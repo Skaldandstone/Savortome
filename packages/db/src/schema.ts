@@ -324,6 +324,34 @@ export const shoppingListItems = pgTable(
 );
 
 /**
+ * A shopper's link to a grocery service they've signed in to.
+ *
+ * Only Kroger needs one today: its Cart API writes to a *customer's* cart, so
+ * it takes an OAuth token belonging to that person, and it prices and stocks
+ * per store, so the chosen location lives here too.
+ *
+ * The tokens are stored as they come. Neon encrypts at rest; encrypting them
+ * again with an application key would mean a key to manage and rotate, and
+ * anyone who can read this table can already read `users`.
+ */
+export const groceryConnections = pgTable(
+  "grocery_connections",
+  {
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(),
+    accessToken: text("access_token").notNull(),
+    refreshToken: text("refresh_token"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    /** Kroger prices, stocks, and carries different things per store. */
+    locationId: text("location_id"),
+    locationName: text("location_name"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.provider] })],
+);
+
+/**
  * Record of pushing a list to a grocery or delivery service. Instacart and
  * Kroger have real cart APIs; the rest are deep links, and we keep the same
  * row shape for both so the history reads consistently.

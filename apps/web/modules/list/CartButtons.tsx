@@ -63,7 +63,16 @@ export function CartButtons({
       </div>
 
       {handoff ? (
-        <Callout tone="info" title={handoff.note}>
+        <Callout tone={handoff.unmatched.length > 0 ? "warn" : "info"} title={handoff.note}>
+          {/* Naming what didn't make it is the whole use of saying some didn't:
+              a count leaves the shopper to work out which. */}
+          {handoff.unmatched.length > 0 ? (
+            <ul className={styles.unmatched}>
+              {handoff.unmatched.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          ) : null}
           {handoff.text ? <pre>{handoff.text}</pre> : null}
         </Callout>
       ) : null}

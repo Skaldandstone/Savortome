@@ -8,6 +8,7 @@ import {
   type ShoppingLine,
 } from "@nomnom/core/format";
 import { Button, Callout, Panel, PanelHeader, space, type as typeScale, usePalette } from "@/ui";
+import { KrogerConnection } from "./KrogerConnection";
 import { useShoppingList } from "./useShoppingList";
 
 type Item = ShoppingLine & { id: string };
@@ -171,11 +172,29 @@ export function ListScreen() {
         )}
 
         {error ? <Callout tone="error">{error}</Callout> : null}
-        {handoff ? <Callout tone="info" title={handoff.note} /> : null}
+        {handoff ? (
+          <Callout
+            tone={handoff.unmatched.length > 0 ? "warn" : "info"}
+            title={handoff.note}
+          >
+            {/* Naming what didn't make it is the whole use of saying some
+                didn't: a count leaves the shopper to work out which. */}
+            {handoff.unmatched.map((item) => (
+              <Text key={item} style={[styles.unmatched, { color: c.textMuted }]}>
+                • {item}
+              </Text>
+            ))}
+          </Callout>
+        ) : null}
       </Panel>
 
       {items.length > 0 ? (
-        <CartSection providers={providers} disabled={busy} onSend={(p) => void send(p)} />
+        <>
+          <CartSection providers={providers} disabled={busy} onSend={(p) => void send(p)} />
+          <View style={styles.kroger}>
+            <KrogerConnection />
+          </View>
+        </>
       ) : null}
     </ScrollView>
   );
@@ -197,6 +216,8 @@ const styles = StyleSheet.create({
   name: { flex: 1, fontSize: typeScale.body },
   actions: { marginTop: space.md, alignSelf: "flex-start" },
   cart: { marginTop: space.lg, gap: space.md },
+  kroger: { marginTop: space.md },
+  unmatched: { fontSize: typeScale.small, lineHeight: 19 },
   cartGroup: { padding: space.lg },
   cartHeading: { fontSize: typeScale.micro, letterSpacing: 1, fontWeight: "600", marginBottom: space.sm },
   cartButtons: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },

@@ -23,6 +23,8 @@
     "check:friends": "pnpm --filter @nomnom/db check:friends",
     "check:discover": "pnpm --filter @nomnom/db check:discover",
     "check:editor": "pnpm --filter @nomnom/db check:editor",
+    "check:grocery": "pnpm --filter @nomnom/db check:grocery",
+    "kroger:stub": "node scripts/kroger-stub.mjs",
     "mobile:bundle": "pnpm --filter @nomnom/mobile exec expo export --platform android --output-dir .expo-export"
   },
   "devDependencies": {
