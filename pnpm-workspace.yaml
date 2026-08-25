@@ -1,0 +1,18 @@
+packages:
+  - "apps/*"
+  - "packages/*"
+
+# Which dependencies may run install scripts. Everything here is deliberate:
+# pnpm treats an undeclared build script as an install failure, which then
+# breaks every `pnpm -r` command in the repo.
+allowBuilds:
+  # tsx ships esbuild and Next ships sharp; both place a platform binary.
+  esbuild: true
+  sharp: true
+  # Clerk uses this for cross-tab session locking.
+  browser-tabs-lock: true
+  # Optional native speedups for `ws`; harmless if they fail to build.
+  bufferutil: true
+  utf-8-validate: true
+  # Postinstall is only a funding banner.
+  core-js: false

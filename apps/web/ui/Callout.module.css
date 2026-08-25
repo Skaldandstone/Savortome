@@ -1,0 +1,22 @@
+.callout {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  font-size: var(--step-2);
+  border: 1px solid transparent;
+}
+
+.title { display: block; margin-bottom: 4px; }
+
+.info { background: var(--surface-sunken); color: var(--text-muted); }
+.warn { background: var(--warn-soft); color: var(--warn); }
+.error { background: var(--accent-soft); color: var(--text); border-color: var(--border); }
+
+.callout :global(pre) {
+  margin: 8px 0 0;
+  font-size: var(--step-1);
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+
+.callout :global(ul) { margin: 8px 0 0; padding-left: 18px; }

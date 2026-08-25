@@ -1,0 +1,11 @@
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.header { margin-bottom: 16px; }
+.title { margin: 0 0 4px; font-size: var(--step-4); }
+.hint { margin: 0; color: var(--text-muted); font-size: var(--step-2); }
