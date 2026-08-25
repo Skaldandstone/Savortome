@@ -1,7 +1,8 @@
-import { ScrollView, StyleSheet } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
+import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { RecipeCard } from "@/modules/recipe";
-import { Callout, Panel, PanelHeader, space, usePalette } from "@/ui";
+import { Button, Callout, Panel, PanelHeader, space, usePalette } from "@/ui";
 import { ImportForm } from "./ImportForm";
 import { ImportProgress } from "./ImportProgress";
 import { useImport } from "./useImport";
@@ -10,6 +11,7 @@ import { useImport } from "./useImport";
 export function ImportScreen() {
   const { stage, busy, error, result, run } = useImport();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const c = usePalette();
 
   return (
@@ -25,6 +27,14 @@ export function ImportScreen() {
         />
 
         <ImportForm busy={busy} onSubmit={run} />
+
+        <View style={styles.writeOne}>
+          <Button
+            label="Or write one yourself"
+            variant="ghost"
+            onPress={() => router.push("/recipe/new")}
+          />
+        </View>
 
         {stage !== null ? <ImportProgress stage={stage} /> : null}
 
@@ -50,4 +60,5 @@ export function ImportScreen() {
 
 const styles = StyleSheet.create({
   content: { padding: space.lg + 4, paddingBottom: space.xxl * 3 },
+  writeOne: { marginTop: space.md, alignSelf: "flex-start" },
 });

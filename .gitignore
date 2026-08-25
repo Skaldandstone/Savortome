@@ -9,3 +9,8 @@ dist/
 .DS_Store
 .env*.bak
 .expo-export
+
+# Next regenerates this, and its contents depend on which distDir last ran
+# (dev and build deliberately use different ones), so tracking it means it
+# flips back and forth in every diff.
+apps/web/next-env.d.ts

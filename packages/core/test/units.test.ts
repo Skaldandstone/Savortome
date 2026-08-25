@@ -50,6 +50,31 @@ describe("parseIngredientLine", () => {
     assert.equal(parseIngredientLine("500 grams beef chuck").unit, "g");
   });
 
+  it("treats the thing a food is sold as as the unit, not part of its name", () => {
+    // Otherwise the container word rides along into the name and the
+    // ingredient stops matching anything in the pantry.
+    const tofu = parseIngredientLine("1 block firm tofu, drained");
+    assert.equal(tofu.unit, "block");
+    assert.equal(tofu.canonicalItem, "firm tofu");
+
+    assert.equal(parseIngredientLine("2 ribs celery").canonicalItem, "celery");
+    // "frozen" is stripped as prep, so frozen peas match peas in the pantry.
+    assert.equal(parseIngredientLine("1 bag frozen peas").canonicalItem, "pea");
+    assert.equal(parseIngredientLine("2 ears of corn").canonicalItem, "corn");
+  });
+
+  it("keeps a hyphenated modifier in one piece", () => {
+    // Half-stripping one is the worst outcome: "stone cornmeal" isn't a food,
+    // so the recipe matches nothing and nobody finds out why.
+    assert.equal(canonicalize("stone-ground cornmeal"), "cornmeal");
+    assert.equal(canonicalize("extra-virgin olive oil"), "olive oil");
+    assert.equal(canonicalize("well-drained chickpeas"), "chickpea");
+    assert.equal(canonicalize("low-fat greek yogurt"), "greek yogurt");
+    // Not every hyphenated word is a modifier.
+    assert.equal(canonicalize("gluten-free flour"), "gluten free flour");
+    assert.equal(canonicalize("half-and-half"), "half and half");
+  });
+
   it("captures ranges", () => {
     const i = parseIngredientLine("2-3 cloves garlic, minced");
     assert.equal(i.quantity, 2);

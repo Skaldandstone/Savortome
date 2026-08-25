@@ -45,8 +45,8 @@ export interface SharedRecipeResponse {
   view: SharedRecipeView;
 }
 
-/** A recipe you own, including who can see it. */
-export type OwnedRecipe = Recipe & { visibility: Visibility };
+/** A recipe you own: who can see it, and whether you've checked it over. */
+export type OwnedRecipe = Recipe & { visibility: Visibility; verifiedAt: string | null };
 
 export interface LibraryResponse {
   shelves: ShelfSummary[];
@@ -60,6 +60,7 @@ export interface DiscoverQuery {
 }
 import type { ImportRequest, ImportResponse } from "./import-client.js";
 import type { Recipe } from "./recipe.js";
+import type { RecipeDraft } from "./editor.js";
 import type { SharedRecipeView } from "./sharing.js";
 
 /**
@@ -169,6 +170,9 @@ export interface NomNomClient {
   discover: (query?: DiscoverQuery) => Promise<DiscoverResponse>;
   similarRecipes: (recipeId: string) => Promise<DiscoverCard[]>;
   library: (shelfId?: string) => Promise<LibraryResponse>;
+  createRecipe: (draft: RecipeDraft) => Promise<{ recipeId: string }>;
+  updateRecipe: (recipeId: string, draft: RecipeDraft) => Promise<void>;
+  deleteRecipe: (recipeId: string) => Promise<void>;
 }
 
 export function createClient(config: ApiClientConfig = {}): NomNomClient {
@@ -329,5 +333,16 @@ export function createClient(config: ApiClientConfig = {}): NomNomClient {
 
     library: (shelfId) =>
       send<LibraryResponse>(`/api/recipes${shelfId ? `?shelf=${shelfId}` : ""}`),
+
+    createRecipe: (draft) =>
+      send<{ recipeId: string }>("/api/recipes", { method: "POST", body: body(draft) }),
+
+    updateRecipe: async (recipeId, draft) => {
+      await send(`/api/recipes/${recipeId}`, { method: "PUT", body: body(draft) });
+    },
+
+    deleteRecipe: async (recipeId) => {
+      await send(`/api/recipes/${recipeId}`, { method: "DELETE" });
+    },
   };
 }

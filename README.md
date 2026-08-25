@@ -335,6 +335,46 @@ expression looks the way it does.
 
 ---
 
+## Writing and correcting recipes
+
+The same form does both. `/recipe/new` starts empty; `/recipe/:id/edit` starts
+from what's already there. A recipe someone typed and a recipe pulled out of a
+video are the same card once they're on the page.
+
+Ingredients are **one box per line**, parsed with the same parser the importer
+uses — people think "2 tbsp olive oil", not amount / unit / item in three
+fields. Underneath each line the form shows the canonical name it landed on
+("Matches *firm tofu* in your pantry"), because that name is what pantry search
+and shopping-list merging join on, and it's the part that silently stops
+matching when a line is misread.
+
+Two decisions worth knowing:
+
+- **Parsing happens on every keystroke, not on blur.** Blur is nearly right and
+  fails exactly once: type the last ingredient, hit Save, and the click can be
+  handled before the blur's state update lands — so the recipe saves without
+  the line you just typed. A line nobody touches never re-parses, which is the
+  other half of what's wanted: an imported ingredient keeps the structure the
+  extractor gave it rather than being re-read by a simpler parser.
+- **Saving an edit sets `verifiedAt`.** The confidence score and the list of
+  guesses stay on the record, but they stop being a warning, because a person
+  has now read it. That's the difference between "we're not sure" and "we
+  weren't sure, and then someone checked".
+
+Editing never rewrites provenance — where a recipe came from, who made it, and
+what we admit we guessed are left exactly as they were. A corrected import is
+still an import.
+
+Validation and normalisation live in `packages/core/src/editor.ts` and run
+inside the database layer, so both write paths agree on what a valid recipe is
+and there's no way to save an invalid one from either app. The ingredient index
+is rebuilt in the same call as the write, or pantry search keeps answering from
+the old card.
+
+`pnpm check:editor` asserts all of it against a real database.
+
+---
+
 ## Optional pieces
 
 **Persistence** — set `DATABASE_URL` in `apps/web/.env.local` (the db package
@@ -425,7 +465,11 @@ pnpm check:friends
 pnpm check:discover
 ```
 
-All five work on their own fixtures and are safe to re-run. `check:shelves` imports
+```bash
+pnpm check:editor
+```
+
+All six work on their own fixtures and are safe to re-run. `check:shelves` imports
 a real recipe and leaves it in the library, so point it at a development
 database.
 
@@ -480,6 +524,5 @@ Modelled in `packages/db/src/schema.ts`, in rough dependency order:
 2. **Kroger cart** — the OAuth flow and product-UPC lookup its Cart API needs.
 3. **Semantic search** — `recipes.embedding` is unused. Worth doing when the
    ingredient-overlap approach visibly runs out, not before.
-4. **Recipe editing.** Imported cards can be shelved, rated, and shared, but
-   not corrected. The extractor flags what it inferred; there's no way to fix
-   it yet.
+4. **Ingredient groups in the editor.** "For the sauce" headings survive an
+   edit untouched, but there's no way to add or change one by hand yet.

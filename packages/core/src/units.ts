@@ -37,6 +37,17 @@ const UNIT_ALIASES: Record<string, string[]> = {
   stick: ["stick", "sticks"],
   head: ["head", "heads"],
   stalk: ["stalk", "stalks"],
+  rib: ["rib", "ribs"],
+  // Things sold as one object. Without these the container word ends up in the
+  // ingredient's name — "block firm tofu" never matches "firm tofu" in a pantry.
+  block: ["block", "blocks"],
+  bag: ["bag", "bags"],
+  bottle: ["bottle", "bottles"],
+  tub: ["tub", "tubs", "container", "containers"],
+  loaf: ["loaf", "loaves"],
+  sheet: ["sheet", "sheets"],
+  ear: ["ear", "ears"],
+  handful: ["handful", "handfuls"],
   quart: ["quart", "quarts", "qt"],
   pint: ["pint", "pints", "pt"],
   gallon: ["gallon", "gallons", "gal"],
@@ -105,8 +116,23 @@ const PREP_WORDS = [
  * Adjectives and filler that describe an ingredient without identifying it.
  * Removing them is what makes "3 very ripe bananas" and "banana" the same key.
  */
-const QUALIFIER_PATTERN =
-  /\b(fresh|freshly|large|small|medium|ripe|very|extra|virgin|whole|ground|raw|cooked|uncooked|boneless|skinless|low[- ]fat|non[- ]fat|unsalted|salted|about|roughly|approximately|good|high|best|quality|preferably|plus more.*)\b/g;
+const QUALIFIER_WORDS = [
+  "fresh", "freshly", "large", "small", "medium", "ripe", "very", "extra", "virgin",
+  "whole", "ground", "raw", "cooked", "uncooked", "boneless", "skinless", "unsalted",
+  "salted", "about", "roughly", "approximately", "good", "high", "best", "quality",
+  "preferably",
+];
+
+const QUALIFIER_PATTERN = new RegExp(
+  String.raw`\b(${QUALIFIER_WORDS.join("|")}|low[- ]fat|non[- ]fat|plus more.*)\b`,
+  "g",
+);
+
+/** Every single word that describes rather than identifies, for the hyphen pass. */
+const MODIFIER_WORDS = new Set([
+  ...QUALIFIER_WORDS,
+  ...PREP_WORDS.flatMap((phrase) => phrase.split(" ")),
+]);
 
 const PLURAL_EXCEPTIONS = new Set(["molasses", "asparagus", "couscous", "hummus", "greens", "oats", "grits"]);
 
@@ -122,6 +148,13 @@ export function canonicalize(item: string): string {
   // food lexicon; the model-backed path already produces clean names.
   s = s.split(/\bor\b/)[0] ?? s;
   s = s.replace(/\bof (?:your )?choice\b/g, " ");
+
+  // A hyphenated modifier is one word, not two. Stripping half of one leaves
+  // "stone-ground cornmeal" as "stone cornmeal", which is worse than leaving it
+  // alone: it isn't a food, so the recipe matches nothing and never says why.
+  s = s.replace(/\b[a-z]+(?:-[a-z]+)+\b/g, (compound) =>
+    compound.split("-").some((part) => MODIFIER_WORDS.has(part)) ? " " : compound,
+  );
 
   for (const p of PREP_WORDS) s = s.replace(new RegExp(String.raw`\b${p}\b`, "g"), " ");
   s = s.replace(QUALIFIER_PATTERN, " ");

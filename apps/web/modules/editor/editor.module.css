@@ -1,0 +1,148 @@
+.editor { display: grid; gap: 16px; }
+
+.fields { display: grid; gap: 14px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 14px;
+}
+
+.labelled { display: grid; gap: 5px; }
+
+.label {
+  font-size: var(--step-1);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.hint { font-size: var(--step-2); color: var(--text-muted); }
+
+.shortArea { min-height: 62px; }
+
+.select {
+  padding: 11px 13px;
+  font: inherit;
+  font-size: var(--step-3);
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+/* --- rows ------------------------------------------------------------- */
+
+.rows { display: grid; gap: 8px; }
+
+.row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.rowMain { flex: 1 1 auto; min-width: 0; }
+
+.lineInput,
+.stepInput {
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  font-size: var(--step-3);
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.stepInput { flex: 1 1 auto; min-width: 0; resize: vertical; line-height: 1.45; }
+
+.lineInput:focus-visible,
+.stepInput:focus-visible,
+.select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.understood {
+  margin: 4px 0 0 2px;
+  font-size: var(--step-1);
+  color: var(--text-muted);
+}
+
+.stepNumber {
+  flex: none;
+  width: 26px;
+  padding-top: 12px;
+  font-size: var(--step-2);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.optional {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding-top: 12px;
+  font-size: var(--step-1);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.rowActions { flex: none; display: flex; gap: 4px; padding-top: 6px; }
+
+.rowAction {
+  width: 30px;
+  height: 30px;
+  font: inherit;
+  font-size: var(--step-3);
+  line-height: 1;
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.rowAction:hover:not(:disabled) { color: var(--text); border-color: var(--text-muted); }
+.rowAction:disabled { opacity: 0.35; cursor: default; }
+
+.addRow {
+  justify-self: start;
+  margin-top: 2px;
+  padding: 7px 12px;
+  font: inherit;
+  font-size: var(--step-2);
+  color: var(--accent);
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.addRow:hover { border-color: var(--accent); background: var(--accent-soft); }
+
+/* --- actions ---------------------------------------------------------- */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.cancel { font-size: var(--step-2); color: var(--text-muted); }
+
+.danger {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+@media (width < 560px) {
+  .row { flex-wrap: wrap; }
+  .optional, .rowActions { padding-top: 0; }
+  .danger { margin-left: 0; }
+}

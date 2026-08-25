@@ -19,9 +19,11 @@ export function RecipeCard({
   recipe,
   /** The recipe's database id, when it has one. Unsaved cards can't be shelved. */
   shelvedId = null,
+  verifiedAt = null,
 }: {
   recipe: Recipe;
   shelvedId?: string | null;
+  verifiedAt?: string | null;
 }) {
   const { servings, canScale, increment, decrement, ingredients } = useServings(recipe);
   const c = usePalette();
@@ -55,7 +57,7 @@ export function RecipeCard({
 
         <ShelfControls recipeId={shelvedId} />
 
-        <Provenance recipe={recipe} />
+        <Provenance recipe={recipe} verifiedAt={verifiedAt} />
       </View>
     </View>
   );

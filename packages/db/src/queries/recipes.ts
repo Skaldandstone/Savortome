@@ -1,5 +1,12 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { canonicalize, isStaple, type Recipe } from "@nomnom/core";
+import {
+  canonicalize,
+  isStaple,
+  normalizeDraft,
+  validateDraft,
+  type Recipe,
+  type RecipeDraft,
+} from "@nomnom/core";
 import type { Database } from "../client.js";
 import * as schema from "../schema.js";
 
@@ -56,6 +63,104 @@ export async function saveRecipe(
   const recipeId = saved!.id;
   await reindexIngredients(database, recipeId, recipe);
   return recipeId;
+}
+
+/**
+ * A recipe someone typed themselves.
+ *
+ * No extraction happened, so there is nothing to be unsure about: confidence is
+ * 1, there are no notes, and it counts as verified the moment it's saved.
+ */
+export async function createRecipe(
+  database: Database,
+  ownerId: string,
+  draft: RecipeDraft,
+): Promise<string> {
+  const clean = normalizeDraft(draft);
+  validateDraft(clean);
+
+  const [saved] = await database
+    .insert(schema.recipes)
+    .values({
+      ownerId,
+      ...draftColumns(clean),
+      sourceKind: "manual",
+      extractionMethod: "manual",
+      confidence: 1,
+      extractionNotes: [],
+      verifiedAt: new Date(),
+    })
+    .returning({ id: schema.recipes.id });
+
+  const recipeId = saved!.id;
+  await reindexIngredients(database, recipeId, { ingredients: clean.ingredients } as Recipe);
+  return recipeId;
+}
+
+/**
+ * Save corrections to a recipe.
+ *
+ * Editing an imported card marks it verified: the confidence score and the list
+ * of things the extractor had to guess stay on the record, but they stop being
+ * a warning, because someone has now read it. Where the recipe came from is
+ * left alone — a corrected import is still an import, and the attribution is
+ * the honest part of it.
+ */
+export async function updateRecipe(
+  database: Database,
+  ownerId: string,
+  recipeId: string,
+  draft: RecipeDraft,
+): Promise<boolean> {
+  const clean = normalizeDraft(draft);
+  validateDraft(clean);
+
+  const [updated] = await database
+    .update(schema.recipes)
+    .set({ ...draftColumns(clean), verifiedAt: new Date(), updatedAt: new Date() })
+    .where(and(eq(schema.recipes.id, recipeId), eq(schema.recipes.ownerId, ownerId)))
+    .returning({ id: schema.recipes.id });
+
+  if (!updated) return false;
+
+  // The ingredient index is derived from what was just written, so it has to be
+  // rebuilt in the same breath or pantry search answers from the old card.
+  await reindexIngredients(database, recipeId, { ingredients: clean.ingredients } as Recipe);
+  return true;
+}
+
+/** Throw away a recipe. Everything hanging off it goes with it, by cascade. */
+export async function deleteRecipe(
+  database: Database,
+  ownerId: string,
+  recipeId: string,
+): Promise<boolean> {
+  const [deleted] = await database
+    .delete(schema.recipes)
+    .where(and(eq(schema.recipes.id, recipeId), eq(schema.recipes.ownerId, ownerId)))
+    .returning({ id: schema.recipes.id });
+  return Boolean(deleted);
+}
+
+/** The columns a draft owns — everything except provenance and ownership. */
+function draftColumns(draft: RecipeDraft) {
+  return {
+    title: draft.title,
+    description: draft.description,
+    imageUrl: draft.imageUrl,
+    servings: draft.servings,
+    servingsNote: draft.servingsNote,
+    prepMinutes: draft.prepMinutes,
+    cookMinutes: draft.cookMinutes,
+    totalMinutes: draft.totalMinutes,
+    ingredients: draft.ingredients,
+    steps: draft.steps,
+    equipment: draft.equipment,
+    tags: draft.tags,
+    cuisine: draft.cuisine,
+    course: draft.course,
+    difficulty: draft.difficulty,
+  };
 }
 
 /** Rebuild the flattened ingredient rows that pantry search will join against. */
