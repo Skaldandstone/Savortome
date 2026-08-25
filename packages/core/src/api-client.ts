@@ -117,6 +117,22 @@ export interface PantrySearchResponse {
   note?: string;
 }
 
+/** A store you can collect a Kroger order from. */
+export interface GroceryStore {
+  locationId: string;
+  name: string;
+  chain?: string;
+  address?: string;
+}
+
+/** Whether this person can send a list to Kroger yet, and from which store. */
+export interface KrogerStatus {
+  /** False when the server has no Kroger credentials at all. */
+  configured: boolean;
+  connected: boolean;
+  store: { locationId: string; name: string } | null;
+}
+
 export interface ShoppingListView {
   id: string;
   name: string;
@@ -170,6 +186,10 @@ export interface NomNomClient {
   discover: (query?: DiscoverQuery) => Promise<DiscoverResponse>;
   similarRecipes: (recipeId: string) => Promise<DiscoverCard[]>;
   library: (shelfId?: string) => Promise<LibraryResponse>;
+  krogerStatus: () => Promise<KrogerStatus>;
+  krogerStores: (zipCode: string) => Promise<GroceryStore[]>;
+  setKrogerStore: (store: GroceryStore) => Promise<KrogerStatus>;
+  disconnectKroger: () => Promise<KrogerStatus>;
   createRecipe: (draft: RecipeDraft) => Promise<{ recipeId: string }>;
   updateRecipe: (recipeId: string, draft: RecipeDraft) => Promise<void>;
   deleteRecipe: (recipeId: string) => Promise<void>;
@@ -333,6 +353,28 @@ export function createClient(config: ApiClientConfig = {}): NomNomClient {
 
     library: (shelfId) =>
       send<LibraryResponse>(`/api/recipes${shelfId ? `?shelf=${shelfId}` : ""}`),
+
+    krogerStatus: () => send<KrogerStatus>("/api/grocery/kroger"),
+
+    krogerStores: async (zipCode) =>
+      (
+        await send<{ stores: GroceryStore[] }>("/api/grocery/kroger", {
+          method: "POST",
+          body: body({ action: "stores", zipCode }),
+        })
+      ).stores,
+
+    setKrogerStore: (store) =>
+      send<KrogerStatus>("/api/grocery/kroger", {
+        method: "POST",
+        body: body({ action: "setStore", locationId: store.locationId, locationName: store.name }),
+      }),
+
+    disconnectKroger: () =>
+      send<KrogerStatus>("/api/grocery/kroger", {
+        method: "POST",
+        body: body({ action: "disconnect" }),
+      }),
 
     createRecipe: (draft) =>
       send<{ recipeId: string }>("/api/recipes", { method: "POST", body: body(draft) }),

@@ -1,6 +1,11 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { InstacartError, RecipeValidationError, ShelfValidationError } from "@nomnom/core";
+import {
+  InstacartError,
+  KrogerError,
+  RecipeValidationError,
+  ShelfValidationError,
+} from "@nomnom/core";
 import { FriendshipError } from "@nomnom/core";
 import { SaveRecipeError } from "@nomnom/db";
 import { db, type Database } from "@nomnom/db";
@@ -29,6 +34,11 @@ export function errorResponse(err: unknown): NextResponse {
   }
   if (err instanceof NotConfiguredError) {
     return NextResponse.json({ error: err.message }, { status: 501 });
+  }
+  if (err instanceof KrogerError) {
+    // 401 means "connect your account", which is a thing the shopper can act
+    // on; anything else without a status is a configuration problem.
+    return NextResponse.json({ error: err.message }, { status: err.status ?? 501 });
   }
   if (err instanceof InstacartError) {
     // A missing key is a configuration problem, not a server fault; a rejected

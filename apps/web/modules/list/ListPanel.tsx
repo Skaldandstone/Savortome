@@ -2,6 +2,7 @@
 
 import { Button, Callout, Panel, PanelHeader } from "@/ui";
 import { CartButtons } from "./CartButtons";
+import { KrogerConnection } from "./KrogerConnection";
 import { ListItems } from "./ListItems";
 import { useShoppingList } from "./useShoppingList";
 import styles from "./list.module.css";
@@ -56,12 +57,15 @@ export function ListPanel() {
       </Panel>
 
       {list && list.itemCount > 0 ? (
-        <CartButtons
-          providers={providers}
-          disabled={busy}
-          handoff={handoff}
-          onSend={(provider) => void sendToCart(provider)}
-        />
+        <>
+          <CartButtons
+            providers={providers}
+            disabled={busy}
+            handoff={handoff}
+            onSend={(provider) => void sendToCart(provider)}
+          />
+          <KrogerConnection />
+        </>
       ) : null}
     </>
   );

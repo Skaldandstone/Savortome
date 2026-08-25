@@ -12,6 +12,7 @@ export * from "./units-convert.js";
 export * from "./shopping.js";
 export * from "./carts.js";
 export * from "./carts-instacart.js";
+export * from "./carts-kroger.js";
 export * from "./pantry-query.js";
 export * from "./units.js";
 export * from "./extract.js";

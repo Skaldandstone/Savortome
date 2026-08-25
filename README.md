@@ -227,7 +227,7 @@ This is the part worth being straight about:
 | Service | What happens |
 |---|---|
 | **Instacart** | Real cart. Their Developer Platform API takes the list and returns a populated shopping-list page. |
-| **Kroger / Fred Meyer** | Has a public Cart API, but it needs per-user OAuth *and* resolved product UPCs. Modelled, not wired up. |
+| **Kroger / Fred Meyer** | Real cart. Sign in to Kroger once, pick a store, and matched items go into your own cart for pickup. |
 | **DoorDash, Uber Eats, Safeway** | **No public consumer cart API exists.** These copy your list and open their store. |
 
 The provider type says which kind each is (`api` vs `handoff`), the UI groups
@@ -239,6 +239,55 @@ The Instacart integration is written against
 - using `line_item_measurements`, since `quantity`/`unit` on a line item are
 deprecated - but has never been run against the live API, which needs a partner
 key this project doesn't have.
+
+### Kroger, and why it's shaped differently
+
+Instacart takes names and matches them itself. Kroger takes **UPCs**, and a UPC
+only means anything at a **specific store** - so the flow has more moving parts:
+
+1. A `client_credentials` token searches the catalogue. No customer involved.
+2. The shopper signs in to Kroger once (`authorization_code`, `cart.basic:write`).
+3. They pick a store, because price, stock, and what's carried all differ.
+4. Each line is searched, matched to a UPC, and `PUT /v1/cart/add` does the rest.
+
+**The matching rule is the interesting part, and it's deliberately strict.** A
+line only matches a product whose description contains the item's name as a
+whole phrase. Kroger's search is fuzzy and will happily hand back almond milk
+for "milk", oat flour for "flour", and olive oil for "coconut oil" - and a
+wrong item that ends up in someone's actual shopping is far worse than a line
+they have to add themselves. Anything unmatched is named, not silently dropped.
+
+Set these to turn it on:
+
+```
+KROGER_CLIENT_ID=...
+KROGER_CLIENT_SECRET=...
+KROGER_REDIRECT_URI=http://localhost:3000/api/grocery/kroger/callback
+```
+
+The OAuth `state` is held in an httpOnly cookie and checked on the way back, so
+a callback URL someone else hands you can't quietly attach their Kroger account
+to your session.
+
+**Developing without Kroger credentials.** There's a stand-in that implements
+the documented shapes of the four endpoints used here:
+
+```bash
+pnpm kroger:stub
+```
+
+Point `KROGER_API_BASE=http://127.0.0.1:4600/v1` at it with any client id and
+secret, and the whole flow runs end to end - sign-in, store picking, matching,
+and the cart add. Its catalogue is a dozen items and its search is loose on
+purpose, so the "Kroger returned it but it isn't what you asked for" path is
+reachable. That is what the integration has actually been run against; the live
+API still hasn't been.
+
+**On mobile, the sign-in happens on the web.** The redirect lands on our server,
+which identifies mobile callers by a bearer token that a system browser doesn't
+carry, so a sign-in started in the app would come back as nobody. The app opens
+the web list instead, and everything after that - picking a store, sending the
+list - happens in the app.
 
 ---
 
@@ -507,7 +556,11 @@ pnpm check:discover
 pnpm check:editor
 ```
 
-All six work on their own fixtures and are safe to re-run. `check:shelves` imports
+```bash
+pnpm check:grocery
+```
+
+All seven work on their own fixtures and are safe to re-run. `check:shelves` imports
 a real recipe and leaves it in the library, so point it at a development
 database.
 
@@ -559,7 +612,9 @@ Modelled in `packages/db/src/schema.ts`, in rough dependency order:
 1. **Running mobile on a device.** It bundles, but has never been opened on a
    phone or simulator - no device was available. Expect the first run to turn
    up layout and native-module issues that bundling can't catch.
-2. **Kroger cart** - the OAuth flow and product-UPC lookup its Cart API needs.
+2. **Kroger against the live API.** Built and exercised end to end against a
+   local stand-in, but never run with real Kroger credentials - expect the
+   first real run to turn up schema details a stand-in can't.
 3. **Semantic search** - `recipes.embedding` is unused. Worth doing when the
    ingredient-overlap approach visibly runs out, not before.
 4. **Ingredient groups in the editor.** "For the sauce" headings survive an
