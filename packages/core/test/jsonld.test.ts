@@ -1,10 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import {
-  extractJsonLdRecipe,
-  isoDurationToMinutes,
-  timerFromStep,
-} from "../src/sources/jsonld.js";
+import { extractJsonLdRecipe, isoDurationToMinutes } from "../src/sources/jsonld.js";
+import { timerFromStep } from "../src/cook.js";
 
 /** A page shaped like the recipe-card plugins most food blogs actually ship. */
 const page = (recipe: unknown) => `<!doctype html>

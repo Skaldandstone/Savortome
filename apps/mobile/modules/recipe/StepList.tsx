@@ -1,5 +1,5 @@
 import { Linking, StyleSheet, Text, View } from "react-native";
-import type { Recipe, Step } from "@nomnom/core/format";
+import { timestampUrl, type Recipe, type Step } from "@nomnom/core/format";
 import { radius, space, type as typeScale, usePalette } from "@/ui";
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -7,15 +7,9 @@ const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, 
 const formatTimer = (seconds: number) =>
   seconds < 90 ? `${seconds}s` : `${Math.round(seconds / 60)} min`;
 
-/** Deep-link back to the exact second of the source video. */
-function timestampLink(source: Recipe["source"], seconds: number): string | null {
-  if (!source.url || source.kind !== "youtube") return null;
-  return `${source.url}${source.url.includes("?") ? "&" : "?"}t=${seconds}s`;
-}
-
 function StepMeta({ step, source }: { step: Step; source: Recipe["source"] }) {
   const c = usePalette();
-  const link = step.sourceTimestamp !== null ? timestampLink(source, step.sourceTimestamp) : null;
+  const link = step.sourceTimestamp !== null ? timestampUrl(source, step.sourceTimestamp) : null;
   if (!link && !step.timerSeconds) return null;
 
   return (

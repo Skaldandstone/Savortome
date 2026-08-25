@@ -23,5 +23,16 @@
 .ingredientsHeading .sectionTitle { flex: 1; }
 
 .listAction { display: flex; align-items: center; gap: 16px; margin-top: 16px; }
+.cook {
+  padding: 12px 20px;
+  font-size: var(--step-3);
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border-radius: var(--radius-sm);
+}
+
+.cook:hover { opacity: 0.9; }
+
 .edit { font-size: var(--step-2); color: var(--text-muted); }
 .edit:hover { color: var(--accent); }

@@ -12,7 +12,7 @@ import { cuesToTranscript, fetchYoutube } from "./youtube.js";
 export * from "./types.js";
 export { assertPublicHttpUrl, UnsafeUrlError } from "./url-guard.js";
 export { extractArticleText } from "./article.js";
-export { extractJsonLdRecipe, isoDurationToMinutes, timerFromStep } from "./jsonld.js";
+export { extractJsonLdRecipe, isoDurationToMinutes } from "./jsonld.js";
 export { fetchSocial } from "./social.js";
 export { detectSourceKind, socialKind, youtubeVideoId } from "../source-kind.js";
 export { asrConfigFromEnv, transcribeUrl, ytDlpAvailable } from "./transcribe.js";

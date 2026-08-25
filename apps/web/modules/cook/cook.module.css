@@ -1,0 +1,204 @@
+.cook {
+  display: grid;
+  gap: 16px;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.exit {
+  font-size: var(--step-2);
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.exit:hover { color: var(--accent); }
+
+.ingredientsToggle {
+  flex: none;
+  padding: 7px 12px;
+  font: inherit;
+  font-size: var(--step-2);
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.ingredientsToggle:hover { color: var(--text); border-color: var(--text-muted); }
+
+.ingredients {
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  max-height: 40vh;
+  overflow-y: auto;
+}
+
+/* --- timers ------------------------------------------------------------ */
+
+.tray { display: grid; gap: 8px; }
+
+.timer {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 14px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.timer[data-state="ringing"] {
+  background: var(--warn-soft);
+  border-color: var(--warn);
+}
+
+.timer[data-state="paused"] { opacity: 0.7; }
+
+.timerHead { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+
+.timerStep {
+  flex: none;
+  font-size: var(--step-1);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.timerLabel {
+  font-size: var(--step-2);
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.timerClock {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  font-size: 30px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.timer[data-state="ringing"] .timerClock { color: var(--warn); }
+
+.timerDone {
+  grid-column: 1;
+  font-size: var(--step-2);
+  font-weight: 600;
+  color: var(--warn);
+}
+
+.timerActions { grid-column: 1; display: flex; gap: 10px; }
+
+.timerActions button {
+  padding: 0;
+  font: inherit;
+  font-size: var(--step-1);
+  color: var(--text-muted);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.timerActions button:hover { color: var(--accent); border-color: var(--accent); }
+
+/* --- the step itself ---------------------------------------------------- */
+
+.progress {
+  height: 4px;
+  background: var(--surface-sunken);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 160ms ease-out;
+}
+
+.stage {
+  min-height: 34vh;
+  padding: 28px 26px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.counter {
+  margin: 0 0 14px;
+  font-size: var(--step-1);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Sized to be read from arm's length, over a chopping board. */
+.text { margin: 0; font-size: 25px; line-height: 1.45; }
+.text[data-done="true"] { color: var(--text-muted); }
+
+.stepExtras { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 22px; }
+
+.timerRunning { font-size: var(--step-2); color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.timerRunning[data-state="ringing"] { color: var(--warn); font-weight: 600; }
+
+.watch { font-size: var(--step-2); color: var(--accent); }
+
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.controls > *:nth-child(2) { flex: 1 1 auto; }
+
+.aside {
+  padding: 0;
+  font: inherit;
+  font-size: var(--step-2);
+  color: var(--text-muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.aside:hover { color: var(--accent); }
+
+/* --- finishing ---------------------------------------------------------- */
+
+.finish {
+  display: grid;
+  gap: 12px;
+  padding: 22px 24px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+}
+
+.finishTitle { margin: 0; font-size: var(--step-5); }
+.finishBody { margin: 0; font-size: var(--step-3); color: var(--text-muted); }
+
+.rate { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.rateLabel { font-size: var(--step-3); }
+.review { display: grid; }
+.finishActions { justify-self: start; }
+
+@media (width < 560px) {
+  .stage { padding: 22px 18px; }
+  .text { font-size: 21px; }
+  .timerClock { font-size: 24px; }
+}

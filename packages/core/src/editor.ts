@@ -1,4 +1,5 @@
 import type { Ingredient, Step } from "./recipe.js";
+import { timerFromStep } from "./cook.js";
 import { canonicalize, parseIngredientLine } from "./units.js";
 
 /**
@@ -116,7 +117,16 @@ export function normalizeDraft(draft: RecipeDraft): RecipeDraft {
 
   const steps = draft.steps
     .filter((step) => step.text.trim().length > 0)
-    .map((step, i) => ({ ...step, n: i + 1, text: step.text.trim() }));
+    .map((step, i) => ({
+      ...step,
+      n: i + 1,
+      text: step.text.trim(),
+      // A step that states a duration gets a timer from it, so writing
+      // "simmer for 20 minutes" is all anyone has to do. When the text says
+      // nothing, whatever was already there stands — a video's timer often
+      // comes from what was shown rather than what was said.
+      timerSeconds: timerFromStep(step.text) ?? step.timerSeconds,
+    }));
 
   const prep = draft.prepMinutes;
   const cook = draft.cookMinutes;

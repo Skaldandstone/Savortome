@@ -81,6 +81,29 @@ describe("normalizeDraft", () => {
     assert.deepEqual(normalizeDraft(draft).steps.map((s) => s.n), [1, 2]);
   });
 
+  it("reads a timer out of what the step says", () => {
+    const draft = draftWith({
+      steps: [{ ...blankStep(1), text: "Simmer gently for 20 minutes." }],
+    });
+    assert.equal(normalizeDraft(draft).steps[0]!.timerSeconds, 1200);
+  });
+
+  it("follows the text when it changes, and keeps what was there when it can't", () => {
+    // An edited duration has to move the timer with it, or the card quietly
+    // disagrees with itself.
+    const edited = draftWith({
+      steps: [{ ...blankStep(1), text: "Simmer for 30 minutes.", timerSeconds: 1200 }],
+    });
+    assert.equal(normalizeDraft(edited).steps[0]!.timerSeconds, 1800);
+
+    // Nothing in the words to go on: a timer the extractor got from watching
+    // the video survives.
+    const silent = draftWith({
+      steps: [{ ...blankStep(1), text: "Fry until golden.", timerSeconds: 240 }],
+    });
+    assert.equal(normalizeDraft(silent).steps[0]!.timerSeconds, 240);
+  });
+
   it("cleans up tags", () => {
     const draft = draftWith({ tags: [" #Weeknight ", "weeknight", "QUICK", "  "] });
     assert.deepEqual(normalizeDraft(draft).tags, ["weeknight", "quick"]);
