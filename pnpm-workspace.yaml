@@ -16,3 +16,10 @@ allowBuilds:
   utf-8-validate: true
   # Postinstall is only a funding banner.
   core-js: false
+
+# One React for the whole workspace. Expo SDK 57 pins 19.2.3, and letting the
+# web app float to a newer one invites the pair of "why is my hook null"
+# problems that come from two copies of React in a tree.
+overrides:
+  react: 19.2.3
+  react-dom: 19.2.3

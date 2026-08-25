@@ -2,14 +2,15 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { Recipe } from "@nomnom/core/format";
+import type { OwnedRecipe } from "@nomnom/core/format";
 import { api } from "@/lib/client";
 import { RecipeCard } from "@/modules/recipe";
+import { ShareControl } from "@/modules/sharing";
 import { Button, Callout, space, usePalette } from "@/ui";
 
 export default function RecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [recipe, setRecipe] = useState<Recipe | null>(null);
+  const [recipe, setRecipe] = useState<OwnedRecipe | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
   const insets = useSafeAreaInsets();
@@ -47,6 +48,7 @@ export default function RecipeScreen() {
         ) : recipe ? (
           <>
             <RecipeCard recipe={recipe} shelvedId={recipe.id} />
+            <ShareControl recipeId={recipe.id} initialVisibility={recipe.visibility} />
             <View style={styles.listAction}>
               <Button
                 label={added ? "On your list ✓" : "Add to shopping list"}

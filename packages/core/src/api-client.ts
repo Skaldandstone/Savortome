@@ -27,6 +27,32 @@ export interface DiscoverResponse {
   appliedTags: string[];
 }
 
+/** A row in your own library. */
+export interface LibraryRecipe {
+  id: string;
+  title: string;
+  imageUrl: string | null;
+  totalMinutes: number | null;
+  ingredientCount: number;
+  attribution: string;
+  status: StatusShelf | null;
+  visibility: Visibility;
+}
+
+/** A shared recipe plus what the viewer may do with it. */
+export interface SharedRecipeResponse {
+  recipe: Recipe;
+  view: SharedRecipeView;
+}
+
+/** A recipe you own, including who can see it. */
+export type OwnedRecipe = Recipe & { visibility: Visibility };
+
+export interface LibraryResponse {
+  shelves: ShelfSummary[];
+  recipes: LibraryRecipe[];
+}
+
 export interface DiscoverQuery {
   query?: string;
   tags?: string[];
@@ -34,6 +60,7 @@ export interface DiscoverQuery {
 }
 import type { ImportRequest, ImportResponse } from "./import-client.js";
 import type { Recipe } from "./recipe.js";
+import type { SharedRecipeView } from "./sharing.js";
 
 /**
  * One typed client for the NomNom HTTP API, shared by both apps.
@@ -118,7 +145,8 @@ export interface NomNomClient {
   removePantry: (canonicalItems: string[]) => Promise<PantryEntry[]>;
   clearPantry: () => Promise<PantryEntry[]>;
   searchPantry: (query?: string) => Promise<PantrySearchResponse>;
-  getRecipe: (recipeId: string) => Promise<Recipe>;
+  getRecipe: (recipeId: string) => Promise<OwnedRecipe>;
+  getSharedRecipe: (recipeId: string) => Promise<SharedRecipeResponse>;
   getList: () => Promise<ShoppingListView>;
   addRecipesToList: (recipeIds: string[]) => Promise<ShoppingListView>;
   addItemsToList: (
@@ -140,6 +168,7 @@ export interface NomNomClient {
   feed: () => Promise<FeedItem[]>;
   discover: (query?: DiscoverQuery) => Promise<DiscoverResponse>;
   similarRecipes: (recipeId: string) => Promise<DiscoverCard[]>;
+  library: (shelfId?: string) => Promise<LibraryResponse>;
 }
 
 export function createClient(config: ApiClientConfig = {}): NomNomClient {
@@ -237,7 +266,9 @@ export function createClient(config: ApiClientConfig = {}): NomNomClient {
         body: body({ query: query ?? "" }),
       }),
 
-    getRecipe: (recipeId) => send<Recipe>(`/api/recipes/${recipeId}`),
+    getRecipe: (recipeId) => send<OwnedRecipe>(`/api/recipes/${recipeId}`),
+
+    getSharedRecipe: (recipeId) => send<SharedRecipeResponse>(`/api/shared/${recipeId}`),
 
     getList: () => send<ShoppingListView>("/api/list"),
 
@@ -295,5 +326,8 @@ export function createClient(config: ApiClientConfig = {}): NomNomClient {
     },
 
     similarRecipes: (recipeId) => send<DiscoverCard[]>(`/api/recipes/${recipeId}/similar`),
+
+    library: (shelfId) =>
+      send<LibraryResponse>(`/api/recipes${shelfId ? `?shelf=${shelfId}` : ""}`),
   };
 }

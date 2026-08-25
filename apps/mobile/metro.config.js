@@ -6,13 +6,15 @@ const workspaceRoot = path.resolve(projectRoot, "../..");
 
 const config = getDefaultConfig(projectRoot);
 
-// Metro has to see the workspace packages and the hoisted pnpm store.
+// Metro has to see the workspace packages and the root node_modules.
 config.watchFolders = [workspaceRoot];
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "node_modules"),
   path.resolve(workspaceRoot, "node_modules"),
 ];
-config.resolver.disableHierarchicalLookup = true;
+// Hierarchical lookup stays ON: React Native resolves some of its own internals
+// by walking up from wherever it happens to live, and pnpm's layout puts that
+// somewhere Metro won't find with the lookup disabled.
 
 /**
  * @nomnom/core ships TypeScript source that uses ESM-style ".js" import

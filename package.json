@@ -21,7 +21,8 @@
     "check:pantry": "pnpm --filter @nomnom/db check:pantry",
     "check:sharing": "pnpm --filter @nomnom/db check:sharing",
     "check:friends": "pnpm --filter @nomnom/db check:friends",
-    "check:discover": "pnpm --filter @nomnom/db check:discover"
+    "check:discover": "pnpm --filter @nomnom/db check:discover",
+    "mobile:bundle": "pnpm --filter @nomnom/mobile exec expo export --platform android --output-dir .expo-export"
   },
   "devDependencies": {
     "typescript": "^5.7.3"
