@@ -1,5 +1,6 @@
 import { relations, sql } from "drizzle-orm";
 import {
+  type AnyPgColumn,
   boolean,
   index,
   integer,
@@ -125,6 +126,19 @@ export const recipes = pgTable(
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
 
     visibility: visibility("visibility").notNull().default("private"),
+    /** Set the first time a recipe is shared, so a link can be revoked and reissued. */
+    sharedAt: timestamp("shared_at", { withTimezone: true }),
+
+    /**
+     * The recipe this was saved from, when someone copied a shared link.
+     * Kept so a shared recipe can say how many people have saved it, and so
+     * credit points back at whoever did the importing work.
+     */
+    copiedFromId: uuid("copied_from_id").references((): AnyPgColumn => recipes.id, {
+      // Losing the original shouldn't delete everyone's saved copy; it just
+      // loses the trail back to it.
+      onDelete: "set null",
+    }),
 
     /** Title + tags + ingredients, embedded for semantic discovery and pantry search. */
     embedding: vector("embedding", { dimensions: 1024 }),
@@ -137,6 +151,8 @@ export const recipes = pgTable(
     index("recipes_visibility_idx").on(t.visibility, t.createdAt),
     // Re-importing the same link should update the existing card, not duplicate it.
     uniqueIndex("recipes_owner_source_idx").on(t.ownerId, t.sourceUrl).where(sql`${t.sourceUrl} is not null`),
+    // "how many people saved this" is a count over this column.
+    index("recipes_copied_from_idx").on(t.copiedFromId),
   ],
 );
 

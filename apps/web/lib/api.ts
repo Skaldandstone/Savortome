@@ -1,6 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { InstacartError, ShelfValidationError } from "@nomnom/core";
+import { SaveRecipeError } from "@nomnom/db";
 import { db, type Database } from "@nomnom/db";
 import {
   NotConfiguredError,
@@ -17,7 +18,7 @@ export function errorResponse(err: unknown): NextResponse {
   if (err instanceof NotSignedInError) {
     return NextResponse.json({ error: err.message }, { status: 401 });
   }
-  if (err instanceof ShelfValidationError) {
+  if (err instanceof ShelfValidationError || err instanceof SaveRecipeError) {
     return NextResponse.json({ error: err.message }, { status: 400 });
   }
   if (err instanceof NotConfiguredError) {

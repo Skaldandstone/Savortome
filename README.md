@@ -4,9 +4,9 @@ Goodreads for recipes — with an importer that turns a YouTube video, a TikTok,
 Reel, or a 2,000-word blog post into a recipe card you can actually cook from.
 
 Built so far: the **import pipeline**, **accounts**, **shelves & ratings**,
-**pantry search**, and **shopping lists & carts**, across web, mobile, and the
-database. Friends and discovery are modelled in the schema and listed at the
-bottom.
+**pantry search**, **shopping lists & carts**, and **sharing**, across web,
+mobile, and the database. Friends and discovery are modelled in the schema and
+listed at the bottom.
 
 ---
 
@@ -240,6 +240,36 @@ key this project doesn't have.
 
 ---
 
+## Sharing
+
+Every recipe is **private by default**. Switch it to *Friends* or *Anyone with
+the link* and you get a link to send: `/r/<id>`.
+
+That page works **without an account**. A stranger opening the link sees the
+recipe, Open Graph metadata for a decent preview, and an invitation to sign in
+and save it — which is the whole point, since the friction in "share a recipe
+with me" is usually the other person having to sign up before they can read it.
+
+**A shared page is the card, not your relationship with it.** Your shelves,
+your rating, and your notes are never rendered there — the type the page
+receives has no field for them.
+
+**Saving makes a copy.** It's yours to shelf, rate, and shop for; the original
+owner only sees the save count go up. Attribution to the *original source* is
+carried over untouched, because that credit belongs to whoever wrote the recipe
+rather than to whoever imported it. A saved copy starts private, and is indexed
+for pantry search immediately.
+
+**Not found and not allowed look identical.** A 404 never confirms that a
+private recipe exists to someone guessing ids.
+
+The rules live in `packages/core/src/sharing.ts` as pure functions, every read
+path goes through `canView`, and `pnpm check:sharing` asserts the negative
+cases against a real database — including that a friends-only recipe is not
+reachable by a signed-out visitor holding the link.
+
+---
+
 ## Optional pieces
 
 **Persistence** — set `DATABASE_URL` in `apps/web/.env.local` (the db package
@@ -300,7 +330,11 @@ pnpm check:shelves http://localhost:3000
 pnpm check:pantry
 ```
 
-Both work on their own fixtures and are safe to re-run. `check:shelves` imports
+```bash
+pnpm check:sharing
+```
+
+All three work on their own fixtures and are safe to re-run. `check:shelves` imports
 a real recipe and leaves it in the library, so point it at a development
 database.
 
@@ -342,8 +376,9 @@ version at least a day old.
 
 Modelled in `packages/db/src/schema.ts`, in rough dependency order:
 
-1. **Friends and sharing** — `friendships` and per-recipe/per-shelf
-   `visibility` exist; nothing reads them yet.
+1. **Friends** — `friendships` exists and `canView` already honours it, so
+   friends-only recipes work the moment there's a way to *become* friends.
+   Sending, accepting, and listing requests is what's missing.
 2. **Discovery** — a public feed over `visibility = 'public'`, plus the
    `recipes.embedding` column for "more like this". Pantry search currently
    falls back to *closest match* rather than semantic similarity, which is
