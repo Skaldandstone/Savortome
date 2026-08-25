@@ -1,5 +1,6 @@
 import * as cheerio from "cheerio";
 import { decodeHTML } from "entities";
+import { timerFromStep } from "../cook.js";
 import type { ExtractedRecipe, Ingredient, Step } from "../recipe.js";
 import { parseIngredientLine } from "../units.js";
 
@@ -87,20 +88,6 @@ function flattenInstructions(v: unknown, out: string[] = []): string[] {
     }
   }
   return out;
-}
-
-const TIMER_RE =
-  /\b(?:for\s+)?(?:about\s+|around\s+)?(\d+(?:\.\d+)?)\s*(?:-|–|to)?\s*(\d+)?\s*(second|sec|minute|min|hour|hr)s?\b/i;
-
-/** Pull a hands-off duration out of step prose so the app can offer a timer. */
-export function timerFromStep(text: string): number | null {
-  const m = TIMER_RE.exec(text);
-  if (!m) return null;
-  const lo = Number(m[1]);
-  const hi = m[2] ? Number(m[2]) : lo;
-  const unit = (m[3] as string).toLowerCase();
-  const mult = unit.startsWith("s") ? 1 : unit.startsWith("m") ? 60 : 3600;
-  return Math.round(((lo + hi) / 2) * mult);
 }
 
 /**

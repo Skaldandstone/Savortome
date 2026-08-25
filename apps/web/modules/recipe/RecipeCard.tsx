@@ -60,6 +60,11 @@ export function RecipeCard({
         <ShelfControls recipeId={shelvedId} />
 
         <div className={styles.listAction}>
+          {shelvedId ? (
+            <Link className={styles.cook} href={`/recipe/${shelvedId}/cook`}>
+              Start cooking
+            </Link>
+          ) : null}
           <AddToListButton recipeId={shelvedId} />
           {shelvedId ? (
             <Link className={styles.edit} href={`/recipe/${shelvedId}/edit`}>

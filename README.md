@@ -1,11 +1,11 @@
 # NomNom
 
-Goodreads for recipes — with an importer that turns a YouTube video, a TikTok, a
+Goodreads for recipes - with an importer that turns a YouTube video, a TikTok, a
 Reel, or a 2,000-word blog post into a recipe card you can actually cook from.
 
 Built so far: the **import pipeline**, **accounts**, **shelves & ratings**,
 **pantry search**, **shopping lists & carts**, **sharing**, **friends**, and
-**discovery** — the whole of the original brief. What's left is listed at the
+**discovery** - the whole of the original brief. What's left is listed at the
 bottom.
 
 ---
@@ -23,16 +23,16 @@ apps/
 
 Both apps use the same shape: thin route/entry files, feature folders under
 `modules/`, and a shared primitives layer in `ui/`. Every feature exists on
-both — library, import, shelves, pantry search, lists, sharing, friends, and
-discovery. Anything platform-agnostic —
-request shapes, shelf rules, quantity scaling, the optimistic-update logic —
+both - library, import, shelves, pantry search, lists, sharing, friends, and
+discovery. Anything platform-agnostic -
+request shapes, shelf rules, quantity scaling, the optimistic-update logic -
 lives in `@nomnom/core/format` so the two clients can't drift apart.
 
 `@nomnom/core` has two entry points:
 
-- `@nomnom/core` — the full pipeline. Server only; pulls in `node:dns`,
+- `@nomnom/core` - the full pipeline. Server only; pulls in `node:dns`,
   `child_process`, and the Anthropic SDK.
-- `@nomnom/core/format` — pure model, formatting, shelf rules, and the HTTP
+- `@nomnom/core/format` - pure model, formatting, shelf rules, and the HTTP
   client. Safe in a browser or React Native bundle.
 
 ---
@@ -102,12 +102,12 @@ plausible-looking step. Low-confidence cards are visually flagged.
 
 Authentication is Clerk, on both platforms.
 
-- **Web** — `@clerk/nextjs`. `middleware.ts` only *attaches* the session;
+- **Web** - `@clerk/nextjs`. `middleware.ts` only *attaches* the session;
   it does not authorize. Clerk deprecated `createRouteMatcher` for a good
-  reason — matching paths in middleware can drift from how Next actually routes
-  a request — so every page and route checks for itself at the point it reads
+  reason - matching paths in middleware can drift from how Next actually routes
+  a request - so every page and route checks for itself at the point it reads
   data. That check lives in `apps/web/lib/session.ts`.
-- **Mobile** — `@clerk/expo` with the session token in `expo-secure-store`.
+- **Mobile** - `@clerk/expo` with the session token in `expo-secure-store`.
   Sign-in runs through Clerk's hosted Account Portal in a browser session, so
   the app never handles a password or a verification code and automatically
   supports whatever methods the Clerk instance has enabled.
@@ -115,7 +115,7 @@ Authentication is Clerk, on both platforms.
 Clerk ids are mapped onto a local `users` row on first sight, which is also
 where each account's three default shelves are created. The webhook at
 `/api/webhooks/clerk` covers the changes that happen without a request from the
-user — a profile edited in Clerk's UI, or an account deleted (which cascades to
+user - a profile edited in Clerk's UI, or an account deleted (which cascades to
 their recipes, shelves, and ratings).
 
 **Running without Clerk keys** is supported and is how the app behaves straight
@@ -132,7 +132,7 @@ cd apps/web && clerk env pull
 
 ## Shelves and ratings
 
-Three built-in shelves — **Want to cook**, **Cooking**, **Cooked** — plus as
+Three built-in shelves - **Want to cook**, **Cooking**, **Cooked** - plus as
 many custom shelves as you like.
 
 The two kinds behave differently on purpose:
@@ -143,7 +143,7 @@ The two kinds behave differently on purpose:
 - **Custom shelves stack.** A recipe can sit on any number of them, alongside
   its status.
 
-Anything you import lands on *Want to cook* automatically — but re-importing a
+Anything you import lands on *Want to cook* automatically - but re-importing a
 link to refresh the card never knocks it back from *Cooked*.
 
 Moving a recipe onto *Cooked* is the one shelf action with a side effect: it
@@ -170,8 +170,8 @@ Two paths, and the cheap one is the default:
   the same key by construction. No model call.
 - **A request with conditions in it** ("something quick and vegetarian",
   "dinner without dairy") goes to Claude to extract ingredients, exclusions,
-  tags, a time limit, and a course. If no key is configured — or the call fails
-  — it silently falls back to the list parser and says so. Search never errors
+  tags, a time limit, and a course. If no key is configured - or the call fails
+  - it silently falls back to the list parser and says so. Search never errors
   because smart search was unavailable.
 
 Matching itself is one SQL query against the flattened `recipe_ingredients`
@@ -181,7 +181,7 @@ same rules exist as pure functions in `packages/core/src/pantry.ts`, and
 
 **Staples are assumed, perishables never are.** Salt, oil, flour, and the rest
 of the shelf-stable list count as present without being added. Eggs, milk,
-butter, onions, and garlic do not — people genuinely run out of those, and
+butter, onions, and garlic do not - people genuinely run out of those, and
 "you can make this" when you can't is the failure that stops the feature being
 trusted. Being told you're missing salt is the cheaper mistake.
 
@@ -204,7 +204,7 @@ Add a recipe from its card, or just the missing ingredients straight from a
 pantry result. Everything merges into one list.
 
 **Merging is the whole job.** Three recipes wanting flour is one line. Amounts
-combine only when their units genuinely relate — `1 cup` and `2 tbsp` add up,
+combine only when their units genuinely relate - `1 cup` and `2 tbsp` add up,
 `1 cup` and `200 g` don't, because that would mean guessing the ingredient's
 density. Incompatible amounts stay as two lines rather than becoming one wrong
 one. Ranges shop for the larger number, since running short is worse than
@@ -213,7 +213,7 @@ leftovers.
 **The pantry comes off the top.** Anything you have with no amount recorded is
 dropped entirely; anything with an amount is subtracted and only the shortfall
 is bought. When the units can't be compared, the line stays but is marked *you
-may already have some* — recomputed on read, so it can't go stale as the pantry
+may already have some* - recomputed on read, so it can't go stale as the pantry
 changes.
 
 Names on the list come from the canonical form rather than the recipe's own
@@ -236,8 +236,8 @@ the same. An API provider only appears once its key is configured.
 
 The Instacart integration is written against
 [their documented schema](https://docs.instacart.com/developer_platform_api/api/products/create_shopping_list_page)
-— using `line_item_measurements`, since `quantity`/`unit` on a line item are
-deprecated — but has never been run against the live API, which needs a partner
+- using `line_item_measurements`, since `quantity`/`unit` on a line item are
+deprecated - but has never been run against the live API, which needs a partner
 key this project doesn't have.
 
 ---
@@ -249,11 +249,11 @@ the link* and you get a link to send: `/r/<id>`.
 
 That page works **without an account**. A stranger opening the link sees the
 recipe, Open Graph metadata for a decent preview, and an invitation to sign in
-and save it — which is the whole point, since the friction in "share a recipe
+and save it - which is the whole point, since the friction in "share a recipe
 with me" is usually the other person having to sign up before they can read it.
 
 **A shared page is the card, not your relationship with it.** Your shelves,
-your rating, and your notes are never rendered there — the type the page
+your rating, and your notes are never rendered there - the type the page
 receives has no field for them.
 
 **Saving makes a copy.** It's yours to shelf, rate, and shop for; the original
@@ -267,14 +267,14 @@ private recipe exists to someone guessing ids.
 
 The rules live in `packages/core/src/sharing.ts` as pure functions, every read
 path goes through `canView`, and `pnpm check:sharing` asserts the negative
-cases against a real database — including that a friends-only recipe is not
+cases against a real database - including that a friends-only recipe is not
 reachable by a signed-out visitor holding the link.
 
 ---
 
 ## Friends
 
-Add someone by handle — `@sam`, `Sam`, or a pasted profile URL all find the
+Add someone by handle - `@sam`, `Sam`, or a pasted profile URL all find the
 same person. They accept, and two things happen: your *Friends* recipes become
 visible to each other, and their cooking shows up in your feed.
 
@@ -285,14 +285,14 @@ states cheap to ask about and unambiguous about who asked whom:
 |---|---|
 | `A → B pending` | A has asked B. Only the requester's row exists. |
 | `A → B accepted` + `B → A accepted` | They're friends. |
-| `A → B blocked` | A has blocked B — and B sees no relationship at all, rather than a rejection. |
+| `A → B blocked` | A has blocked B - and B sees no relationship at all, rather than a rejection. |
 
 So "who are my friends" and "who has asked me" are each a single indexed
 lookup. Declining a request, withdrawing one, and un-friending are all the same
 operation on the same rows.
 
 **The feed** is what friends cooked, rated, and shared, newest first. Every
-branch requires the recipe to be non-private — a friend cooking something they
+branch requires the recipe to be non-private - a friend cooking something they
 kept private never surfaces.
 
 Access follows the friendship in both directions: accept and a friends-only
@@ -304,14 +304,14 @@ asserted in `pnpm check:friends`, along with the whole state machine.
 ## Discovery
 
 Browse and search what other people have shared, filter by tag, and get "more
-like this" under any recipe. Readable **signed out** — discovery you have to
+like this" under any recipe. Readable **signed out** - discovery you have to
 sign up for isn't discovery.
 
 Only `public` recipes appear, never your own. Friends-only recipes stay out
 deliberately; they reach their audience through the feed.
 
 **Not embeddings, on purpose.** Recipes are short structured documents whose
-useful similarity is concrete — shared ingredients, shared tags, same cuisine —
+useful similarity is concrete - shared ingredients, shared tags, same cuisine -
 and a result you can explain (*"Shares 6 ingredients"*) is worth more to a cook
 than a cosine score they can't argue with. So:
 
@@ -319,7 +319,7 @@ than a cosine score they can't argue with. So:
   weighted above cuisine above description. `websearch_to_tsquery` parses what
   a person actually types, quoted phrases and stray punctuation included.
 - **Tags** are matched exactly via GIN array overlap rather than being stemmed
-  into the text vector — you want `vegetarian`, not a near-miss.
+  into the text vector - you want `vegetarian`, not a near-miss.
 - **Similar** counts shared non-staple ingredients, with shared tags as a
   lighter signal, and shows the count as the reason.
 
@@ -342,7 +342,7 @@ from what's already there. A recipe someone typed and a recipe pulled out of a
 video are the same card once they're on the page.
 
 Ingredients are **one box per line**, parsed with the same parser the importer
-uses — people think "2 tbsp olive oil", not amount / unit / item in three
+uses - people think "2 tbsp olive oil", not amount / unit / item in three
 fields. Underneath each line the form shows the canonical name it landed on
 ("Matches *firm tofu* in your pantry"), because that name is what pantry search
 and shopping-list merging join on, and it's the part that silently stops
@@ -352,7 +352,7 @@ Two decisions worth knowing:
 
 - **Parsing happens on every keystroke, not on blur.** Blur is nearly right and
   fails exactly once: type the last ingredient, hit Save, and the click can be
-  handled before the blur's state update lands — so the recipe saves without
+  handled before the blur's state update lands - so the recipe saves without
   the line you just typed. A line nobody touches never re-parses, which is the
   other half of what's wanted: an imported ingredient keeps the structure the
   extractor gave it rather than being re-read by a simpler parser.
@@ -361,7 +361,7 @@ Two decisions worth knowing:
   has now read it. That's the difference between "we're not sure" and "we
   weren't sure, and then someone checked".
 
-Editing never rewrites provenance — where a recipe came from, who made it, and
+Editing never rewrites provenance - where a recipe came from, who made it, and
 what we admit we guessed are left exactly as they were. A corrected import is
 still an import.
 
@@ -375,9 +375,47 @@ the old card.
 
 ---
 
+## Cooking from a card
+
+`/recipe/:id/cook` is the recipe one step at a time, sized to be read from
+arm's length and driven with one finger or the arrow keys. The screen stays
+awake — Wake Lock on the web, `expo-keep-awake` on the phone — because
+unlocking a phone with batter on your hands is the moment an app stops being
+worth using.
+
+This is where two extracted fields finally get used. The importer has always
+pulled a hands-off duration out of step prose ("simmer for 20 minutes") and,
+for videos, the second each step happens at; until now both were badges.
+
+- **Timers belong to the session, not the step.** The reason you set one is so
+  you can move on, so they run in a tray above whatever step you're reading.
+  Several at once is the normal case.
+- **They're anchored to the wall clock**, not counted down on a tick. A tick
+  drifts, and stops entirely when the tab is backgrounded or the phone sleeps —
+  exactly when someone has walked away from a simmering pot. Nothing has to be
+  running for the remaining time to stay correct.
+- **Overdue keeps counting up.** "3 minutes past" is what you want to know when
+  you come back and something smells wrong.
+- **Steps typed by hand get timers too.** The same deterministic
+  `timerFromStep` the importer uses runs over edited step text, so writing
+  "simmer for 20 minutes" is all anyone has to do — and changing the number in
+  the text moves the timer with it.
+- **▶ Watch this bit** deep-links into the source video at that second, for
+  recipes that came from one.
+
+Ticking the last step marks the recipe cooked — bumping `timesCooked`, which
+pantry search and discovery both lean on — and asks for a rating there and
+then, which is the one moment anyone has an opinion.
+
+**Not persisted.** Reload the page or cold-start the app mid-cook and the
+progress and running timers are gone. Doing it properly means local
+notifications so a timer can ring with the app closed, which is its own slice.
+
+---
+
 ## Optional pieces
 
-**Persistence** — set `DATABASE_URL` in `apps/web/.env.local` (the db package
+**Persistence** - set `DATABASE_URL` in `apps/web/.env.local` (the db package
 reads it from there, so it only has to be set once), then:
 
 ```bash
@@ -393,23 +431,23 @@ After changing `schema.ts`, write a migration for the change:
 pnpm db:generate
 ```
 
-`pnpm db:push` also exists — it diffs the schema straight into the database with
+`pnpm db:push` also exists - it diffs the schema straight into the database with
 no migration file. Handy while iterating locally, but note that drizzle-kit
 can't round-trip array defaults, so `push` reports the same six no-op
 `ALTER ... SET DEFAULT '{}'` statements every time. `db:migrate` doesn't.
 
-**Video transcription** — only used when a video has no captions *and* no usable
+**Video transcription** - only used when a video has no captions *and* no usable
 caption text. Needs `yt-dlp` and `ffmpeg` on PATH plus `DEEPGRAM_API_KEY` or
 `GROQ_API_KEY`. Without them the pipeline says so in the trace and falls back to
 caption extraction rather than failing.
 
-**Mobile** — `pnpm dev:mobile`. It talks to the web app's API, so run both, and
+**Mobile** - `pnpm dev:mobile`. It talks to the web app's API, so run both, and
 copy the web app's publishable key into `apps/mobile/.env`. On a simulator
 `localhost` resolves to your machine; on a physical device the app falls back to
 the LAN address Expo is already serving from. Copy a link in any app and NomNom
 offers to import it when you switch back.
 
-Five tabs — Library, Cook, List, Friends, Discover — with importing, recipes,
+Five tabs - Library, Cook, List, Friends, Discover - with importing, recipes,
 and shared links pushed over them. Sharing uses the system share sheet, which
 is the point on a phone: it hands the link to whatever the person already uses
 to talk to their friends.
@@ -442,7 +480,7 @@ using the real SDK, so request shape and schema round-trip are covered without a
 key or a bill.
 
 There is also an end-to-end check of the shelf lifecycle against a running
-server and a real database — exclusivity, the cook counter, re-import
+server and a real database - exclusivity, the cook counter, re-import
 idempotency, and the guards on built-in shelves:
 
 ```bash
@@ -492,13 +530,13 @@ transcription path is the fallback.
 **Bot blocking.** Some large recipe sites (allrecipes.com among them) return 403
 to server-side fetches regardless of headers. Those need the paste-text path.
 
-**SSRF.** The server fetches whatever URL you paste, so every request — and
-every redirect hop — is checked against loopback, link-local, and private ranges
+**SSRF.** The server fetches whatever URL you paste, so every request - and
+every redirect hop - is checked against loopback, link-local, and private ranges
 before it goes out. See `packages/core/src/sources/url-guard.ts`.
 
 **`next build` used to clobber the dev server.** Both write to `.next` by
 default, so building while `next dev` was running left it serving production
-chunks it couldn't hydrate — a page that rendered and then did nothing, or
+chunks it couldn't hydrate - a page that rendered and then did nothing, or
 `Cannot find module './vendor-chunks/...'`. The production build now writes to
 `.next-build` instead (`next.config.ts`), so the two can't collide. If you ever
 see that symptom anyway, `rm -rf apps/web/.next` and restart.
@@ -519,10 +557,12 @@ version at least a day old.
 Modelled in `packages/db/src/schema.ts`, in rough dependency order:
 
 1. **Running mobile on a device.** It bundles, but has never been opened on a
-   phone or simulator — no device was available. Expect the first run to turn
+   phone or simulator - no device was available. Expect the first run to turn
    up layout and native-module issues that bundling can't catch.
-2. **Kroger cart** — the OAuth flow and product-UPC lookup its Cart API needs.
-3. **Semantic search** — `recipes.embedding` is unused. Worth doing when the
+2. **Kroger cart** - the OAuth flow and product-UPC lookup its Cart API needs.
+3. **Semantic search** - `recipes.embedding` is unused. Worth doing when the
    ingredient-overlap approach visibly runs out, not before.
 4. **Ingredient groups in the editor.** "For the sauce" headings survive an
    edit untouched, but there's no way to add or change one by hand yet.
+5. **Cook sessions that survive a reload**, and timers that ring with the app
+   closed. Both want local notifications rather than more state.

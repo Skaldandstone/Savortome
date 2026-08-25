@@ -50,6 +50,12 @@ export default function RecipeScreen() {
           <>
             <RecipeCard recipe={recipe} shelvedId={recipe.id} verifiedAt={recipe.verifiedAt} />
             <ShareControl recipeId={recipe.id} initialVisibility={recipe.visibility} />
+            <View style={styles.cookAction}>
+              <Button
+                label="Start cooking"
+                onPress={() => router.push(`/recipe/${recipe.id}/cook`)}
+              />
+            </View>
             <View style={styles.actions}>
               <Button
                 label={added ? "On your list ✓" : "Add to shopping list"}
@@ -79,5 +85,6 @@ export default function RecipeScreen() {
 const styles = StyleSheet.create({
   content: { padding: space.lg },
   loading: { paddingVertical: space.xxl, alignItems: "center" },
-  actions: { flexDirection: "row", gap: space.sm, marginTop: space.lg, alignSelf: "flex-start" },
+  cookAction: { marginTop: space.lg, alignSelf: "stretch" },
+  actions: { flexDirection: "row", gap: space.sm, marginTop: space.md, alignSelf: "flex-start" },
 });

@@ -10,6 +10,7 @@ export * from "./import-client.js";
 export * from "./shelves.js";
 export * from "./sharing.js";
 export * from "./editor.js";
+export * from "./cook.js";
 export * from "./friends.js";
 export * from "./api-client.js";
 export * from "./pantry.js";
