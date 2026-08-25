@@ -24,6 +24,7 @@ function Masthead({ children }: { children: ReactNode }) {
         <Link href="/cook">What can I make?</Link>
         <Link href="/list">Shopping list</Link>
         <Link href="/friends">Friends</Link>
+        <Link href="/discover">Discover</Link>
       </nav>
       {children}
     </header>

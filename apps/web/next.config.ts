@@ -1,6 +1,14 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
+  /**
+   * `next build` and `next dev` both write to `.next` by default, so building
+   * while the dev server is running leaves it serving production chunks it
+   * can't hydrate — a page that renders and then does nothing. Giving the
+   * build its own directory makes that impossible.
+   */
+  distDir: process.env.NODE_ENV === "production" ? ".next-build" : ".next",
+
   // The workspace packages ship TypeScript source rather than a build step.
   transpilePackages: ["@nomnom/core", "@nomnom/db"],
   // The workspace packages are TypeScript source using ESM-style ".js" import

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { db, getSharedRecipe } from "@nomnom/db";
 import { RecipeCard } from "@/modules/recipe";
+import { SimilarRecipes } from "@/modules/discover";
 import { SaveSharedButton, SharedByLine } from "@/modules/sharing";
 import { databaseConfigured, viewerId } from "@/lib/session";
 
@@ -55,6 +56,7 @@ export default async function SharedRecipePage({ params }: Params) {
       <SharedByLine view={shared.view} />
       <RecipeCard recipe={shared.recipe} />
       <SaveSharedButton view={shared.view} />
+      <SimilarRecipes recipeId={shared.view.recipeId} />
     </main>
   );
 }
