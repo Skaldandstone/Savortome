@@ -3,6 +3,7 @@ import type { PantryEntry, PantryMatch } from "./pantry.js";
 import type { ShoppingLine } from "./shopping.js";
 import type { CartHandoff, CartProvider, CartProviderId } from "./carts.js";
 import type { Visibility } from "./shelves.js";
+import type { FeedItem, FriendsOverview } from "./friends.js";
 import type { ImportRequest, ImportResponse } from "./import-client.js";
 import type { Recipe } from "./recipe.js";
 
@@ -102,6 +103,13 @@ export interface NomNomClient {
   sendToCart: (provider: CartProviderId) => Promise<CartHandoff>;
   setVisibility: (recipeId: string, visibility: Visibility) => Promise<{ visibility: Visibility | null }>;
   saveSharedRecipe: (recipeId: string) => Promise<{ recipeId: string }>;
+  friends: () => Promise<FriendsOverview>;
+  addFriend: (handle: string) => Promise<FriendsOverview>;
+  updateFriendship: (
+    personId: string,
+    action: "accept" | "remove" | "block" | "unblock",
+  ) => Promise<FriendsOverview>;
+  feed: () => Promise<FeedItem[]>;
 }
 
 export function createClient(config: ApiClientConfig = {}): NomNomClient {
@@ -233,5 +241,18 @@ export function createClient(config: ApiClientConfig = {}): NomNomClient {
 
     saveSharedRecipe: (recipeId) =>
       send<{ recipeId: string }>(`/api/recipes/${recipeId}/save`, { method: "POST" }),
+
+    friends: () => send<FriendsOverview>("/api/friends"),
+
+    addFriend: (handle) =>
+      send<FriendsOverview>("/api/friends", { method: "POST", body: body({ handle }) }),
+
+    updateFriendship: (personId, action) =>
+      send<FriendsOverview>(`/api/friends/${personId}`, {
+        method: "PATCH",
+        body: body({ action }),
+      }),
+
+    feed: () => send<FeedItem[]>("/api/feed"),
   };
 }

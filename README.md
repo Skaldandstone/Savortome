@@ -4,8 +4,8 @@ Goodreads for recipes — with an importer that turns a YouTube video, a TikTok,
 Reel, or a 2,000-word blog post into a recipe card you can actually cook from.
 
 Built so far: the **import pipeline**, **accounts**, **shelves & ratings**,
-**pantry search**, **shopping lists & carts**, and **sharing**, across web,
-mobile, and the database. Friends and discovery are modelled in the schema and
+**pantry search**, **shopping lists & carts**, **sharing**, and **friends**,
+across web, mobile, and the database. Discovery is modelled in the schema and
 listed at the bottom.
 
 ---
@@ -270,6 +270,35 @@ reachable by a signed-out visitor holding the link.
 
 ---
 
+## Friends
+
+Add someone by handle — `@sam`, `Sam`, or a pasted profile URL all find the
+same person. They accept, and two things happen: your *Friends* recipes become
+visible to each other, and their cooking shows up in your feed.
+
+**One row per direction** in `friendships`, which is what makes the three
+states cheap to ask about and unambiguous about who asked whom:
+
+| Rows | Meaning |
+|---|---|
+| `A → B pending` | A has asked B. Only the requester's row exists. |
+| `A → B accepted` + `B → A accepted` | They're friends. |
+| `A → B blocked` | A has blocked B — and B sees no relationship at all, rather than a rejection. |
+
+So "who are my friends" and "who has asked me" are each a single indexed
+lookup. Declining a request, withdrawing one, and un-friending are all the same
+operation on the same rows.
+
+**The feed** is what friends cooked, rated, and shared, newest first. Every
+branch requires the recipe to be non-private — a friend cooking something they
+kept private never surfaces.
+
+Access follows the friendship in both directions: accept and a friends-only
+recipe becomes reachable, unfriend or get blocked and it 404s again. That's
+asserted in `pnpm check:friends`, along with the whole state machine.
+
+---
+
 ## Optional pieces
 
 **Persistence** — set `DATABASE_URL` in `apps/web/.env.local` (the db package
@@ -334,7 +363,11 @@ pnpm check:pantry
 pnpm check:sharing
 ```
 
-All three work on their own fixtures and are safe to re-run. `check:shelves` imports
+```bash
+pnpm check:friends
+```
+
+All four work on their own fixtures and are safe to re-run. `check:shelves` imports
 a real recipe and leaves it in the library, so point it at a development
 database.
 
@@ -361,6 +394,12 @@ to server-side fetches regardless of headers. Those need the paste-text path.
 every redirect hop — is checked against loopback, link-local, and private ranges
 before it goes out. See `packages/core/src/sources/url-guard.ts`.
 
+**Toggling Clerk keys needs a cache clear.** Commenting the keys in or out of
+`.env.local` while `next dev` is running leaves `.next` holding chunks built
+for the other mode, which shows up as a page that renders but never hydrates,
+or `Cannot find module './vendor-chunks/...'`. `rm -rf apps/web/.next` and
+restart.
+
 **Postgres version.** Neon runs Postgres 18, which names its `NOT NULL`
 constraints. drizzle-kit below 0.31 doesn't understand that and tries to drop
 them, aborting the migration part-way and leaving a schema with tables but no
@@ -376,11 +415,9 @@ version at least a day old.
 
 Modelled in `packages/db/src/schema.ts`, in rough dependency order:
 
-1. **Friends** — `friendships` exists and `canView` already honours it, so
-   friends-only recipes work the moment there's a way to *become* friends.
-   Sending, accepting, and listing requests is what's missing.
-2. **Discovery** — a public feed over `visibility = 'public'`, plus the
+1. **Discovery** — a public feed over `visibility = 'public'`, plus the
    `recipes.embedding` column for "more like this". Pantry search currently
    falls back to *closest match* rather than semantic similarity, which is
    arguably the better answer for "what's for dinner" anyway.
-3. **Kroger cart** — the OAuth flow and product-UPC lookup its Cart API needs.
+2. **Kroger cart** — the OAuth flow and product-UPC lookup its Cart API needs.
+3. **Mobile parity for sharing and friends** — both are web-only so far.
