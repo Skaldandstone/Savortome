@@ -19,6 +19,10 @@ function Masthead({ children }: { children: ReactNode }) {
         <Link href="/">NomNom</Link>
       </h1>
       <span className={styles.tagline}>recipes, from anywhere</span>
+      <nav className={styles.nav}>
+        <Link href="/">Library</Link>
+        <Link href="/cook">What can I make?</Link>
+      </nav>
       {children}
     </header>
   );

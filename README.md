@@ -3,9 +3,9 @@
 Goodreads for recipes — with an importer that turns a YouTube video, a TikTok, a
 Reel, or a 2,000-word blog post into a recipe card you can actually cook from.
 
-Built so far: the **import pipeline**, **accounts**, and **shelves & ratings**,
-across web, mobile, and the database. Friends, pantry search, and grocery carts
-are modelled in the schema and listed at the bottom.
+Built so far: the **import pipeline**, **accounts**, **shelves & ratings**, and
+**pantry search**, across web, mobile, and the database. Friends and grocery
+carts are modelled in the schema and listed at the bottom.
 
 ---
 
@@ -154,6 +154,47 @@ apply identical logic.
 
 ---
 
+## Pantry search
+
+*What can I make from what I have.* Type a list of ingredients, or describe what
+you're after, and get your own collection ranked into **Cook tonight**, **Nearly
+there**, and everything else.
+
+Two paths, and the cheap one is the default:
+
+- **A list of ingredients** ("chicken thighs, rice, an onion") is parsed with
+  the same code the importer uses, so a pantry entry and a recipe line land on
+  the same key by construction. No model call.
+- **A request with conditions in it** ("something quick and vegetarian",
+  "dinner without dairy") goes to Claude to extract ingredients, exclusions,
+  tags, a time limit, and a course. If no key is configured — or the call fails
+  — it silently falls back to the list parser and says so. Search never errors
+  because smart search was unavailable.
+
+Matching itself is one SQL query against the flattened `recipe_ingredients`
+index, so it stays a single round-trip however large the collection gets. The
+same rules exist as pure functions in `packages/core/src/pantry.ts`, and
+`pnpm check:pantry` asserts the SQL and the functions agree on every fixture.
+
+**Staples are assumed, perishables never are.** Salt, oil, flour, and the rest
+of the shelf-stable list count as present without being added. Eggs, milk,
+butter, onions, and garlic do not — people genuinely run out of those, and
+"you can make this" when you can't is the failure that stops the feature being
+trusted. Being told you're missing salt is the cheaper mistake.
+
+The staple list is code, so it's passed into the query as a parameter rather
+than read from `recipe_ingredients.is_staple`. Editing it takes effect
+immediately instead of needing every recipe reindexed.
+
+Canonical names come from a parser that keeps improving. When it does, older
+recipes keep their old keys until they're re-derived:
+
+```bash
+curl -X POST localhost:3000/api/pantry/reindex
+```
+
+---
+
 ## Optional pieces
 
 **Persistence** — set `DATABASE_URL` in `apps/web/.env.local` (the db package
@@ -210,8 +251,13 @@ idempotency, and the guards on built-in shelves:
 pnpm check:shelves http://localhost:3000
 ```
 
-It imports a real recipe and leaves it in the library, so point it at a
-development database.
+```bash
+pnpm check:pantry
+```
+
+Both work on their own fixtures and are safe to re-run. `check:shelves` imports
+a real recipe and leaves it in the library, so point it at a development
+database.
 
 ---
 
@@ -251,16 +297,12 @@ version at least a day old.
 
 Modelled in `packages/db/src/schema.ts`, in rough dependency order:
 
-1. **Friends and sharing** — `friendships` and per-recipe/per-shelf
+1. **Shopping lists and carts** — the natural next step: every "Nearly there"
+   result already names exactly what's missing, so turning that into a merged
+   list and handing it to Instacart or Kroger is mostly plumbing.
+2. **Friends and sharing** — `friendships` and per-recipe/per-shelf
    `visibility` exist; nothing reads them yet.
-2. **Discovery** — a public feed over `visibility = 'public'`, plus the
-   `recipes.embedding` column for "more like this".
-3. **Pantry search** — "what can I make from what I have", joining
-   `pantry_items` against `recipe_ingredients` on `canonical_item`, with staples
-   assumed present, then falling back to embedding similarity when nothing in
-   your catalogue matches.
-4. **Shopping lists and carts** — merge ingredients across recipes by canonical
-   item, subtract the pantry, hand off to Instacart/Kroger or a deep link.
-
-The ingredient index and canonical-item normalization that steps 3 and 4 depend
-on are already built and tested — every import populates them.
+3. **Discovery** — a public feed over `visibility = 'public'`, plus the
+   `recipes.embedding` column for "more like this". Pantry search currently
+   falls back to *closest match* rather than semantic similarity, which is
+   arguably the better answer for "what's for dinner" anyway.

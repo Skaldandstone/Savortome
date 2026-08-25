@@ -1,5 +1,5 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
-import { isStaple, type Recipe } from "@nomnom/core";
+import { canonicalize, isStaple, type Recipe } from "@nomnom/core";
 import type { Database } from "../client.js";
 import * as schema from "../schema.js";
 
@@ -132,4 +132,47 @@ export async function getRecipe(database: Database, ownerId: string, recipeId: s
   return database.query.recipes.findFirst({
     where: and(eq(schema.recipes.id, recipeId), eq(schema.recipes.ownerId, ownerId)),
   });
+}
+
+/**
+ * Recompute every stored recipe's canonical ingredient names and rebuild the
+ * ingredient index.
+ *
+ * The canonicalizer is code, and improving it — teaching it a new prep word, a
+ * new way recipes phrase alternatives — changes what a recipe's key should be.
+ * Without this, those improvements only reach recipes imported afterwards, and
+ * the pantry silently keeps missing the older ones.
+ */
+export async function recanonicalizeRecipes(
+  database: Database,
+  ownerId: string,
+): Promise<{ recipes: number; changed: number }> {
+  const rows = await database.query.recipes.findMany({
+    where: eq(schema.recipes.ownerId, ownerId),
+    columns: { id: true, ingredients: true },
+  });
+
+  let changed = 0;
+
+  for (const row of rows) {
+    const ingredients = row.ingredients.map((ing) => ({
+      ...ing,
+      canonicalItem: canonicalize(ing.item || ing.raw),
+    }));
+
+    const differs = ingredients.some(
+      (ing, i) => ing.canonicalItem !== row.ingredients[i]?.canonicalItem,
+    );
+    if (!differs) continue;
+
+    changed++;
+    await database
+      .update(schema.recipes)
+      .set({ ingredients, updatedAt: new Date() })
+      .where(eq(schema.recipes.id, row.id));
+
+    await reindexIngredients(database, row.id, { ingredients } as Recipe);
+  }
+
+  return { recipes: rows.length, changed };
 }

@@ -17,7 +17,8 @@
     "test": "pnpm --filter @nomnom/core test",
     "check:shelves": "node scripts/check-shelves.mjs",
     "db:generate": "pnpm --filter @nomnom/db generate",
-    "db:migrate": "pnpm --filter @nomnom/db migrate"
+    "db:migrate": "pnpm --filter @nomnom/db migrate",
+    "check:pantry": "pnpm --filter @nomnom/db check:pantry"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

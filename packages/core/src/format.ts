@@ -9,3 +9,4 @@ export * from "./staples.js";
 export * from "./import-client.js";
 export * from "./shelves.js";
 export * from "./api-client.js";
+export * from "./pantry.js";

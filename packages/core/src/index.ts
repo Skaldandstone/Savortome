@@ -3,6 +3,8 @@ export * from "./source-kind.js";
 export * from "./import-client.js";
 export * from "./shelves.js";
 export * from "./api-client.js";
+export * from "./pantry.js";
+export * from "./pantry-query.js";
 export * from "./units.js";
 export * from "./extract.js";
 export * from "./ingest.js";

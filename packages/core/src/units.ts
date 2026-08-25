@@ -97,7 +97,16 @@ const PREP_WORDS = [
   "thinly sliced", "grated", "shredded", "melted", "softened", "room temperature",
   "packed", "divided", "drained", "rinsed", "peeled", "seeded", "crushed",
   "beaten", "cubed", "julienned", "toasted", "halved", "quartered", "trimmed",
+  "mashed", "whisked", "blended", "pureed", "zested", "juiced", "torn", "shaved",
+  "warmed", "chilled", "frozen", "thawed", "cut into pieces", "at room temperature",
 ];
+
+/**
+ * Adjectives and filler that describe an ingredient without identifying it.
+ * Removing them is what makes "3 very ripe bananas" and "banana" the same key.
+ */
+const QUALIFIER_PATTERN =
+  /\b(fresh|freshly|large|small|medium|ripe|very|extra|virgin|whole|ground|raw|cooked|uncooked|boneless|skinless|low[- ]fat|non[- ]fat|unsalted|salted|about|roughly|approximately|good|high|best|quality|preferably|plus more.*)\b/g;
 
 const PLURAL_EXCEPTIONS = new Set(["molasses", "asparagus", "couscous", "hummus", "greens", "oats", "grits"]);
 
@@ -105,8 +114,17 @@ const PLURAL_EXCEPTIONS = new Set(["molasses", "asparagus", "couscous", "hummus"
 export function canonicalize(item: string): string {
   let s = item.toLowerCase().trim();
   s = s.replace(/\([^)]*\)/g, " "); // parenthetical sizes: "(14.5 oz)"
+
+  // Recipes offer alternatives constantly — "butter or vegetable oil", "milk of
+  // choice or water". Only the first can be the key, or the pantry never matches.
+  // Known limitation: "chicken or vegetable stock" reduces to "chicken", losing
+  // the shared noun. Telling that apart from "butter or vegetable oil" needs a
+  // food lexicon; the model-backed path already produces clean names.
+  s = s.split(/\bor\b/)[0] ?? s;
+  s = s.replace(/\bof (?:your )?choice\b/g, " ");
+
   for (const p of PREP_WORDS) s = s.replace(new RegExp(String.raw`\b${p}\b`, "g"), " ");
-  s = s.replace(/\b(fresh|freshly|large|small|medium|ripe|extra|virgin|whole|ground|raw|cooked|uncooked|boneless|skinless|low[- ]fat|non[- ]fat|unsalted|salted|plus more.*)\b/g, " ");
+  s = s.replace(QUALIFIER_PATTERN, " ");
   s = s.replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
   s = s.replace(/^\d+(?:\.\d+)? /, ""); // a leading bare count is not part of the name
 
@@ -213,10 +231,16 @@ export function formatQuantity(q: number | null): string {
   return whole > 0 ? `${whole}${glyph}` : glyph;
 }
 
-/** The amount column of an ingredient line: "1½ cup", "2-3 clove", "" when unstated. */
-export function formatAmount(ing: Pick<Ingredient, "quantity" | "quantityMax" | "unit">): string {
+/**
+ * The amount column of an ingredient line: "1½ cup", "2-3 clove", "" when
+ * unstated. `quantityMax` is optional so pantry entries, which never carry a
+ * range, can use this too.
+ */
+export function formatAmount(
+  ing: Pick<Ingredient, "quantity" | "unit"> & { quantityMax?: number | null },
+): string {
   const lo = formatQuantity(ing.quantity);
-  const hi = formatQuantity(ing.quantityMax);
+  const hi = formatQuantity(ing.quantityMax ?? null);
   const amount = lo && hi ? `${lo}-${hi}` : lo;
   return [amount, ing.unit ?? ""].filter(Boolean).join(" ");
 }
