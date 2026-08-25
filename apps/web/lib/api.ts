@@ -1,6 +1,6 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { InstacartError, ShelfValidationError } from "@nomnom/core";
+import { InstacartError, RecipeValidationError, ShelfValidationError } from "@nomnom/core";
 import { FriendshipError } from "@nomnom/core";
 import { SaveRecipeError } from "@nomnom/db";
 import { db, type Database } from "@nomnom/db";
@@ -22,7 +22,8 @@ export function errorResponse(err: unknown): NextResponse {
   if (
     err instanceof ShelfValidationError ||
     err instanceof SaveRecipeError ||
-    err instanceof FriendshipError
+    err instanceof FriendshipError ||
+    err instanceof RecipeValidationError
   ) {
     return NextResponse.json({ error: err.message }, { status: 400 });
   }

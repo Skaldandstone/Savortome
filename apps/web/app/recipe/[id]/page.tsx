@@ -20,7 +20,11 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
 
   return (
     <main>
-      <RecipeCard recipe={toRecipe(row)} shelvedId={row.id} />
+      <RecipeCard
+        recipe={toRecipe(row)}
+        shelvedId={row.id}
+        verifiedAt={row.verifiedAt?.toISOString() ?? null}
+      />
       <ShareControl recipeId={row.id} initialVisibility={row.visibility} />
     </main>
   );

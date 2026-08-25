@@ -22,4 +22,6 @@
 .ingredientsHeading { display: flex; align-items: center; gap: 12px; }
 .ingredientsHeading .sectionTitle { flex: 1; }
 
-.listAction { margin-top: 16px; }
+.listAction { display: flex; align-items: center; gap: 16px; margin-top: 16px; }
+.edit { font-size: var(--step-2); color: var(--text-muted); }
+.edit:hover { color: var(--accent); }

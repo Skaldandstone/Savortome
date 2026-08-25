@@ -22,6 +22,7 @@
     "check:sharing": "pnpm --filter @nomnom/db check:sharing",
     "check:friends": "pnpm --filter @nomnom/db check:friends",
     "check:discover": "pnpm --filter @nomnom/db check:discover",
+    "check:editor": "pnpm --filter @nomnom/db check:editor",
     "mobile:bundle": "pnpm --filter @nomnom/mobile exec expo export --platform android --output-dir .expo-export"
   },
   "devDependencies": {

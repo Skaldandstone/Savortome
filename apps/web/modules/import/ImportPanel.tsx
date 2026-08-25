@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { RecipeCard } from "@/modules/recipe";
 import { Callout, Panel, PanelHeader } from "@/ui";
 import { ImportForm } from "./ImportForm";
@@ -15,7 +16,12 @@ export function ImportPanel() {
       <Panel>
         <PanelHeader
           title="Import a recipe"
-          hint="Paste a link to a YouTube video, TikTok, Reel, or a blog post buried under a life story."
+          hint={
+            <>
+              Paste a link to a YouTube video, TikTok, Reel, or a blog post buried under a life
+              story — or <Link href="/recipe/new">write one yourself</Link>.
+            </>
+          }
         />
 
         <ImportForm busy={busy} onSubmit={run} />

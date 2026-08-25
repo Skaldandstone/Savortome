@@ -1,5 +1,6 @@
-import { listRecipes, listShelves, recipeIdsOnShelf, statusByRecipe } from "@nomnom/db";
-import { withUser } from "@/lib/api";
+import type { RecipeDraft } from "@nomnom/core";
+import { createRecipe, listRecipes, listShelves, recipeIdsOnShelf, statusByRecipe } from "@nomnom/db";
+import { readJson, withUser } from "@/lib/api";
 
 /**
  * The signed-in user's library. The web app reads this server-side; mobile has
@@ -35,4 +36,15 @@ export async function GET(request: Request) {
       })),
     };
   });
+}
+
+/** Write a recipe by hand. */
+export async function POST(request: Request) {
+  const draft = await readJson<RecipeDraft>(request);
+
+  return withUser(async (userId, database) => ({
+    // The draft is validated inside the query, where the same rules also guard
+    // the edit path — there is no way to write an invalid card from either.
+    recipeId: await createRecipe(database, userId, draft as RecipeDraft),
+  }));
 }

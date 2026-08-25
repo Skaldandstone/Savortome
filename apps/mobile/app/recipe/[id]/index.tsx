@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { OwnedRecipe } from "@nomnom/core/format";
 import { api } from "@/lib/client";
@@ -14,6 +14,7 @@ export default function RecipeScreen() {
   const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const c = usePalette();
 
   useEffect(() => {
@@ -47,9 +48,9 @@ export default function RecipeScreen() {
           </Callout>
         ) : recipe ? (
           <>
-            <RecipeCard recipe={recipe} shelvedId={recipe.id} />
+            <RecipeCard recipe={recipe} shelvedId={recipe.id} verifiedAt={recipe.verifiedAt} />
             <ShareControl recipeId={recipe.id} initialVisibility={recipe.visibility} />
-            <View style={styles.listAction}>
+            <View style={styles.actions}>
               <Button
                 label={added ? "On your list ✓" : "Add to shopping list"}
                 variant="ghost"
@@ -57,6 +58,11 @@ export default function RecipeScreen() {
                 onPress={() => {
                   void api.addRecipesToList([recipe.id]).then(() => setAdded(true));
                 }}
+              />
+              <Button
+                label="Edit recipe"
+                variant="ghost"
+                onPress={() => router.push(`/recipe/${recipe.id}/edit`)}
               />
             </View>
           </>
@@ -73,5 +79,5 @@ export default function RecipeScreen() {
 const styles = StyleSheet.create({
   content: { padding: space.lg },
   loading: { paddingVertical: space.xxl, alignItems: "center" },
-  listAction: { marginTop: space.lg, alignSelf: "flex-start" },
+  actions: { flexDirection: "row", gap: space.sm, marginTop: space.lg, alignSelf: "flex-start" },
 });

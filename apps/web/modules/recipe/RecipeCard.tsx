@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { Recipe } from "@nomnom/core/format";
 import { ShelfControls } from "@/modules/shelves";
 import { AddToListButton } from "@/modules/list";
@@ -20,10 +21,12 @@ export function RecipeCard({
    * failed to save has nothing to shelve, so the controls stay hidden.
    */
   shelvedId = null,
+  verifiedAt = null,
 }: {
   recipe: Recipe;
   trace?: string[];
   shelvedId?: string | null;
+  verifiedAt?: string | null;
 }) {
   const { servings, canScale, increment, decrement, ingredients } = useServings(recipe);
 
@@ -58,9 +61,14 @@ export function RecipeCard({
 
         <div className={styles.listAction}>
           <AddToListButton recipeId={shelvedId} />
+          {shelvedId ? (
+            <Link className={styles.edit} href={`/recipe/${shelvedId}/edit`}>
+              Edit recipe
+            </Link>
+          ) : null}
         </div>
 
-        <Provenance recipe={recipe} />
+        <Provenance recipe={recipe} verifiedAt={verifiedAt} />
         <ImportTrace trace={trace} />
       </div>
     </article>

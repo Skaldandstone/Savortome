@@ -26,6 +26,8 @@ export interface RecipeRow {
   sourceSiteName: string | null;
   extractionMethod: Recipe["source"]["extractionMethod"];
   visibility: Visibility;
+  /** Null until someone has read the card through and saved it. */
+  verifiedAt: Date | null;
 }
 
 /** Rebuild the nested card shape from the flattened columns the table stores. */

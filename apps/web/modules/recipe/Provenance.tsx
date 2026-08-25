@@ -1,4 +1,4 @@
-import type { ExtractionMethod, Recipe } from "@nomnom/core/format";
+import { provenanceTone, type ExtractionMethod, type Recipe } from "@nomnom/core/format";
 import { Callout } from "@/ui";
 import styles from "./Provenance.module.css";
 
@@ -15,14 +15,32 @@ const METHOD_LABEL: Record<ExtractionMethod, string> = {
  * difference between a recipe you trust and one you check against the source,
  * so it stays visible rather than hiding behind a toggle.
  */
-export function Provenance({ recipe }: { recipe: Recipe }) {
+export function Provenance({
+  recipe,
+  /** When someone last read this card through and saved it. */
+  verifiedAt = null,
+}: {
+  recipe: Recipe;
+  verifiedAt?: string | null;
+}) {
   const { extractionMethod } = recipe.source;
-  const inferred = extractionMethod !== "schema-org";
-  const needsReview = recipe.confidence < 0.8 || recipe.extractionNotes.length > 0;
+  // Nothing was extracted from a recipe someone typed, so there's no score to
+  // report and nothing for them to have double-checked.
+  const written = extractionMethod === "manual";
+  const inferred = !written && extractionMethod !== "schema-org";
+  const tone = provenanceTone(recipe.confidence, recipe.extractionNotes.length, verifiedAt);
 
   return (
-    <Callout tone={needsReview ? "warn" : "info"} title={METHOD_LABEL[extractionMethod]}>
+    <Callout
+      tone={tone === "needs-review" ? "warn" : "info"}
+      title={METHOD_LABEL[extractionMethod]}
+    >
       {inferred ? <>{Math.round(recipe.confidence * 100)}% of this was stated outright.</> : null}
+
+      {/* Once a person has been through it, what we had to guess is history
+          rather than a warning — so it's still listed, just not shouted. */}
+      {tone === "verified" && !written ? <> You&apos;ve checked this one over.</> : null}
+
       {recipe.extractionNotes.length > 0 ? (
         <ul>
           {recipe.extractionNotes.map((note) => (
