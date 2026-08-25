@@ -267,7 +267,12 @@ export const shoppingListItems = pgTable(
     recipeIds: uuid("recipe_ids").array().notNull().default([]),
     checked: boolean("checked").notNull().default(false),
   },
-  (t) => [index("shopping_list_items_list_idx").on(t.listId)],
+  (t) => [
+    index("shopping_list_items_list_idx").on(t.listId),
+    // One line per ingredient per list — merging is the whole point, so a
+    // second add of the same item must update rather than duplicate.
+    uniqueIndex("shopping_list_items_item_idx").on(t.listId, t.canonicalItem),
+  ],
 );
 
 /**

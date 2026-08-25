@@ -21,3 +21,5 @@
 
 .ingredientsHeading { display: flex; align-items: center; gap: 12px; }
 .ingredientsHeading .sectionTitle { flex: 1; }
+
+.listAction { margin-top: 16px; }

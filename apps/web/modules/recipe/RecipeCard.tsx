@@ -2,6 +2,7 @@
 
 import type { Recipe } from "@nomnom/core/format";
 import { ShelfControls } from "@/modules/shelves";
+import { AddToListButton } from "@/modules/list";
 import { IngredientList, ServingScaler } from "./IngredientList";
 import { ImportTrace, Provenance } from "./Provenance";
 import { RecipeFacts, TagList } from "./RecipeFacts";
@@ -54,6 +55,10 @@ export function RecipeCard({
         ) : null}
 
         <ShelfControls recipeId={shelvedId} />
+
+        <div className={styles.listAction}>
+          <AddToListButton recipeId={shelvedId} />
+        </div>
 
         <Provenance recipe={recipe} />
         <ImportTrace trace={trace} />

@@ -69,6 +69,9 @@
 
 .matches { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 
+.matchRow { display: flex; align-items: center; gap: 8px; }
+.matchRow .match { flex: 1; min-width: 0; }
+
 .match {
   display: flex;
   gap: 12px;

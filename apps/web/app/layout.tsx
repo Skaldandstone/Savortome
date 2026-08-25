@@ -22,6 +22,7 @@ function Masthead({ children }: { children: ReactNode }) {
       <nav className={styles.nav}>
         <Link href="/">Library</Link>
         <Link href="/cook">What can I make?</Link>
+        <Link href="/list">Shopping list</Link>
       </nav>
       {children}
     </header>

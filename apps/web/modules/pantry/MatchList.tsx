@@ -8,11 +8,12 @@ import {
   type PantrySearchResponse,
   type PantrySearchResult,
 } from "@nomnom/core/format";
+import { AddMissingButton } from "@/modules/list";
 import styles from "./pantry.module.css";
 
 function MatchRow({ match }: { match: PantrySearchResult }) {
   return (
-    <li>
+    <li className={styles.matchRow}>
       <Link className={styles.match} href={`/recipe/${match.recipeId}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className={styles.thumb} src={match.imageUrl ?? undefined} alt="" />
@@ -31,6 +32,8 @@ function MatchRow({ match }: { match: PantrySearchResult }) {
           {match.canMakeNow ? "✓" : `${Math.round(match.coverage * 100)}%`}
         </span>
       </Link>
+      {/* Sits outside the link: adding to the list isn't navigation. */}
+      <AddMissingButton missing={match.missing} />
     </li>
   );
 }

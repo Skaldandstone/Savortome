@@ -1,16 +1,17 @@
 import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import type { Recipe } from "@nomnom/core/format";
 import { api } from "@/lib/client";
 import { RecipeCard } from "@/modules/recipe";
-import { Callout, space, usePalette } from "@/ui";
+import { Button, Callout, space, usePalette } from "@/ui";
 
 export default function RecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [added, setAdded] = useState(false);
   const insets = useSafeAreaInsets();
   const c = usePalette();
 
@@ -44,7 +45,19 @@ export default function RecipeScreen() {
             {error}
           </Callout>
         ) : recipe ? (
-          <RecipeCard recipe={recipe} shelvedId={recipe.id} />
+          <>
+            <RecipeCard recipe={recipe} shelvedId={recipe.id} />
+            <View style={styles.listAction}>
+              <Button
+                label={added ? "On your list ✓" : "Add to shopping list"}
+                variant="ghost"
+                disabled={added}
+                onPress={() => {
+                  void api.addRecipesToList([recipe.id]).then(() => setAdded(true));
+                }}
+              />
+            </View>
+          </>
         ) : (
           <View style={styles.loading}>
             <ActivityIndicator color={c.accent} />
@@ -58,4 +71,5 @@ export default function RecipeScreen() {
 const styles = StyleSheet.create({
   content: { padding: space.lg },
   loading: { paddingVertical: space.xxl, alignItems: "center" },
+  listAction: { marginTop: space.lg, alignSelf: "flex-start" },
 });

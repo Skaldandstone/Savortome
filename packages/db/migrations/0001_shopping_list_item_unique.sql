@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "shopping_list_items_item_idx" ON "shopping_list_items" USING btree ("list_id","canonical_item");
