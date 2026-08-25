@@ -6,3 +6,4 @@ export * from "./queries/recipes.js";
 export * from "./queries/shelves.js";
 export * from "./queries/ratings.js";
 export * from "./queries/pantry.js";
+export * from "./queries/shopping.js";

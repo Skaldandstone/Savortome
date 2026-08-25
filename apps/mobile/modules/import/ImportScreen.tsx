@@ -27,9 +27,14 @@ export function ImportScreen() {
         <SignOutButton />
       </View>
 
-      <Link href="/cook" style={[styles.cookLink, { color: c.accent }]}>
-        What can I make? →
-      </Link>
+      <View style={styles.navRow}>
+        <Link href="/cook" style={[styles.navLink, { color: c.accent }]}>
+          What can I make?
+        </Link>
+        <Link href="/list" style={[styles.navLink, { color: c.accent }]}>
+          Shopping list
+        </Link>
+      </View>
 
       <Panel>
         <PanelHeader
@@ -72,5 +77,6 @@ const styles = StyleSheet.create({
   wordmark: { fontSize: typeScale.display, fontWeight: "700", letterSpacing: -0.5 },
   tagline: { fontSize: 14 },
   spacer: { flex: 1 },
-  cookLink: { fontSize: 15, fontWeight: "600", marginBottom: space.lg },
+  navRow: { flexDirection: "row", gap: space.lg, marginBottom: space.lg },
+  navLink: { fontSize: 15, fontWeight: "600" },
 });

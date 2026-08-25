@@ -1,6 +1,6 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { ShelfValidationError } from "@nomnom/core";
+import { InstacartError, ShelfValidationError } from "@nomnom/core";
 import { db, type Database } from "@nomnom/db";
 import {
   NotConfiguredError,
@@ -22,6 +22,11 @@ export function errorResponse(err: unknown): NextResponse {
   }
   if (err instanceof NotConfiguredError) {
     return NextResponse.json({ error: err.message }, { status: 501 });
+  }
+  if (err instanceof InstacartError) {
+    // A missing key is a configuration problem, not a server fault; a rejected
+    // list is upstream's answer, so pass its status through.
+    return NextResponse.json({ error: err.message }, { status: err.status ?? 501 });
   }
   return NextResponse.json(
     { error: err instanceof Error ? err.message : "Something went wrong." },

@@ -1,5 +1,7 @@
 import type { RecipeRating, RecipeShelfState, ShelfSummary, StatusShelf } from "./shelves.js";
 import type { PantryEntry, PantryMatch } from "./pantry.js";
+import type { ShoppingLine } from "./shopping.js";
+import type { CartHandoff, CartProvider, CartProviderId } from "./carts.js";
 import type { ImportRequest, ImportResponse } from "./import-client.js";
 import type { Recipe } from "./recipe.js";
 
@@ -57,6 +59,15 @@ export interface PantrySearchResponse {
   note?: string;
 }
 
+export interface ShoppingListView {
+  id: string;
+  name: string;
+  createdAt: string;
+  itemCount: number;
+  checkedCount: number;
+  items: (ShoppingLine & { id: string })[];
+}
+
 export interface NomNomClient {
   importRecipe: (request: ImportRequest) => Promise<ImportResponse>;
   listShelves: () => Promise<ShelfSummary[]>;
@@ -78,6 +89,16 @@ export interface NomNomClient {
   clearPantry: () => Promise<PantryEntry[]>;
   searchPantry: (query?: string) => Promise<PantrySearchResponse>;
   getRecipe: (recipeId: string) => Promise<Recipe>;
+  getList: () => Promise<ShoppingListView>;
+  addRecipesToList: (recipeIds: string[]) => Promise<ShoppingListView>;
+  addItemsToList: (
+    items: { canonicalItem: string; displayName?: string }[],
+  ) => Promise<ShoppingListView>;
+  setListItemChecked: (itemId: string, checked: boolean) => Promise<ShoppingListView>;
+  removeListItem: (itemId: string) => Promise<ShoppingListView>;
+  clearList: () => Promise<ShoppingListView>;
+  cartProviders: () => Promise<CartProvider[]>;
+  sendToCart: (provider: CartProviderId) => Promise<CartHandoff>;
 }
 
 export function createClient(config: ApiClientConfig = {}): NomNomClient {
@@ -176,5 +197,29 @@ export function createClient(config: ApiClientConfig = {}): NomNomClient {
       }),
 
     getRecipe: (recipeId) => send<Recipe>(`/api/recipes/${recipeId}`),
+
+    getList: () => send<ShoppingListView>("/api/list"),
+
+    addRecipesToList: (recipeIds) =>
+      send<ShoppingListView>("/api/list", { method: "POST", body: body({ recipeIds }) }),
+
+    addItemsToList: (items) =>
+      send<ShoppingListView>("/api/list", { method: "POST", body: body({ items }) }),
+
+    setListItemChecked: (itemId, checked) =>
+      send<ShoppingListView>(`/api/list/items/${itemId}`, {
+        method: "PATCH",
+        body: body({ checked }),
+      }),
+
+    removeListItem: (itemId) =>
+      send<ShoppingListView>(`/api/list/items/${itemId}`, { method: "DELETE" }),
+
+    clearList: () => send<ShoppingListView>("/api/list", { method: "DELETE" }),
+
+    cartProviders: () => send<CartProvider[]>("/api/list/cart"),
+
+    sendToCart: (provider) =>
+      send<CartHandoff>("/api/list/cart", { method: "POST", body: body({ provider }) }),
   };
 }

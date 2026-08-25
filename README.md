@@ -3,9 +3,10 @@
 Goodreads for recipes — with an importer that turns a YouTube video, a TikTok, a
 Reel, or a 2,000-word blog post into a recipe card you can actually cook from.
 
-Built so far: the **import pipeline**, **accounts**, **shelves & ratings**, and
-**pantry search**, across web, mobile, and the database. Friends and grocery
-carts are modelled in the schema and listed at the bottom.
+Built so far: the **import pipeline**, **accounts**, **shelves & ratings**,
+**pantry search**, and **shopping lists & carts**, across web, mobile, and the
+database. Friends and discovery are modelled in the schema and listed at the
+bottom.
 
 ---
 
@@ -195,6 +196,50 @@ curl -X POST localhost:3000/api/pantry/reindex
 
 ---
 
+## Shopping lists and carts
+
+Add a recipe from its card, or just the missing ingredients straight from a
+pantry result. Everything merges into one list.
+
+**Merging is the whole job.** Three recipes wanting flour is one line. Amounts
+combine only when their units genuinely relate — `1 cup` and `2 tbsp` add up,
+`1 cup` and `200 g` don't, because that would mean guessing the ingredient's
+density. Incompatible amounts stay as two lines rather than becoming one wrong
+one. Ranges shop for the larger number, since running short is worse than
+leftovers.
+
+**The pantry comes off the top.** Anything you have with no amount recorded is
+dropped entirely; anything with an amount is subtracted and only the shortfall
+is bought. When the units can't be compared, the line stays but is marked *you
+may already have some* — recomputed on read, so it can't go stale as the pantry
+changes.
+
+Names on the list come from the canonical form rather than the recipe's own
+wording, because "melted coconut oil or extra-virgin olive oil or high quality
+vegetable oil*" is not something you can look for in a shop.
+
+### Which services actually work
+
+This is the part worth being straight about:
+
+| Service | What happens |
+|---|---|
+| **Instacart** | Real cart. Their Developer Platform API takes the list and returns a populated shopping-list page. |
+| **Kroger / Fred Meyer** | Has a public Cart API, but it needs per-user OAuth *and* resolved product UPCs. Modelled, not wired up. |
+| **DoorDash, Uber Eats, Safeway** | **No public consumer cart API exists.** These copy your list and open their store. |
+
+The provider type says which kind each is (`api` vs `handoff`), the UI groups
+them apart, and both record identically in `cart_handoffs` so the history reads
+the same. An API provider only appears once its key is configured.
+
+The Instacart integration is written against
+[their documented schema](https://docs.instacart.com/developer_platform_api/api/products/create_shopping_list_page)
+— using `line_item_measurements`, since `quantity`/`unit` on a line item are
+deprecated — but has never been run against the live API, which needs a partner
+key this project doesn't have.
+
+---
+
 ## Optional pieces
 
 **Persistence** — set `DATABASE_URL` in `apps/web/.env.local` (the db package
@@ -297,12 +342,10 @@ version at least a day old.
 
 Modelled in `packages/db/src/schema.ts`, in rough dependency order:
 
-1. **Shopping lists and carts** — the natural next step: every "Nearly there"
-   result already names exactly what's missing, so turning that into a merged
-   list and handing it to Instacart or Kroger is mostly plumbing.
-2. **Friends and sharing** — `friendships` and per-recipe/per-shelf
+1. **Friends and sharing** — `friendships` and per-recipe/per-shelf
    `visibility` exist; nothing reads them yet.
-3. **Discovery** — a public feed over `visibility = 'public'`, plus the
+2. **Discovery** — a public feed over `visibility = 'public'`, plus the
    `recipes.embedding` column for "more like this". Pantry search currently
    falls back to *closest match* rather than semantic similarity, which is
    arguably the better answer for "what's for dinner" anyway.
+3. **Kroger cart** — the OAuth flow and product-UPC lookup its Cart API needs.
