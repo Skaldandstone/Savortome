@@ -38,6 +38,18 @@ const imported = await j("/api/import", {
   method: "POST",
   body: JSON.stringify({ url: URL_TO_IMPORT }),
 });
+if (imported.status === 401) {
+  // This check drives the HTTP API, so it needs a session. The other check
+  // scripts talk to the database directly and don't.
+  console.error(
+    [
+      "The server wants you signed in, and this script has no session.",
+      "Comment out the Clerk keys in apps/web/.env.local to run on the local",
+      "development account, restart the dev server, and try again.",
+    ].join(" "),
+  );
+  process.exit(1);
+}
 if (imported.status !== 200) {
   console.error(`import failed: ${imported.status} ${JSON.stringify(imported.body)?.slice(0, 300)}`);
   process.exit(1);

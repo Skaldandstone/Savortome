@@ -4,6 +4,34 @@ import type { ShoppingLine } from "./shopping.js";
 import type { CartHandoff, CartProvider, CartProviderId } from "./carts.js";
 import type { Visibility } from "./shelves.js";
 import type { FeedItem, FriendsOverview } from "./friends.js";
+
+/** A recipe someone else has shared, as it appears while browsing. */
+export interface DiscoverCard {
+  recipeId: string;
+  title: string;
+  description: string | null;
+  imageUrl: string | null;
+  totalMinutes: number | null;
+  tags: string[];
+  cuisine: string | null;
+  sharedBy: { handle: string; displayName: string; avatarUrl: string | null };
+  saveCount: number;
+  /** Why this is in front of you. Only set by "more like this". */
+  reason?: string;
+}
+
+export interface DiscoverResponse {
+  recipes: DiscoverCard[];
+  tags: { tag: string; count: number }[];
+  query: string;
+  appliedTags: string[];
+}
+
+export interface DiscoverQuery {
+  query?: string;
+  tags?: string[];
+  maxMinutes?: number | null;
+}
 import type { ImportRequest, ImportResponse } from "./import-client.js";
 import type { Recipe } from "./recipe.js";
 
@@ -110,6 +138,8 @@ export interface NomNomClient {
     action: "accept" | "remove" | "block" | "unblock",
   ) => Promise<FriendsOverview>;
   feed: () => Promise<FeedItem[]>;
+  discover: (query?: DiscoverQuery) => Promise<DiscoverResponse>;
+  similarRecipes: (recipeId: string) => Promise<DiscoverCard[]>;
 }
 
 export function createClient(config: ApiClientConfig = {}): NomNomClient {
@@ -254,5 +284,16 @@ export function createClient(config: ApiClientConfig = {}): NomNomClient {
       }),
 
     feed: () => send<FeedItem[]>("/api/feed"),
+
+    discover: (query = {}) => {
+      const params = new URLSearchParams();
+      if (query.query) params.set("q", query.query);
+      for (const tag of query.tags ?? []) params.append("tag", tag);
+      if (query.maxMinutes) params.set("maxMinutes", String(query.maxMinutes));
+      const qs = params.toString();
+      return send<DiscoverResponse>(`/api/discover${qs ? `?${qs}` : ""}`);
+    },
+
+    similarRecipes: (recipeId) => send<DiscoverCard[]>(`/api/recipes/${recipeId}/similar`),
   };
 }

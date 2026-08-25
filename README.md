@@ -4,9 +4,9 @@ Goodreads for recipes — with an importer that turns a YouTube video, a TikTok,
 Reel, or a 2,000-word blog post into a recipe card you can actually cook from.
 
 Built so far: the **import pipeline**, **accounts**, **shelves & ratings**,
-**pantry search**, **shopping lists & carts**, **sharing**, and **friends**,
-across web, mobile, and the database. Discovery is modelled in the schema and
-listed at the bottom.
+**pantry search**, **shopping lists & carts**, **sharing**, **friends**, and
+**discovery** — the whole of the original brief. What's left is listed at the
+bottom.
 
 ---
 
@@ -299,6 +299,40 @@ asserted in `pnpm check:friends`, along with the whole state machine.
 
 ---
 
+## Discovery
+
+Browse and search what other people have shared, filter by tag, and get "more
+like this" under any recipe. Readable **signed out** — discovery you have to
+sign up for isn't discovery.
+
+Only `public` recipes appear, never your own. Friends-only recipes stay out
+deliberately; they reach their audience through the feed.
+
+**Not embeddings, on purpose.** Recipes are short structured documents whose
+useful similarity is concrete — shared ingredients, shared tags, same cuisine —
+and a result you can explain (*"Shares 6 ingredients"*) is worth more to a cook
+than a cosine score they can't argue with. So:
+
+- **Search** is Postgres full-text over a generated `tsvector`, with title
+  weighted above cuisine above description. `websearch_to_tsquery` parses what
+  a person actually types, quoted phrases and stray punctuation included.
+- **Tags** are matched exactly via GIN array overlap rather than being stemmed
+  into the text vector — you want `vegetarian`, not a near-miss.
+- **Similar** counts shared non-staple ingredients, with shared tags as a
+  lighter signal, and shows the count as the reason.
+
+Ranking is by save count, then recency. Someone bothering to put a recipe into
+their own collection says more than a star they clicked once.
+
+`recipes.embedding` is still there for when semantic search earns its keep.
+
+One wrinkle worth knowing if you touch the search column: `to_tsvector('english', …)`
+is only STABLE, and `array_to_string` is too, so neither can appear in a
+generated column. The `::regconfig` cast form is IMMUTABLE, which is why the
+expression looks the way it does.
+
+---
+
 ## Optional pieces
 
 **Persistence** — set `DATABASE_URL` in `apps/web/.env.local` (the db package
@@ -367,7 +401,11 @@ pnpm check:sharing
 pnpm check:friends
 ```
 
-All four work on their own fixtures and are safe to re-run. `check:shelves` imports
+```bash
+pnpm check:discover
+```
+
+All five work on their own fixtures and are safe to re-run. `check:shelves` imports
 a real recipe and leaves it in the library, so point it at a development
 database.
 
@@ -394,11 +432,12 @@ to server-side fetches regardless of headers. Those need the paste-text path.
 every redirect hop — is checked against loopback, link-local, and private ranges
 before it goes out. See `packages/core/src/sources/url-guard.ts`.
 
-**Toggling Clerk keys needs a cache clear.** Commenting the keys in or out of
-`.env.local` while `next dev` is running leaves `.next` holding chunks built
-for the other mode, which shows up as a page that renders but never hydrates,
-or `Cannot find module './vendor-chunks/...'`. `rm -rf apps/web/.next` and
-restart.
+**`next build` used to clobber the dev server.** Both write to `.next` by
+default, so building while `next dev` was running left it serving production
+chunks it couldn't hydrate — a page that rendered and then did nothing, or
+`Cannot find module './vendor-chunks/...'`. The production build now writes to
+`.next-build` instead (`next.config.ts`), so the two can't collide. If you ever
+see that symptom anyway, `rm -rf apps/web/.next` and restart.
 
 **Postgres version.** Neon runs Postgres 18, which names its `NOT NULL`
 constraints. drizzle-kit below 0.31 doesn't understand that and tries to drop
@@ -415,9 +454,8 @@ version at least a day old.
 
 Modelled in `packages/db/src/schema.ts`, in rough dependency order:
 
-1. **Discovery** — a public feed over `visibility = 'public'`, plus the
-   `recipes.embedding` column for "more like this". Pantry search currently
-   falls back to *closest match* rather than semantic similarity, which is
-   arguably the better answer for "what's for dinner" anyway.
+1. **Mobile parity for sharing, friends, and discovery** — all three are
+   web-only so far. Mobile has import, shelves, pantry search, and lists.
 2. **Kroger cart** — the OAuth flow and product-UPC lookup its Cart API needs.
-3. **Mobile parity for sharing and friends** — both are web-only so far.
+3. **Semantic search** — `recipes.embedding` is unused. Worth doing when the
+   ingredient-overlap approach visibly runs out, not before.

@@ -20,7 +20,8 @@
     "db:migrate": "pnpm --filter @nomnom/db migrate",
     "check:pantry": "pnpm --filter @nomnom/db check:pantry",
     "check:sharing": "pnpm --filter @nomnom/db check:sharing",
-    "check:friends": "pnpm --filter @nomnom/db check:friends"
+    "check:friends": "pnpm --filter @nomnom/db check:friends",
+    "check:discover": "pnpm --filter @nomnom/db check:discover"
   },
   "devDependencies": {
     "typescript": "^5.7.3"
