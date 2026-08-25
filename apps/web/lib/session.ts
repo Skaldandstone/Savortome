@@ -74,3 +74,17 @@ export async function requireUserId(database: Database = db()): Promise<string> 
   if (!id) throw new NotSignedInError();
   return id;
 }
+
+/**
+ * The viewer's id, or null — never throws.
+ *
+ * Public pages are reachable by strangers and by crawlers, so an unconfigured
+ * Clerk or a missing session has to read as "signed out", not as an error page.
+ */
+export async function viewerId(database: Database = db()): Promise<string | null> {
+  try {
+    return await currentUserId(database);
+  } catch {
+    return null;
+  }
+}

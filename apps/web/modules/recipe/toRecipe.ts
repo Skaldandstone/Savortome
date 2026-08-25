@@ -1,4 +1,4 @@
-import type { Recipe } from "@nomnom/core/format";
+import type { Recipe, Visibility } from "@nomnom/core/format";
 
 /** The database row shape, expressed without importing the server-only db package. */
 export interface RecipeRow {
@@ -25,6 +25,7 @@ export interface RecipeRow {
   sourceAuthor: string | null;
   sourceSiteName: string | null;
   extractionMethod: Recipe["source"]["extractionMethod"];
+  visibility: Visibility;
 }
 
 /** Rebuild the nested card shape from the flattened columns the table stores. */

@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { RecipeCard, toRecipe } from "@/modules/recipe";
+import { ShareControl } from "@/modules/sharing";
 import { loadRecipe } from "@/lib/library";
 import { clerkConfigured, currentUserId, databaseConfigured } from "@/lib/session";
 
@@ -20,6 +21,7 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
   return (
     <main>
       <RecipeCard recipe={toRecipe(row)} shelvedId={row.id} />
+      <ShareControl recipeId={row.id} initialVisibility={row.visibility} />
     </main>
   );
 }

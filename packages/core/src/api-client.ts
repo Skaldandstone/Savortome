@@ -2,6 +2,7 @@ import type { RecipeRating, RecipeShelfState, ShelfSummary, StatusShelf } from "
 import type { PantryEntry, PantryMatch } from "./pantry.js";
 import type { ShoppingLine } from "./shopping.js";
 import type { CartHandoff, CartProvider, CartProviderId } from "./carts.js";
+import type { Visibility } from "./shelves.js";
 import type { ImportRequest, ImportResponse } from "./import-client.js";
 import type { Recipe } from "./recipe.js";
 
@@ -99,6 +100,8 @@ export interface NomNomClient {
   clearList: () => Promise<ShoppingListView>;
   cartProviders: () => Promise<CartProvider[]>;
   sendToCart: (provider: CartProviderId) => Promise<CartHandoff>;
+  setVisibility: (recipeId: string, visibility: Visibility) => Promise<{ visibility: Visibility | null }>;
+  saveSharedRecipe: (recipeId: string) => Promise<{ recipeId: string }>;
 }
 
 export function createClient(config: ApiClientConfig = {}): NomNomClient {
@@ -221,5 +224,14 @@ export function createClient(config: ApiClientConfig = {}): NomNomClient {
 
     sendToCart: (provider) =>
       send<CartHandoff>("/api/list/cart", { method: "POST", body: body({ provider }) }),
+
+    setVisibility: (recipeId, visibility) =>
+      send<{ visibility: Visibility | null }>(`/api/recipes/${recipeId}/share`, {
+        method: "PUT",
+        body: body({ visibility }),
+      }),
+
+    saveSharedRecipe: (recipeId) =>
+      send<{ recipeId: string }>(`/api/recipes/${recipeId}/save`, { method: "POST" }),
   };
 }
