@@ -1,0 +1,38 @@
+.button {
+  font: inherit;
+  font-weight: 600;
+  font-size: var(--step-3);
+  padding: 11px 20px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.button:disabled { opacity: 0.55; cursor: progress; }
+
+.button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.primary { background: var(--accent); color: #fff; }
+
+.ghost {
+  background: transparent;
+  color: var(--text-muted);
+  border-color: var(--border);
+  font-weight: 500;
+  padding: 6px 12px;
+  font-size: var(--step-2);
+}
+
+.toggle {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 5px 12px;
+  font-size: var(--step-2);
+  font-weight: 500;
+}
+
+.toggle[aria-pressed="true"] {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--border);
+}

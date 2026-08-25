@@ -1,0 +1,24 @@
+.scaler { display: flex; align-items: center; gap: 8px; }
+
+.list { list-style: none; margin: 0; padding: 0; }
+
+.item {
+  display: flex;
+  gap: 12px;
+  padding: 7px 0;
+  border-bottom: 1px dashed var(--border);
+  font-size: var(--step-3);
+}
+
+.item:last-child { border-bottom: none; }
+
+.amount { flex: 0 0 96px; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.note { color: var(--text-muted); }
+
+.groupHeading {
+  display: block;
+  font-weight: 700;
+  font-size: var(--step-2);
+  padding-top: 14px;
+}

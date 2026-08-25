@@ -1,0 +1,11 @@
+.hero {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  display: block;
+  background: var(--surface-sunken);
+}
+
+.title { margin: 0 0 6px; font-size: var(--step-5); letter-spacing: -0.02em; line-height: 1.2; }
+.lede { margin: 0 0 16px; color: var(--text-muted); font-size: var(--step-3); }
+.attribution { font-size: var(--step-2); color: var(--text-muted); margin: 0 0 18px; }

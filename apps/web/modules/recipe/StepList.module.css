@@ -1,0 +1,8 @@
+.steps { margin: 0; padding-left: 22px; }
+
+.step { padding: 8px 0 8px 4px; font-size: var(--step-3); }
+.step::marker { color: var(--accent); font-weight: 700; }
+
+.meta { display: flex; gap: 10px; margin-top: 6px; font-size: var(--step-1); color: var(--text-muted); }
+
+.jump { text-decoration: none; background: var(--accent-soft); padding: 2px 8px; border-radius: 999px; }

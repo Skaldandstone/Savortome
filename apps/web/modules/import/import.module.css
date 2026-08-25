@@ -1,0 +1,16 @@
+.modeSwitch { display: flex; gap: 4px; margin-bottom: 14px; }
+
+.sourceHint { margin: 12px 0 0; color: var(--text-muted); font-size: var(--step-2); }
+
+.progress {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+}
+
+.stages { margin: 0; padding-left: 18px; }
+.stages li { color: var(--text-muted); }
+.stages li[data-state="active"] { color: var(--text); font-weight: 600; }
+.stages li[data-state="done"] { color: var(--good); }

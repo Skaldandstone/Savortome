@@ -1,0 +1,72 @@
+.controls {
+  margin-top: 28px;
+  padding: 18px 20px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 14px;
+}
+
+.row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.label {
+  margin: 0;
+  flex: 0 0 92px;
+  font-size: var(--step-1);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.statusPicker { display: flex; gap: 4px; flex-wrap: wrap; }
+
+.cookCount { font-size: var(--step-2); color: var(--text-muted); }
+
+/* ------------------------------------------------------------ stars */
+
+.stars { display: flex; gap: 2px; }
+
+.star {
+  font-size: 22px;
+  line-height: 1;
+  padding: 2px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--border);
+  transition: color 80ms ease;
+}
+
+.star[data-filled="true"] { color: var(--accent); }
+.star:disabled { cursor: default; }
+.star:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-radius: 3px; }
+
+/* ------------------------------------------------------------ custom shelves */
+
+.checklist { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+.checkItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--step-2);
+  cursor: pointer;
+}
+
+.newShelf { display: flex; gap: 6px; align-items: center; }
+.newShelf input { flex: 0 1 180px; padding: 6px 10px; font-size: var(--step-2); }
+
+/* ------------------------------------------------------------ badge */
+
+.badge {
+  display: inline-block;
+  font-size: var(--step-1);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
+.badge[data-status="cooking"] { background: var(--warn-soft); color: var(--warn); }
+.badge[data-status="cooked"] { background: var(--accent-soft); color: var(--accent); }

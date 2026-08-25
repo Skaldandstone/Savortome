@@ -1,0 +1,25 @@
+{
+  "name": "nomnom",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @nomnom/web dev",
+    "dev:mobile": "pnpm --filter @nomnom/mobile start",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "db:push": "pnpm --filter @nomnom/db push",
+    "db:studio": "pnpm --filter @nomnom/db studio",
+    "ingest": "pnpm --filter @nomnom/core ingest --",
+    "test": "pnpm --filter @nomnom/core test",
+    "check:shelves": "node scripts/check-shelves.mjs",
+    "db:generate": "pnpm --filter @nomnom/db generate",
+    "db:migrate": "pnpm --filter @nomnom/db migrate"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}

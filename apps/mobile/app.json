@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "NomNom",
+    "slug": "nomnom",
+    "scheme": "nomnom",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "plugins": [
+      "expo-router",
+      "@clerk/expo",
+      "expo-secure-store",
+      "expo-web-browser"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.nomnom.app"
+    },
+    "android": {
+      "package": "com.nomnom.app"
+    },
+    "extra": {
+      "apiBaseUrl": "http://localhost:3000"
+    }
+  }
+}
