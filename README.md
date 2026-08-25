@@ -22,7 +22,9 @@ apps/
 ```
 
 Both apps use the same shape: thin route/entry files, feature folders under
-`modules/`, and a shared primitives layer in `ui/`. Anything platform-agnostic —
+`modules/`, and a shared primitives layer in `ui/`. Every feature exists on
+both — library, import, shelves, pantry search, lists, sharing, friends, and
+discovery. Anything platform-agnostic —
 request shapes, shelf rules, quantity scaling, the optimistic-update logic —
 lives in `@nomnom/core/format` so the two clients can't drift apart.
 
@@ -367,6 +369,24 @@ copy the web app's publishable key into `apps/mobile/.env`. On a simulator
 the LAN address Expo is already serving from. Copy a link in any app and NomNom
 offers to import it when you switch back.
 
+Five tabs — Library, Cook, List, Friends, Discover — with importing, recipes,
+and shared links pushed over them. Sharing uses the system share sheet, which
+is the point on a phone: it hands the link to whatever the person already uses
+to talk to their friends.
+
+Check it still bundles without needing a device or simulator:
+
+```bash
+pnpm mobile:bundle
+```
+
+**Keep mobile's dependency versions where Expo wants them.** `expo install --check`
+is the source of truth; `npm view <pkg> version` is not. Pinning React Native to
+the newest release rather than the one Expo SDK 57 expects produces a Metro
+failure about a missing `rn-get-polyfills` that looks nothing like a version
+problem. The one deliberate exception is TypeScript: Expo suggests 6.x, and the
+rest of the workspace is on 5.x.
+
 ---
 
 ## Tests
@@ -454,8 +474,12 @@ version at least a day old.
 
 Modelled in `packages/db/src/schema.ts`, in rough dependency order:
 
-1. **Mobile parity for sharing, friends, and discovery** — all three are
-   web-only so far. Mobile has import, shelves, pantry search, and lists.
+1. **Running mobile on a device.** It bundles, but has never been opened on a
+   phone or simulator — no device was available. Expect the first run to turn
+   up layout and native-module issues that bundling can't catch.
 2. **Kroger cart** — the OAuth flow and product-UPC lookup its Cart API needs.
 3. **Semantic search** — `recipes.embedding` is unused. Worth doing when the
    ingredient-overlap approach visibly runs out, not before.
+4. **Recipe editing.** Imported cards can be shelved, rated, and shared, but
+   not corrected. The extractor flags what it inferred; there's no way to fix
+   it yet.

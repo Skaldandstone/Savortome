@@ -36,6 +36,7 @@ export async function GET(_request: Request, { params }: Params) {
       difficulty: row.difficulty,
       confidence: row.confidence,
       extractionNotes: row.extractionNotes,
+      visibility: row.visibility,
       source: {
         kind: row.sourceKind,
         url: row.sourceUrl,
