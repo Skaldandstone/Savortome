@@ -124,3 +124,33 @@ describe("scaleQuantity", () => {
     assert.equal(scaleQuantity(null, 2), null);
   });
 });
+
+describe("canonicalize on real recipe wording", () => {
+  it("takes the first of a list of alternatives", () => {
+    // Recipes offer choices constantly. Keeping the whole phrase means a pantry
+    // holding "butter" never matches a recipe asking for "butter or oil".
+    assert.equal(canonicalize("butter or vegetable oil"), "butter");
+    assert.equal(canonicalize("milk of choice or water"), "milk");
+    assert.equal(
+      canonicalize("coconut oil or extra-virgin olive oil or high quality vegetable oil"),
+      "coconut oil",
+    );
+  });
+
+  it("strips prep and filler down to the food", () => {
+    assert.equal(canonicalize("mashed very ripe bananas"), "banana");
+    assert.equal(canonicalize("chopped walnuts"), "walnut");
+    assert.equal(canonicalize("2 large eggs"), "egg");
+  });
+
+  it("drops footnote markers and parentheticals", () => {
+    assert.equal(canonicalize("butter or vegetable oil (plus more for the pan)"), "butter");
+    assert.equal(canonicalize("light brown sugar**"), "light brown sugar");
+  });
+
+  it("gives a pantry entry and a recipe line the same key", () => {
+    // The property the whole pantry feature rests on.
+    assert.equal(canonicalize("3 very ripe bananas"), canonicalize("mashed ripe banana"));
+    assert.equal(canonicalize("2 large eggs"), canonicalize("egg"));
+  });
+});

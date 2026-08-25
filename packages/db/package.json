@@ -14,7 +14,8 @@
     "generate": "drizzle-kit generate",
     "push": "drizzle-kit push",
     "studio": "drizzle-kit studio",
-    "migrate": "tsx src/migrate.ts"
+    "migrate": "tsx src/migrate.ts",
+    "check:pantry": "tsx scripts/check-pantry.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

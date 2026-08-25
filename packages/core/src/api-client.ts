@@ -1,5 +1,7 @@
 import type { RecipeRating, RecipeShelfState, ShelfSummary, StatusShelf } from "./shelves.js";
+import type { PantryEntry, PantryMatch } from "./pantry.js";
 import type { ImportRequest, ImportResponse } from "./import-client.js";
+import type { Recipe } from "./recipe.js";
 
 /**
  * One typed client for the NomNom HTTP API, shared by both apps.
@@ -28,6 +30,33 @@ export class ApiError extends Error {
   }
 }
 
+/** One row of "what can I make", with enough to render it without a second call. */
+export interface PantrySearchResult extends PantryMatch {
+  title: string;
+  imageUrl: string | null;
+  totalMinutes: number | null;
+  tags: string[];
+  timesCooked: number;
+}
+
+export interface PantrySearchResponse {
+  /** The filters that were actually applied, after any interpretation. */
+  query: {
+    ingredients: string[];
+    excludeIngredients: string[];
+    tags: string[];
+    maxMinutes: number | null;
+    course: string | null;
+  };
+  results: PantrySearchResult[];
+  /** True when a model read the request rather than it being taken as a list. */
+  interpreted: boolean;
+  /** True when the saved pantry was used because no ingredients were typed. */
+  usedPantry: boolean;
+  /** Set when smart search was unavailable and the query was handled plainly. */
+  note?: string;
+}
+
 export interface NomNomClient {
   importRecipe: (request: ImportRequest) => Promise<ImportResponse>;
   listShelves: () => Promise<ShelfSummary[]>;
@@ -43,6 +72,12 @@ export interface NomNomClient {
   ) => Promise<RecipeShelfState>;
   rateRecipe: (recipeId: string, stars: number, review?: string | null) => Promise<RecipeRating>;
   clearRating: (recipeId: string) => Promise<void>;
+  listPantry: () => Promise<PantryEntry[]>;
+  addPantry: (text: string) => Promise<PantryEntry[]>;
+  removePantry: (canonicalItems: string[]) => Promise<PantryEntry[]>;
+  clearPantry: () => Promise<PantryEntry[]>;
+  searchPantry: (query?: string) => Promise<PantrySearchResponse>;
+  getRecipe: (recipeId: string) => Promise<Recipe>;
 }
 
 export function createClient(config: ApiClientConfig = {}): NomNomClient {
@@ -119,5 +154,27 @@ export function createClient(config: ApiClientConfig = {}): NomNomClient {
     clearRating: async (recipeId) => {
       await send(`/api/recipes/${recipeId}/rating`, { method: "DELETE" });
     },
+
+    listPantry: () => send<PantryEntry[]>("/api/pantry"),
+
+    addPantry: (text) =>
+      send<PantryEntry[]>("/api/pantry", { method: "POST", body: body({ text }) }),
+
+    removePantry: (canonicalItems) =>
+      send<PantryEntry[]>("/api/pantry", {
+        method: "DELETE",
+        body: body({ items: canonicalItems }),
+      }),
+
+    clearPantry: () =>
+      send<PantryEntry[]>("/api/pantry", { method: "DELETE", body: body({ all: true }) }),
+
+    searchPantry: (query) =>
+      send<PantrySearchResponse>("/api/pantry/search", {
+        method: "POST",
+        body: body({ query: query ?? "" }),
+      }),
+
+    getRecipe: (recipeId) => send<Recipe>(`/api/recipes/${recipeId}`),
   };
 }

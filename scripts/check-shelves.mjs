@@ -62,6 +62,11 @@ let state = await shelfState();
 expect("baseline: no status", state.status, null);
 expect("baseline: no rating", state.rating, null);
 
+// Other recipes may live on these shelves; assert the delta, not the total.
+const countOn = async (name) =>
+  ((await j("/api/shelves")).body.find((s) => s.name === name)?.recipeCount) ?? 0;
+const wantToCookBefore = await countOn("Want to cook");
+
 // --- the importer shelves an unshelved recipe -------------------------------
 const reimported = await j("/api/import", {
   method: "POST",
@@ -182,7 +187,7 @@ expect(
 // --- shelf counts -----------------------------------------------------------
 const counts = Object.fromEntries((await j("/api/shelves")).body.map((s) => [s.name, s.recipeCount]));
 expect("Cooked holds the recipe", counts["Cooked"] >= 1, true);
-expect("Want to cook does not", counts["Want to cook"], 0);
+expect("Want to cook is back where it started", counts["Want to cook"], wantToCookBefore);
 expect("the custom shelf holds it too", counts[TEST_SHELF], 1);
 
 // --- cleanup ----------------------------------------------------------------

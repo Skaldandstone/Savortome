@@ -1,4 +1,5 @@
 import { ScrollView, StyleSheet, Text, View } from "react-native";
+import { Link } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SignOutButton } from "@/modules/account";
 import { RecipeCard } from "@/modules/recipe";
@@ -25,6 +26,10 @@ export function ImportScreen() {
         <View style={styles.spacer} />
         <SignOutButton />
       </View>
+
+      <Link href="/cook" style={[styles.cookLink, { color: c.accent }]}>
+        What can I make? →
+      </Link>
 
       <Panel>
         <PanelHeader
@@ -67,4 +72,5 @@ const styles = StyleSheet.create({
   wordmark: { fontSize: typeScale.display, fontWeight: "700", letterSpacing: -0.5 },
   tagline: { fontSize: 14 },
   spacer: { flex: 1 },
+  cookLink: { fontSize: 15, fontWeight: "600", marginBottom: space.lg },
 });
