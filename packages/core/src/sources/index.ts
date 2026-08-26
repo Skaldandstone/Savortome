@@ -6,6 +6,7 @@ import { extractJsonLdRecipe } from "./jsonld.js";
 import { fetchSocial } from "./social.js";
 import {
   asrConfigFromEnv,
+  metadataViaYtDlp,
   subtitlesViaYtDlp,
   transcribeUrl,
   ytDlpAvailable,
@@ -22,6 +23,7 @@ export { fetchSocial } from "./social.js";
 export { detectSourceKind, socialKind, youtubeVideoId } from "../source-kind.js";
 export {
   asrConfigFromEnv,
+  metadataViaYtDlp,
   subtitlesViaYtDlp,
   transcribeUrl,
   ytDlpAvailable,
@@ -69,6 +71,22 @@ async function resolveVideo(
     imageUrl = s.imageUrl;
     caption = s.caption;
     trace.push(`${kind}: caption ${caption ? `${caption.length} chars` : "unavailable"}`);
+
+    // Instagram and Facebook serve a login wall to anything that looks like a
+    // scraper, so the Open Graph tags come back empty — and for a Reel the
+    // caption usually is the recipe. yt-dlp still gets it.
+    if (!caption && opts.allowTranscription !== false && (await ytDlpAvailable())) {
+      const meta = await metadataViaYtDlp(url);
+      if (meta?.description) {
+        caption = meta.description;
+        title = title ?? meta.title;
+        author = author ?? meta.uploader;
+        imageUrl = imageUrl ?? meta.thumbnail;
+        trace.push(`yt-dlp: caption ${caption.length} chars`);
+      } else {
+        trace.push("yt-dlp: no caption either");
+      }
+    }
   }
 
   // The caption track is the prize, and yt-dlp can usually fetch the one

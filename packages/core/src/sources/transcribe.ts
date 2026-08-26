@@ -80,6 +80,45 @@ export async function ytDlpAvailable(): Promise<boolean> {
   }
 }
 
+export interface VideoMetadata {
+  title: string | null;
+  description: string | null;
+  uploader: string | null;
+  thumbnail: string | null;
+}
+
+/**
+ * Post metadata, fetched through yt-dlp.
+ *
+ * Instagram and Facebook serve a login wall to anything that looks like a
+ * scraper, so the Open Graph tags the social resolver reads come back empty —
+ * and for a Reel the caption usually *is* the recipe. yt-dlp still gets it.
+ *
+ * One extra process per import, and only when the page itself gave us nothing.
+ */
+export async function metadataViaYtDlp(url: string): Promise<VideoMetadata | null> {
+  try {
+    const raw = await run(
+      ytDlpBin(),
+      ["--skip-download", "--dump-json", "--no-warnings", "--no-playlist", url],
+      60_000,
+    );
+
+    const data = JSON.parse(raw) as Record<string, unknown>;
+    return {
+      title: (data.title as string | undefined) ?? null,
+      description: (data.description as string | undefined) ?? null,
+      // `uploader` is the display name; `channel` is the handle. The name reads
+      // better as an attribution line.
+      uploader:
+        (data.uploader as string | undefined) ?? (data.channel as string | undefined) ?? null,
+      thumbnail: (data.thumbnail as string | undefined) ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Captions, fetched through yt-dlp.
  *

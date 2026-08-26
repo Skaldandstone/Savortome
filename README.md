@@ -79,7 +79,8 @@ took (visible under "How this import ran" on every card).
 | Blog with schema.org data | The site's own machine-readable recipe | **No model call** |
 | Blog without it | Page prose → Claude | One call |
 | YouTube | Caption track (+ description) → Claude | One call |
-| TikTok / Instagram / Facebook | Post caption → Claude | One call |
+| TikTok | Post caption → Claude | One call |
+| Instagram / Facebook | Caption via yt-dlp → Claude | One call |
 | Video whose captions we can't fetch directly | yt-dlp → caption track → Claude | One call |
 | Video with no captions at all | yt-dlp → audio → ASR → Claude | One call + ASR |
 
@@ -134,6 +135,14 @@ at all.
 The trace says exactly which of these happened, because they need different
 fixes: "the video publishes no captions", "captions exist but YouTube won't
 serve them to a server directly", "yt-dlp: 41 caption cues".
+
+**Instagram and Facebook need yt-dlp too**, for a different reason than
+YouTube: they serve a login wall to anything that looks like a scraper, so the
+Open Graph tags the social resolver reads come back empty. yt-dlp still gets
+the caption - and for a Reel the caption usually *is* the recipe, which makes
+these the highest-confidence imports in the app (0.93 on the one used to test
+it). TikTok has a working oEmbed endpoint and never needs the fallback, so it
+doesn't pay for one.
 
 **Video timestamps.** Steps extracted from a transcript carry the second they
 happen at, and the card links straight into the video at that moment. Where the
