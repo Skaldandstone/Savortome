@@ -80,7 +80,8 @@ took (visible under "How this import ran" on every card).
 | Blog without it | Page prose → Claude | One call |
 | YouTube | Caption track (+ description) → Claude | One call |
 | TikTok / Instagram / Facebook | Post caption → Claude | One call |
-| Video whose captions we can't read | yt-dlp → ASR → Claude | One call + ASR |
+| Video whose captions we can't fetch directly | yt-dlp → caption track → Claude | One call |
+| Video with no captions at all | yt-dlp → audio → ASR → Claude | One call + ASR |
 
 Most food blogs publish structured recipe data, and those imports are instant
 and free. Everything else goes through `claude-opus-5` with adaptive thinking, a
@@ -97,25 +98,42 @@ an **empty 200**. Not an error, not a 403: zero bytes. Every URL variant tried
 `ANDROID` client route 400s. The endpoint is gated behind browser session
 tokens now, which is exactly what `yt-dlp` exists to handle.
 
-So without yt-dlp, **a YouTube import falls back to the video description**,
-which is usually a promotional blurb. It still produces a card, with a
-confidence around 0.2 and a list of everything it had to guess - the honesty
-machinery does its job - but it is not the spoken-word extraction this app is
-for.
-
-To get the real thing:
+**yt-dlp can still fetch them**, which is why it's the first thing the pipeline
+reaches for when the direct fetch comes back empty - ahead of transcribing
+audio, because it's free, takes a second or two rather than minutes, and a
+human-written caption track beats any ASR pass. (The automatic track on the
+test video renders "Jacques Pépin" as "zck Pepa".)
 
 ```bash
 winget install yt-dlp.yt-dlp Gyan.FFmpeg
 ```
 
-then set `GROQ_API_KEY` (free tier, Whisper) or `DEEPGRAM_API_KEY` in
-`.env.local`. The pipeline pulls the audio, transcribes it, and feeds the same
-extractor - and the cards get real quantities and working video timestamps.
+winget installs both **without adding them to PATH**, so name them explicitly
+in `.env.local` rather than fighting your environment:
 
-The trace says which of these happened, and says it precisely: "the video
-publishes no captions" and "captions exist but YouTube won't serve them to a
-server" are different sentences, because they need different fixes.
+```
+YT_DLP_PATH=C:\...\WinGet\Packages\yt-dlp.yt-dlp_...\yt-dlp.exe
+FFMPEG_PATH=C:\...\WinGet\Packages\Gyan.FFmpeg_...in
+```
+
+Only audio extraction needs ffmpeg; subtitles don't touch it.
+
+**What it's worth**, measured on the same Jacques Pépin video:
+
+| | Without yt-dlp | With it |
+|---|---|---|
+| Path | description → Claude | transcript → Claude |
+| Confidence | 0.20 | **0.78** |
+| Ingredients | 4 | **17**, with real quantities |
+| Steps | 3 | **14**, each timestamped |
+
+An ASR key (`GROQ_API_KEY`, free tier, or `DEEPGRAM_API_KEY`) is still worth
+setting, but it is now the *third* resort - for videos that publish no captions
+at all.
+
+The trace says exactly which of these happened, because they need different
+fixes: "the video publishes no captions", "captions exist but YouTube won't
+serve them to a server directly", "yt-dlp: 41 caption cues".
 
 **Video timestamps.** Steps extracted from a transcript carry the second they
 happen at, and the card links straight into the video at that moment. Where the

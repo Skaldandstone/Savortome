@@ -41,6 +41,28 @@ export interface YoutubeMeta {
   captionStatus: CaptionStatus;
 }
 
+/**
+ * Cues out of YouTube's json3 caption format.
+ *
+ * Shared with the yt-dlp path, which downloads the very same format — the only
+ * difference is who managed to ask for it.
+ */
+export function parseJson3Cues(raw: string): TranscriptCue[] {
+  let data: { events?: Json3Event[] };
+  try {
+    data = JSON.parse(raw) as { events?: Json3Event[] };
+  } catch {
+    return [];
+  }
+
+  return (data.events ?? [])
+    .map((e) => ({
+      start: Math.round((e.tStartMs ?? 0) / 1000),
+      text: (e.segs ?? []).map((seg) => seg.utf8 ?? "").join("").replace(/\s+/g, " ").trim(),
+    }))
+    .filter((c) => c.text.length > 0);
+}
+
 /** Pull the embedded player JSON out of the watch page HTML. */
 function playerResponse(html: string): Record<string, unknown> | null {
   const m =
@@ -88,12 +110,7 @@ export async function fetchYoutube(url: string): Promise<YoutubeMeta> {
   if (track?.baseUrl) {
     try {
       const data = await fetchJson<{ events?: Json3Event[] }>(`${track.baseUrl}&fmt=json3`);
-      cues = (data.events ?? [])
-        .map((e) => ({
-          start: Math.round((e.tStartMs ?? 0) / 1000),
-          text: (e.segs ?? []).map((s) => s.utf8 ?? "").join("").replace(/\s+/g, " ").trim(),
-        }))
-        .filter((c) => c.text.length > 0);
+      cues = parseJson3Cues(JSON.stringify(data));
       if (cues.length === 0) cues = null;
     } catch {
       // An empty 200 is what a gated endpoint returns, so this lands here
