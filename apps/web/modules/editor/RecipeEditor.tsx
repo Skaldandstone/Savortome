@@ -96,11 +96,15 @@ export function RecipeEditor({
       </Panel>
 
       <Panel>
-        <PanelHeader title="Ingredients" hint="One per line, however you'd write it down." />
+        <PanelHeader
+          title="Ingredients"
+          hint="One per line, however you'd write it down. End a line with a colon to start a section."
+        />
         <IngredientRows
           ingredients={draft.ingredients}
           onReplace={ingredients.replace}
           onAdd={ingredients.add}
+          onAddHeading={ingredients.addHeading}
           onRemove={ingredients.remove}
           onMove={ingredients.move}
         />

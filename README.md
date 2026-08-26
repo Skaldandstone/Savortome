@@ -397,6 +397,13 @@ fields. Underneath each line the form shows the canonical name it landed on
 and shopping-list merging join on, and it's the part that silently stops
 matching when a line is misread.
 
+**Sections are typed, not configured.** End a line with a colon and it becomes
+a heading - "For the sauce:" - applying to every ingredient under it until the
+next one. That's how recipes are written, so it needs no extra control: the
+same one box per line does both. Headings are stored as the `group` on each
+ingredient and expanded back into heading rows whenever the form reopens, so a
+multi-part recipe survives editing instead of flattening.
+
 Two decisions worth knowing:
 
 - **Parsing happens on every keystroke, not on blur.** Blur is nearly right and
@@ -617,7 +624,5 @@ Modelled in `packages/db/src/schema.ts`, in rough dependency order:
    first real run to turn up schema details a stand-in can't.
 3. **Semantic search** - `recipes.embedding` is unused. Worth doing when the
    ingredient-overlap approach visibly runs out, not before.
-4. **Ingredient groups in the editor.** "For the sauce" headings survive an
-   edit untouched, but there's no way to add or change one by hand yet.
-5. **Cook sessions that survive a reload**, and timers that ring with the app
+4. **Cook sessions that survive a reload**, and timers that ring with the app
    closed. Both want local notifications rather than more state.

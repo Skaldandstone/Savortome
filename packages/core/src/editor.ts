@@ -97,23 +97,59 @@ export const blankStep = (n: number): Step => ({
 export function ingredientFromLine(line: string, group: string | null = null): Ingredient {
   const trimmed = line.trim();
   if (!trimmed) return { ...blankIngredient(), group };
+  // "For the sauce:" is how people write a section heading, so that's how one
+  // is typed — no separate control, and the same box as everything else.
+  if (trimmed.endsWith(":")) return groupHeading(trimmed.slice(0, -1));
   return parseIngredientLine(trimmed, group);
 }
 
+/**
+ * A section heading, as a row in the ingredient list.
+ *
+ * Sub-recipes ("For the sauce", "For the topping") are stored on each
+ * ingredient, but nobody wants to type the same heading onto six rows. So the
+ * editor keeps headings as rows of their own and folds them back onto the
+ * ingredients underneath when the draft is normalised.
+ */
+export function groupHeading(name: string): Ingredient {
+  const trimmed = name.trim();
+  return {
+    ...blankIngredient(),
+    raw: `${trimmed}:`,
+    group: trimmed || null,
+  };
+}
+
+/** A row that names a section rather than a thing to buy. */
+export const isGroupHeading = (ing: Ingredient): boolean =>
+  ing.item.trim() === "" && ing.raw.trim().endsWith(":");
+
 /** Re-derive everything that's computed from what the person typed. */
 export function normalizeDraft(draft: RecipeDraft): RecipeDraft {
-  const ingredients = draft.ingredients
-    .filter((ing) => (ing.item || ing.raw).trim().length > 0)
-    .map((ing) => ({
+  // Headings apply to everything below them until the next one, which is how
+  // recipes are written and read. A heading with nothing under it is dropped
+  // along with the other empty rows.
+  const ingredients: Ingredient[] = [];
+  let currentGroup: string | null = null;
+
+  for (const ing of draft.ingredients) {
+    if (isGroupHeading(ing)) {
+      currentGroup = ing.group?.trim() || ing.raw.trim().replace(/:$/, "") || null;
+      continue;
+    }
+    if (!(ing.item || ing.raw).trim()) continue;
+
+    ingredients.push({
       ...ing,
       item: ing.item.trim(),
       raw: ing.raw.trim() || ing.item.trim(),
       notes: ing.notes?.trim() || null,
-      group: ing.group?.trim() || null,
+      group: currentGroup,
       // Always recomputed: an edited name with a stale key is worse than no
       // key at all, because the recipe silently stops matching.
       canonicalItem: canonicalize(ing.item || ing.raw),
-    }));
+    });
+  }
 
   const steps = draft.steps
     .filter((step) => step.text.trim().length > 0)
@@ -161,7 +197,9 @@ export function validateDraft(draft: RecipeDraft): void {
     throw new RecipeValidationError(`That name is longer than ${MAX_TITLE} characters.`, "title");
   }
 
-  const ingredients = draft.ingredients.filter((i) => (i.item || i.raw).trim());
+  const ingredients = draft.ingredients.filter(
+    (i) => !isGroupHeading(i) && (i.item || i.raw).trim(),
+  );
   if (ingredients.length === 0) {
     throw new RecipeValidationError("A recipe needs at least one ingredient.", "ingredients");
   }
@@ -206,7 +244,7 @@ export function draftFromRecipe(recipe: RecipeDraft): RecipeDraft {
     totalMinutes: recipe.totalMinutes,
     // A recipe saved with no ingredients or steps can't be edited into shape if
     // the form gives you nothing to type into.
-    ingredients: recipe.ingredients.length > 0 ? [...recipe.ingredients] : [blankIngredient()],
+    ingredients: recipe.ingredients.length > 0 ? withHeadingRows(recipe.ingredients) : [blankIngredient()],
     steps: recipe.steps.length > 0 ? [...recipe.steps] : [blankStep(1)],
     equipment: [...recipe.equipment],
     tags: [...recipe.tags],
@@ -215,6 +253,26 @@ export function draftFromRecipe(recipe: RecipeDraft): RecipeDraft {
     difficulty: recipe.difficulty,
     imageUrl: recipe.imageUrl,
   };
+}
+
+/**
+ * Put a heading row above each run of ingredients that shares a group.
+ *
+ * Assumes headings partition the list from where they appear, which is how
+ * every recipe writes them. A list that went grouped -> ungrouped again can't
+ * be expressed this way, and the ungrouped tail would be absorbed into the
+ * group above it on the next save.
+ */
+function withHeadingRows(ingredients: Ingredient[]): Ingredient[] {
+  const rows: Ingredient[] = [];
+  let lastGroup: string | null = null;
+
+  for (const ing of ingredients) {
+    if (ing.group && ing.group !== lastGroup) rows.push(groupHeading(ing.group));
+    lastGroup = ing.group;
+    rows.push(ing);
+  }
+  return rows;
 }
 
 /** Move an item within a list, for reordering steps and ingredients. */
