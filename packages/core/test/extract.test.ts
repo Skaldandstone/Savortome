@@ -216,4 +216,49 @@ describe("ingest", () => {
     assert.equal(lastBody, before, "no request should have been made");
     assert.ok(trace.some((t) => t.includes("no model call")));
   });
+
+  it("refuses an extraction with nothing in it, rather than saving an empty card", async () => {
+    // How a paywalled newsletter post became a library entry titled
+    // "No recipe found" with no ingredients and no steps.
+    const doc = { ...transcriptDoc(), kind: "web" as const, textKind: "article" as const };
+
+    await assert.rejects(
+      () =>
+        ingestDocument({
+          ...doc,
+          prestructured: { ...modelRecipe, ingredients: [], steps: [], extractionNotes: [] },
+        }),
+      /No recipe could be read from that page\.$/,
+    );
+  });
+
+  it("passes on the model's own reason for finding nothing", async () => {
+    // The model explains itself better than any generic message could.
+    const doc = { ...transcriptDoc(), kind: "web" as const, textKind: "article" as const };
+
+    await assert.rejects(
+      () =>
+        ingestDocument({
+          ...doc,
+          prestructured: {
+            ...modelRecipe,
+            ingredients: [],
+            steps: [],
+            extractionNotes: ["The recipe is behind a paywall."],
+          },
+        }),
+      /behind a paywall/,
+    );
+  });
+
+  it("still accepts a recipe that has steps but no ingredient list", async () => {
+    // Deliberately conservative: only refuse when *both* are empty.
+    const doc = { ...transcriptDoc(), kind: "web" as const, textKind: "article" as const };
+    const { recipe } = await ingestDocument({
+      ...doc,
+      prestructured: { ...modelRecipe, ingredients: [] },
+    });
+    assert.equal(recipe.ingredients.length, 0);
+    assert.ok(recipe.steps.length > 0);
+  });
 });

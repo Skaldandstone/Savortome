@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { extractRecipe, type ExtractOptions } from "./extract.js";
 import type { ExtractionMethod, Recipe } from "./recipe.js";
 import {
+  ResolveError,
   methodForTextKind,
   resolveSource,
   textSource,
@@ -95,6 +96,21 @@ export async function ingestDocument(
     );
   }
 
+  // Nothing at all came back. That is not a recipe, and saving it puts a card
+  // called "No recipe found" in someone's library — which is how a paywalled
+  // Substack post ended up there. The model is usually able to say exactly why
+  // (a paywall, a page that was never a recipe), and its own words beat
+  // anything generic this could invent.
+  if (extracted.ingredients.length === 0 && extracted.steps.length === 0) {
+    const why = extracted.extractionNotes.find((note) => note.trim())?.trim();
+    throw new ResolveError(
+      why
+        ? `No recipe could be read from that page. ${truncate(why, 300)}`
+        : "No recipe could be read from that page.",
+      trace,
+    );
+  }
+
   const recipe: Recipe = backfillTimestamps(
     {
       ...extracted,
@@ -127,3 +143,6 @@ export async function ingestText(
 ): Promise<IngestResult> {
   return ingestDocument(textSource(text, opts.title), opts);
 }
+
+const truncate = (text: string, max: number): string =>
+  text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`;
