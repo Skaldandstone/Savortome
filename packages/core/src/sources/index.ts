@@ -44,8 +44,15 @@ async function resolveVideo(
       cues = yt.cues;
       transcript = cuesToTranscript(yt.cues);
       trace.push(`youtube: ${yt.cues.length} caption cues`);
+    } else if (yt.captionStatus === "none") {
+      trace.push("youtube: the video publishes no captions");
     } else {
-      trace.push("youtube: no caption track available");
+      // Worth spelling out. This looks identical to "no captions" from the
+      // outside and sends you looking in the wrong place entirely.
+      trace.push(
+        "youtube: captions exist but YouTube won't serve them to a server; " +
+          "install yt-dlp and set an ASR key to transcribe the audio instead",
+      );
     }
   } else {
     const s = await fetchSocial(url, kind);

@@ -80,11 +80,42 @@ took (visible under "How this import ran" on every card).
 | Blog without it | Page prose → Claude | One call |
 | YouTube | Caption track (+ description) → Claude | One call |
 | TikTok / Instagram / Facebook | Post caption → Claude | One call |
-| Video with no captions | yt-dlp → ASR → Claude | One call + ASR |
+| Video whose captions we can't read | yt-dlp → ASR → Claude | One call + ASR |
 
 Most food blogs publish structured recipe data, and those imports are instant
 and free. Everything else goes through `claude-opus-5` with adaptive thinking, a
 cached system prompt, and a Zod-validated structured output.
+
+### YouTube captions need yt-dlp today
+
+Measured 2026-08-26, and worth knowing before you judge a video import.
+
+YouTube still lists caption tracks in the watch page, and the pipeline still
+finds them - but `/api/timedtext` now answers a plain server-side request with
+an **empty 200**. Not an error, not a 403: zero bytes. Every URL variant tried
+(`fmt=json3`, `fmt=srv3`, bare, `&c=WEB`) behaves the same, and the InnerTube
+`ANDROID` client route 400s. The endpoint is gated behind browser session
+tokens now, which is exactly what `yt-dlp` exists to handle.
+
+So without yt-dlp, **a YouTube import falls back to the video description**,
+which is usually a promotional blurb. It still produces a card, with a
+confidence around 0.2 and a list of everything it had to guess - the honesty
+machinery does its job - but it is not the spoken-word extraction this app is
+for.
+
+To get the real thing:
+
+```bash
+winget install yt-dlp.yt-dlp Gyan.FFmpeg
+```
+
+then set `GROQ_API_KEY` (free tier, Whisper) or `DEEPGRAM_API_KEY` in
+`.env.local`. The pipeline pulls the audio, transcribes it, and feeds the same
+extractor - and the cards get real quantities and working video timestamps.
+
+The trace says which of these happened, and says it precisely: "the video
+publishes no captions" and "captions exist but YouTube won't serve them to a
+server" are different sentences, because they need different fixes.
 
 **Video timestamps.** Steps extracted from a transcript carry the second they
 happen at, and the card links straight into the video at that moment. Where the

@@ -16,12 +16,29 @@ interface CaptionTrack {
   name?: { simpleText?: string };
 }
 
+/**
+ * Why there is or isn't a transcript, which is not the same question as
+ * whether the video has captions.
+ *
+ * - `ok`          - cues were downloaded.
+ * - `none`        - the video genuinely publishes no caption track.
+ * - `unavailable` - a track exists, but its cues can't be downloaded from a
+ *                   server. YouTube gates /api/timedtext behind browser session
+ *                   tokens and answers a plain request with an empty 200, so
+ *                   this is the normal case rather than an odd one.
+ *
+ * Telling the last two apart matters: they look identical from the outside and
+ * lead to completely different fixes.
+ */
+export type CaptionStatus = "ok" | "none" | "unavailable";
+
 export interface YoutubeMeta {
   title: string | null;
   author: string | null;
   description: string | null;
   thumbnail: string | null;
   cues: TranscriptCue[] | null;
+  captionStatus: CaptionStatus;
 }
 
 /** Pull the embedded player JSON out of the watch page HTML. */
@@ -79,11 +96,15 @@ export async function fetchYoutube(url: string): Promise<YoutubeMeta> {
         .filter((c) => c.text.length > 0);
       if (cues.length === 0) cues = null;
     } catch {
-      cues = null; // caption endpoints rotate; the caller falls back to ASR or the description
+      // An empty 200 is what a gated endpoint returns, so this lands here
+      // rather than as an HTTP error. Either way there are no cues.
+      cues = null;
     }
   }
 
-  return { title, author, description, thumbnail, cues };
+  const captionStatus: CaptionStatus = cues ? "ok" : tracks.length === 0 ? "none" : "unavailable";
+
+  return { title, author, description, thumbnail, cues, captionStatus };
 }
 
 /** Merge word-level cues into readable sentences, keeping the start time of each chunk. */
