@@ -3,7 +3,6 @@ import {
   detectSourceKind,
   ExtractionError,
   ingestDocument,
-  ingestText,
   outOfCreditsMessage,
   nextResetISO,
   resolveSource,

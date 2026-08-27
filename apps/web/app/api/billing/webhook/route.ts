@@ -13,6 +13,7 @@ import {
   claimStripeEvent,
   db,
   linkStripeCustomer,
+  releaseStripeEvent,
   userForSubscription,
 } from "@seconds/db";
 import { requireWebhookSecret, stripe, stripeConfigured, webhookConfigured } from "@/lib/stripe";
@@ -101,7 +102,20 @@ export async function POST(request: Request) {
     // A 500 asks Stripe to retry. The event id is already claimed, so the
     // retry would be treated as a duplicate and do nothing — which is why the
     // claim is released here, so a genuine transient failure gets its retry.
-    await releaseClaim(database, event.id);
+    console.error(`Stripe webhook fulfilment failed for ${event.id} (${event.type}):`, err);
+    try {
+      await releaseStripeEvent(database, event.id);
+    } catch (releaseErr) {
+      // If the release itself fails, the event stays claimed and every future
+      // retry silently no-ops forever — the one outcome worse than a slow
+      // retry. Logged loudly rather than swallowed, because this is the last
+      // point where anything can say "a payment may be stuck."
+      console.error(
+        `...and releasing its claim also failed — ${event.id} may be stuck ` +
+          `unfulfilled until this is fixed by hand:`,
+        releaseErr,
+      );
+    }
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Fulfilment failed." },
       { status: 500 },
@@ -156,11 +170,28 @@ async function onSubscriptionChanged(
   if (!userId) return;
 
   // Which plan this subscription is for, taken from metadata written at
-  // checkout. An unrecognised value falls back to the lowest paid tier rather
-  // than guessing upward — being wrong should cost the customer nothing and
-  // the business a little, never the other way round.
+  // checkout. Most updates carry no plan-change intent at all — a proration,
+  // a payment-method swap, a renewal — so a missing or unrecognised value
+  // must NOT be read as "downgrade to the cheapest plan". That would
+  // silently take features away from someone still being billed at the
+  // higher price, on every renewal, with nothing in the logs to explain why.
+  // The safe reading of "we don't know what plan this is" is "leave the
+  // account's tier as it already is."
   const metaTier = subscription.metadata?.productId?.replace(/^plan-/, "");
-  const paidTier = isPayableTier(metaTier) ? metaTier : "plus";
+  const current = await database.query.users.findFirst({
+    where: (u, { eq }) => eq(u.id, userId),
+    columns: { tier: true },
+  });
+  const knownTier = isPayableTier(current?.tier) ? current.tier : "plus";
+
+  if (!isPayableTier(metaTier)) {
+    console.error(
+      `Stripe subscription ${subscription.id} has no resolvable plan in metadata` +
+        ` (got ${JSON.stringify(metaTier)}) — keeping the account's current tier` +
+        ` (${knownTier}) rather than guessing.`,
+    );
+  }
+  const paidTier = isPayableTier(metaTier) ? metaTier : knownTier;
 
   await applySubscriptionTier(
     database,
@@ -170,15 +201,3 @@ async function onSubscriptionChanged(
   );
 }
 
-/** Let a failed delivery be retried by giving back the event id. */
-async function releaseClaim(database: ReturnType<typeof db>, eventId: string): Promise<void> {
-  try {
-    const { schema } = await import("@seconds/db");
-    const { eq } = await import("drizzle-orm");
-    await database.delete(schema.stripeEvents).where(eq(schema.stripeEvents.id, eventId));
-  } catch {
-    // If the release fails the event stays claimed and the retry no-ops. That
-    // loses one fulfilment, which is recoverable from the Stripe dashboard;
-    // throwing here would lose the error that caused it, which isn't.
-  }
-}

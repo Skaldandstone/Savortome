@@ -1,0 +1,1 @@
+ALTER TABLE "credit_purchases" ADD COLUMN "fulfilled_at" timestamp with time zone;

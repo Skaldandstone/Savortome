@@ -1,4 +1,4 @@
-import { CREDIT_PACKS, TIERS, type Tier } from "./credits.js";
+import { CREDIT_PACKS, TIERS, formatCents, type Tier } from "./credits.js";
 
 /**
  * What can be bought, and what buying it grants.
@@ -140,5 +140,4 @@ export function tierForSubscriptionStatus(
 export const isPayableTier = (value: unknown): value is Exclude<Tier, "free"> =>
   typeof value === "string" && value !== "free" && (TIERS as readonly string[]).includes(value);
 
-/** "$29.99" — every price in this module is whole cents. */
-export const formatCents = (cents: number): string => `$${(cents / 100).toFixed(2)}`;
+export { formatCents };

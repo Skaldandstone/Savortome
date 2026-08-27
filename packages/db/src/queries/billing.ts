@@ -44,6 +44,18 @@ export async function stripeEventSeen(database: Database, eventId: string): Prom
   return row !== undefined;
 }
 
+/**
+ * Give back a claim after fulfilment failed, so Stripe's retry gets a real
+ * second attempt instead of being told "already handled."
+ *
+ * Lives here rather than in the route so it can use the same imports as
+ * every other function in this file, instead of a route reaching for a
+ * dynamic `import()` to get at the schema and `eq` it already needs.
+ */
+export async function releaseStripeEvent(database: Database, eventId: string): Promise<void> {
+  await database.delete(schema.stripeEvents).where(eq(schema.stripeEvents.id, eventId));
+}
+
 export interface PurchaseRecord {
   userId: string;
   productId: string;
@@ -60,9 +72,23 @@ export interface PurchaseRecord {
  * Records what was bought before changing the balance, so a failure between
  * the two leaves evidence of a payment that didn't land rather than credits
  * with no explanation. The unique index on the session id means a second
- * attempt at the same purchase writes nothing and grants nothing.
+ * attempt at the same purchase can't insert a second row for it.
  *
- * Returns null when the purchase was already applied.
+ * That alone isn't enough, though, because the driver has no interactive
+ * transactions: the insert and the fulfilment are separate statements, and a
+ * process that dies between them — a dropped connection, a killed
+ * container — leaves a purchase row on the books with nothing granted for
+ * it. A naive "insert failed to conflict, so we're done" read of that state
+ * would mean the retry Stripe sends next treats a stranded row as a finished
+ * purchase and grants nothing, forever: the customer paid, the record says
+ * so, and they got nothing for it.
+ *
+ * `fulfilledAt` is what tells the two situations apart. Only a null value
+ * means "still owed a grant" — a retry against an unfulfilled row finishes
+ * the job instead of skipping it; a retry against a fulfilled one is a
+ * genuine duplicate delivery and does nothing, as before.
+ *
+ * Returns null when the purchase was already fulfilled.
  */
 export async function applyPurchase(
   database: Database,
@@ -80,9 +106,19 @@ export async function applyPurchase(
       stripeSessionId: record.stripeSessionId,
     })
     .onConflictDoNothing()
-    .returning({ id: schema.creditPurchases.id });
+    .returning({ id: schema.creditPurchases.id, fulfilledAt: schema.creditPurchases.fulfilledAt });
 
-  if (inserted.length === 0) return null;
+  // The conflict path only fires when a stripeSessionId collides with a row
+  // already on file, so looking that row up here can't race with a second
+  // insert — the unique index already resolved which attempt "won."
+  const purchase =
+    inserted[0] ??
+    (await database.query.creditPurchases.findFirst({
+      where: eq(schema.creditPurchases.stripeSessionId, record.stripeSessionId ?? ""),
+      columns: { id: true, fulfilledAt: true },
+    }));
+
+  if (!purchase || purchase.fulfilledAt !== null) return null;
 
   if (fulfilment.grantCredits !== null) {
     await grantCredits(database, record.userId, fulfilment.grantCredits);
@@ -90,6 +126,11 @@ export async function applyPurchase(
   if (fulfilment.setTier !== null) {
     await setTier(database, record.userId, fulfilment.setTier);
   }
+
+  await database
+    .update(schema.creditPurchases)
+    .set({ fulfilledAt: new Date() })
+    .where(eq(schema.creditPurchases.id, purchase.id));
 
   return creditsFor(database, record.userId);
 }

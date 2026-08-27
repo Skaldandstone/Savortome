@@ -165,6 +165,41 @@ expect(
   pack.credits * 2,
 );
 
+// --- surviving a partial failure ---------------------------------------------
+// The scenario the fulfilledAt column exists for: the purchase row lands, but
+// the process dies before the grant runs — a dropped connection, a killed
+// container. A naive retry would see the row, assume "already done," and
+// leave the customer with nothing for a payment that's on the books.
+await db
+  .insert(schema.creditPurchases)
+  .values({
+    userId: buyer,
+    productId: pack.id,
+    cents: pack.cents,
+    credits: pack.credits,
+    stripeSessionId: "cs_test_stranded",
+    fulfilledAt: null,
+  });
+const strandedBefore = await creditsFor(db, buyer);
+const recovered = await applyPurchase(
+  db,
+  { userId: buyer, productId: pack.id, cents: pack.cents, credits: pack.credits, tier: null, stripeSessionId: "cs_test_stranded" },
+  fulfilmentFor(pack),
+);
+expect(
+  "a purchase stranded before fulfilment is completed on the next attempt",
+  recovered?.purchasedLeft,
+  strandedBefore.purchasedLeft + pack.credits,
+);
+
+// Once fulfilled, a further retry of the same session is a true duplicate.
+const strandedReplay = await applyPurchase(
+  db,
+  { userId: buyer, productId: pack.id, cents: pack.cents, credits: pack.credits, tier: null, stripeSessionId: "cs_test_stranded" },
+  fulfilmentFor(pack),
+);
+expect("...and a later retry of the now-fulfilled row grants nothing more", strandedReplay, null);
+
 // --- cleanup ----------------------------------------------------------------
 await db.delete(schema.creditPurchases).where(inArray(schema.creditPurchases.userId, [buyer, other]));
 await db.delete(schema.creditSpends).where(inArray(schema.creditSpends.userId, [buyer, other]));

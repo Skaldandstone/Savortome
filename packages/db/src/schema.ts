@@ -158,6 +158,15 @@ export const creditPurchases = pgTable(
     tier: userTier("tier"),
     /** Stripe's checkout session id, for reconciling against their dashboard. */
     stripeSessionId: text("stripe_session_id"),
+    /**
+     * Null until the credits/tier this purchase paid for have actually been
+     * applied. The neon-http driver has no interactive transactions, so the
+     * insert of this row and the write that fulfils it are two separate
+     * statements — if the process dies between them, this column is what
+     * tells a retry to finish the job instead of treating a claimed-but-
+     * unfulfilled row as "already done."
+     */
+    fulfilledAt: timestamp("fulfilled_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
