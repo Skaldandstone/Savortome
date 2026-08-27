@@ -45,8 +45,13 @@ export function errorResponse(err: unknown): NextResponse {
     // list is upstream's answer, so pass its status through.
     return NextResponse.json({ error: err.message }, { status: err.status ?? 501 });
   }
+  // Anything unrecognised is a bug, and a bug's message is for the log. Domain
+  // errors above say something useful on purpose; this one can't, because it
+  // doesn't know what it's holding — and a driver error would hand the caller
+  // the failing query and its bound values.
+  console.error("Unhandled API error:", err);
   return NextResponse.json(
-    { error: err instanceof Error ? err.message : "Something went wrong." },
+    { error: "Something went wrong on our end." },
     { status: 500 },
   );
 }
