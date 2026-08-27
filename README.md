@@ -605,6 +605,32 @@ depends on a shared rate limit the way a fully live test would.
 
 ---
 
+## Pairs well with
+
+A recipe's card offers a side, a drink, and a dessert pulled from your own
+library - never generated. `packages/core/src/pairing.ts` buckets every other
+recipe you own by its free-text `course` field (a "side dish" or "starter"
+both read as a side; "main" and anything unclear are excluded from every slot
+rather than guessed into one), then ranks candidates in each slot with the
+same cuisine as the main first.
+
+No model call and nothing new to store: it's plain matching over recipes you
+already saved, computed fresh on every render, so a newly imported side shows
+up as a suggestion the moment it's in your library. Shown only on your own
+copy of a recipe - the shared-recipe page never queries anyone's private
+library, the same as shelves and ratings.
+
+```bash
+pnpm check:pairings
+```
+
+Checks the query layer against real Postgres: same-cuisine ranking, the main
+recipe excluded from its own suggestions, one owner never seeing another
+owner's recipes, and an unknown or not-yours recipe id answering empty rather
+than an error.
+
+---
+
 ## Writing and correcting recipes
 
 The same form does both. `/recipe/new` starts empty; `/recipe/:id/edit` starts
