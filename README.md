@@ -802,6 +802,41 @@ says so.
 
 ---
 
+## Installing it, and losing signal
+
+The app is installable: `app/manifest.ts` plus real 192 and 512 icons, so a
+phone can put it on a home screen and open it without browser chrome. The
+short name is `2xBreakfast`, the same contraction the native app uses, for the
+same reason - iOS elides an icon label around twelve characters.
+
+An `/offline` page and a banner that appears when the connection drops are both
+live and tested. The banner says what still works and what doesn't, because an
+offline recipe otherwise looks exactly like an online one and the first thing
+anyone notices is that importing silently fails.
+
+**The service worker is written but switched off.** `public/sw.js` caches the
+reading path - the app shell, the hashed bundle, and any recipe already opened
+- and deliberately never touches anything that costs money or changes state:
+imports, checkout and every non-GET go straight to the network, because a
+cached import is either a lie or a double charge.
+
+It is gated behind `NEXT_PUBLIC_ENABLE_SW=true` and off by default. A service
+worker is *sticky*: a bad one keeps serving its cache to everyone who has
+already visited, and clearing it means shipping another worker to undo the
+first. The script is served correctly and has been read, but its registration
+has never actually been exercised in a browser - the automated browser used to
+build this refuses `navigator.serviceWorker.register()` with "an unknown error
+occurred when fetching the script" even though the same URL fetches fine at
+200 with the right MIME type. That is a property of that browser, not of the
+script, but "probably fine" is not the standard for something this hard to take
+back. Switch it on once someone has watched it work *and* watched it update.
+
+What it will not do, whenever it is switched on: make cook-mode timers survive
+a closed tab. Nothing in a service worker can - that needs the Notification
+Triggers API or Web Push. See "Cooking from a card".
+
+---
+
 ## Payments
 
 Stripe, and optional in exactly the way the database and Clerk are: without

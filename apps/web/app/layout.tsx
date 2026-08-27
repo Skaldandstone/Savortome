@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { ClerkProvider } from "@clerk/nextjs";
 import { AccountMenu, DevAccountBadge } from "@/modules/account";
+import { OfflineBanner, ServiceWorkerRegistration } from "@/modules/offline";
 import { clerkConfigured } from "@/lib/session";
 import "./globals.css";
 import styles from "./layout.module.css";
@@ -44,8 +45,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <Masthead>
               <DevAccountBadge />
             </Masthead>
+            <OfflineBanner />
             {children}
           </div>
+          <ServiceWorkerRegistration />
         </body>
       </html>
     );
@@ -59,8 +62,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             <Masthead>
               <AccountMenu />
             </Masthead>
+            <OfflineBanner />
             {children}
           </div>
+          <ServiceWorkerRegistration />
         </ClerkProvider>
       </body>
     </html>
