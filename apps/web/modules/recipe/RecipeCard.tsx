@@ -83,7 +83,11 @@ export function RecipeCard({
 
         <RecipeExport recipe={recipe} ingredients={ingredients} servings={servings} />
 
-        <PairingSuggestions recipeId={shelvedId} />
+        <PairingSuggestions
+          recipeId={shelvedId}
+          mainNutrition={recipe.nutrition}
+          servings={recipe.servings}
+        />
 
         <Provenance recipe={recipe} verifiedAt={verifiedAt} />
         <ImportTrace trace={trace} />

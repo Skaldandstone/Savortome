@@ -8,6 +8,8 @@
  * renders — no credit, no latency, no schema to keep in sync with a prompt.
  */
 
+import type { RecipeNutrition } from "./recipe.js";
+
 export type PairingSlot = "side" | "drink" | "dessert";
 
 /** The fields a pairing decision needs — a thin slice of a full recipe row. */
@@ -17,6 +19,8 @@ export interface PairingCandidate {
   imageUrl: string | null;
   cuisine: string | null;
   course: string | null;
+  /** Carried along so a full-meal total can be built without a second fetch. */
+  nutrition: RecipeNutrition | null;
 }
 
 export type PairingSuggestions = Record<PairingSlot, PairingCandidate[]>;

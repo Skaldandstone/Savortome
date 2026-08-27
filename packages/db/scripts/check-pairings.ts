@@ -16,9 +16,15 @@ import { readFileSync } from "node:fs";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq } from "drizzle-orm";
-import { emptyDraft, ingredientFromLine, type RecipeDraft } from "@seconds/core";
+import {
+  emptyDraft,
+  ingredientFromLine,
+  summarizeMeal,
+  type RecipeDraft,
+  type RecipeNutrition,
+} from "@seconds/core";
 import * as schema from "../src/schema.js";
-import { createRecipe, suggestedPairings } from "../src/queries/recipes.js";
+import { createRecipe, setRecipeNutrition, suggestedPairings } from "../src/queries/recipes.js";
 
 const url =
   process.env.DATABASE_URL ??
@@ -93,6 +99,28 @@ expect("never mixes another owner's recipes into someone else's suggestions", is
 
 const empty = await suggestedPairings(db, userId, crypto.randomUUID());
 expect("a recipe that doesn't exist (or isn't yours) answers empty, not an error", empty, { side: [], drink: [], dessert: [] });
+
+// --- full-meal totals -----------------------------------------------------------
+console.log("\n--- full-meal totals ---");
+const sideNutrition: RecipeNutrition = {
+  perServing: { calories: 150, proteinGrams: 3, carbGrams: 20, fatGrams: 6, fiberGrams: 2, sodiumMg: 300 },
+  perIngredient: [],
+  method: "computed",
+};
+await setRecipeNutrition(db, userId, sideMex, sideNutrition);
+
+const withNutrition = await suggestedPairings(db, userId, mainId);
+const sideCandidate = withNutrition.side.find((c) => c.id === sideMex);
+expect("a candidate's own nutrition round-trips through the suggestion", sideCandidate?.nutrition?.perServing.calories, 150);
+
+const mainNutrition: RecipeNutrition = {
+  perServing: { calories: 400, proteinGrams: 25, carbGrams: 30, fatGrams: 15, fiberGrams: 4, sodiumMg: 600 },
+  perIngredient: [],
+  method: "computed",
+};
+const meal = summarizeMeal([mainNutrition, sideCandidate!.nutrition!], 4);
+expect("a full meal sums one serving of each dish per guest", meal?.perGuest.calories, 550);
+expect("...and scales that by the guest count for the table total", meal?.total.calories, 2200);
 
 // --- cleanup ------------------------------------------------------------------
 await db.delete(schema.recipes).where(eq(schema.recipes.ownerId, userId));

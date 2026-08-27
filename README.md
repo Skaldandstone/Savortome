@@ -629,6 +629,16 @@ recipe excluded from its own suggestions, one owner never seeing another
 owner's recipes, and an unknown or not-yours recipe id answering empty rather
 than an error.
 
+**Picking a suggestion builds a full-meal total**, once the main dish has
+nutrition of its own: one side, one drink, and one dessert can be checked in,
+and `summarizeMeal` in `packages/core/src/nutrition.ts` sums each dish's own
+per-serving figure into a per-guest total, then scales that by however many
+are coming - the same scaling a serving-size slider already does for one
+recipe. A picked dish with no nutrition of its own stays picked and visible,
+marked "no nutrition yet," rather than silently vanishing from the sum. The
+label follows the same weakest-link rule as a single recipe's: one estimated
+dish makes the whole meal "Estimated."
+
 ---
 
 ## Writing and correcting recipes

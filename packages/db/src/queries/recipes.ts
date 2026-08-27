@@ -189,6 +189,7 @@ export async function suggestedPairings(
       imageUrl: schema.recipes.imageUrl,
       cuisine: schema.recipes.cuisine,
       course: schema.recipes.course,
+      nutrition: schema.recipes.nutrition,
     })
     .from(schema.recipes)
     .where(and(eq(schema.recipes.ownerId, ownerId), ne(schema.recipes.id, recipeId)));
