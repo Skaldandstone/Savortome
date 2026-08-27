@@ -548,6 +548,63 @@ expression looks the way it does.
 
 ---
 
+## Nutrition, and where it comes from
+
+Every recipe can carry per-serving nutrition — calories, protein, carbs, fat,
+fiber, sodium — built from one of three sources, in a strict order of trust:
+
+1. **Published.** The page's own schema.org `nutrition` block, when it has
+   one. Real data from whoever wrote the recipe, not a lookup or a guess.
+   `packages/core/src/sources/jsonld.ts` reads it straight off the JSON-LD
+   most recipe-card plugins already emit.
+2. **Looked up.** Every ingredient is matched against USDA FoodData Central
+   (free, no signup needed for light use - `USDA_FDC_API_KEY` unset falls back
+   to api.data.gov's public `DEMO_KEY`, which is real but capped around
+   30 requests an hour). The recipe's own stated amount is converted to grams
+   using the existing unit-conversion table for weights and volumes, plus a
+   small density table for the volume-measured ingredients that show up
+   constantly in recipes - a cup of flour and a cup of honey are not the same
+   weight, which is why the shopping list never merges the two either.
+3. **Estimated.** Only for whatever the lookup couldn't match or convert - an
+   unusual product, "salt to taste," a unit with no known weight. The model
+   already reads every ingredient during extraction, so its own guess at that
+   ingredient's contribution rides along in the same call, for free. There is
+   no second model call on the AI-import path.
+
+**This rides along automatically only when a model call already happened.** A
+hand-typed recipe, an old import from before this shipped, or a schema.org
+page with no nutrition block of its own has none of the free fallback guesses
+to lean on - filling in the gaps blind would silently under-report anything
+USDA can't identify. Those get an "Add nutrition" button instead, which is the
+one nutrition action that pays for its own small model call on purpose: a
+short prompt, a small schema, low effort - USDA still gets first attempt at
+every ingredient.
+
+**The label always names the weakest link, not the best one.** A recipe with
+nine USDA-matched ingredients and one estimated one is labelled "Estimated" -
+`nutritionLabel` in `packages/core/src/nutrition.ts` is the one place that
+decides this, so five different screens can't drift into five different
+wordings. Every figure carries the same disclaimer everywhere it renders:
+a kitchen-scale guess from the recipe's own ingredients, not a lab result, and
+never medical or dietary advice.
+
+**Editing a recipe clears its nutrition** rather than leaving a number that
+might now disagree with what's actually in the ingredient list - deliberately
+blunt, since a wrong figure that still looks current is worse than an "add
+nutrition" prompt asking to recompute it.
+
+```bash
+pnpm check:nutrition
+```
+
+Exercises the real USDA API live (no key needed) alongside the persistence and
+edit-clearing behaviour against real Postgres. The USDA-match behaviour itself
+- what happens on a hit, a miss, a timeout, a 500 - is covered with an
+injectable `fetch` in `nutrition-usda.test.ts`, so that suite's outcome never
+depends on a shared rate limit the way a fully live test would.
+
+---
+
 ## Writing and correcting recipes
 
 The same form does both. `/recipe/new` starts empty; `/recipe/:id/edit` starts

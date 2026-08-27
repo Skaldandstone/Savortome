@@ -47,6 +47,7 @@ export async function saveRecipe(
     extractionMethod: recipe.source.extractionMethod,
     confidence: recipe.confidence,
     extractionNotes: recipe.extractionNotes,
+    nutrition: recipe.nutrition,
     updatedAt: new Date(),
   } satisfies Partial<typeof schema.recipes.$inferInsert> & { ownerId: string };
 
@@ -136,6 +137,30 @@ export async function updateRecipe(
   return true;
 }
 
+/**
+ * Attach nutrition to a recipe that doesn't have any yet.
+ *
+ * The one write in this file that never touches `updatedAt` or re-indexes
+ * anything — computing nutrition doesn't change what the recipe says, so it
+ * shouldn't look like an edit or disturb pantry search's index of it.
+ */
+export async function setRecipeNutrition(
+  database: Database,
+  ownerId: string,
+  recipeId: string,
+  nutrition: Recipe["nutrition"],
+): Promise<boolean> {
+  if (!isUuid(recipeId)) return false;
+
+  const [updated] = await database
+    .update(schema.recipes)
+    .set({ nutrition })
+    .where(and(eq(schema.recipes.id, recipeId), eq(schema.recipes.ownerId, ownerId)))
+    .returning({ id: schema.recipes.id });
+
+  return Boolean(updated);
+}
+
 /** Throw away a recipe. Everything hanging off it goes with it, by cascade. */
 export async function deleteRecipe(
   database: Database,
@@ -169,6 +194,13 @@ function draftColumns(draft: RecipeDraft) {
     cuisine: draft.cuisine,
     course: draft.course,
     difficulty: draft.difficulty,
+    // Blunt on purpose: any edit clears whatever nutrition was on file rather
+    // than trying to tell whether the edit actually touched an ingredient.
+    // A stale number that still looks current is worse than no number next
+    // to an "add nutrition" prompt — this errs toward never showing a figure
+    // that might silently disagree with what's actually in the recipe now.
+    // A no-op for createRecipe, which has never had one to clear.
+    nutrition: null,
   };
 }
 

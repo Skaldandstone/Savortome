@@ -1,6 +1,20 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { ExtractedRecipeSchema, type ExtractedRecipe } from "./recipe.js";
+
+/**
+ * The guess schema's contribution fields are plain numbers, not the nullable
+ * `Nutrients` shape the rest of the app uses — see the schema comment for why.
+ * A backfilled placeholder needs the same non-nullable shape.
+ */
+const ZERO_CONTRIBUTION = {
+  calories: 0,
+  proteinGrams: 0,
+  carbGrams: 0,
+  fatGrams: 0,
+  fiberGrams: 0,
+  sodiumMg: 0,
+};
 import { canonicalize } from "./units.js";
 import type { SourceDocument } from "./sources/types.js";
 
@@ -41,6 +55,11 @@ Times, yield, metadata
 - "servings" is a number; put the source's own phrasing in "servingsNote" ("serves 4-6 as a side").
 - "tags" are lowercase and useful for browsing: dietary ("vegetarian", "gluten-free"), effort ("weeknight", "make-ahead"), method ("one-pan", "grilled", "no-bake"). 3-8 of them. No hashtag punctuation.
 - "equipment" only for things a normal kitchen might lack: stand mixer, food processor, Dutch oven, thermometer, air fryer.
+
+Nutrition
+- "ingredientNutritionGuesses" is your best estimate of each ingredient's nutritional contribution to this recipe AS USED — at the amount actually called for, not per 100g. One entry per ingredient in the ingredients list, matched by the same "canonicalItem" string.
+- This is a fallback of last resort, used only for the ingredients a real food database can't identify — an unusual product, a regional dish, a garnish with no clean database entry. Give your honest best guess anyway; a rough number the app can label "estimated" is more useful than an empty one.
+- Give 0 rather than null for calories/protein/carbGrams/fatGrams/fiberGrams/sodiumMg you're confident is genuinely negligible (a pinch of salt's calories), and your best nonzero guess otherwise. Never skip an ingredient.
 
 Honesty
 - "confidence" is the fraction of the recipe that was actually stated rather than inferred by you. A clean blog recipe card is 0.95+. A rambling transcript where you reconstructed half the amounts is 0.5-0.7. Be strict; users trust this number to decide whether to double-check.
@@ -92,6 +111,15 @@ function normalize(recipe: ExtractedRecipe): ExtractedRecipe {
       ...new Set(recipe.tags.map((t) => t.toLowerCase().replace(/^#/, "").trim())),
     ].filter(Boolean),
     confidence: Math.min(1, Math.max(0, recipe.confidence)),
+    // Belt-and-braces, same as canonicalItem above: the model is asked for one
+    // guess per ingredient, but a missing row shouldn't be a missing lookup
+    // fallback later — it becomes a zero-contribution guess instead.
+    ingredientNutritionGuesses: recipe.ingredients.map((ing) => {
+      const existing = recipe.ingredientNutritionGuesses.find(
+        (g) => g.canonicalItem === ing.canonicalItem,
+      );
+      return existing ?? { canonicalItem: ing.canonicalItem, contribution: { ...ZERO_CONTRIBUTION } };
+    }),
   };
 }
 

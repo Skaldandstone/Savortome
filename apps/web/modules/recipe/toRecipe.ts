@@ -1,4 +1,4 @@
-import type { Recipe, Visibility } from "@seconds/core/format";
+import type { Recipe, RecipeNutrition, Visibility } from "@seconds/core/format";
 
 /** The database row shape, expressed without importing the server-only db package. */
 export interface RecipeRow {
@@ -28,6 +28,8 @@ export interface RecipeRow {
   visibility: Visibility;
   /** Null until someone has read the card through and saved it. */
   verifiedAt: Date | null;
+  /** Null until something has computed it — an import that hasn't run nutrition, or a manual recipe. */
+  nutrition: RecipeNutrition | null;
 }
 
 /** Rebuild the nested card shape from the flattened columns the table stores. */
@@ -51,6 +53,10 @@ export function toRecipe(row: RecipeRow): Recipe {
     difficulty: row.difficulty as Recipe["difficulty"],
     confidence: row.confidence,
     extractionNotes: row.extractionNotes,
+    // Only ever meaningful mid-ingest, between extraction and the USDA
+    // lookup that consumes it — a stored recipe has already been through
+    // that and has no reason to carry the raw guesses around.
+    ingredientNutritionGuesses: [],
     source: {
       kind: row.sourceKind,
       url: row.sourceUrl,
@@ -58,5 +64,6 @@ export function toRecipe(row: RecipeRow): Recipe {
       siteName: row.sourceSiteName,
       extractionMethod: row.extractionMethod,
     },
+    nutrition: row.nutrition,
   };
 }

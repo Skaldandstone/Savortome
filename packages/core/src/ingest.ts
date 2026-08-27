@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { extractRecipe, type ExtractOptions } from "./extract.js";
-import type { ExtractionMethod, Recipe } from "./recipe.js";
+import { computeNutrition, type ComputeNutritionOptions } from "./nutrition-usda.js";
+import type { ExtractionMethod, Recipe, RecipeNutrition } from "./recipe.js";
 import {
   ResolveError,
   methodForTextKind,
@@ -16,6 +17,8 @@ export interface IngestOptions extends ResolveOptions, ExtractOptions {
    * Costs a call; worth it when the site's own card is thin or wrong.
    */
   forceModel?: boolean;
+  /** Passed straight through to computeNutrition — the injection seam tests use to stay offline. */
+  nutrition?: ComputeNutritionOptions;
 }
 
 export interface IngestResult {
@@ -81,11 +84,23 @@ export async function ingestDocument(
   const trace = [...doc.trace];
   let method: ExtractionMethod;
   let extracted;
+  let nutrition: RecipeNutrition | null;
 
   if (!willCallModel(doc, opts)) {
     extracted = doc.prestructured!;
     method = "schema-org";
     trace.push("extraction: used the page's own schema.org recipe (no model call)");
+    // Nothing here calls a model, so there's no free per-ingredient fallback
+    // guess to lean on. Only the page's own published figures are trustworthy
+    // enough to attach automatically; anything else waits for someone to ask
+    // for it explicitly, rather than silently under-reporting whatever
+    // ingredient a database lookup alone can't identify.
+    nutrition = doc.prestructuredNutrition ?? null;
+    trace.push(
+      nutrition
+        ? "nutrition: read from the page's own published figures"
+        : "nutrition: not published on this page — available on request",
+    );
   } else {
     extracted = await extractRecipe(doc, opts);
     method = methodForTextKind(doc.textKind);
@@ -93,6 +108,19 @@ export async function ingestDocument(
     trace.push(
       `extraction: ${extracted.ingredients.length} ingredients, ${extracted.steps.length} steps, ` +
         `confidence ${extracted.confidence.toFixed(2)}`,
+    );
+    // Rides along with the extraction that already happened: USDA first per
+    // ingredient, the model's own guesses above as the fallback. No second
+    // model call.
+    nutrition = await computeNutrition(
+      extracted.ingredients,
+      extracted.ingredientNutritionGuesses,
+      extracted.servings,
+      opts.nutrition,
+    );
+    const usdaHits = nutrition.perIngredient.filter((i) => i.source === "usda").length;
+    trace.push(
+      `nutrition: ${usdaHits}/${nutrition.perIngredient.length} ingredients matched to a food database`,
     );
   }
 
@@ -111,9 +139,16 @@ export async function ingestDocument(
     );
   }
 
+  // The model's raw per-ingredient guesses did their one job — feeding
+  // computeNutrition above — and don't need to live on past that. What's
+  // worth keeping is the resolved result in `nutrition`, not the intermediate
+  // guesses that produced it.
+  const { ingredientNutritionGuesses: _guesses, ...extractedWithoutGuesses } = extracted;
+
   const recipe: Recipe = backfillTimestamps(
     {
-      ...extracted,
+      ...extractedWithoutGuesses,
+      ingredientNutritionGuesses: [],
       id: randomUUID(),
       imageUrl: doc.imageUrl,
       source: {
@@ -123,6 +158,7 @@ export async function ingestDocument(
         siteName: doc.siteName,
         extractionMethod: method,
       },
+      nutrition,
     },
     doc,
   );
