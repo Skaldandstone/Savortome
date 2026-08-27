@@ -51,6 +51,16 @@ export const mealSlot = pgEnum("meal_slot", ["breakfast", "lunch", "dinner"]);
 
 export const friendshipStatus = pgEnum("friendship_status", ["pending", "accepted", "blocked"]);
 
+/**
+ * Plan identifiers, not marketing names. `@seconds/core` maps these to whatever
+ * the tiers are currently called, so a rename is a label change rather than a
+ * migration.
+ */
+export const userTier = pgEnum("user_tier", ["free", "plus", "pro"]);
+
+/** Which pool a credit came out of. The allowance expires; purchases don't. */
+export const creditSource = pgEnum("credit_source", ["allowance", "purchased"]);
+
 export const importStatus = pgEnum("import_status", [
   "queued", "resolving", "extracting", "ready", "failed",
 ]);
@@ -70,6 +80,14 @@ export const users = pgTable(
     handle: text("handle").notNull(),
     displayName: text("display_name").notNull(),
     avatarUrl: text("avatar_url"),
+    tier: userTier("tier").notNull().default("free"),
+    /**
+     * Every credit ever bought, not the remaining balance. What's left is this
+     * minus the purchased spends in the ledger, which keeps the balance
+     * derivable from rows rather than being a mutable number two writers could
+     * race each other to update.
+     */
+    creditsPurchased: integer("credits_purchased").notNull().default(0),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -92,6 +110,39 @@ export const friendships = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.friendId] }), index("friendships_friend_idx").on(t.friendId)],
+);
+
+/**
+ * One row per AI import that cost a credit.
+ *
+ * A ledger rather than a counter, because this is the only part of the app
+ * that touches money. When someone asks why they were charged, the answer has
+ * to be a list of things they did, not a number that went down.
+ *
+ * Nothing is written here for a schema.org or hand-typed recipe — those never
+ * call a model, so they never spend anything.
+ */
+export const creditSpends = pgTable(
+  "credit_spends",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    /** `YYYY-MM` in UTC. Text because the only question asked of it is equality. */
+    month: text("month").notNull(),
+    source: creditSource("source").notNull(),
+    /**
+     * Nulled rather than cascaded when the recipe goes: deleting a recipe must
+     * not refund the model call that was already paid for.
+     */
+    recipeId: uuid("recipe_id").references(() => recipes.id, { onDelete: "set null" }),
+    method: extractionMethod("method").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // The hot query: how much of this month's allowance is gone.
+    index("credit_spends_user_month_idx").on(t.userId, t.month, t.source),
+    index("credit_spends_user_source_idx").on(t.userId, t.source),
+  ],
 );
 
 // ---------------------------------------------------------------- recipes

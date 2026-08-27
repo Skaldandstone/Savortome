@@ -1,3 +1,4 @@
+import type { CreditBalance } from "./credits.js";
 import type { Recipe } from "./recipe.js";
 import { detectSourceKind } from "./source-kind.js";
 import { scaleQuantity } from "./units.js";
@@ -25,6 +26,8 @@ export interface ImportResponse {
   freeExtraction: boolean;
   saved: boolean;
   saveError: string | null;
+  /** What's left after this import. Null when there's no account to meter. */
+  credits: CreditBalance | null;
 }
 
 export interface ImportFailure {

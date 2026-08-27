@@ -43,6 +43,13 @@
       "when": 1787800305119,
       "tag": "0005_meal_plan",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787812137484,
+      "tag": "0006_credits",
+      "breakpoints": true
     }
   ]
 }
