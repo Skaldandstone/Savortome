@@ -17,7 +17,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.secondbreakfast.app",
       "infoPlist": {
-        "CFBundleDisplayName": "2nd Breakfast"
+        "CFBundleDisplayName": "2xBreakfast"
       }
     },
     "android": {
