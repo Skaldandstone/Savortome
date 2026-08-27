@@ -84,9 +84,14 @@ export async function loadLibrary(
     };
   } catch (err) {
     if (err instanceof NotSignedInError) return { kind: "unavailable", reason: SIGNED_OUT };
+
+    // The detail goes to the server log, never to the page. A database error
+    // message carries the failing SQL and the values bound to it — which for
+    // this query included the signed-in user's own id.
+    console.error("loadLibrary failed:", err);
     return {
       kind: "unavailable",
-      reason: `Couldn't read the library: ${err instanceof Error ? err.message : "unknown error"}`,
+      reason: "Couldn't read your library just now. Try again in a moment.",
     };
   }
 }

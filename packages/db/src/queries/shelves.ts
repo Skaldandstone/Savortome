@@ -1,6 +1,7 @@
 import { and, count, desc, eq, inArray, ne, sql } from "drizzle-orm";
 import {
   isStatusShelf,
+  isUuid,
   normalizeShelfName,
   ShelfValidationError,
   shouldCountAsCook,
@@ -283,6 +284,11 @@ export async function recipeIdsOnShelf(
   userId: string,
   shelfId: string,
 ): Promise<string[]> {
+  // A shelf id that isn't a uuid is a hand-edited URL, and Postgres answers a
+  // malformed uuid by raising rather than by returning nothing. "No such
+  // shelf" is the honest result, and it keeps the query text out of the reply.
+  if (!isUuid(shelfId)) return [];
+
   const rows = await database
     .select({ recipeId: schema.shelfRecipes.recipeId })
     .from(schema.shelfRecipes)

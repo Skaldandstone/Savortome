@@ -3,6 +3,7 @@ import {
   DEFAULT_LIBRARY_SORT,
   canonicalize,
   isStaple,
+  isUuid,
   normalizeDraft,
   validateDraft,
   type LibrarySort,
@@ -362,6 +363,10 @@ export async function searchRecipes(
 }
 
 export async function getRecipe(database: Database, ownerId: string, recipeId: string) {
+  // Same reasoning as recipeIdsOnShelf: /recipe/<nonsense> should be a 404,
+  // not a raised Postgres error carrying the query with it.
+  if (!isUuid(recipeId)) return undefined;
+
   return database.query.recipes.findFirst({
     where: and(eq(schema.recipes.id, recipeId), eq(schema.recipes.ownerId, ownerId)),
   });
