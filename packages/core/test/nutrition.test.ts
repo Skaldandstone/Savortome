@@ -7,10 +7,11 @@ import {
   nutritionLabel,
   perServingNutrients,
   scaleNutrients,
+  summarizeMeal,
   sumNutrients,
   tidyNutrients,
 } from "../src/nutrition.js";
-import type { Ingredient, IngredientNutrition, Nutrients } from "../src/recipe.js";
+import type { Ingredient, IngredientNutrition, Nutrients, RecipeNutrition } from "../src/recipe.js";
 
 const n = (over: Partial<Nutrients> = {}): Nutrients => ({ ...ZERO_NUTRIENTS, ...over });
 
@@ -184,5 +185,52 @@ describe("nutritionLabel", () => {
 
   it("falls back to 'Estimated' for an empty ingredient list rather than overclaiming", () => {
     assert.equal(nutritionLabel({ method: "computed", perIngredient: [] }), "Estimated");
+  });
+});
+
+describe("summarizeMeal", () => {
+  const dish = (over: Partial<RecipeNutrition> & { calories?: number } = {}): RecipeNutrition => {
+    const { calories, ...rest } = over;
+    return {
+      perServing: n({ calories: calories ?? 0 }),
+      perIngredient: [],
+      method: "computed",
+      ...rest,
+    };
+  };
+
+  it("returns null for no dishes at all", () => {
+    assert.equal(summarizeMeal([], 4), null);
+  });
+
+  it("sums one serving of each dish for the per-guest figure", () => {
+    const meal = summarizeMeal([dish({ calories: 500 }), dish({ calories: 150 })], 4);
+    assert.equal(meal?.perGuest.calories, 650);
+  });
+
+  it("scales the per-guest figure by the guest count for the total", () => {
+    const meal = summarizeMeal([dish({ calories: 500 })], 4);
+    assert.equal(meal?.total.calories, 2000);
+  });
+
+  it("treats a nonsense guest count as one guest rather than erroring", () => {
+    const meal = summarizeMeal([dish({ calories: 500 })], 0);
+    assert.equal(meal?.guests, 1);
+    assert.equal(meal?.total.calories, 500);
+  });
+
+  it("labels the meal by its weakest dish, not its strongest", () => {
+    const strong = dish({ method: "published" });
+    const weak = dish({
+      method: "computed",
+      perIngredient: [{ canonicalItem: "x", source: "estimated", fdcId: null, contribution: n() }],
+    });
+    const meal = summarizeMeal([strong, weak], 2);
+    assert.equal(meal?.label, "Estimated");
+  });
+
+  it("labels a meal of entirely published dishes as 'From the source'", () => {
+    const meal = summarizeMeal([dish({ method: "published" }), dish({ method: "published" })], 2);
+    assert.equal(meal?.label, "From the source");
   });
 });

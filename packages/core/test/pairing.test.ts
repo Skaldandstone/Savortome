@@ -8,6 +8,7 @@ function candidate(over: Partial<PairingCandidate> & { id: string }): PairingCan
     imageUrl: null,
     cuisine: null,
     course: null,
+    nutrition: null,
     ...over,
   };
 }

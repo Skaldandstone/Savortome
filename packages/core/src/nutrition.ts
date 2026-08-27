@@ -189,3 +189,50 @@ export function perServingNutrients(
   if (!servings || servings <= 0) return total;
   return tidyNutrients(scaleNutrients(total, 1 / servings));
 }
+
+// --- full-meal totals --------------------------------------------------------
+
+/** Weakest to strongest, matching the meaning `nutritionLabel` already gives each one. */
+const LABEL_STRENGTH: Record<string, number> = {
+  Estimated: 0,
+  "From a food database": 1,
+  "From the source": 2,
+};
+
+/** The full meal's total: per guest, and for however many guests are coming. */
+export interface MealNutrition {
+  perGuest: Nutrients;
+  total: Nutrients;
+  guests: number;
+  /** The weakest label among the dishes that make up the meal — same idea as a single recipe's. */
+  label: string;
+}
+
+/**
+ * Combines each dish's own per-serving figure into what the whole meal comes
+ * to — a main plus whichever sides, drinks, and desserts are going with it.
+ *
+ * "Per guest" is just the sum of one serving of each dish, on the assumption
+ * that's what a plate looks like; the total for the table is that figure
+ * scaled by how many are eating, the same scaling a serving-size slider
+ * already does for one recipe. `null` for no dishes at all — a meal with
+ * nothing in it isn't a total, it's an empty state.
+ */
+export function summarizeMeal(
+  dishes: readonly Pick<RecipeNutrition, "perServing" | "method" | "perIngredient">[],
+  guests: number,
+): MealNutrition | null {
+  if (dishes.length === 0) return null;
+
+  const perGuest = tidyNutrients(sumNutrients(dishes.map((d) => d.perServing)));
+  const partySize = guests > 0 ? guests : 1;
+  const total = tidyNutrients(scaleNutrients(perGuest, partySize));
+
+  const label = dishes
+    .map((d) => nutritionLabel(d))
+    .reduce((weakest, next) =>
+      LABEL_STRENGTH[next]! < LABEL_STRENGTH[weakest]! ? next : weakest,
+    );
+
+  return { perGuest, total, guests: partySize, label };
+}
