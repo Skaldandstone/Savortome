@@ -1,0 +1,17 @@
+/*
+ * Sits above everything, quietly. An outage the reader can see is a
+ * circumstance; one they can't is a bug in the app, as far as they know.
+ */
+.banner {
+  margin: 0 0 18px;
+  padding: 10px 14px;
+  font-size: var(--step-2);
+  color: var(--warn);
+  background: var(--warn-soft);
+  border: 1px solid var(--warn);
+  border-radius: var(--radius-sm);
+}
+
+.page { max-width: 46ch; }
+.pageTitle { font-size: var(--step-5); margin: 0 0 12px; }
+.pageBody { color: var(--text-muted); font-size: var(--step-3); }
