@@ -1,4 +1,4 @@
-import { and, desc, eq, gte, ilike, isNotNull, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, isNotNull, isNull, ne, sql } from "drizzle-orm";
 import * as schema from "../schema.js";
 import type { Database } from "../client.js";
 
@@ -135,12 +135,38 @@ export async function adminPurchases(database: Database, userId: string, limit =
 }
 
 /**
- * Record a refund and claw back unspent credits in one shot. `clawback` is the
- * caller-computed number of still-unspent purchased credits to remove (never
- * more than the balance, so it can't drive it negative). Marks the purchase
- * refunded so it can't be refunded twice.
+ * Atomically claim a purchase for refund BEFORE any money moves. The
+ * conditional `WHERE refunded_at IS NULL` means only one caller can win, so a
+ * double-click or concurrent refund can't reach Stripe twice. Returns true if
+ * this call claimed it; false if it was already claimed/refunded.
+ *
+ * The driver has no interactive transactions, so this deliberate claim-first
+ * ordering is how the flow stays safe: claim, then refund at Stripe, then
+ * finalize — or release the claim if Stripe fails.
  */
-export async function recordRefund(
+export async function claimRefund(database: Database, purchaseId: string): Promise<boolean> {
+  const rows = await database
+    .update(schema.creditPurchases)
+    .set({ refundedAt: new Date() })
+    .where(and(eq(schema.creditPurchases.id, purchaseId), isNull(schema.creditPurchases.refundedAt)))
+    .returning({ id: schema.creditPurchases.id });
+  return rows.length > 0;
+}
+
+/** Undo a claim when the Stripe refund itself failed, so it can be retried. */
+export async function releaseRefundClaim(database: Database, purchaseId: string) {
+  await database
+    .update(schema.creditPurchases)
+    .set({ refundedAt: null })
+    .where(eq(schema.creditPurchases.id, purchaseId));
+}
+
+/**
+ * Finalize a claimed refund: record the amount and claw back unspent credits.
+ * `clawback` is the caller-computed still-unspent purchased credits to remove
+ * (never more than the balance, so it can't drive it negative).
+ */
+export async function finalizeRefund(
   database: Database,
   userId: string,
   purchaseId: string,
@@ -150,7 +176,7 @@ export async function recordRefund(
   await database.batch([
     database
       .update(schema.creditPurchases)
-      .set({ refundedAt: new Date(), refundedCents })
+      .set({ refundedCents })
       .where(eq(schema.creditPurchases.id, purchaseId)),
     database
       .update(schema.users)

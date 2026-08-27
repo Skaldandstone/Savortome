@@ -1,8 +1,10 @@
 import {
   adminUserById,
+  claimRefund,
   creditsFor,
+  finalizeRefund,
   purchaseForRefund,
-  recordRefund,
+  releaseRefundClaim,
 } from "@seconds/db";
 import { readJson } from "@/lib/api";
 import { withAdmin } from "@/lib/admin";
@@ -52,17 +54,31 @@ export async function POST(request: Request, { params }: Params) {
     if (!paymentIntent) throw new Error("No payment intent found on the checkout session");
 
     // Clawback = the portion of THIS purchase's credits that is still unspent,
-    // never more than the account's current purchased balance.
+    // never more than the account's current purchased balance. Read before the
+    // claim so it reflects the pre-refund state.
     const balance = await creditsFor(database, id);
     const clawback = Math.min(purchase.credits, balance.purchasedLeft);
 
-    const refund = await stripe().refunds.create({
-      payment_intent: paymentIntent,
-      amount: requested,
-      metadata: { purchaseId: purchase.id, source: "adminhelper" },
-    });
+    // Claim BEFORE touching Stripe: a lost claim means someone else is already
+    // refunding this purchase, so we never issue a second Stripe refund.
+    if (!(await claimRefund(database, purchase.id))) {
+      throw new Error("This purchase is already being refunded");
+    }
 
-    await recordRefund(database, id, purchase.id, requested, clawback);
+    let refund;
+    try {
+      refund = await stripe().refunds.create({
+        payment_intent: paymentIntent,
+        amount: requested,
+        metadata: { purchaseId: purchase.id, source: "adminhelper" },
+      });
+    } catch (err) {
+      // Stripe rejected it — release the claim so it can be retried.
+      await releaseRefundClaim(database, purchase.id);
+      throw err;
+    }
+
+    await finalizeRefund(database, id, purchase.id, requested, clawback);
     const after = await creditsFor(database, id);
     return {
       refundedCents: requested,
