@@ -2,6 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { KrogerConnection, KrogerToken } from "@seconds/core";
 import type { Database } from "../client.js";
 import * as schema from "../schema.js";
+import { decryptSecret, decryptNullable, encryptSecret, encryptNullable } from "../crypto.js";
 
 /**
  * A shopper's connection to a grocery service.
@@ -27,9 +28,11 @@ export async function getConnection(
   });
   if (!row) return null;
 
+  // Tokens are stored encrypted; decrypt on the way out so callers never see
+  // the ciphertext. Legacy plaintext rows (pre-backfill) pass through unchanged.
   return {
-    accessToken: row.accessToken,
-    refreshToken: row.refreshToken,
+    accessToken: decryptSecret(row.accessToken),
+    refreshToken: decryptNullable(row.refreshToken),
     expiresAt: row.expiresAt.toISOString(),
     locationId: row.locationId,
     locationName: row.locationName,
@@ -43,9 +46,11 @@ export async function saveConnection(
   provider: GroceryProvider,
   token: KrogerToken,
 ): Promise<void> {
+  // Encrypt before the token ever reaches the database. Anyone with read access
+  // to this table — or a backup of it — sees ciphertext, not a working token.
   const values = {
-    accessToken: token.accessToken,
-    refreshToken: token.refreshToken,
+    accessToken: encryptSecret(token.accessToken),
+    refreshToken: encryptNullable(token.refreshToken),
     expiresAt: new Date(token.expiresAt),
     updatedAt: new Date(),
   };

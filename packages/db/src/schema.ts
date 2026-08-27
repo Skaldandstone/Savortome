@@ -18,7 +18,7 @@ import {
   uuid,
   vector,
 } from "drizzle-orm/pg-core";
-import type { Ingredient, Step } from "@seconds/core";
+import type { Ingredient, RecipeNutrition, Step } from "@seconds/core";
 
 /**
  * The full Second Breakfast data model. Only the recipe/import path is wired up in the
@@ -253,6 +253,13 @@ export const recipes = pgTable(
     /** Set once a human has reviewed an imported card. */
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
 
+    /**
+     * Null until something has computed it. Never invented lazily at render
+     * time — see the ingest pipeline and the "add nutrition" action, the only
+     * two places that fill this in.
+     */
+    nutrition: jsonb("nutrition").$type<RecipeNutrition>(),
+
     visibility: visibility("visibility").notNull().default("private"),
     /** Set the first time a recipe is shared, so a link can be revoked and reissued. */
     sharedAt: timestamp("shared_at", { withTimezone: true }),
@@ -477,9 +484,12 @@ export const shoppingListItems = pgTable(
  * it takes an OAuth token belonging to that person, and it prices and stocks
  * per store, so the chosen location lives here too.
  *
- * The tokens are stored as they come. Neon encrypts at rest; encrypting them
- * again with an application key would mean a key to manage and rotate, and
- * anyone who can read this table can already read `users`.
+ * The access and refresh tokens are live grocery-account credentials, so they
+ * are encrypted with an application key (`GROCERY_TOKEN_ENCRYPTION_KEY`) before
+ * they are written and decrypted on read — see `crypto.ts`. Storage-at-rest
+ * encryption alone wouldn't help against a leaked backup or a stray read; the
+ * key lives in the environment, not the database. Values carry an `enc:v1:`
+ * tag, so a pre-encryption row still reads until the backfill converts it.
  */
 export const groceryConnections = pgTable(
   "grocery_connections",

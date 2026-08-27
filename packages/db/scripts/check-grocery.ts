@@ -25,6 +25,7 @@ import {
   saveConnection,
   setConnectionStore,
 } from "../src/queries/grocery.js";
+import { isEncrypted } from "../src/crypto.js";
 
 const url =
   process.env.DATABASE_URL ??
@@ -73,6 +74,16 @@ const connected = (await getConnection(db, shopper, "kroger"))!;
 expect("the token is stored", connected.accessToken, "first");
 expect("...along with the refresh token", connected.refreshToken, "first-refresh");
 expect("...and no store yet", [connected.locationId, connected.locationName], [null, null]);
+
+// The round-trip above hides the encryption, which is the point — so look at the
+// raw columns directly and confirm what actually landed on disk is ciphertext,
+// not the token anyone with a `SELECT` could lift.
+const raw = (await db.query.groceryConnections.findFirst({
+  where: eq(schema.groceryConnections.userId, shopper),
+}))!;
+expect("the access token is encrypted at rest", isEncrypted(raw.accessToken), true);
+expect("...and so is the refresh token", isEncrypted(raw.refreshToken!), true);
+expect("...and the plaintext isn't sitting in the column", raw.accessToken.includes("first"), false);
 
 // --- reconnecting -----------------------------------------------------------
 await setConnectionStore(db, shopper, "kroger", "70100123", "Fred Meyer Interstate");
