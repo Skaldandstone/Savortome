@@ -1,5 +1,12 @@
 import type { RecipeDraft } from "@seconds/core";
-import { createRecipe, listRecipes, listShelves, recipeIdsOnShelf, statusByRecipe } from "@seconds/db";
+import {
+  createRecipe,
+  listRecipes,
+  listShelves,
+  recipeIdsOnShelf,
+  searchRecipes,
+  statusByRecipe,
+} from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
 
 /**
@@ -9,11 +16,23 @@ import { readJson, withUser } from "@/lib/api";
 export const runtime = "nodejs";
 
 export async function GET(request: Request) {
-  const shelfId = new URL(request.url).searchParams.get("shelf") ?? undefined;
+  const params = new URL(request.url).searchParams;
+  const shelfId = params.get("shelf") ?? undefined;
+  const query = params.get("q")?.trim() ?? "";
 
   return withUser(async (userId, database) => {
     const shelves = await listShelves(database, userId);
-    const ids = shelfId ? await recipeIdsOnShelf(database, userId, shelfId) : undefined;
+
+    // A shelf filter and a search both narrow to a set of ids; together they
+    // intersect, so "the Korean thing on my baking shelf" works.
+    const shelfIds = shelfId ? await recipeIdsOnShelf(database, userId, shelfId) : null;
+    const matchIds = query ? await searchRecipes(database, userId, query) : null;
+
+    const ids =
+      matchIds && shelfIds
+        ? matchIds.filter((id) => shelfIds.includes(id))
+        : (matchIds ?? shelfIds ?? undefined);
+
     const rows = await listRecipes(database, userId, { ids, limit: 60 });
 
     const statuses = await statusByRecipe(
@@ -24,6 +43,7 @@ export async function GET(request: Request) {
 
     return {
       shelves,
+      query,
       recipes: rows.map((row) => ({
         id: row.id,
         title: row.title,

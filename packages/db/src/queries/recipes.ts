@@ -1,4 +1,4 @@
-import { and, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   canonicalize,
   isStaple,
@@ -205,6 +205,8 @@ export interface ListRecipesOptions {
   limit?: number;
   /** Restrict to these ids, in this order. Used when filtering by shelf. */
   ids?: string[];
+  /** Free text. Matches the name, cuisine, description, tags, and ingredients. */
+  query?: string;
 }
 
 /** The signed-in user's recipes, newest first. */
@@ -231,6 +233,68 @@ export async function listRecipes(
     orderBy: (r, { desc }) => [desc(r.createdAt)],
     limit,
   });
+}
+
+/**
+ * Search your own recipes.
+ *
+ * Discovery searches what other people have shared; this searches what you
+ * kept. Three ways in, because people look for a saved recipe by all three and
+ * remember only one of them:
+ *
+ * - the **words on the card** — name, cuisine, description — through the same
+ *   generated tsvector discovery uses, so the title outranks a passing mention;
+ * - a **tag**, matched exactly rather than stemmed, because "vegetarian" means
+ *   vegetarian;
+ * - an **ingredient**, through the canonical index the pantry already joins on,
+ *   which is the one discovery can't do and the one that answers "what did I
+ *   make with gochujang".
+ *
+ * Any of the three is a hit. Full-text rank orders what it can and the rest
+ * falls back to newest first, which is the order the library already uses.
+ */
+export async function searchRecipes(
+  database: Database,
+  ownerId: string,
+  query: string,
+  limit = 50,
+): Promise<string[]> {
+  const text = query.trim();
+  if (!text) return [];
+
+  const tsquery = sql`websearch_to_tsquery('english'::regconfig, ${text})`;
+  // Ingredient and tag matching are literal, not stemmed — someone typing
+  // "gochujang" wants that jar, not something merely near it.
+  const term = text.toLowerCase();
+
+  const rows = await database
+    .select({
+      id: schema.recipes.id,
+      rank: sql<number>`ts_rank(${schema.recipes.searchVector}, ${tsquery})`.as("rank"),
+      createdAt: schema.recipes.createdAt,
+    })
+    .from(schema.recipes)
+    .where(
+      and(
+        eq(schema.recipes.ownerId, ownerId),
+        sql`(
+          ${schema.recipes.searchVector} @@ ${tsquery}
+          or exists (
+            select 1 from unnest(${schema.recipes.tags}) as tag
+            where tag = ${term}
+          )
+          or exists (
+            select 1 from ${schema.recipeIngredients} ri
+            where ri.recipe_id = ${schema.recipes.id}
+              and ri.canonical_item like ${`%${term}%`}
+          )
+        )`,
+      ),
+    )
+    .orderBy(desc(sql`rank`), desc(schema.recipes.createdAt))
+    .limit(limit);
+
+  return rows.map((row) => row.id);
 }
 
 export async function getRecipe(database: Database, ownerId: string, recipeId: string) {
