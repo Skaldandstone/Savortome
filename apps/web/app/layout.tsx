@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 function Masthead({ children }: { children: ReactNode }) {
   return (
-    <header className={styles.masthead}>
+    <header className={styles.masthead} data-print="hide">
       <h1 className={styles.wordmark}>
         <Link href="/">Second Breakfast</Link>
       </h1>

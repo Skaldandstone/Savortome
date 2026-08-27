@@ -16,3 +16,43 @@ html, body {
 }
 
 a { color: var(--accent); }
+
+/**
+ * Printing.
+ *
+ * A page propped against the kettle doesn't lock, sleep, or need a battery,
+ * which still makes paper the most reliable way to cook from a screen. What
+ * gets printed is the recipe and nothing else.
+ *
+ * Anything that only exists to be clicked opts out by marking itself
+ * `data-print="hide"` — an explicit, greppable list rather than print rules
+ * scattered through a dozen CSS Modules chasing hashed class names.
+ */
+@media print {
+  [data-print="hide"] { display: none !important; }
+
+  html, body {
+    /* Ink is expensive and a printer's white is the paper. */
+    background: #fff;
+    color: #000;
+    font-size: 11pt;
+  }
+
+  a { color: #000; text-decoration: none; }
+
+  /* Screen depth is a smudge on paper. */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Never split a heading from what it introduces, or a step across pages. */
+  h1, h2, h3, h4 { break-after: avoid; }
+  li, p { break-inside: avoid; }
+
+  img { max-width: 100% !important; }
+}
+
+@page {
+  margin: 18mm 16mm;
+}

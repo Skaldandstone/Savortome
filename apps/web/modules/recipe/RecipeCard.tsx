@@ -7,6 +7,7 @@ import { AddToListButton } from "@/modules/list";
 import { IngredientList, ServingScaler } from "./IngredientList";
 import { ImportTrace, Provenance } from "./Provenance";
 import { RecipeFacts, TagList } from "./RecipeFacts";
+import { RecipeExport } from "./RecipeExport";
 import { RecipeHeader, RecipeHero } from "./RecipeHeader";
 import { StepList } from "./StepList";
 import { useServings } from "./useServings";
@@ -42,7 +43,9 @@ export function RecipeCard({
         <div className={styles.ingredientsHeading}>
           <h3 className={styles.sectionTitle}>Ingredients</h3>
           {canScale && servings !== null ? (
-            <ServingScaler servings={servings} onIncrement={increment} onDecrement={decrement} />
+            <div data-print="hide">
+              <ServingScaler servings={servings} onIncrement={increment} onDecrement={decrement} />
+            </div>
           ) : null}
         </div>
         <IngredientList ingredients={ingredients} />
@@ -57,9 +60,11 @@ export function RecipeCard({
           </>
         ) : null}
 
-        <ShelfControls recipeId={shelvedId} />
+        <div data-print="hide">
+          <ShelfControls recipeId={shelvedId} />
+        </div>
 
-        <div className={styles.listAction}>
+        <div className={styles.listAction} data-print="hide">
           {shelvedId ? (
             <Link className={styles.cook} href={`/recipe/${shelvedId}/cook`}>
               Start cooking
@@ -72,6 +77,8 @@ export function RecipeCard({
             </Link>
           ) : null}
         </div>
+
+        <RecipeExport recipe={recipe} ingredients={ingredients} servings={servings} />
 
         <Provenance recipe={recipe} verifiedAt={verifiedAt} />
         <ImportTrace trace={trace} />

@@ -73,6 +73,32 @@ export async function withUser<T>(
   }
 }
 
+/**
+ * The same guard, for a route whose answer isn't JSON.
+ *
+ * `withUser` serialises whatever the handler returns, which is right for an
+ * API but wrong for a file download — those need their own content type and a
+ * content-disposition header. Everything else is shared: same configuration
+ * check, same auth, same error mapping.
+ */
+export async function withUserResponse(
+  handler: (userId: string, database: Database) => Promise<Response>,
+): Promise<Response> {
+  if (!databaseConfigured()) {
+    return NextResponse.json(
+      { error: "Exporting needs a database. Set DATABASE_URL in .env.local." },
+      { status: 501 },
+    );
+  }
+
+  try {
+    const database = db();
+    return await handler(await requireUserId(database), database);
+  } catch (err) {
+    return errorResponse(err);
+  }
+}
+
 /** Parse a JSON body, treating an unreadable one as an empty object. */
 export async function readJson<T extends object>(request: Request): Promise<Partial<T>> {
   try {

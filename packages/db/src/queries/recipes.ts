@@ -367,6 +367,30 @@ export async function getRecipe(database: Database, ownerId: string, recipeId: s
   });
 }
 
+/** How many recipes someone owns, unfiltered and unpaged. */
+export async function countRecipes(database: Database, ownerId: string): Promise<number> {
+  const [row] = await database
+    .select({ n: sql<number>`count(*)::int` })
+    .from(schema.recipes)
+    .where(eq(schema.recipes.ownerId, ownerId));
+  return row?.n ?? 0;
+}
+
+/**
+ * Every recipe someone owns, whole.
+ *
+ * `listRecipes` returns the summary a shelf needs; this returns the full rows,
+ * because an export that dropped the method would be a list of titles rather
+ * than an archive. Unpaged on purpose — a personal recipe collection is small,
+ * and half an archive is worse than none.
+ */
+export async function allRecipesFor(database: Database, ownerId: string) {
+  return database.query.recipes.findMany({
+    where: eq(schema.recipes.ownerId, ownerId),
+    orderBy: (r, { asc }) => [asc(r.title)],
+  });
+}
+
 /**
  * Recompute every stored recipe's canonical ingredient names and rebuild the
  * ingredient index.
