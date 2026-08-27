@@ -1,12 +1,14 @@
-import { and, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, inArray, ne, sql, type SQL } from "drizzle-orm";
 import {
   DEFAULT_LIBRARY_SORT,
   canonicalize,
   isStaple,
   isUuid,
   normalizeDraft,
+  suggestPairings,
   validateDraft,
   type LibrarySort,
+  type PairingSuggestions,
   type Recipe,
   type RecipeDraft,
 } from "@seconds/core";
@@ -159,6 +161,39 @@ export async function setRecipeNutrition(
     .returning({ id: schema.recipes.id });
 
   return Boolean(updated);
+}
+
+/**
+ * A side, a drink, and a dessert to go with a recipe — chosen from the
+ * owner's own library, never generated. Empty for a recipe nobody signed in
+ * as its owner is looking at, or whose library has nothing that fits.
+ */
+export async function suggestedPairings(
+  database: Database,
+  ownerId: string,
+  recipeId: string,
+): Promise<PairingSuggestions> {
+  const empty: PairingSuggestions = { side: [], drink: [], dessert: [] };
+  if (!isUuid(recipeId)) return empty;
+
+  const main = await database.query.recipes.findFirst({
+    where: and(eq(schema.recipes.id, recipeId), eq(schema.recipes.ownerId, ownerId)),
+    columns: { id: true, cuisine: true },
+  });
+  if (!main) return empty;
+
+  const library = await database
+    .select({
+      id: schema.recipes.id,
+      title: schema.recipes.title,
+      imageUrl: schema.recipes.imageUrl,
+      cuisine: schema.recipes.cuisine,
+      course: schema.recipes.course,
+    })
+    .from(schema.recipes)
+    .where(and(eq(schema.recipes.ownerId, ownerId), ne(schema.recipes.id, recipeId)));
+
+  return suggestPairings(main, library);
 }
 
 /** Throw away a recipe. Everything hanging off it goes with it, by cascade. */

@@ -7,6 +7,7 @@ import { AddToListButton } from "@/modules/list";
 import { IngredientList, ServingScaler } from "./IngredientList";
 import { ImportTrace, Provenance } from "./Provenance";
 import { NutritionFacts } from "./NutritionFacts";
+import { PairingSuggestions } from "./PairingSuggestions";
 import { RecipeFacts, TagList } from "./RecipeFacts";
 import { RecipeExport } from "./RecipeExport";
 import { RecipeHeader, RecipeHero } from "./RecipeHeader";
@@ -81,6 +82,8 @@ export function RecipeCard({
         </div>
 
         <RecipeExport recipe={recipe} ingredients={ingredients} servings={servings} />
+
+        <PairingSuggestions recipeId={shelvedId} />
 
         <Provenance recipe={recipe} verifiedAt={verifiedAt} />
         <ImportTrace trace={trace} />

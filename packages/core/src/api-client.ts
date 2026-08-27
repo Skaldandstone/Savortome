@@ -71,6 +71,7 @@ import type { RecipeDraft } from "./editor.js";
 import type { LibrarySort } from "./library.js";
 import type { MealSlot, PlannedMeal } from "./plan.js";
 import type { SharedRecipeView } from "./sharing.js";
+import type { PairingSuggestions } from "./pairing.js";
 
 /**
  * One typed client for the Second Breakfast HTTP API, shared by both apps.
@@ -210,6 +211,7 @@ export interface SecondsClient {
   feed: () => Promise<FeedItem[]>;
   discover: (query?: DiscoverQuery) => Promise<DiscoverResponse>;
   similarRecipes: (recipeId: string) => Promise<DiscoverCard[]>;
+  pairings: (recipeId: string) => Promise<PairingSuggestions>;
   credits: () => Promise<CreditsResponse>;
   library: (shelfId?: string, query?: string, sort?: LibrarySort) => Promise<LibraryResponse>;
   plan: (week?: string) => Promise<PlanResponse>;
@@ -387,6 +389,8 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
     },
 
     similarRecipes: (recipeId) => send<DiscoverCard[]>(`/api/recipes/${recipeId}/similar`),
+
+    pairings: (recipeId) => send<PairingSuggestions>(`/api/recipes/${recipeId}/pairings`),
 
     library: (shelfId, query, sort) => {
       const params = new URLSearchParams();
