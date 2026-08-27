@@ -253,13 +253,6 @@ export const recipes = pgTable(
     /** Set once a human has reviewed an imported card. */
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
 
-    /**
-     * Null until something has computed it. Never invented lazily at render
-     * time — see the ingest pipeline and the "add nutrition" action, the only
-     * two places that fill this in.
-     */
-    nutrition: jsonb("nutrition").$type<RecipeNutrition>(),
-
     visibility: visibility("visibility").notNull().default("private"),
     /** Set the first time a recipe is shared, so a link can be revoked and reissued. */
     sharedAt: timestamp("shared_at", { withTimezone: true }),
