@@ -29,11 +29,12 @@ request shapes, shelf rules, quantity scaling, the optimistic-update logic -
 lives in `@seconds/core/format` so the two clients can't drift apart.
 
 The app is **Second Breakfast** everywhere except an iPhone home screen, where
-`ios.infoPlist.CFBundleDisplayName` shortens it to **2nd Breakfast**. iOS gives
-a label around twelve characters before it elides, and "Second Brea…" is a
-worse thing to look at every day than a contraction. The bundle identifier,
-the App Store name and the web app are all unchanged; only the icon caption is
-shorter. Android keeps the full name, having room for it.
+`ios.infoPlist.CFBundleDisplayName` shortens it to **2xBreakfast**. iOS elides
+an icon label somewhere around twelve characters - it's really a width, not a
+count - and "Second Brea…" is a worse thing to look at every day than a
+contraction that fits whole. The bundle identifier, the App Store name and the
+web app are all unchanged; only the icon caption is shorter. Android keeps the
+full name, having room for it.
 
 `@seconds/core` has two entry points:
 
