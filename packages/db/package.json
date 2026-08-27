@@ -21,7 +21,8 @@
     "check:discover": "tsx scripts/check-discover.ts",
     "check:editor": "tsx scripts/check-editor.ts",
     "check:grocery": "tsx scripts/check-grocery.ts",
-    "check:library": "tsx scripts/check-library.ts"
+    "check:library": "tsx scripts/check-library.ts",
+    "check:plan": "tsx scripts/check-plan.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

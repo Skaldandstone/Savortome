@@ -68,6 +68,7 @@ import type { ImportRequest, ImportResponse } from "./import-client.js";
 import type { Recipe } from "./recipe.js";
 import type { RecipeDraft } from "./editor.js";
 import type { LibrarySort } from "./library.js";
+import type { MealSlot, PlannedMeal } from "./plan.js";
 import type { SharedRecipeView } from "./sharing.js";
 
 /**
@@ -140,6 +141,15 @@ export interface KrogerStatus {
   store: { locationId: string; name: string } | null;
 }
 
+/** A week of planned meals, as the grid reads it. */
+export interface PlanResponse {
+  /** The Monday the week starts on. */
+  week: string;
+  meals: PlannedMeal[];
+  /** How many recipes a "send to shopping list" just contributed. */
+  addedToList?: number;
+}
+
 export interface ShoppingListView {
   id: string;
   name: string;
@@ -193,6 +203,17 @@ export interface SecondsClient {
   discover: (query?: DiscoverQuery) => Promise<DiscoverResponse>;
   similarRecipes: (recipeId: string) => Promise<DiscoverCard[]>;
   library: (shelfId?: string, query?: string, sort?: LibrarySort) => Promise<LibraryResponse>;
+  plan: (week?: string) => Promise<PlanResponse>;
+  planAdd: (recipeId: string, date: string, slot: MealSlot, week?: string) => Promise<PlanResponse>;
+  planRemove: (recipeId: string, date: string, slot: MealSlot, week?: string) => Promise<PlanResponse>;
+  planMove: (
+    recipeId: string,
+    from: { date: string; slot: MealSlot },
+    to: { date: string; slot: MealSlot },
+    week?: string,
+  ) => Promise<PlanResponse>;
+  planClearWeek: (week: string) => Promise<PlanResponse>;
+  planToShoppingList: (week: string) => Promise<PlanResponse>;
   krogerStatus: () => Promise<KrogerStatus>;
   krogerStores: (zipCode: string) => Promise<GroceryStore[]>;
   setKrogerStore: (store: GroceryStore) => Promise<KrogerStatus>;
@@ -366,6 +387,35 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
       const qs = params.toString();
       return send<LibraryResponse>(`/api/recipes${qs ? `?${qs}` : ""}`);
     },
+
+    plan: (week) => send<PlanResponse>(`/api/plan${week ? `?week=${week}` : ""}`),
+
+    planAdd: (recipeId, date, slot, week) =>
+      send<PlanResponse>("/api/plan", {
+        method: "POST",
+        body: body({ action: "add", recipeId, date, slot, week }),
+      }),
+
+    planRemove: (recipeId, date, slot, week) =>
+      send<PlanResponse>("/api/plan", {
+        method: "POST",
+        body: body({ action: "remove", recipeId, date, slot, week }),
+      }),
+
+    planMove: (recipeId, from, to, week) =>
+      send<PlanResponse>("/api/plan", {
+        method: "POST",
+        body: body({ action: "move", recipeId, from, date: to.date, slot: to.slot, week }),
+      }),
+
+    planClearWeek: (week) =>
+      send<PlanResponse>("/api/plan", { method: "POST", body: body({ action: "clearWeek", week }) }),
+
+    planToShoppingList: (week) =>
+      send<PlanResponse>("/api/plan", {
+        method: "POST",
+        body: body({ action: "toShoppingList", week }),
+      }),
 
     krogerStatus: () => send<KrogerStatus>("/api/grocery/kroger"),
 

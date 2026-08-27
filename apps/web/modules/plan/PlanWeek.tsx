@@ -1,0 +1,202 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import {
+  MEAL_SLOTS,
+  MEAL_SLOT_LABEL,
+  dayLabel,
+  groupByDay,
+  recipeIdsIn,
+  shiftWeeks,
+  todayISO,
+  weekLabel,
+  type LibraryRecipe,
+  type MealSlot,
+  type PlannedMeal,
+} from "@seconds/core/format";
+import { api } from "@/lib/client";
+import { Button, Callout, Panel, PanelHeader } from "@/ui";
+import { AddMealDialog } from "./AddMealDialog";
+import styles from "./plan.module.css";
+
+/**
+ * A week of meals.
+ *
+ * The grid shows every day and every slot, empty ones included — an empty
+ * Thursday is exactly the thing a plan is for, and hiding it would defeat the
+ * point of looking at the week at all.
+ */
+export function PlanWeek({ initialWeek }: { initialWeek: string }) {
+  const [week, setWeek] = useState(initialWeek);
+  const [meals, setMeals] = useState<PlannedMeal[]>([]);
+  const [library, setLibrary] = useState<LibraryRecipe[]>([]);
+  const [adding, setAdding] = useState<{ date: string; slot: MealSlot } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sentToList, setSentToList] = useState<number | null>(null);
+
+  const today = todayISO();
+
+  const load = useCallback(async (forWeek: string) => {
+    setError(null);
+    try {
+      const data = await api.plan(forWeek);
+      setMeals(data.meals);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't load your plan.");
+    }
+  }, []);
+
+  useEffect(() => {
+    void load(week);
+  }, [load, week]);
+
+  // The picker needs something to pick from; fetched once, not per open.
+  useEffect(() => {
+    void api
+      .library()
+      .then((data) => setLibrary(data.recipes))
+      .catch(() => undefined);
+  }, []);
+
+  const run = async (work: () => Promise<{ meals: PlannedMeal[]; addedToList?: number }>) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const data = await work();
+      setMeals(data.meals);
+      if (data.addedToList !== undefined && data.addedToList > 0) setSentToList(data.addedToList);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "That didn't work.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const grid = groupByDay(meals, week);
+  const planned = recipeIdsIn(meals).length;
+
+  return (
+    <>
+      <Panel>
+        <PanelHeader
+          title="The week"
+          hint="What you're cooking, and when. Everything planned here can become one shopping list."
+        />
+
+        <div className={styles.weekBar}>
+          <Button type="button" variant="ghost" onClick={() => setWeek(shiftWeeks(week, -1))}>
+            ← Previous
+          </Button>
+          <strong className={styles.weekLabel}>{weekLabel(week)}</strong>
+          <Button type="button" variant="ghost" onClick={() => setWeek(shiftWeeks(week, 1))}>
+            Next →
+          </Button>
+          <Button type="button" variant="ghost" onClick={() => setWeek(shiftWeeks(todayISO(), 0))}>
+            This week
+          </Button>
+        </div>
+
+        <div className={styles.weekActions}>
+          <Button
+            type="button"
+            disabled={busy || planned === 0}
+            onClick={() => void run(() => api.planToShoppingList(week))}
+          >
+            Add this week to the shopping list
+          </Button>
+          {planned > 0 ? (
+            <button
+              type="button"
+              className={styles.clearWeek}
+              disabled={busy}
+              onClick={() => void run(() => api.planClearWeek(week))}
+            >
+              Clear the week
+            </button>
+          ) : null}
+        </div>
+
+        {sentToList !== null ? (
+          <Callout tone="info" role="status">
+            {sentToList} {sentToList === 1 ? "recipe" : "recipes"} added — duplicates merged and
+            anything already in your pantry left off. <Link href="/list">See the list</Link>.
+          </Callout>
+        ) : null}
+
+        {error ? (
+          <Callout tone="error" role="alert">
+            {error}
+          </Callout>
+        ) : null}
+      </Panel>
+
+      <div className={styles.week}>
+        {grid.map((day) => (
+          <section
+            key={day.date}
+            className={styles.day}
+            data-today={day.date === today}
+            aria-label={dayLabel(day.date)}
+          >
+            <h3 className={styles.dayHeading}>
+              {dayLabel(day.date)}
+              {day.date === today ? <span className={styles.todayMark}>Today</span> : null}
+            </h3>
+
+            {day.slots.map(({ slot, meals: inSlot }) => (
+              <div key={slot} className={styles.slot}>
+                <span className={styles.slotLabel}>{MEAL_SLOT_LABEL[slot]}</span>
+
+                {inSlot.map((planned) => (
+                  <div key={planned.recipeId} className={styles.meal}>
+                    <Link className={styles.mealTitle} href={`/recipe/${planned.recipeId}`}>
+                      {planned.title}
+                    </Link>
+                    <button
+                      type="button"
+                      className={styles.removeMeal}
+                      disabled={busy}
+                      aria-label={`Remove ${planned.title} from ${dayLabel(day.date)}`}
+                      onClick={() =>
+                        void run(() => api.planRemove(planned.recipeId, day.date, slot, week))
+                      }
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+
+                <button
+                  type="button"
+                  className={styles.addMeal}
+                  disabled={busy}
+                  aria-label={`Add a recipe to ${MEAL_SLOT_LABEL[slot]} on ${dayLabel(day.date)}`}
+                  onClick={() => setAdding({ date: day.date, slot })}
+                >
+                  +
+                </button>
+              </div>
+            ))}
+          </section>
+        ))}
+      </div>
+
+      {adding ? (
+        <AddMealDialog
+          date={adding.date}
+          slot={adding.slot}
+          recipes={library}
+          onClose={() => setAdding(null)}
+          onPick={(recipeId) => {
+            setAdding(null);
+            void run(() => api.planAdd(recipeId, adding.date, adding.slot, week));
+          }}
+        />
+      ) : null}
+    </>
+  );
+}
+
+export { MEAL_SLOTS };

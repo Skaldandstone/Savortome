@@ -1,0 +1,171 @@
+/* --- the bar above the grid --------------------------------------------- */
+
+.weekBar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.weekLabel { flex: 1 1 auto; font-size: var(--step-4); }
+
+.weekActions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 14px; }
+
+.clearWeek {
+  padding: 0;
+  font: inherit;
+  font-size: var(--step-2);
+  color: var(--text-muted);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.clearWeek:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+
+/* --- the week ------------------------------------------------------------ */
+
+.week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(150px, 1fr));
+  gap: 10px;
+  margin-top: 20px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+
+.day {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-width: 0;
+}
+
+.day[data-today="true"] { border-color: var(--accent); }
+
+.dayHeading {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--step-2);
+  font-weight: 700;
+}
+
+.todayMark {
+  font-size: var(--step-1);
+  font-weight: 600;
+  color: var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.slot { display: flex; flex-direction: column; gap: 5px; }
+
+.slotLabel {
+  font-size: var(--step-1);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.meal {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 7px 9px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+}
+
+.mealTitle { flex: 1; font-size: var(--step-2); line-height: 1.3; min-width: 0; }
+
+.removeMeal {
+  flex: none;
+  padding: 0 2px;
+  font: inherit;
+  font-size: var(--step-3);
+  line-height: 1;
+  color: var(--text-muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.removeMeal:hover:not(:disabled) { color: var(--accent); }
+
+.addMeal {
+  align-self: flex-start;
+  width: 26px;
+  height: 26px;
+  font: inherit;
+  font-size: var(--step-3);
+  line-height: 1;
+  color: var(--text-muted);
+  background: none;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.addMeal:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
+
+/* --- the picker ---------------------------------------------------------- */
+
+.dialog {
+  width: min(460px, calc(100vw - 32px));
+  padding: 20px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.dialog::backdrop { background: rgb(36 29 23 / 45%); }
+
+.dialogHead { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
+.dialogTitle { margin: 0; font-size: var(--step-4); }
+.dialogHint { margin: 4px 0 0; font-size: var(--step-2); color: var(--text-muted); }
+
+.dialogClose {
+  margin-left: auto;
+  padding: 0 4px;
+  font: inherit;
+  font-size: var(--step-5);
+  line-height: 1;
+  color: var(--text-muted);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.dialogClose:hover { color: var(--accent); }
+
+.pickList {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+  max-height: 46vh;
+  overflow-y: auto;
+}
+
+.pick {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 9px 11px;
+  font: inherit;
+  text-align: left;
+  color: var(--text);
+  background: var(--surface-sunken);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.pick:hover { border-color: var(--accent); }
+.pick span { font-size: var(--step-1); color: var(--text-muted); }
+
+.pickEmpty { padding: 12px 2px; font-size: var(--step-2); color: var(--text-muted); }
+
+@media (width < 900px) {
+  .week { grid-template-columns: 1fr; overflow-x: visible; }
+}
