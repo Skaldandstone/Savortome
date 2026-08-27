@@ -192,6 +192,12 @@ async function resolveWeb(
     // Only trust the deterministic parse when it actually split most lines;
     // otherwise the model gets a shot at the same page.
     prestructured: jsonld && jsonld.parseCoverage >= 0.6 ? jsonld.recipe : undefined,
+    // Published nutrition travels with the recipe it describes — a page whose
+    // ingredient parse wasn't trusted enough to skip the model shouldn't have
+    // its nutrition figures trusted either, since they were read off the same
+    // structured block.
+    prestructuredNutrition:
+      jsonld && jsonld.parseCoverage >= 0.6 ? jsonld.nutrition : undefined,
     trace,
   };
 }

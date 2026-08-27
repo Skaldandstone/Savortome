@@ -18,7 +18,7 @@ import {
   uuid,
   vector,
 } from "drizzle-orm/pg-core";
-import type { Ingredient, Step } from "@seconds/core";
+import type { Ingredient, RecipeNutrition, Step } from "@seconds/core";
 
 /**
  * The full Second Breakfast data model. Only the recipe/import path is wired up in the
@@ -256,6 +256,13 @@ export const recipes = pgTable(
     visibility: visibility("visibility").notNull().default("private"),
     /** Set the first time a recipe is shared, so a link can be revoked and reissued. */
     sharedAt: timestamp("shared_at", { withTimezone: true }),
+
+    /**
+     * Per-serving nutrition, when it's known. Null for a recipe nobody has
+     * asked about yet — computing it up front for every import would spend a
+     * model call and a USDA lookup that most recipes never need.
+     */
+    nutrition: jsonb("nutrition").$type<RecipeNutrition>(),
 
     /**
      * The recipe this was saved from, when someone copied a shared link.

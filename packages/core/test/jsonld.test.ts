@@ -183,3 +183,64 @@ describe("serving counts", () => {
     assert.equal(withYield("serves 4-6").servingsNote, "serves 4-6");
   });
 });
+
+describe("published nutrition", () => {
+  it("reads a real NutritionInformation block, labelled as published", () => {
+    const got = extractJsonLdRecipe(
+      page({
+        ...baseRecipe,
+        nutrition: {
+          "@type": "NutritionInformation",
+          calories: "320 calories",
+          proteinContent: "12 g",
+          carbohydrateContent: "40 g",
+          fatContent: "9 g",
+          fiberContent: "6 g",
+          sodiumContent: "540 mg",
+        },
+      }),
+    );
+    assert.ok(got?.nutrition);
+    assert.equal(got.nutrition.method, "published");
+    assert.equal(got.nutrition.perServing.calories, 320);
+    assert.equal(got.nutrition.perServing.proteinGrams, 12);
+    assert.equal(got.nutrition.perServing.sodiumMg, 540);
+    // Nothing was looked up or guessed for a published figure.
+    assert.deepEqual(got.nutrition.perIngredient, []);
+  });
+
+  it("reads only whichever fields the page actually published", () => {
+    // A lot of sites publish calories alone. Losing the whole block over one
+    // missing field would throw away the one number most readers want anyway.
+    const got = extractJsonLdRecipe(
+      page({ ...baseRecipe, nutrition: { "@type": "NutritionInformation", calories: "410 kcal" } }),
+    );
+    assert.equal(got?.nutrition?.perServing.calories, 410);
+    assert.equal(got?.nutrition?.perServing.proteinGrams, null);
+  });
+
+  it("returns null nutrition when the page has none", () => {
+    const got = extractJsonLdRecipe(page(baseRecipe));
+    assert.equal(got?.nutrition, null);
+  });
+
+  it("returns null for an empty nutrition block some themes emit as boilerplate", () => {
+    const got = extractJsonLdRecipe(
+      page({ ...baseRecipe, nutrition: { "@type": "NutritionInformation" } }),
+    );
+    assert.equal(got?.nutrition, null);
+  });
+
+  it("doesn't choke on a nutrition value with no leading number", () => {
+    const got = extractJsonLdRecipe(
+      page({
+        ...baseRecipe,
+        nutrition: { "@type": "NutritionInformation", calories: "varies", proteinContent: "12 g" },
+      }),
+    );
+    // "varies" contributes nothing, but a genuinely present field elsewhere
+    // still counts as a real block rather than an empty one.
+    assert.equal(got?.nutrition?.perServing.calories, null);
+    assert.equal(got?.nutrition?.perServing.proteinGrams, 12);
+  });
+});

@@ -56,6 +56,7 @@ const modelRecipe: ExtractedRecipe = {
   difficulty: "easy",
   confidence: 1.4, // deliberately out of range
   extractionNotes: ["Butter amount was gestured at; estimated 3 tbsp."],
+  ingredientNutritionGuesses: [],
 };
 
 let server: Server;
@@ -173,6 +174,7 @@ describe("ingest", () => {
   it("stamps the source and a fresh id onto the recipe", async () => {
     const { recipe, freeExtraction } = await ingestText("some pasted recipe text", {
       client: client(),
+      nutrition: { skipUsda: true },
     });
     assert.equal(recipe.source.kind, "text");
     assert.equal(recipe.source.extractionMethod, "article-llm");
@@ -181,7 +183,10 @@ describe("ingest", () => {
   });
 
   it("backfills video timestamps onto steps the model left untagged", async () => {
-    const { recipe } = await ingestDocument(transcriptDoc(), { client: client() });
+    const { recipe } = await ingestDocument(transcriptDoc(), {
+      client: client(),
+      nutrition: { skipUsda: true },
+    });
 
     // The model tagged step 1 itself; step 2 is matched against the cues by wording.
     assert.equal(recipe.steps[0]!.sourceTimestamp, 30);
@@ -194,7 +199,7 @@ describe("ingest", () => {
       { start: 200, text: "melt some butter and add sliced garlic at the end too" },
       ...doc.cues!,
     ];
-    const { recipe } = await ingestDocument(doc, { client: client() });
+    const { recipe } = await ingestDocument(doc, { client: client(), nutrition: { skipUsda: true } });
     assert.ok(recipe.steps[1]!.sourceTimestamp! >= recipe.steps[0]!.sourceTimestamp!);
   });
 

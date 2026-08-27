@@ -6,6 +6,7 @@ import { ShelfControls } from "@/modules/shelves";
 import { AddToListButton } from "@/modules/list";
 import { IngredientList, ServingScaler } from "./IngredientList";
 import { ImportTrace, Provenance } from "./Provenance";
+import { NutritionFacts } from "./NutritionFacts";
 import { RecipeFacts, TagList } from "./RecipeFacts";
 import { RecipeExport } from "./RecipeExport";
 import { RecipeHeader, RecipeHero } from "./RecipeHeader";
@@ -38,6 +39,7 @@ export function RecipeCard({
       <div className={styles.body}>
         <RecipeHeader recipe={recipe} />
         <RecipeFacts recipe={recipe} />
+        <NutritionFacts recipe={recipe} shelvedId={shelvedId} />
         <TagList tags={recipe.tags} />
 
         <div className={styles.ingredientsHeading}>

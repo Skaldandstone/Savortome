@@ -94,6 +94,7 @@ export async function getSharedRecipe(
       difficulty: row.difficulty as Recipe["difficulty"],
       confidence: row.confidence,
       extractionNotes: row.extractionNotes,
+      ingredientNutritionGuesses: [],
       source: {
         kind: row.sourceKind,
         url: row.sourceUrl,
@@ -101,6 +102,7 @@ export async function getSharedRecipe(
         siteName: row.sourceSiteName,
         extractionMethod: row.extractionMethod,
       },
+      nutrition: row.nutrition,
     },
     view: {
       recipeId: row.id,

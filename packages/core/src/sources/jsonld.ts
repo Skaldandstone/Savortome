@@ -1,7 +1,7 @@
 import * as cheerio from "cheerio";
 import { decodeHTML } from "entities";
 import { timerFromStep } from "../cook.js";
-import type { ExtractedRecipe, Ingredient, Step } from "../recipe.js";
+import type { ExtractedRecipe, Ingredient, Nutrients, RecipeNutrition, Step } from "../recipe.js";
 import { parseIngredientLine } from "../units.js";
 
 /** ISO-8601 duration ("PT1H15M") -> minutes. */
@@ -104,12 +104,58 @@ function isPerServingYield(raw: string | null): boolean {
   return /^\d+(?:\s*(?:-|–|—|to)\s*\d+)?$/.test(stripped);
 }
 
+/**
+ * schema.org's NutritionInformation values arrive as strings with the unit
+ * baked in — "270 calories", "5 g", "312 mg" — never bare numbers. Only the
+ * leading figure is wanted; the unit is already known from which property it
+ * came from.
+ */
+function leadingNumber(v: unknown): number | null {
+  const text = textOf(v);
+  if (!text) return null;
+  const m = /-?\d+(?:\.\d+)?/.exec(text);
+  return m ? Number(m[0]) : null;
+}
+
+/**
+ * A page's own published nutrition, when it bothered to include one.
+ *
+ * This is real data from whoever wrote the recipe — not a lookup, not a
+ * guess — which is why it outranks both of the other two sources everywhere
+ * this app shows nutrition. Schema.org's own spec doesn't pin down whether
+ * these figures are per-serving or for the whole batch, but every recipe
+ * plugin that actually emits this block treats it as per-serving, since
+ * that's the number a reader wants next to a recipe card — so this app reads
+ * it the same way.
+ */
+function publishedNutrition(node: Record<string, unknown>): RecipeNutrition | null {
+  const info = node.nutrition;
+  if (!info || typeof info !== "object") return null;
+  const n = info as Record<string, unknown>;
+
+  const perServing: Nutrients = {
+    calories: leadingNumber(n.calories),
+    proteinGrams: leadingNumber(n.proteinContent),
+    carbGrams: leadingNumber(n.carbohydrateContent),
+    fatGrams: leadingNumber(n.fatContent),
+    fiberGrams: leadingNumber(n.fiberContent),
+    sodiumMg: leadingNumber(n.sodiumContent),
+  };
+  // A block with every field empty isn't a nutrition block; some pages emit
+  // an empty NutritionInformation node as boilerplate their theme always includes.
+  if (Object.values(perServing).every((v) => v === null)) return null;
+
+  return { perServing, perIngredient: [], method: "published" };
+}
+
 export interface JsonLdResult {
   recipe: ExtractedRecipe;
   imageUrl: string | null;
   author: string | null;
   /** Fraction of ingredient lines we split into a quantity or unit. Low means fall back to the model. */
   parseCoverage: number;
+  /** The page's own nutrition figures, when it published any. */
+  nutrition: RecipeNutrition | null;
 }
 
 /**
@@ -198,9 +244,11 @@ export function extractJsonLdRecipe(html: string): JsonLdResult | null {
       difficulty: null,
       confidence: 0.95,
       extractionNotes: [],
+      ingredientNutritionGuesses: [],
     },
     imageUrl: image,
     author: textOf(node.author),
     parseCoverage: ingredients.length ? parsed / ingredients.length : 0,
+    nutrition: publishedNutrition(node),
   };
 }

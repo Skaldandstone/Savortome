@@ -1,4 +1,4 @@
-import type { ExtractedRecipe, ExtractionMethod, SourceKind } from "../recipe.js";
+import type { ExtractedRecipe, ExtractionMethod, RecipeNutrition, SourceKind } from "../recipe.js";
 
 /**
  * Whatever we managed to pull out of a URL before any model is involved.
@@ -17,6 +17,8 @@ export interface SourceDocument {
   textKind: "article" | "transcript" | "caption" | "raw";
   /** Set when the page already published a machine-readable recipe; skips the model entirely. */
   prestructured?: ExtractedRecipe;
+  /** The page's own nutrition figures, when its schema.org data included any. */
+  prestructuredNutrition?: RecipeNutrition | null;
   /** Transcript cue points, used to attach `sourceTimestamp` to steps. */
   cues?: TranscriptCue[];
   /** Human-readable trail of what each resolver tried. Shown when things go wrong. */

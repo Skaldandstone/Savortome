@@ -46,6 +46,7 @@ export async function GET(_request: Request, { params }: Params) {
         siteName: row.sourceSiteName,
         extractionMethod: row.extractionMethod,
       },
+      nutrition: row.nutrition,
     };
   });
 
