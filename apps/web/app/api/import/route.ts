@@ -1,13 +1,19 @@
 import { NextResponse } from "next/server";
 import {
+  detectSourceKind,
   ExtractionError,
+  ingestDocument,
   ingestText,
-  ingestUrl,
+  outOfCreditsMessage,
+  nextResetISO,
+  resolveSource,
   ResolveError,
+  textSource,
   UnsafeUrlError,
+  willCallModel,
   type IngestResult,
 } from "@seconds/core";
-import { db, ensureInitialStatus, saveRecipe } from "@seconds/db";
+import { creditsFor, db, ensureInitialStatus, saveRecipe, spendCredit } from "@seconds/db";
 import { errorResponse } from "@/lib/api";
 import { databaseConfigured, requireUserId } from "@/lib/session";
 
@@ -48,11 +54,49 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Send either a url or some text to import." }, { status: 400 });
   }
 
+  // Resolve first, then decide whether this will cost anything: a page might
+  // publish its own recipe data, and those imports are free however empty the
+  // balance is. Extracting is the part that spends money.
+  //
+  // The exception is video. No video platform publishes schema.org recipes, so
+  // one of those always needs a model — and resolving it means a page fetch and
+  // a yt-dlp call first. Someone out of credits should hear so immediately
+  // rather than after eighteen seconds of work that was never going to be used.
   let result: IngestResult;
   try {
-    result = url
-      ? await ingestUrl(url, { forceModel: body.forceModel })
-      : await ingestText(text as string, { title: body.title, forceModel: body.forceModel });
+    if (userId && url) {
+      const kind = detectSourceKind(url);
+      if (kind !== "web" && kind !== "text" && kind !== "manual") {
+        const balance = await creditsFor(db(), userId);
+        if (!balance.canSpend) {
+          return NextResponse.json(
+            { error: outOfCreditsMessage(balance, nextResetISO()), credits: balance },
+            { status: 402 },
+          );
+        }
+      }
+    }
+
+    const doc = url
+      ? await resolveSource(url)
+      : textSource(text as string, body.title);
+
+    if (userId && willCallModel(doc, { forceModel: body.forceModel })) {
+      const balance = await creditsFor(db(), userId);
+      if (!balance.canSpend) {
+        // 402 rather than 403: this isn't a permission problem, it's a
+        // "top up and try again" one, and the client tells them apart.
+        return NextResponse.json(
+          { error: outOfCreditsMessage(balance, nextResetISO()), credits: balance },
+          { status: 402 },
+        );
+      }
+    }
+
+    result = await ingestDocument(doc, {
+      forceModel: body.forceModel,
+      ...(url ? {} : { title: body.title }),
+    });
   } catch (err) {
     return NextResponse.json(errorPayload(err), { status: statusFor(err) });
   }
@@ -73,12 +117,29 @@ export async function POST(request: Request) {
     }
   }
 
+  // Charged after the extraction succeeded, never before. A failed import that
+  // had already taken a credit would be charging for nothing, and refunding is
+  // more moving parts than simply not charging.
+  let credits = null;
+  if (userId) {
+    try {
+      const database = db();
+      credits =
+        (await spendCredit(database, userId, result.recipe.source.extractionMethod, savedId)) ??
+        (await creditsFor(database, userId));
+    } catch {
+      // Never fail an import over the meter. An uncounted credit costs cents;
+      // throwing away a recipe someone already waited for costs a customer.
+    }
+  }
+
   return NextResponse.json({
     recipe: savedId ? { ...result.recipe, id: savedId } : result.recipe,
     trace: result.trace,
     freeExtraction: result.freeExtraction,
     saved: savedId !== null,
     saveError,
+    credits,
   });
 }
 

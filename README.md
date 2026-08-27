@@ -725,6 +725,78 @@ without this app needing to know any of them exist.
 
 ---
 
+## AI credits
+
+One thing in this app costs real money at the margin: asking a model to read a
+video transcript or an unstructured blog post. Everything else - storing
+recipes, shelves, the planner, shopping lists, cook mode, print, export,
+sharing - costs effectively nothing to serve. So that one action, and only that
+one, is metered.
+
+**A credit is one AI import.** Nothing else spends one. A page that publishes
+its own schema.org recipe is read directly, with no model call, so those
+imports are always free however empty the balance is - verified end to end,
+not assumed. Pantry search doesn't count either: it's about a fifteenth of the
+price of an import and already skips the model entirely for a plain ingredient
+list, so metering it would make the cheapest feature feel like the priciest.
+
+Tiers live in `packages/core/src/credits.ts`. The database stores plan
+identifiers (`free`, `plus`, `pro`) and `TIER_LABEL` maps them to whatever the
+tiers are currently called - renaming a tier is a one-line label change, not a
+migration.
+
+| Plan | Credits / month |
+|---|---|
+| free | 3 |
+| plus | 25 |
+| pro | 50 |
+
+Allowances are sized so that a subscriber who burns every credit every month is
+still profitable on the current extraction pipeline. That's the point of a cap:
+the worst case is a number you work out in advance rather than discover from a
+bill. They're floors, not ambitions - raising them later is an announcement
+people enjoy, lowering them is why people leave.
+
+**Two pools, and the perishable one is spent first.** The monthly allowance
+resets on the 1st (UTC, so it resets at one instant worldwide); purchased
+credits never expire. Spending the allowance before purchases is simply the
+arithmetic that loses the customer the least.
+
+**The balance is never stored.** It's derived from `credit_spends` on every
+read - an indexed count - so there's no number that can drift away from the
+rows explaining it. When someone asks why they have 12 left, the answer is a
+list of imports. Deleting a recipe nulls the ledger row's reference rather than
+cascading it away: a model call that already ran isn't refunded by tidying up.
+
+**Charged after the extraction succeeds, never before.** A failed import that
+had already taken a credit would be charging for nothing, and refunding is more
+moving parts than not charging. The exposure that buys is bounded - at worst a
+few concurrent imports slip past a nearly-empty balance, which costs cents,
+where a wrongly-charged customer costs trust.
+
+The refusal is a `402`, not a `403`: not a permission problem, a top-up-and-
+try-again one. Video URLs are refused *before* resolving, because no video
+platform publishes schema.org recipes so one always needs a model - and
+resolving a video means a page fetch and a yt-dlp call. That turned an
+18-second wait before the refusal into a quarter of a second.
+
+```bash
+pnpm check:credits
+```
+
+Asserts the whole thing against real Postgres: free methods never charge, the
+allowance drains before purchases, a month boundary resets one pool and not the
+other, a downgrade reads as none left rather than a negative, and deleting a
+recipe doesn't refund anything.
+
+Top-up packs are defined in the same module and priced above what an import
+costs to serve, with the bigger pack cheaper per credit - a unit test enforces
+both, having caught the first draft pricing the 100-pack *worse* per credit
+than the 25. **Payments aren't wired up**: the UI shows the packs disabled and
+says so.
+
+---
+
 ## Optional pieces
 
 **Persistence** - set `DATABASE_URL` in `apps/web/.env.local` (the db package

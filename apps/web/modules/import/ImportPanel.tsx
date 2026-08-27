@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import type { CreditBalance } from "@seconds/core/format";
 import { RecipeCard } from "@/modules/recipe";
 import { Callout, Panel, PanelHeader } from "@/ui";
+import { CreditMeter } from "./CreditMeter";
 import { ImportForm } from "./ImportForm";
 import { ImportProgress } from "./ImportProgress";
 import { useImport } from "./useImport";
@@ -10,6 +13,26 @@ import { useImport } from "./useImport";
 /** The app's front door: paste something, get a recipe card. */
 export function ImportPanel() {
   const { stage, busy, error, result, run } = useImport();
+  const [credits, setCredits] = useState<CreditBalance | null>(null);
+  const [resetsOn, setResetsOn] = useState<string>("");
+
+  // Fetched once so the count is on screen before anything is pasted. A 401 or
+  // 501 just means there's nothing to meter, which is not an error worth showing.
+  useEffect(() => {
+    fetch("/api/credits")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.credits) setCredits(d.credits);
+        if (d?.resetsOn) setResetsOn(d.resetsOn);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  // Every import answers with the balance that follows it, so the count stays
+  // right without a second round trip.
+  useEffect(() => {
+    if (result?.credits) setCredits(result.credits);
+  }, [result]);
 
   return (
     <>
@@ -23,6 +46,8 @@ export function ImportPanel() {
             </>
           }
         />
+
+        {credits ? <CreditMeter balance={credits} resetsOn={resetsOn} /> : null}
 
         <ImportForm busy={busy} onSubmit={run} />
 

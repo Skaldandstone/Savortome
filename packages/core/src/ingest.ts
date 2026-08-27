@@ -82,8 +82,8 @@ export async function ingestDocument(
   let method: ExtractionMethod;
   let extracted;
 
-  if (doc.prestructured && !opts.forceModel) {
-    extracted = doc.prestructured;
+  if (!willCallModel(doc, opts)) {
+    extracted = doc.prestructured!;
     method = "schema-org";
     trace.push("extraction: used the page's own schema.org recipe (no model call)");
   } else {
@@ -128,6 +128,20 @@ export async function ingestDocument(
   );
 
   return { recipe, trace, freeExtraction: method === "schema-org" };
+}
+
+/**
+ * Will turning this document into a recipe cost a model call?
+ *
+ * The one place that decides, so the importer and whatever meters it can never
+ * disagree. A caller can resolve a source, ask this, and refuse before paying
+ * for an extraction rather than after.
+ */
+export function willCallModel(
+  doc: Pick<SourceDocument, "prestructured">,
+  opts: Pick<IngestOptions, "forceModel"> = {},
+): boolean {
+  return !(doc.prestructured && !opts.forceModel);
 }
 
 /** Paste a link from anywhere, get a recipe card. The one function the app is built around. */

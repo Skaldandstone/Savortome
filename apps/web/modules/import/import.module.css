@@ -14,3 +14,41 @@
 .stages li { color: var(--text-muted); }
 .stages li[data-state="active"] { color: var(--text); font-weight: 600; }
 .stages li[data-state="done"] { color: var(--good); }
+
+/* --- credit meter --------------------------------------------------------- */
+
+/*
+ * Sits above the paste box. Quiet when there's headroom, and only raises its
+ * voice when there's nothing left — a counter that shouts all the time reads
+ * as a meter running on the whole app, which it isn't.
+ */
+.meter {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+}
+.meter[data-empty="true"] { border-color: var(--warn); background: var(--warn-soft); }
+
+.meterCount { margin: 0; font-size: var(--step-3); font-weight: 600; }
+.meterReset { font-weight: 400; color: var(--text-muted); }
+
+.meterNote { margin: 4px 0 0; font-size: var(--step-2); color: var(--text-muted); }
+
+.meterPacks { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+
+.pack {
+  padding: 7px 13px;
+  font: inherit;
+  font-size: var(--step-2);
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.meterSoon { font-size: var(--step-1); color: var(--text-muted); }
