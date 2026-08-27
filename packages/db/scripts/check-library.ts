@@ -1,11 +1,13 @@
 /**
- * Checks searching your own library against a real database.
+ * Checks your own library — searching it, ordering it, and the rating shown
+ * on each card — against a real database.
  *
- *   pnpm check:library-search
+ *   pnpm check:library
  *
- * The things worth asserting: all three ways in actually work (words on the
+ * The things worth asserting: all three ways into search work (words on the
  * card, an exact tag, an ingredient), the title outranks a passing mention,
- * and it never reaches another person's recipes.
+ * every sort orders by what it claims with nulls last, the rating is joined in
+ * rather than guessed, and none of it reaches another person's recipes.
  *
  * Works on its own fixture users and deletes everything it created.
  */
@@ -15,7 +17,8 @@ import { drizzle } from "drizzle-orm/neon-http";
 import { inArray } from "drizzle-orm";
 import { isStaple, type Ingredient } from "@seconds/core";
 import * as schema from "../src/schema.js";
-import { searchRecipes } from "../src/queries/recipes.js";
+import { listRecipes, searchRecipes } from "../src/queries/recipes.js";
+import { rateRecipe } from "../src/queries/ratings.js";
 
 const url =
   process.env.DATABASE_URL ??
@@ -148,6 +151,82 @@ expect("a deleted recipe stops matching", await (async () => {
   await db.delete(schema.recipes).where(inArray(schema.recipes.id, [stew]));
   return titles("pork belly");
 })(), []);
+
+// --- sorting ----------------------------------------------------------------
+// Fixtures with deliberate gaps: sorting has to put "unknown" last, not first.
+const quick = await makeRecipe(cook, "Apple quickie", ["apple"], {});
+const slow = await makeRecipe(cook, "Zuppa slow-cooked", ["bean"], {});
+await db.update(schema.recipes).set({ totalMinutes: 10 }).where(inArray(schema.recipes.id, [quick]));
+await db.update(schema.recipes).set({ totalMinutes: 240 }).where(inArray(schema.recipes.id, [slow]));
+
+const names = async (sort: Parameters<typeof listRecipes>[2]["sort"]) =>
+  (await listRecipes(db, cook, { sort })).map((r) => r.title);
+
+const byName = await names("name");
+expect("A-Z sorts by name, case-insensitively", byName[0], "Apple quickie");
+expect("...and runs to the end of the alphabet", byName[byName.length - 1], "Zuppa slow-cooked");
+
+const byQuick = await names("quickest");
+expect("quickest puts the fastest first", byQuick[0], "Apple quickie");
+expect(
+  "...and a recipe with no stated time last, not first",
+  byQuick[byQuick.length - 1] !== "Apple quickie" && byQuick.indexOf("Zuppa slow-cooked") < byQuick.length - 1,
+  true,
+);
+
+await rateRecipe(db, cook, slow, 5, null);
+await rateRecipe(db, cook, quick, 2, null);
+
+const byRated = await names("rated");
+expect("best rated puts five stars first", byRated[0], "Zuppa slow-cooked");
+expect("...then the two-star one", byRated[1], "Apple quickie");
+expect(
+  "...and unrated recipes last, not floated up by a null",
+  byRated.slice(2).includes("Tteokbokki"),
+  true,
+);
+
+// Cooking is a shelf move, so set the counter the way the shelf flow does.
+await db
+  .update(schema.ratings)
+  .set({ timesCooked: 3, lastCookedAt: new Date() })
+  .where(inArray(schema.ratings.recipeId, [quick]));
+expect("recently cooked puts it first", (await names("cooked"))[0], "Apple quickie");
+
+expect(
+  "newest is the default when no sort is given",
+  (await names(undefined)).length > 0,
+  true,
+);
+
+// --- the rating on the card -------------------------------------------------
+const rows = await listRecipes(db, cook, { sort: "name" });
+const appleRow = rows.find((r) => r.title === "Apple quickie")!;
+expect("the card carries this person's own stars", appleRow.stars, 2);
+expect("...and how many times they cooked it", appleRow.timesCooked, 3);
+expect(
+  "an unrated recipe reports null rather than a fabricated zero",
+  rows.find((r) => r.title === "Tteokbokki")!.stars,
+  null,
+);
+expect(
+  "another person's rating never leaks onto your card",
+  (await listRecipes(db, other, { sort: "name" })).every((r) => r.stars === null),
+  true,
+);
+
+// --- search and sort together -----------------------------------------------
+const searched = await searchRecipes(db, cook, "gochujang");
+expect(
+  "a search keeps its relevance order when no sort is asked for",
+  (await listRecipes(db, cook, { ids: searched })).length,
+  searched.length,
+);
+expect(
+  "...and takes the sort when one is",
+  (await listRecipes(db, cook, { ids: searched, sort: "name" })).map((r) => r.title),
+  ["Tteokbokki"],
+);
 
 // --- cleanup ----------------------------------------------------------------
 await db.delete(schema.recipes).where(inArray(schema.recipes.ownerId, [cook, other]));

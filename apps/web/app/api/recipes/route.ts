@@ -1,4 +1,4 @@
-import type { RecipeDraft } from "@seconds/core";
+import { librarySortOr, type RecipeDraft } from "@seconds/core";
 import {
   createRecipe,
   listRecipes,
@@ -19,6 +19,7 @@ export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
   const shelfId = params.get("shelf") ?? undefined;
   const query = params.get("q")?.trim() ?? "";
+  const sort = librarySortOr(params.get("sort"));
 
   return withUser(async (userId, database) => {
     const shelves = await listShelves(database, userId);
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
         ? matchIds.filter((id) => shelfIds.includes(id))
         : (matchIds ?? shelfIds ?? undefined);
 
-    const rows = await listRecipes(database, userId, { ids, limit: 60 });
+    const rows = await listRecipes(database, userId, { ids, limit: 60, sort });
 
     const statuses = await statusByRecipe(
       database,
@@ -44,6 +45,7 @@ export async function GET(request: Request) {
     return {
       shelves,
       query,
+      sort,
       recipes: rows.map((row) => ({
         id: row.id,
         title: row.title,
@@ -53,6 +55,8 @@ export async function GET(request: Request) {
         attribution: row.sourceAuthor ?? row.sourceSiteName ?? row.sourceKind,
         status: statuses.get(row.id) ?? null,
         visibility: row.visibility,
+        stars: row.stars,
+        timesCooked: row.timesCooked ?? 0,
       })),
     };
   });

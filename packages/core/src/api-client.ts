@@ -37,6 +37,9 @@ export interface LibraryRecipe {
   attribution: string;
   status: StatusShelf | null;
   visibility: Visibility;
+  /** Null when never rated, which is not the same as rated zero. */
+  stars: number | null;
+  timesCooked: number;
 }
 
 /** A shared recipe plus what the viewer may do with it. */
@@ -53,6 +56,7 @@ export interface LibraryResponse {
   recipes: LibraryRecipe[];
   /** Echoed back so a stale response can't overwrite a newer search. */
   query?: string;
+  sort?: LibrarySort;
 }
 
 export interface DiscoverQuery {
@@ -63,6 +67,7 @@ export interface DiscoverQuery {
 import type { ImportRequest, ImportResponse } from "./import-client.js";
 import type { Recipe } from "./recipe.js";
 import type { RecipeDraft } from "./editor.js";
+import type { LibrarySort } from "./library.js";
 import type { SharedRecipeView } from "./sharing.js";
 
 /**
@@ -187,7 +192,7 @@ export interface SecondsClient {
   feed: () => Promise<FeedItem[]>;
   discover: (query?: DiscoverQuery) => Promise<DiscoverResponse>;
   similarRecipes: (recipeId: string) => Promise<DiscoverCard[]>;
-  library: (shelfId?: string, query?: string) => Promise<LibraryResponse>;
+  library: (shelfId?: string, query?: string, sort?: LibrarySort) => Promise<LibraryResponse>;
   krogerStatus: () => Promise<KrogerStatus>;
   krogerStores: (zipCode: string) => Promise<GroceryStore[]>;
   setKrogerStore: (store: GroceryStore) => Promise<KrogerStatus>;
@@ -353,10 +358,11 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
 
     similarRecipes: (recipeId) => send<DiscoverCard[]>(`/api/recipes/${recipeId}/similar`),
 
-    library: (shelfId, query) => {
+    library: (shelfId, query, sort) => {
       const params = new URLSearchParams();
       if (shelfId) params.set("shelf", shelfId);
       if (query?.trim()) params.set("q", query.trim());
+      if (sort && sort !== "newest") params.set("sort", sort);
       const qs = params.toString();
       return send<LibraryResponse>(`/api/recipes${qs ? `?${qs}` : ""}`);
     },

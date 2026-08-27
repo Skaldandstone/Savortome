@@ -1,9 +1,11 @@
-import { and, desc, eq, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql, type SQL } from "drizzle-orm";
 import {
+  DEFAULT_LIBRARY_SORT,
   canonicalize,
   isStaple,
   normalizeDraft,
   validateDraft,
+  type LibrarySort,
   type Recipe,
   type RecipeDraft,
 } from "@seconds/core";
@@ -207,32 +209,94 @@ export interface ListRecipesOptions {
   ids?: string[];
   /** Free text. Matches the name, cuisine, description, tags, and ingredients. */
   query?: string;
+  /**
+   * How to order the result. Omitted alongside `ids` keeps the caller's order,
+   * which is what a search wants — its ids arrive ranked by relevance.
+   */
+  sort?: LibrarySort;
 }
 
 /** The signed-in user's recipes, newest first. */
+/**
+ * The signed-in user's library.
+ *
+ * The rating is joined in rather than fetched afterwards: the card wants to
+ * show it, and two of the sorts order by it, so a separate round trip would be
+ * paying twice for the same row. It's a left join — an unrated recipe is the
+ * common case, not a missing one.
+ */
 export async function listRecipes(
   database: Database,
   ownerId: string,
   options: ListRecipesOptions = {},
 ) {
-  const { limit = 50, ids } = options;
+  const { limit = 50, ids, sort } = options;
+  if (ids && ids.length === 0) return [];
 
-  if (ids) {
-    if (ids.length === 0) return [];
-    const rows = await database.query.recipes.findMany({
-      where: and(eq(schema.recipes.ownerId, ownerId), inArray(schema.recipes.id, ids)),
-      limit,
-    });
-    // Preserve the caller's ordering (shelves order by when they were added).
+  const rows = await database
+    .select({
+      id: schema.recipes.id,
+      title: schema.recipes.title,
+      imageUrl: schema.recipes.imageUrl,
+      totalMinutes: schema.recipes.totalMinutes,
+      ingredients: schema.recipes.ingredients,
+      sourceAuthor: schema.recipes.sourceAuthor,
+      sourceSiteName: schema.recipes.sourceSiteName,
+      sourceKind: schema.recipes.sourceKind,
+      visibility: schema.recipes.visibility,
+      createdAt: schema.recipes.createdAt,
+      stars: schema.ratings.stars,
+      timesCooked: schema.ratings.timesCooked,
+      lastCookedAt: schema.ratings.lastCookedAt,
+    })
+    .from(schema.recipes)
+    .leftJoin(
+      schema.ratings,
+      and(
+        eq(schema.ratings.recipeId, schema.recipes.id),
+        eq(schema.ratings.userId, ownerId),
+      ),
+    )
+    .where(
+      and(
+        eq(schema.recipes.ownerId, ownerId),
+        ids ? inArray(schema.recipes.id, ids) : undefined,
+      ),
+    )
+    .orderBy(...orderFor(sort))
+    .limit(limit);
+
+  // No sort asked for, but a caller-supplied order to honour: shelves order by
+  // when a recipe was added, and a search arrives ranked by relevance.
+  if (ids && !sort) {
     const rank = new Map(ids.map((id, i) => [id, i]));
     return rows.sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
   }
+  return rows;
+}
 
-  return database.query.recipes.findMany({
-    where: eq(schema.recipes.ownerId, ownerId),
-    orderBy: (r, { desc }) => [desc(r.createdAt)],
-    limit,
-  });
+/**
+ * Nulls always sort last, whichever direction the column runs.
+ *
+ * A recipe with no cook time or no rating is the least useful answer to
+ * "quickest" or "best rated" — floating it to the top because null happens to
+ * sort high in Postgres would be a bug that looks like a preference.
+ */
+function orderFor(sort: LibrarySort | undefined): SQL[] {
+  const newest = sql`${schema.recipes.createdAt} desc`;
+
+  switch (sort ?? DEFAULT_LIBRARY_SORT) {
+    case "name":
+      return [sql`lower(${schema.recipes.title}) asc`];
+    case "quickest":
+      return [sql`${schema.recipes.totalMinutes} asc nulls last`, newest];
+    case "rated":
+      return [sql`${schema.ratings.stars} desc nulls last`, newest];
+    case "cooked":
+      return [sql`${schema.ratings.lastCookedAt} desc nulls last`, newest];
+    default:
+      return [newest];
+  }
 }
 
 /**

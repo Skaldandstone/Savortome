@@ -242,8 +242,27 @@ it is a plain GET form, like the shelf tabs beside it - the result is a real
 URL that survives a refresh and can be sent to someone, and it needs no
 JavaScript at all.
 
-`pnpm check:library-search` asserts all of it against a real database,
-including that it never reaches another person's recipes.
+**Ordering.** Newest-first is right until the library outgrows a screen, so
+there is also A–Z, quickest, best rated, and recently cooked. Nulls always sort
+last, whichever direction the column runs — a recipe with no stated time is the
+least useful answer to "quickest", and floating it to the top because null
+sorts high in Postgres would be a bug that looks like a preference.
+
+**Your own verdict on the card.** You could rate a recipe, but the library
+never showed it back to you. Cards now carry your stars and "Cooked 3 times" —
+yours, not the community average. Cooked-but-never-rated shows nothing rather
+than a zero, because a card announcing "cooked 0 times" is an accusation rather
+than information. The rating comes from a left join in the same query that
+lists the recipes, since two of the sorts order by it and a second round trip
+would be paying twice for the same row.
+
+Search, shelf, and order all **compose**, and each control carries the other
+two — a sort link that silently dropped your search would be worse than no
+sort link.
+
+`pnpm check:library` asserts all of it against a real database, including that
+it never reaches another person's recipes and that another person's rating
+never leaks onto your card.
 
 ---
 
@@ -733,7 +752,7 @@ pnpm check:grocery
 ```
 
 ```bash
-pnpm check:library-search
+pnpm check:library
 ```
 
 All eight work on their own fixtures and are safe to re-run. `check:shelves` imports
