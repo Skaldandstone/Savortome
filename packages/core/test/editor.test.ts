@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
   blankStep,
+  draftFromRecipe,
   emptyDraft,
+  groupHeading,
   ingredientFromLine,
+  isGroupHeading,
   moveItem,
   normalizeDraft,
   provenanceTone,
@@ -123,6 +126,92 @@ describe("normalizeDraft", () => {
     assert.equal(clean.description, null);
     assert.equal(clean.cuisine, null);
     assert.equal(clean.servingsNote, null);
+  });
+});
+
+describe("section headings", () => {
+  it("reads a line ending in a colon as a heading", () => {
+    const row = ingredientFromLine("For the sauce:");
+    assert.equal(isGroupHeading(row), true);
+    assert.equal(row.group, "For the sauce");
+    assert.equal(row.item, "");
+  });
+
+  it("applies a heading to everything under it, and drops the row", () => {
+    const clean = normalizeDraft(
+      draftWith({
+        ingredients: [
+          ingredientFromLine("200g plain flour"),
+          ingredientFromLine("For the sauce:"),
+          ingredientFromLine("2 tbsp soy sauce"),
+          ingredientFromLine("1 tsp sesame oil"),
+        ],
+      }),
+    );
+
+    assert.equal(clean.ingredients.length, 3);
+    assert.deepEqual(
+      clean.ingredients.map((i) => [i.item, i.group]),
+      [
+        ["plain flour", null],
+        ["soy sauce", "For the sauce"],
+        ["sesame oil", "For the sauce"],
+      ],
+    );
+  });
+
+  it("starts a new section at the next heading", () => {
+    const clean = normalizeDraft(
+      draftWith({
+        ingredients: [
+          ingredientFromLine("For the cake:"),
+          ingredientFromLine("200g flour"),
+          ingredientFromLine("For the icing:"),
+          ingredientFromLine("100g butter"),
+        ],
+      }),
+    );
+    assert.deepEqual(clean.ingredients.map((i) => i.group), ["For the cake", "For the icing"]);
+  });
+
+  it("drops a heading with nothing under it", () => {
+    const clean = normalizeDraft(
+      draftWith({ ingredients: [ingredientFromLine("rice"), groupHeading("For the sauce")] }),
+    );
+    assert.equal(clean.ingredients.length, 1);
+  });
+
+  it("survives a round trip through the form", () => {
+    // The thing that would quietly flatten a multi-part recipe: editing it and
+    // saving has to give the groups back exactly.
+    const saved = normalizeDraft(
+      draftWith({
+        ingredients: [
+          ingredientFromLine("For the cake:"),
+          ingredientFromLine("200g flour"),
+          ingredientFromLine("For the icing:"),
+          ingredientFromLine("100g butter"),
+        ],
+      }),
+    );
+
+    const reopened = draftFromRecipe(saved);
+    assert.deepEqual(
+      reopened.ingredients.map((i) => i.raw),
+      ["For the cake:", "200g flour", "For the icing:", "100g butter"],
+    );
+    assert.deepEqual(normalizeDraft(reopened).ingredients, saved.ingredients);
+  });
+
+  it("doesn't count a heading as an ingredient", () => {
+    assert.throws(
+      () => validateDraft(draftWith({ ingredients: [ingredientFromLine("For the sauce:")] })),
+      /ingredient/i,
+    );
+  });
+
+  it("leaves an ordinary line alone", () => {
+    assert.equal(isGroupHeading(ingredientFromLine("2 tbsp olive oil")), false);
   });
 });
 

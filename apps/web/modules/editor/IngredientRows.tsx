@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { formatAmount, ingredientFromLine, type Ingredient } from "@nomnom/core/format";
+import {
+  formatAmount,
+  ingredientFromLine,
+  isGroupHeading,
+  type Ingredient,
+} from "@nomnom/core/format";
 import { RowActions } from "./RowActions";
 import styles from "./editor.module.css";
 
@@ -18,12 +23,14 @@ export function IngredientRows({
   ingredients,
   onReplace,
   onAdd,
+  onAddHeading,
   onRemove,
   onMove,
 }: {
   ingredients: Ingredient[];
   onReplace: (index: number, ingredient: Ingredient) => void;
   onAdd: () => void;
+  onAddHeading: () => void;
   onRemove: (index: number) => void;
   onMove: (from: number, to: number) => void;
 }) {
@@ -43,9 +50,14 @@ export function IngredientRows({
         />
       ))}
 
-      <button type="button" className={styles.addRow} onClick={onAdd}>
-        + Add ingredient
-      </button>
+      <div className={styles.addRows}>
+        <button type="button" className={styles.addRow} onClick={onAdd}>
+          + Add ingredient
+        </button>
+        <button type="button" className={styles.addRow} onClick={onAddHeading}>
+          + Add section
+        </button>
+      </div>
     </div>
   );
 }
@@ -106,38 +118,44 @@ function IngredientRow({
   const canonical = ingredient.canonicalItem.trim();
   const showCanonical = !editing && canonical && canonical !== text.trim().toLowerCase();
 
+  // A heading names the section everything under it belongs to. It buys
+  // nothing, so it has no pantry name and can't be optional.
+  const heading = isGroupHeading(ingredient);
+
   return (
-    <div className={styles.row}>
+    <div className={styles.row} data-heading={heading}>
       <div className={styles.rowMain}>
         <input
-          className={styles.lineInput}
+          className={heading ? styles.headingInput : styles.lineInput}
           value={text}
-          placeholder="2 tbsp olive oil"
-          aria-label={`Ingredient ${index + 1}`}
+          placeholder={heading ? "For the sauce:" : "2 tbsp olive oil"}
+          aria-label={heading ? `Section ${index + 1}` : `Ingredient ${index + 1}`}
           onChange={(e) => parse(e.target.value)}
           onFocus={() => setEditing(true)}
           onBlur={() => setEditing(false)}
         />
-        {showCanonical ? (
+        {!heading && showCanonical ? (
           <p className={styles.understood}>
             Matches <strong>{canonical}</strong> in your pantry
           </p>
         ) : null}
       </div>
 
-      <label className={styles.optional}>
-        <input
-          type="checkbox"
-          checked={ingredient.optional}
-          onChange={(e) => onReplace(index, { ...ingredient, optional: e.target.checked })}
-        />
-        Optional
-      </label>
+      {heading ? null : (
+        <label className={styles.optional}>
+          <input
+            type="checkbox"
+            checked={ingredient.optional}
+            onChange={(e) => onReplace(index, { ...ingredient, optional: e.target.checked })}
+          />
+          Optional
+        </label>
+      )}
 
       <RowActions
         index={index}
         count={count}
-        label="ingredient"
+        label={heading ? "section" : "ingredient"}
         onMove={onMove}
         onRemove={onRemove}
       />

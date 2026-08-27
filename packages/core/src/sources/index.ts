@@ -4,7 +4,13 @@ import { extractArticleText } from "./article.js";
 import { fetchText } from "./fetch.js";
 import { extractJsonLdRecipe } from "./jsonld.js";
 import { fetchSocial } from "./social.js";
-import { asrConfigFromEnv, transcribeUrl, ytDlpAvailable } from "./transcribe.js";
+import {
+  asrConfigFromEnv,
+  metadataViaYtDlp,
+  subtitlesViaYtDlp,
+  transcribeUrl,
+  ytDlpAvailable,
+} from "./transcribe.js";
 import { ResolveError, type ResolveOptions, type SourceDocument } from "./types.js";
 import { assertPublicHttpUrl } from "./url-guard.js";
 import { cuesToTranscript, fetchYoutube } from "./youtube.js";
@@ -15,7 +21,13 @@ export { extractArticleText } from "./article.js";
 export { extractJsonLdRecipe, isoDurationToMinutes } from "./jsonld.js";
 export { fetchSocial } from "./social.js";
 export { detectSourceKind, socialKind, youtubeVideoId } from "../source-kind.js";
-export { asrConfigFromEnv, transcribeUrl, ytDlpAvailable } from "./transcribe.js";
+export {
+  asrConfigFromEnv,
+  metadataViaYtDlp,
+  subtitlesViaYtDlp,
+  transcribeUrl,
+  ytDlpAvailable,
+} from "./transcribe.js";
 export { coalesceCues, cuesToTranscript, fetchYoutube } from "./youtube.js";
 
 /** A caption is only worth extracting from if it's long enough to plausibly hold a recipe. */
@@ -44,8 +56,13 @@ async function resolveVideo(
       cues = yt.cues;
       transcript = cuesToTranscript(yt.cues);
       trace.push(`youtube: ${yt.cues.length} caption cues`);
+    } else if (yt.captionStatus === "none") {
+      trace.push("youtube: the video publishes no captions");
     } else {
-      trace.push("youtube: no caption track available");
+      // Worth spelling out. This looks identical to "no captions" from the
+      // outside and sends you looking in the wrong place entirely. What
+      // happens next is yt-dlp's line to report, not this one's.
+      trace.push("youtube: captions exist but YouTube won't serve them to a server directly");
     }
   } else {
     const s = await fetchSocial(url, kind);
@@ -54,9 +71,45 @@ async function resolveVideo(
     imageUrl = s.imageUrl;
     caption = s.caption;
     trace.push(`${kind}: caption ${caption ? `${caption.length} chars` : "unavailable"}`);
+
+    // Instagram and Facebook serve a login wall to anything that looks like a
+    // scraper, so the Open Graph tags come back empty — and for a Reel the
+    // caption usually is the recipe. yt-dlp still gets it.
+    if (!caption && opts.allowTranscription !== false && (await ytDlpAvailable())) {
+      const meta = await metadataViaYtDlp(url);
+      if (meta?.description) {
+        caption = meta.description;
+        title = title ?? meta.title;
+        author = author ?? meta.uploader;
+        imageUrl = imageUrl ?? meta.thumbnail;
+        trace.push(`yt-dlp: caption ${caption.length} chars`);
+      } else {
+        trace.push("yt-dlp: no caption either");
+      }
+    }
   }
 
-  // No captions and no usable post text — fall back to downloading audio and running ASR.
+  // The caption track is the prize, and yt-dlp can usually fetch the one
+  // YouTube won't hand a server directly. Free and quick, so it goes ahead of
+  // ASR — but it isn't worth the wait for a post whose caption is already the
+  // whole recipe.
+  const wantsTranscript =
+    !transcript &&
+    opts.allowTranscription !== false &&
+    (kind === "youtube" || !captionIsSubstantive(caption));
+
+  if (wantsTranscript && (await ytDlpAvailable())) {
+    const subs = await subtitlesViaYtDlp(url);
+    if (subs.length) {
+      cues = subs;
+      transcript = cuesToTranscript(subs);
+      trace.push(`yt-dlp: ${subs.length} caption cues`);
+    } else {
+      trace.push("yt-dlp: no subtitles published");
+    }
+  }
+
+  // Still nothing spoken and no usable post text — download the audio and run ASR.
   if (!transcript && !captionIsSubstantive(caption) && opts.allowTranscription !== false) {
     const asr = asrConfigFromEnv();
     if (!asr) {
@@ -77,8 +130,8 @@ async function resolveVideo(
   if (!transcript && !captionIsSubstantive(caption)) {
     throw new ResolveError(
       `Could not get spoken text or a usable caption from this ${kind} link. ` +
-        `Install yt-dlp and set DEEPGRAM_API_KEY (or GROQ_API_KEY) to transcribe audio, ` +
-        `or paste the recipe text directly.`,
+        `Install yt-dlp to read caption tracks, add DEEPGRAM_API_KEY (or GROQ_API_KEY) ` +
+        `to transcribe audio when there are none, or paste the recipe text directly.`,
       trace,
     );
   }

@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import {
   blankIngredient,
   blankStep,
+  groupHeading,
   moveItem,
   type Ingredient,
   type RecipeDraft,
@@ -38,6 +39,8 @@ export function useDraft(initial: RecipeDraft) {
       })),
     add: () =>
       edit((current) => ({ ...current, ingredients: [...current.ingredients, blankIngredient()] })),
+    addHeading: () =>
+      edit((current) => ({ ...current, ingredients: [...current.ingredients, groupHeading("")] })),
     remove: (index: number) =>
       edit((current) => {
         const next = current.ingredients.filter((_, i) => i !== index);
