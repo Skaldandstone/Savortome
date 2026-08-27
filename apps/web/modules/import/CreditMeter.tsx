@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
-  CREDIT_PACKS,
   PLAN_PRICES,
   TIER_ALLOWANCE,
   TIER_LABEL,
@@ -27,19 +26,22 @@ import styles from "./import.module.css";
  * hobbit meals, which is charming but carries no inherent size ordering — the
  * number does that work, so the two travel together.
  */
-export function CreditMeter({ balance, resetsOn }: { balance: CreditBalance; resetsOn: string }) {
-  const [packs, setPacks] = useState<CreditPack[]>(CREDIT_PACKS);
+export function CreditMeter({
+  balance,
+  resetsOn,
+  packs,
+}: {
+  balance: CreditBalance;
+  resetsOn: string;
+  /**
+   * Prices come from the server, so a client cached across a price change
+   * can't offer a pack at yesterday's rate. Passed down rather than fetched
+   * here — the parent already asked the same endpoint for the same payload.
+   */
+  packs: CreditPack[];
+}) {
   const [busy, setBusy] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Prices come from the server so a client cached mid-change can't offer a
-    // pack at yesterday's price.
-    fetch("/api/credits")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => d?.packs && setPacks(d.packs))
-      .catch(() => undefined);
-  }, []);
 
   const buy = async (productId: string) => {
     setBusy(productId);
