@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   clampStep,
   cookProgress,
+  formatAmount,
   formatDuration,
+  ingredientsByStep,
   timestampUrl,
   type Recipe,
 } from "@seconds/core/format";
@@ -64,6 +66,13 @@ export function CookMode({ recipe, recipeId }: { recipe: Recipe; recipeId: strin
 
   const step = steps[clampStep(index, steps.length)];
   const progress = cookProgress(done, steps.length);
+
+  // Scaled ingredients, so the amount beside a step matches the one the cook
+  // set at the top. Recomputed only when that scaling changes, not per step.
+  const stepIngredients = useMemo(
+    () => ingredientsByStep(steps, servings.ingredients),
+    [steps, servings.ingredients],
+  );
 
   // Keep the saved session in step with what's on screen — but never before
   // the restore has settled, or this writes the empty state it starts in over
@@ -126,6 +135,7 @@ export function CookMode({ recipe, recipeId }: { recipe: Recipe; recipeId: strin
     );
   }
 
+  const forThisStep = stepIngredients.get(step.n) ?? [];
   const timer = timers.timerFor(step.n);
   const videoLink = step.sourceTimestamp !== null
     ? timestampUrl(recipe.source, step.sourceTimestamp)
@@ -199,6 +209,17 @@ export function CookMode({ recipe, recipeId }: { recipe: Recipe; recipeId: strin
         <p className={styles.text} data-done={done.has(step.n)}>
           {step.text}
         </p>
+
+        {forThisStep.length > 0 ? (
+          <ul className={styles.stepAmounts} aria-label="Amounts for this step">
+            {forThisStep.map((ingredient) => (
+              <li key={ingredient.raw + ingredient.canonicalItem} className={styles.stepAmount}>
+                <span className={styles.stepQuantity}>{formatAmount(ingredient)}</span>{" "}
+                {ingredient.item || ingredient.canonicalItem}
+              </li>
+            ))}
+          </ul>
+        ) : null}
 
         <div className={styles.stepExtras}>
           {step.timerSeconds ? (

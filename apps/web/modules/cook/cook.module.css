@@ -226,3 +226,32 @@
   .text { font-size: 21px; }
   .timerClock { font-size: 24px; }
 }
+
+/* --- amounts for the current step ----------------------------------------- */
+
+/*
+ * The one thing a step never says. Set beside the instruction rather than
+ * inside it, so the sentence still reads as a sentence.
+ */
+.stepAmounts {
+  list-style: none;
+  margin: 22px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+}
+
+.stepAmount {
+  padding: 7px 13px;
+  font-size: var(--step-3);
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border-radius: var(--radius-sm);
+}
+
+.stepQuantity {
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useKeepAwake } from "expo-keep-awake";
@@ -6,7 +6,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   clampStep,
   cookProgress,
+  formatAmount,
   formatDuration,
+  ingredientsByStep,
   timestampUrl,
   type Recipe,
 } from "@seconds/core/format";
@@ -54,6 +56,13 @@ export function CookScreen({ recipe, recipeId }: { recipe: Recipe; recipeId: str
   const { restored, checked, save, clear } = useCookSession(recipeId, steps.length);
   const step = steps[clampStep(index, steps.length)];
   const progress = cookProgress(done, steps.length);
+
+  // Scaled ingredients, so the amount beside a step matches the one the cook
+  // set at the top. Recomputed only when that scaling changes, not per step.
+  const stepIngredients = useMemo(
+    () => ingredientsByStep(steps, servings.ingredients),
+    [steps, servings.ingredients],
+  );
 
   // Apply a saved session once the read has landed, then let saving begin.
   useEffect(() => {
@@ -123,6 +132,7 @@ export function CookScreen({ recipe, recipeId }: { recipe: Recipe; recipeId: str
     );
   }
 
+  const forThisStep = stepIngredients.get(step.n) ?? [];
   const timer = timers.timerFor(step.n);
   const videoLink =
     step.sourceTimestamp !== null ? timestampUrl(recipe.source, step.sourceTimestamp) : null;
@@ -204,6 +214,24 @@ export function CookScreen({ recipe, recipeId }: { recipe: Recipe; recipeId: str
             {step.text}
           </Text>
 
+          {forThisStep.length > 0 ? (
+            <View style={styles.amounts} accessibilityLabel="Amounts for this step">
+              {forThisStep.map((ingredient) => (
+                <View
+                  key={ingredient.raw + ingredient.canonicalItem}
+                  style={[styles.amount, { backgroundColor: c.surfaceSunken }]}
+                >
+                  <Text style={[styles.amountText, { color: c.textMuted }]}>
+                    <Text style={[styles.amountQuantity, { color: c.text }]}>
+                      {formatAmount(ingredient)}
+                    </Text>{" "}
+                    {ingredient.item || ingredient.canonicalItem}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
+
           <View style={styles.extras}>
             {step.timerSeconds ? (
               timer ? (
@@ -270,6 +298,12 @@ export function CookScreen({ recipe, recipeId }: { recipe: Recipe; recipeId: str
 }
 
 const styles = StyleSheet.create({
+  // The one thing a step never says. Set beside the instruction rather than
+  // inside it, so the sentence still reads as a sentence.
+  amounts: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: space.lg },
+  amount: { paddingVertical: space.sm, paddingHorizontal: space.md, borderRadius: radius.sm },
+  amountText: { fontSize: typeScale.body },
+  amountQuantity: { fontWeight: "700" },
   content: { padding: space.lg, gap: space.md },
   empty: { flex: 1, padding: space.lg, gap: space.lg },
   toggle: {

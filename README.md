@@ -595,9 +595,38 @@ awake — Wake Lock on the web, `expo-keep-awake` on the phone — because
 unlocking a phone with batter on your hands is the moment an app stops being
 worth using.
 
-This is where two extracted fields finally get used. The importer has always
-pulled a hands-off duration out of step prose ("simmer for 20 minutes") and,
-for videos, the second each step happens at; until now both were badges.
+**Each step carries its own amounts.** "Whisk together the flour, baking soda
+and salt" is missing the only thing you need, and the numbers are three screens
+up in a list you'd have to leave the step to read. So the amounts sit beside
+the instruction - scaled, so they match whatever the serving control is set to.
+Nothing new is stored; it's the ingredient list and the step text, matched.
+
+The matching is deliberately cautious, because a wrong amount next to a step is
+worse than no amount at all: no amount sends someone to the ingredient list, a
+wrong one sends them to the bin. Four rules do the work:
+
+- **Whole words, never substrings** - "oat" doesn't match "coat", "ice" doesn't
+  match "slice".
+- **A short name can't claim a mention a longer one covers.** A recipe holding
+  both `garlic` and `garlic powder` used to add a clove to every step that said
+  "garlic powder"; found on a real recipe, not imagined.
+- **Shorthand only when it's unambiguous.** A step says "the oil", not
+  "extra-virgin olive oil". That resolves when the recipe has one oil and stays
+  silent when it has two. Only the tail of a name can stand for the whole -
+  plus the head when the tail is a form word, so `vanilla extract` answers to
+  "vanilla" while `brown sugar` does *not* answer to "Brown the meat".
+- **Never resolve to something the recipe makes.** "Fold the tofu into the
+  sauce" means the dressing from two steps ago, not the bottle of hot sauce in
+  the list.
+
+Across the seeded recipes this puts amounts on 32 of 41 steps. The one case it
+still reads oddly is a recipe that lists the same ingredient twice - a step
+mentioning olive oil shows both entries. That's honest rather than wrong, and
+hiding one would hide a real amount.
+
+This is also where two extracted fields finally get used. The importer has
+always pulled a hands-off duration out of step prose ("simmer for 20 minutes")
+and, for videos, the second each step happens at; until now both were badges.
 
 - **Timers belong to the session, not the step.** The reason you set one is so
   you can move on, so they run in a tray above whatever step you're reading.
