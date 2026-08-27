@@ -28,6 +28,13 @@ discovery. Anything platform-agnostic -
 request shapes, shelf rules, quantity scaling, the optimistic-update logic -
 lives in `@seconds/core/format` so the two clients can't drift apart.
 
+The app is **Second Breakfast** everywhere except an iPhone home screen, where
+`ios.infoPlist.CFBundleDisplayName` shortens it to **2nd Breakfast**. iOS gives
+a label around twelve characters before it elides, and "Second Brea…" is a
+worse thing to look at every day than a contraction. The bundle identifier,
+the App Store name and the web app are all unchanged; only the icon caption is
+shorter. Android keeps the full name, having room for it.
+
 `@seconds/core` has two entry points:
 
 - `@seconds/core` - the full pipeline. Server only; pulls in `node:dns`,
@@ -935,7 +942,3 @@ Modelled in `packages/db/src/schema.ts`, in rough dependency order:
    see "Cooking from a card". The phone hands its alarms to the OS and has no
    such limit. Fixing the web side means a service worker with its own
    scheduler.
-5. **The mobile home-screen label.** `app.json` uses the full "Second
-   Breakfast", which iOS truncates near 12 characters to "Second Brea…". Left
-   as-is deliberately — a naming convention is well down the priority list, and
-   "Seconds" wasn't the right call. Worth a look before any store listing.

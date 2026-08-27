@@ -15,7 +15,10 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.secondbreakfast.app"
+      "bundleIdentifier": "com.secondbreakfast.app",
+      "infoPlist": {
+        "CFBundleDisplayName": "2nd Breakfast"
+      }
     },
     "android": {
       "package": "com.secondbreakfast.app"
