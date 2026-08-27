@@ -17,11 +17,19 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     orientation: "portrait",
     background_color: "#fbf8f4",
-    theme_color: "#b4451f",
+    theme_color: "#E89A0C",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      // Its own file: a maskable icon is cropped to whatever shape the platform
+      // fancies, so the mark is drawn well inside the safe area. Reusing the
+      // square one here would let a circular mask take the handle off.
+      {
+        src: "/icons/icon-maskable-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
     ],
   };
 }
