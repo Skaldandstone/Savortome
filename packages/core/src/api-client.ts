@@ -65,6 +65,7 @@ export interface DiscoverQuery {
   maxMinutes?: number | null;
 }
 import type { ImportRequest, ImportResponse } from "./import-client.js";
+import type { CreditBalance, CreditPack } from "./credits.js";
 import type { Recipe } from "./recipe.js";
 import type { RecipeDraft } from "./editor.js";
 import type { LibrarySort } from "./library.js";
@@ -105,6 +106,13 @@ export interface PantrySearchResult extends PantryMatch {
   totalMinutes: number | null;
   tags: string[];
   timesCooked: number;
+}
+
+/** What the credit meter needs: the balance, when it resets, and what to buy. */
+export interface CreditsResponse {
+  credits: CreditBalance;
+  resetsOn: string;
+  packs: CreditPack[];
 }
 
 export interface PantrySearchResponse {
@@ -202,6 +210,7 @@ export interface SecondsClient {
   feed: () => Promise<FeedItem[]>;
   discover: (query?: DiscoverQuery) => Promise<DiscoverResponse>;
   similarRecipes: (recipeId: string) => Promise<DiscoverCard[]>;
+  credits: () => Promise<CreditsResponse>;
   library: (shelfId?: string, query?: string, sort?: LibrarySort) => Promise<LibraryResponse>;
   plan: (week?: string) => Promise<PlanResponse>;
   planAdd: (recipeId: string, date: string, slot: MealSlot, week?: string) => Promise<PlanResponse>;
@@ -387,6 +396,8 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
       const qs = params.toString();
       return send<LibraryResponse>(`/api/recipes${qs ? `?${qs}` : ""}`);
     },
+
+    credits: () => send<CreditsResponse>("/api/credits"),
 
     plan: (week) => send<PlanResponse>(`/api/plan${week ? `?week=${week}` : ""}`),
 
