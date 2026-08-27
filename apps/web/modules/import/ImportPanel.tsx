@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import type { CreditBalance } from "@seconds/core/format";
+import { CREDIT_PACKS, type CreditBalance, type CreditPack } from "@seconds/core/format";
 import { RecipeCard } from "@/modules/recipe";
 import { Callout, Panel, PanelHeader } from "@/ui";
 import { CreditMeter } from "./CreditMeter";
@@ -15,6 +15,7 @@ export function ImportPanel() {
   const { stage, busy, error, result, run } = useImport();
   const [credits, setCredits] = useState<CreditBalance | null>(null);
   const [resetsOn, setResetsOn] = useState<string>("");
+  const [packs, setPacks] = useState<CreditPack[]>(CREDIT_PACKS);
 
   // Fetched once so the count is on screen before anything is pasted. A 401 or
   // 501 just means there's nothing to meter, which is not an error worth showing.
@@ -24,6 +25,7 @@ export function ImportPanel() {
       .then((d) => {
         if (d?.credits) setCredits(d.credits);
         if (d?.resetsOn) setResetsOn(d.resetsOn);
+        if (d?.packs) setPacks(d.packs);
       })
       .catch(() => undefined);
   }, []);
@@ -47,7 +49,7 @@ export function ImportPanel() {
           }
         />
 
-        {credits ? <CreditMeter balance={credits} resetsOn={resetsOn} /> : null}
+        {credits ? <CreditMeter balance={credits} resetsOn={resetsOn} packs={packs} /> : null}
 
         <ImportForm busy={busy} onSubmit={run} />
 
