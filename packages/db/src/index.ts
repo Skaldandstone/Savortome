@@ -1,6 +1,13 @@
 export * as schema from "./schema.js";
 export * from "./schema.js";
 export { createDb, db, type Database } from "./client.js";
+export {
+  encryptSecret,
+  decryptSecret,
+  encryptNullable,
+  decryptNullable,
+  isEncrypted,
+} from "./crypto.js";
 export * from "./queries/users.js";
 export * from "./queries/recipes.js";
 export * from "./queries/shelves.js";
