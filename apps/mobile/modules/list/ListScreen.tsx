@@ -3,6 +3,7 @@ import * as Clipboard from "expo-clipboard";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   formatAmount,
+  groupByAisle,
   type CartProvider,
   type CartProviderId,
   type ShoppingLine,
@@ -127,6 +128,8 @@ export function ListScreen() {
   const open = items.filter((i) => !i.checked);
   const done = items.filter((i) => i.checked);
 
+  const sections = groupByAisle(open);
+
   const send = async (provider: CartProviderId) => {
     const result = await sendToCart(provider);
     if (!result) return;
@@ -158,8 +161,19 @@ export function ListScreen() {
               {list && list.checkedCount > 0 ? ` · ${list.checkedCount} in the basket` : ""}
             </Text>
 
-            {open.map((item) => (
-              <Row key={item.id} item={item} disabled={busy} onToggle={toggle} onRemove={remove} />
+            {/* Only what's still to find is grouped — once something is in the
+                basket its aisle stops being useful. */}
+            {sections.map((section) => (
+              <View key={section.aisle}>
+                {sections.length > 1 ? (
+                  <Text style={[styles.aisle, { color: c.textMuted }]}>
+                    {section.label.toUpperCase()}
+                  </Text>
+                ) : null}
+                {section.items.map((item) => (
+                  <Row key={item.id} item={item} disabled={busy} onToggle={toggle} onRemove={remove} />
+                ))}
+              </View>
             ))}
             {done.map((item) => (
               <Row key={item.id} item={item} disabled={busy} onToggle={toggle} onRemove={remove} />
@@ -202,6 +216,13 @@ export function ListScreen() {
 
 const styles = StyleSheet.create({
   content: { padding: space.lg + 4, paddingBottom: space.xxl * 3 },
+  aisle: {
+    fontSize: typeScale.micro,
+    fontWeight: "700",
+    letterSpacing: 0.8,
+    marginTop: space.md,
+    marginBottom: space.xs,
+  },
   count: { fontSize: typeScale.small, marginBottom: space.md },
   row: {
     flexDirection: "row",

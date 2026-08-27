@@ -130,3 +130,18 @@
 .store span { font-size: var(--step-2); color: var(--text-muted); }
 
 .unmatched { margin: 4px 0 8px; padding-left: 18px; }
+
+/* --- shop sections -------------------------------------------------------- */
+
+.aisle + .aisle { margin-top: 18px; }
+
+.aisleLabel {
+  margin: 0 0 6px;
+  font-size: var(--step-1);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border);
+}

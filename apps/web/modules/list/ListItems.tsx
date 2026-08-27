@@ -1,6 +1,6 @@
 "use client";
 
-import { formatAmount, type ShoppingLine } from "@seconds/core/format";
+import { formatAmount, groupByAisle, type ShoppingLine } from "@seconds/core/format";
 import styles from "./list.module.css";
 
 type Item = ShoppingLine & { id: string };
@@ -29,13 +29,29 @@ export function ListItems({
   const outstanding = items.filter((i) => !i.checked);
   const done = items.filter((i) => i.checked);
 
+  // Only what's left to find is grouped. Once something is in the basket the
+  // aisle stops being information, so the done pile stays one flat list.
+  const sections = groupByAisle(outstanding);
+
   return (
     <>
-      <ul className={styles.items}>
-        {outstanding.map((item) => (
-          <Row key={item.id} item={item} disabled={disabled} onToggle={onToggle} onRemove={onRemove} />
-        ))}
-      </ul>
+      {sections.map((section) => (
+        <section key={section.aisle} className={styles.aisle}>
+          {/* A single section means a single heading saying nothing useful. */}
+          {sections.length > 1 ? <h3 className={styles.aisleLabel}>{section.label}</h3> : null}
+          <ul className={styles.items}>
+            {section.items.map((item) => (
+              <Row
+                key={item.id}
+                item={item}
+                disabled={disabled}
+                onToggle={onToggle}
+                onRemove={onRemove}
+              />
+            ))}
+          </ul>
+        </section>
+      ))}
 
       {done.length > 0 ? (
         <details className={styles.done}>

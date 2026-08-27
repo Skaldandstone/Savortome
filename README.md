@@ -360,6 +360,22 @@ Names on the list come from the canonical form rather than the recipe's own
 wording, because "melted coconut oil or extra-virgin olive oil or high quality
 vegetable oil*" is not something you can look for in a shop.
 
+**Sorted by aisle, not by recipe.** A merged list is still only half the job -
+printed in the order recipes happened to contribute it walks you from produce to
+frozen and back to produce again. Lines are grouped into the sections a shop is
+actually laid out in, in walking order: produce, meat and fish, dairy, bakery,
+frozen, pantry, drinks. Only what's still to get is grouped; once something is
+in the basket its aisle stops being information.
+
+The grouping reads the canonical name, so there's nothing to tag and no new
+data - but it matches whole words rather than substrings, which is the thing
+that makes this kind of table quietly wrong. "grape" inside `grapeseed oil`
+files a bottle of oil in produce; "cream" inside `cream of tartar` puts a
+raising agent in the fridge. Anything unrecognised falls to **Anything else**
+at the end rather than being guessed at - an unknown item at the bottom of the
+list is a small annoyance, the same item confidently filed under Frozen is a
+walk to the wrong end of the shop.
+
 ### Which services actually work
 
 This is the part worth being straight about:
