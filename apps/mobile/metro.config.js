@@ -17,7 +17,7 @@ config.resolver.nodeModulesPaths = [
 // somewhere Metro won't find with the lookup disabled.
 
 /**
- * @nomnom/core ships TypeScript source that uses ESM-style ".js" import
+ * @seconds/core ships TypeScript source that uses ESM-style ".js" import
  * specifiers ("./units.js" for units.ts). Metro has no extensionAlias option,
  * so relative ".js" specifiers that don't exist on disk get retried as ".ts".
  */
