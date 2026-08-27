@@ -13,6 +13,7 @@ import { IngredientList, ServingScaler, useServings } from "@/modules/recipe";
 import { Button, Callout } from "@/ui";
 import { FinishPanel } from "./FinishPanel";
 import { TimerTray } from "./TimerTray";
+import { useCookSession } from "./useCookSession";
 import { useTimers } from "./useTimers";
 import { useWakeLock } from "./useWakeLock";
 import styles from "./cook.module.css";
@@ -29,16 +30,61 @@ export function CookMode({ recipe, recipeId }: { recipe: Recipe; recipeId: strin
   const [index, setIndex] = useState(0);
   const [done, setDone] = useState<ReadonlySet<number>>(() => new Set());
   const [showIngredients, setShowIngredients] = useState(false);
+  const [showResumed, setShowResumed] = useState(false);
+  /**
+   * Whether the saved session has been dealt with — restored, or found absent.
+   *
+   * State rather than a ref, because it has to survive being wrong: a remount
+   * gets a fresh one and correctly re-reads storage. A ref looked right and
+   * quietly let the second mount save before it had restored.
+   */
+  const [settled, setSettled] = useState(false);
   const timers = useTimers();
   const servings = useServings(recipe);
+  const steps = recipe.steps;
+  // Destructured: the hook returns a fresh object every render, and depending
+  // on it made the save effect fire on every timer tick.
+  const { restored, checked, save, clear } = useCookSession(recipeId, steps.length);
 
   useWakeLock(true);
 
-  const steps = recipe.steps;
+  // Apply a saved session once the read has landed, then let saving begin.
+  useEffect(() => {
+    if (!checked || settled) return;
+    if (restored) {
+      setIndex(restored.stepIndex);
+      setDone(restored.done);
+      timers.restore(restored.timers);
+      setShowResumed(true);
+    }
+    setSettled(true);
+    // timers is rebuilt every render; depending on it would re-run this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checked, restored, settled]);
+
   const step = steps[clampStep(index, steps.length)];
   const progress = cookProgress(done, steps.length);
 
+  // Keep the saved session in step with what's on screen — but never before
+  // the restore has settled, or this writes the empty state it starts in over
+  // the session it is about to read.
+  useEffect(() => {
+    if (!settled) return;
+    if (progress.finished) clear();
+    else save(index, done, timers.timers);
+  }, [settled, index, done, timers.timers, progress.finished, save, clear]);
+
+
   const go = (delta: number) => setIndex((i) => clampStep(i + delta, steps.length));
+
+  /** Throw the restored session away and begin the recipe again. */
+  const startOver = () => {
+    setShowResumed(false);
+    setIndex(0);
+    setDone(new Set());
+    for (const timer of timers.timers) timers.dismiss(timer.stepN);
+    clear();
+  };
 
   const toggleDone = (n: number) =>
     setDone((current) => {
@@ -123,6 +169,17 @@ export function CookMode({ recipe, recipeId }: { recipe: Recipe; recipeId: strin
         onReset={timers.reset}
         onDismiss={timers.dismiss}
       />
+
+      {/* An unexplained jump to step 4 reads as a bug; saying so makes it a
+          feature. Dismissible, because it's only interesting once. */}
+      {showResumed ? (
+        <div className={styles.resumed} role="status">
+          <span>Picked up where you left off.</span>
+          <button type="button" onClick={startOver}>
+            Start over
+          </button>
+        </div>
+      ) : null}
 
       <div
         className={styles.progress}

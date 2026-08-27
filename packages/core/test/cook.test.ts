@@ -9,6 +9,9 @@ import {
   resetTimer,
   resumeTimer,
   startTimer,
+  restoreSession,
+  serializeSession,
+  SESSION_MAX_AGE_MS,
   timerLabel,
   timerState,
   timestampUrl,
@@ -165,5 +168,58 @@ describe("navigation", () => {
     assert.equal(clampStep(9, 5), 4);
     assert.equal(clampStep(2, 5), 2);
     assert.equal(clampStep(0, 0), 0);
+  });
+});
+
+describe("sessions", () => {
+  const running = startTimer(step(2, "Simmer for 20 minutes.", 1200), T0);
+  const save = (now = T0) => serializeSession("r1", 3, new Set([1, 2]), [running], now);
+
+  it("comes back the way it went in", () => {
+    const back = restoreSession(save(), "r1", 5, T0 + 60_000)!;
+    assert.equal(back.stepIndex, 3);
+    assert.deepEqual([...back.done].sort(), [1, 2]);
+    assert.equal(back.timers.length, 1);
+  });
+
+  it("restores a timer to the right moment, not the moment it was saved", () => {
+    // The whole reason timers are wall-clock anchored: five minutes passing
+    // during a reload has to cost five minutes.
+    const back = restoreSession(save(), "r1", 5, T0 + 300_000)!;
+    assert.equal(remainingSeconds(back.timers[0]!, T0 + 300_000), 900);
+  });
+
+  it("ignores a session belonging to a different recipe", () => {
+    assert.equal(restoreSession(save(), "r2", 5, T0), null);
+  });
+
+  it("ignores one older than a cook could plausibly be", () => {
+    assert.equal(restoreSession(save(), "r1", 5, T0 + SESSION_MAX_AGE_MS + 1), null);
+    assert.ok(restoreSession(save(), "r1", 5, T0 + SESSION_MAX_AGE_MS - 1));
+  });
+
+  it("survives anything at all being in storage", () => {
+    assert.equal(restoreSession(null, "r1", 5, T0), null);
+    assert.equal(restoreSession("", "r1", 5, T0), null);
+    assert.equal(restoreSession("not json", "r1", 5, T0), null);
+    assert.equal(restoreSession("[1,2,3]", "r1", 5, T0), null);
+    assert.equal(restoreSession('{"recipeId":"r1"}', "r1", 5, T0), null);
+  });
+
+  it("drops progress pointing past a recipe that has since been edited shorter", () => {
+    const back = restoreSession(save(), "r1", 2, T0 + 60_000)!;
+    assert.deepEqual([...back.done].sort(), [1, 2]);
+    // Step index clamped to the last step that still exists.
+    assert.equal(back.stepIndex, 1);
+  });
+
+  it("drops a timer whose step no longer exists", () => {
+    const gone = serializeSession("r1", 0, new Set([1]), [startTimer(step(9, "x", 60), T0)], T0);
+    assert.deepEqual(restoreSession(gone, "r1", 3, T0)!.timers, []);
+  });
+
+  it("has nothing to offer when nothing had happened yet", () => {
+    // Restoring "you are on step 1 and have done nothing" is not a restore.
+    assert.equal(restoreSession(serializeSession("r1", 0, new Set(), [], T0), "r1", 5, T0), null);
   });
 });

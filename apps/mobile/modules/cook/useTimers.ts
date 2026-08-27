@@ -71,6 +71,13 @@ export function useTimers() {
       Vibration.cancel();
       setTimers((current) => current.filter((t) => t.stepN !== stepN));
     },
+    /** Put back a set of timers read out of a saved session. */
+    restore: (saved: CookTimer[]) => {
+      // Anything already ringing when the session was saved has had its buzz;
+      // re-firing it on reopen would be startling rather than useful.
+      for (const t of saved) alarmed.current.add(t.stepN);
+      setTimers(saved);
+    },
     timerFor: (stepN: number) => timers.find((t) => t.stepN === stepN) ?? null,
     remaining: (timer: CookTimer) => remainingSeconds(timer, now),
     stateOf: (timer: CookTimer) => timerState(timer, now),
