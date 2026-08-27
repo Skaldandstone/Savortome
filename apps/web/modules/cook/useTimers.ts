@@ -11,6 +11,7 @@ import {
   type CookTimer,
   type Step,
 } from "@seconds/core/format";
+import { notifyTimerDone, requestNotifyPermission } from "./notify";
 
 /**
  * Every timer running in a cook session.
@@ -19,7 +20,7 @@ import {
  * oven — so they're keyed by the step they came from and live above the step
  * you happen to be looking at.
  */
-export function useTimers(initial: CookTimer[] = []) {
+export function useTimers(initial: CookTimer[] = [], recipeTitle = "") {
   const [timers, setTimers] = useState<CookTimer[]>(initial);
   const [now, setNow] = useState(() => Date.now());
   const alarmed = useRef(new Set<number>());
@@ -38,6 +39,8 @@ export function useTimers(initial: CookTimer[] = []) {
     for (const timer of timers) {
       if (timerState(timer, now) === "ringing" && !alarmed.current.has(timer.stepN)) {
         alarmed.current.add(timer.stepN);
+        // Reaches someone who has switched tabs, which the beep does not.
+        notifyTimerDone(timer, recipeTitle);
         ring();
       }
     }
@@ -48,6 +51,9 @@ export function useTimers(initial: CookTimer[] = []) {
   }, []);
 
   const start = useCallback((step: Step) => {
+    // Asked here rather than on page load: starting a timer is the gesture
+    // that makes the request make sense, and an unprompted one gets dismissed.
+    void requestNotifyPermission();
     alarmed.current.delete(step.n);
     setTimers((current) => [
       ...current.filter((t) => t.stepN !== step.n),
@@ -71,9 +77,14 @@ export function useTimers(initial: CookTimer[] = []) {
     },
     /** Put back a set of timers read out of a saved session. */
     restore: (saved: CookTimer[]) => {
-      // Anything already ringing when the session was saved has had its alarm;
-      // re-sounding it on a reload would be startling rather than useful.
-      for (const t of saved) alarmed.current.add(t.stepN);
+      const at = Date.now();
+      // Only a timer that had *already* finished has had its alarm; re-sounding
+      // that one on a reload would be startling. One still counting down has
+      // not rung yet and must be allowed to, or restoring a session quietly
+      // disarms every timer in it.
+      for (const t of saved) {
+        if (timerState(t, at) === "ringing") alarmed.current.add(t.stepN);
+      }
       setTimers(saved);
     },
     timerFor: (stepN: number) => timers.find((t) => t.stepN === stepN) ?? null,

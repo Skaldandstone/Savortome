@@ -36,7 +36,7 @@ export function CookScreen({ recipe, recipeId }: { recipe: Recipe; recipeId: str
    * saving over what it was about to restore.
    */
   const [settled, setSettled] = useState(false);
-  const timers = useTimers();
+  const timers = useTimers(recipe.title);
   const servings = useServings(recipe);
   const insets = useSafeAreaInsets();
   const scroller = useRef<ScrollView>(null);
