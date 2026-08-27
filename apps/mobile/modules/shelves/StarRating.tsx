@@ -1,5 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { MAX_STARS } from "@nomnom/core/format";
+import { MAX_STARS } from "@seconds/core/format";
 import { usePalette } from "@/ui";
 
 const STARS = Array.from({ length: MAX_STARS }, (_, i) => i + 1);

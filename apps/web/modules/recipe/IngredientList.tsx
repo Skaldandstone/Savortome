@@ -1,4 +1,4 @@
-import { formatAmount, type Ingredient } from "@nomnom/core/format";
+import { formatAmount, type Ingredient } from "@seconds/core/format";
 import { Button } from "@/ui";
 import styles from "./IngredientList.module.css";
 

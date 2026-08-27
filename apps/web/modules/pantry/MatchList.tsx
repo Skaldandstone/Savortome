@@ -7,7 +7,7 @@ import {
   formatMinutes,
   type PantrySearchResponse,
   type PantrySearchResult,
-} from "@nomnom/core/format";
+} from "@seconds/core/format";
 import { AddMissingButton } from "@/modules/list";
 import styles from "./pantry.module.css";
 

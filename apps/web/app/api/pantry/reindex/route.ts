@@ -1,4 +1,4 @@
-import { recanonicalizeRecipes } from "@nomnom/db";
+import { recanonicalizeRecipes } from "@seconds/db";
 import { withUser } from "@/lib/api";
 
 /**

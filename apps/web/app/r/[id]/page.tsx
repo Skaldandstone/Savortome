@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { db, getSharedRecipe } from "@nomnom/db";
+import { db, getSharedRecipe } from "@seconds/db";
 import { RecipeCard } from "@/modules/recipe";
 import { SimilarRecipes } from "@/modules/discover";
 import { SaveSharedButton, SharedByLine } from "@/modules/sharing";
@@ -28,11 +28,11 @@ async function load(id: string) {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const shared = await load(id);
-  if (!shared) return { title: "Recipe not found · NomNom" };
+  if (!shared) return { title: "Recipe not found · Second Breakfast" };
 
   const { recipe, view } = shared;
   return {
-    title: `${recipe.title} · NomNom`,
+    title: `${recipe.title} · Second Breakfast`,
     description: recipe.description ?? `A recipe shared by ${view.sharedBy.displayName}.`,
     openGraph: {
       title: recipe.title,

@@ -24,12 +24,12 @@ importers:
       '@expo/metro-runtime':
         specifier: ~57.0.13
         version: 57.0.13(@expo/log-box@57.0.3)(expo@57.0.16)(react-dom@19.2.3(react@19.2.3))(react-native@0.86.2(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.0(@babel/core@7.29.7(supports-color@8.1.1))(bufferutil@4.1.0)(supports-color@8.1.1)(utf-8-validate@6.0.6))(@types/react@19.2.18)(bufferutil@4.1.0)(react@19.2.3)(supports-color@8.1.1)(utf-8-validate@6.0.6))(react@19.2.3)
-      '@nomnom/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@react-native-async-storage/async-storage':
         specifier: 2.2.0
         version: 2.2.0(react-native@0.86.2(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.87.0(@babel/core@7.29.7(supports-color@8.1.1))(bufferutil@4.1.0)(supports-color@8.1.1)(utf-8-validate@6.0.6))(@types/react@19.2.18)(bufferutil@4.1.0)(react@19.2.3)(supports-color@8.1.1)(utf-8-validate@6.0.6))
+      '@seconds/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       expo:
         specifier: ~57.0.16
         version: 57.0.16(dc6885287973a402da2c9eb089a47d34)
@@ -82,10 +82,10 @@ importers:
       '@clerk/nextjs':
         specifier: 7.8.0
         version: 7.8.0(next@15.5.23(@babel/core@7.29.7(supports-color@8.1.1))(babel-plugin-react-compiler@1.0.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3))(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
-      '@nomnom/core':
+      '@seconds/core':
         specifier: workspace:*
         version: link:../../packages/core
-      '@nomnom/db':
+      '@seconds/db':
         specifier: workspace:*
         version: link:../../packages/db
       drizzle-orm:
@@ -150,7 +150,7 @@ importers:
       '@neondatabase/serverless':
         specifier: ^1.1.0
         version: 1.1.0
-      '@nomnom/core':
+      '@seconds/core':
         specifier: workspace:*
         version: link:../core
       drizzle-orm:

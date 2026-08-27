@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ShelfSummary } from "@nomnom/core/format";
+import type { ShelfSummary } from "@seconds/core/format";
 import { Button, TextField } from "@/ui";
 import styles from "./shelves.module.css";
 

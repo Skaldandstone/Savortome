@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { emptyDraft } from "@nomnom/core/format";
+import { emptyDraft } from "@seconds/core/format";
 import { RecipeEditor } from "@/modules/editor";
 import { Callout } from "@/ui";
 import { clerkConfigured, currentUserId, databaseConfigured } from "@/lib/session";

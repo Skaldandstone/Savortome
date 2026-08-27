@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { RecipeShelfState, ShelfSummary, StatusShelf } from "@nomnom/core/format";
+import type { RecipeShelfState, ShelfSummary, StatusShelf } from "@seconds/core/format";
 import { api } from "@/lib/client";
 
 export interface ShelfController {

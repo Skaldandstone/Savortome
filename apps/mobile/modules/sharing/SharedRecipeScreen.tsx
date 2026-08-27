@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Image, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { DiscoverCard, Recipe, SharedRecipeView } from "@nomnom/core/format";
+import type { DiscoverCard, Recipe, SharedRecipeView } from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { DiscoverRow } from "@/modules/discover";
 import { RecipeCard } from "@/modules/recipe";

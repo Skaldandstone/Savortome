@@ -6,9 +6,9 @@ import {
   serializeSession,
   type CookTimer,
   type RestoredSession,
-} from "@nomnom/core/format";
+} from "@seconds/core/format";
 
-const key = (recipeId: string) => `nomnom:cook:${recipeId}`;
+const key = (recipeId: string) => `seconds:cook:${recipeId}`;
 
 /**
  * A cook in progress, kept across a reload.

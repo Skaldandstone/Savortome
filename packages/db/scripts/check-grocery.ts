@@ -17,7 +17,7 @@ import { readFileSync } from "node:fs";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq, inArray } from "drizzle-orm";
-import type { KrogerToken } from "@nomnom/core";
+import type { KrogerToken } from "@seconds/core";
 import * as schema from "../src/schema.js";
 import {
   getConnection,

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { describeFeedItem, type FeedItem } from "@nomnom/core/format";
+import { describeFeedItem, type FeedItem } from "@seconds/core/format";
 import styles from "./friends.module.css";
 
 /** Roughly how long ago, in the terms people actually use. */

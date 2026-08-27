@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { IMPORT_STAGES } from "@nomnom/core/format";
+import { IMPORT_STAGES } from "@seconds/core/format";
 import { radius, space, usePalette } from "@/ui";
 
 export function ImportProgress({ stage }: { stage: number }) {

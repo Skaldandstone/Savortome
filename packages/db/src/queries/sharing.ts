@@ -5,14 +5,14 @@ import {
   type Recipe,
   type SharedRecipeView,
   type Visibility,
-} from "@nomnom/core";
+} from "@seconds/core";
 import type { Database } from "../client.js";
 import * as schema from "../schema.js";
 
 /**
  * Sharing a recipe by link, and saving someone else's into your own library.
  *
- * Every read here goes through `canView` from `@nomnom/core` rather than
+ * Every read here goes through `canView` from `@seconds/core` rather than
  * hand-rolling the visibility check, so there is one place the rules live and
  * one place they're tested.
  */

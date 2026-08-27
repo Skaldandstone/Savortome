@@ -1,6 +1,6 @@
 "use client";
 
-import type { Step } from "@nomnom/core/format";
+import type { Step } from "@seconds/core/format";
 import { RowActions } from "./RowActions";
 import styles from "./editor.module.css";
 

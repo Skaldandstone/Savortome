@@ -1,5 +1,5 @@
 import { StyleSheet, View } from "react-native";
-import { SHELF_ACTION, STATUS_SHELVES, type StatusShelf } from "@nomnom/core/format";
+import { SHELF_ACTION, STATUS_SHELVES, type StatusShelf } from "@seconds/core/format";
 import { Button, space } from "@/ui";
 
 /** The three built-in shelves as one exclusive control. */

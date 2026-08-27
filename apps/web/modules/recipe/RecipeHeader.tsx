@@ -1,4 +1,4 @@
-import type { Recipe } from "@nomnom/core/format";
+import type { Recipe } from "@seconds/core/format";
 import styles from "./RecipeHeader.module.css";
 
 export function RecipeHeader({ recipe }: { recipe: Recipe }) {

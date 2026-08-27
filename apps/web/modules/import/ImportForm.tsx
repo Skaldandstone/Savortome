@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button, FieldRow, TextArea, TextField } from "@/ui";
 import { ModeSwitch } from "./ModeSwitch";
-import { hintForUrl, type ImportMode, type ImportRequest } from "@nomnom/core/format";
+import { hintForUrl, type ImportMode, type ImportRequest } from "@seconds/core/format";
 import styles from "./import.module.css";
 
 export function ImportForm({

@@ -1,5 +1,5 @@
-import type { Visibility } from "@nomnom/core";
-import { deleteShelf, renameShelf, setShelfVisibility } from "@nomnom/db";
+import type { Visibility } from "@seconds/core";
+import { deleteShelf, renameShelf, setShelfVisibility } from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
 
 export const runtime = "nodejs";

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { exchangeCode } from "@nomnom/core";
-import { db, saveConnection } from "@nomnom/db";
+import { exchangeCode } from "@seconds/core";
+import { db, saveConnection } from "@seconds/db";
 import { errorResponse } from "@/lib/api";
 import { KROGER_STATE_COOKIE, requireKrogerCredentials } from "@/lib/kroger";
 import { requireUserId } from "@/lib/session";

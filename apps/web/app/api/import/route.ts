@@ -6,8 +6,8 @@ import {
   ResolveError,
   UnsafeUrlError,
   type IngestResult,
-} from "@nomnom/core";
-import { db, ensureInitialStatus, saveRecipe } from "@nomnom/db";
+} from "@seconds/core";
+import { db, ensureInitialStatus, saveRecipe } from "@seconds/db";
 import { errorResponse } from "@/lib/api";
 import { databaseConfigured, requireUserId } from "@/lib/session";
 

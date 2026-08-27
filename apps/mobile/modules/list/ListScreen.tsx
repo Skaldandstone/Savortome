@@ -6,7 +6,7 @@ import {
   type CartProvider,
   type CartProviderId,
   type ShoppingLine,
-} from "@nomnom/core/format";
+} from "@seconds/core/format";
 import { Button, Callout, Panel, PanelHeader, space, type as typeScale, usePalette } from "@/ui";
 import { KrogerConnection } from "./KrogerConnection";
 import { useShoppingList } from "./useShoppingList";

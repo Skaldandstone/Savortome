@@ -4,7 +4,7 @@ import {
   clearShoppingList,
   currentShoppingList,
   getShoppingList,
-} from "@nomnom/db";
+} from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
 
 export const runtime = "nodejs";

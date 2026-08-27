@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { hintForUrl, type ImportMode, type ImportRequest } from "@nomnom/core/format";
+import { hintForUrl, type ImportMode, type ImportRequest } from "@seconds/core/format";
 import { Button, Field, space, type as typeScale, usePalette } from "@/ui";
 import { ClipboardSuggestion } from "./ClipboardSuggestion";
 import { ModeSwitch } from "./ModeSwitch";

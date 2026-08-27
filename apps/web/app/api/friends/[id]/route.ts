@@ -4,7 +4,7 @@ import {
   friendsOverview,
   removeFriendship,
   unblockPerson,
-} from "@nomnom/db";
+} from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
 
 export const runtime = "nodejs";

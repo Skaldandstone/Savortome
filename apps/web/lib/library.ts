@@ -1,5 +1,5 @@
 import "server-only";
-import type { ShelfSummary } from "@nomnom/core";
+import type { ShelfSummary } from "@seconds/core";
 import {
   db,
   getRecipe,
@@ -7,7 +7,7 @@ import {
   listShelves,
   recipeIdsOnShelf,
   statusByRecipe,
-} from "@nomnom/db";
+} from "@seconds/db";
 import type { LibraryEntry } from "@/modules/library";
 import type { RecipeRow } from "@/modules/recipe";
 import { NotSignedInError, currentUserId, databaseConfigured } from "./session";

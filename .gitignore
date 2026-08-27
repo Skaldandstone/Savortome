@@ -14,3 +14,6 @@ dist/
 # (dev and build deliberately use different ones), so tracking it means it
 # flips back and forth in every diff.
 apps/web/next-env.d.ts
+
+# Personal Claude Code overrides for this project
+.claude/settings.local.json

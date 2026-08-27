@@ -1,4 +1,4 @@
-import { createClient } from "@nomnom/core/format";
+import { createClient } from "@seconds/core/format";
 
 /**
  * Same-origin client. The browser sends Clerk's session cookie automatically,

@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { formatDuration, type CookTimer, type TimerState } from "@nomnom/core/format";
+import { formatDuration, type CookTimer, type TimerState } from "@seconds/core/format";
 import { Button, radius, space, type as typeScale, usePalette } from "@/ui";
 
 /**

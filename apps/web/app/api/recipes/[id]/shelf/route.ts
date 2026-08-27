@@ -1,5 +1,5 @@
-import type { StatusShelf } from "@nomnom/core";
-import { getRecipeShelfState, setCustomShelfMembership, setRecipeStatus } from "@nomnom/db";
+import type { StatusShelf } from "@seconds/core";
+import { getRecipeShelfState, setCustomShelfMembership, setRecipeStatus } from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
 
 export const runtime = "nodejs";

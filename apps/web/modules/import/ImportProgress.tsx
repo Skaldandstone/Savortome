@@ -1,4 +1,4 @@
-import { IMPORT_STAGES } from "@nomnom/core/format";
+import { IMPORT_STAGES } from "@seconds/core/format";
 import styles from "./import.module.css";
 
 export function ImportProgress({ stage }: { stage: number }) {

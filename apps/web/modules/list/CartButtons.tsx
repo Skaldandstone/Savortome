@@ -1,6 +1,6 @@
 "use client";
 
-import type { CartHandoff, CartProvider, CartProviderId } from "@nomnom/core/format";
+import type { CartHandoff, CartProvider, CartProviderId } from "@seconds/core/format";
 import { Button, Callout } from "@/ui";
 import styles from "./list.module.css";
 

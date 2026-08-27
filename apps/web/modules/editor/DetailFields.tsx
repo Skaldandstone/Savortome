@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { RecipeDraft } from "@nomnom/core/format";
+import type { RecipeDraft } from "@seconds/core/format";
 import { TextArea, TextField } from "@/ui";
 import styles from "./editor.module.css";
 
@@ -63,10 +63,10 @@ export function Details({ draft, set }: { draft: RecipeDraft; set: Setter }) {
           <TextField
             value={draft.course ?? ""}
             placeholder="dinner"
-            list="nomnom-courses"
+            list="seconds-courses"
             onChange={(e) => set("course", e.target.value)}
           />
-          <datalist id="nomnom-courses">
+          <datalist id="seconds-courses">
             {["breakfast", "lunch", "dinner", "dessert", "snack", "side", "drink", "sauce"].map(
               (course) => (
                 <option key={course} value={course} />

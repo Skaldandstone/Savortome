@@ -7,7 +7,7 @@ import {
   SHELF_LABEL,
   type LibraryRecipe,
   type ShelfSummary,
-} from "@nomnom/core/format";
+} from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { SignOutButton } from "@/modules/account";
 import { Button, Callout, radius, space, type as typeScale, usePalette } from "@/ui";
@@ -100,7 +100,7 @@ export function LibraryScreen() {
       }
     >
       <View style={styles.masthead}>
-        <Text style={[styles.wordmark, { color: c.text }]}>NomNom</Text>
+        <Text style={[styles.wordmark, { color: c.text }]}>Second Breakfast</Text>
         <View style={styles.spacer} />
         <SignOutButton />
       </View>

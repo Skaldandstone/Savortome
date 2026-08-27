@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { OwnedRecipe } from "@nomnom/core/format";
+import type { OwnedRecipe } from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { RecipeCard } from "@/modules/recipe";
 import { ShareControl } from "@/modules/sharing";

@@ -12,7 +12,7 @@
  *   KROGER_REDIRECT_URI=http://localhost:3000/api/grocery/kroger/callback
  *   KROGER_API_BASE=http://127.0.0.1:4600/v1
  *
- * It implements the documented shapes of the four endpoints NomNom uses, and
+ * It implements the documented shapes of the four endpoints Second Breakfast uses, and
  * nothing else. It is not a simulator: the catalogue is a dozen items, the
  * sign-in page approves instantly, and every token is the string "stub-token".
  * The point is to exercise our own request and response handling — what the

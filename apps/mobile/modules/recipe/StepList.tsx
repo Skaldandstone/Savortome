@@ -1,5 +1,5 @@
 import { Linking, StyleSheet, Text, View } from "react-native";
-import { timestampUrl, type Recipe, type Step } from "@nomnom/core/format";
+import { timestampUrl, type Recipe, type Step } from "@seconds/core/format";
 import { radius, space, type as typeScale, usePalette } from "@/ui";
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;

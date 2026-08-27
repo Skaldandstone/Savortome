@@ -1,5 +1,5 @@
-import { interpretPantryQuery, type PantryQuery } from "@nomnom/core";
-import { listPantry, searchByPantry } from "@nomnom/db";
+import { interpretPantryQuery, type PantryQuery } from "@seconds/core";
+import { listPantry, searchByPantry } from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
 
 // Interpreting a query can call the model, so this needs the Node runtime.

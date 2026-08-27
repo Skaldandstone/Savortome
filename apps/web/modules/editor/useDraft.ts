@@ -9,7 +9,7 @@ import {
   type Ingredient,
   type RecipeDraft,
   type Step,
-} from "@nomnom/core/format";
+} from "@seconds/core/format";
 
 /**
  * The form's state.

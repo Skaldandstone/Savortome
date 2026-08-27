@@ -14,7 +14,7 @@ import { readFileSync } from "node:fs";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { inArray } from "drizzle-orm";
-import { isStaple, type Ingredient, type Visibility } from "@nomnom/core";
+import { isStaple, type Ingredient, type Visibility } from "@seconds/core";
 import * as schema from "../src/schema.js";
 import {
   discoverFeed,

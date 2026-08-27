@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db, discoverFeed, popularTags, searchDiscover } from "@nomnom/db";
+import { db, discoverFeed, popularTags, searchDiscover } from "@seconds/db";
 import { errorResponse } from "@/lib/api";
 import { databaseConfigured, viewerId } from "@/lib/session";
 

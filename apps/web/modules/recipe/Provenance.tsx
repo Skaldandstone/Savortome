@@ -1,4 +1,4 @@
-import { provenanceTone, type ExtractionMethod, type Recipe } from "@nomnom/core/format";
+import { provenanceTone, type ExtractionMethod, type Recipe } from "@seconds/core/format";
 import { Callout } from "@/ui";
 import styles from "./Provenance.module.css";
 

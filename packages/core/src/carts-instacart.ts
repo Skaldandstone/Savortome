@@ -103,7 +103,7 @@ export async function createInstacartList(
       accept: "application/json",
     },
     body: JSON.stringify({
-      title: options.title ?? "NomNom shopping list",
+      title: options.title ?? "Second Breakfast shopping list",
       link_type: "shopping_list",
       expires_in: EXPIRES_IN_DAYS,
       ...(options.instructions?.length ? { instructions: options.instructions } : {}),

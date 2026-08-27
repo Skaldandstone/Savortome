@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
-import { draftFromRecipe, type RecipeDraft } from "@nomnom/core/format";
+import { draftFromRecipe, type RecipeDraft } from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { RecipeEditorScreen } from "@/modules/editor";
 import { Callout, space, usePalette } from "@/ui";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { CartHandoff, CartProvider, CartProviderId, ShoppingListView } from "@nomnom/core/format";
+import type { CartHandoff, CartProvider, CartProviderId, ShoppingListView } from "@seconds/core/format";
 import { api } from "@/lib/client";
 
 export interface ListController {

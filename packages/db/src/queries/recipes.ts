@@ -6,7 +6,7 @@ import {
   validateDraft,
   type Recipe,
   type RecipeDraft,
-} from "@nomnom/core";
+} from "@seconds/core";
 import type { Database } from "../client.js";
 import * as schema from "../schema.js";
 

@@ -6,7 +6,7 @@ import {
   type Ingredient,
   type PantryEntry,
   type ShoppingLine,
-} from "@nomnom/core";
+} from "@seconds/core";
 import type { Database } from "../client.js";
 import * as schema from "../schema.js";
 import { listPantry } from "./pantry.js";
@@ -14,7 +14,7 @@ import { listPantry } from "./pantry.js";
 /**
  * Shopping lists.
  *
- * Merging is done in `@nomnom/core` so the rules are testable without a
+ * Merging is done in `@seconds/core` so the rules are testable without a
  * database; this layer is about persistence — which recipes went in, what has
  * been ticked off, and where the list was sent.
  */

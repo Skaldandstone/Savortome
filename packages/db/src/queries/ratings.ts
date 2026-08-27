@@ -1,5 +1,5 @@
 import { and, avg, count, eq, gt, inArray } from "drizzle-orm";
-import { assertValidStars, type RecipeRating } from "@nomnom/core";
+import { assertValidStars, type RecipeRating } from "@seconds/core";
 import type { Database } from "../client.js";
 import * as schema from "../schema.js";
 

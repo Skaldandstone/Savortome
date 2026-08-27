@@ -6,7 +6,7 @@ import {
   ingredientFromLine,
   isGroupHeading,
   type Ingredient,
-} from "@nomnom/core/format";
+} from "@seconds/core/format";
 import { RowActions } from "./RowActions";
 import styles from "./editor.module.css";
 

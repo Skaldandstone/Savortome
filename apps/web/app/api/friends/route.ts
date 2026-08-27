@@ -1,4 +1,4 @@
-import { friendsOverview, sendFriendRequest } from "@nomnom/db";
+import { friendsOverview, sendFriendRequest } from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
 
 export const runtime = "nodejs";

@@ -1,6 +1,6 @@
 "use client";
 
-import { formatAmount, type ShoppingLine } from "@nomnom/core/format";
+import { formatAmount, type ShoppingLine } from "@seconds/core/format";
 import styles from "./list.module.css";
 
 type Item = ShoppingLine & { id: string };

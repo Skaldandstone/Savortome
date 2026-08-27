@@ -369,7 +369,7 @@ export interface KrogerCartItem {
 }
 
 /**
- * Kroger takes whole units, and everything on a NomNom list is either an
+ * Kroger takes whole units, and everything on a Second Breakfast list is either an
  * amount in some cooking unit or nothing at all. Neither converts: two
  * tablespoons of oil is still one bottle. So every matched line is one of
  * whatever the store sells, and the shopper adjusts.

@@ -1,4 +1,4 @@
-import { clearRating, rateRecipe } from "@nomnom/db";
+import { clearRating, rateRecipe } from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
 
 export const runtime = "nodejs";

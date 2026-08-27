@@ -1,6 +1,6 @@
 import { Button } from "@/ui";
 import styles from "./import.module.css";
-import type { ImportMode } from "@nomnom/core/format";
+import type { ImportMode } from "@seconds/core/format";
 
 const MODES: { value: ImportMode; label: string }[] = [
   { value: "url", label: "From a link" },

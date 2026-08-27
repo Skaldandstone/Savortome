@@ -64,7 +64,7 @@ import type { RecipeDraft } from "./editor.js";
 import type { SharedRecipeView } from "./sharing.js";
 
 /**
- * One typed client for the NomNom HTTP API, shared by both apps.
+ * One typed client for the Second Breakfast HTTP API, shared by both apps.
  *
  * The web app talks to its own origin with a session cookie; the mobile app
  * talks to a host over the network with a bearer token. That difference is the
@@ -142,7 +142,7 @@ export interface ShoppingListView {
   items: (ShoppingLine & { id: string })[];
 }
 
-export interface NomNomClient {
+export interface SecondsClient {
   importRecipe: (request: ImportRequest) => Promise<ImportResponse>;
   listShelves: () => Promise<ShelfSummary[]>;
   createShelf: (name: string) => Promise<ShelfSummary>;
@@ -195,7 +195,7 @@ export interface NomNomClient {
   deleteRecipe: (recipeId: string) => Promise<void>;
 }
 
-export function createClient(config: ApiClientConfig = {}): NomNomClient {
+export function createClient(config: ApiClientConfig = {}): SecondsClient {
   const base = (config.baseUrl ?? "").replace(/\/$/, "");
 
   async function send<T>(path: string, init: RequestInit = {}): Promise<T> {

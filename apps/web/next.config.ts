@@ -10,7 +10,7 @@ const config: NextConfig = {
   distDir: process.env.NODE_ENV === "production" ? ".next-build" : ".next",
 
   // The workspace packages ship TypeScript source rather than a build step.
-  transpilePackages: ["@nomnom/core", "@nomnom/db"],
+  transpilePackages: ["@seconds/core", "@seconds/db"],
   // The workspace packages are TypeScript source using ESM-style ".js" import
   // specifiers, so the bundler has to map those back to the ".ts" files on disk.
   webpack: (config) => {

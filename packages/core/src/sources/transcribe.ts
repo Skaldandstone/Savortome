@@ -129,7 +129,7 @@ export async function metadataViaYtDlp(url: string): Promise<VideoMetadata | nul
  * one on our test video renders "Jacques Pépin" as "zck Pepa".
  */
 export async function subtitlesViaYtDlp(url: string): Promise<TranscriptCue[]> {
-  const dir = await mkdtemp(join(tmpdir(), "nomnom-subs-"));
+  const dir = await mkdtemp(join(tmpdir(), "seconds-subs-"));
 
   try {
     await run(
@@ -176,7 +176,7 @@ export async function subtitlesViaYtDlp(url: string): Promise<TranscriptCue[]> {
 
 /** Download the audio track only — far smaller and faster than the full video. */
 async function downloadAudio(url: string): Promise<{ path: string; cleanup: () => Promise<void> }> {
-  const dir = await mkdtemp(join(tmpdir(), "nomnom-"));
+  const dir = await mkdtemp(join(tmpdir(), "seconds-"));
   const path = join(dir, "audio.m4a");
   const ffmpeg = ffmpegBin();
   await run(ytDlpBin(), [

@@ -8,7 +8,7 @@ import "./globals.css";
 import styles from "./layout.module.css";
 
 export const metadata: Metadata = {
-  title: "NomNom",
+  title: "Second Breakfast",
   description: "Every recipe you find, turned into a card you can actually cook from.",
 };
 
@@ -16,7 +16,7 @@ function Masthead({ children }: { children: ReactNode }) {
   return (
     <header className={styles.masthead}>
       <h1 className={styles.wordmark}>
-        <Link href="/">NomNom</Link>
+        <Link href="/">Second Breakfast</Link>
       </h1>
       <span className={styles.tagline}>recipes, from anywhere</span>
       <nav className={styles.nav}>

@@ -4,7 +4,7 @@ import {
   rankMatches,
   type PantryEntry,
   type PantryMatch,
-} from "@nomnom/core";
+} from "@seconds/core";
 import type { Database } from "../client.js";
 import * as schema from "../schema.js";
 

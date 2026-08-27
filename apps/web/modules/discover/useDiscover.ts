@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { DiscoverResponse } from "@nomnom/core/format";
+import type { DiscoverResponse } from "@seconds/core/format";
 import { api } from "@/lib/client";
 
 const EMPTY: DiscoverResponse = { recipes: [], tags: [], query: "", appliedTags: [] };

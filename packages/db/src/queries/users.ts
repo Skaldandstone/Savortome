@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { DEFAULT_SHELVES } from "@nomnom/core";
+import { DEFAULT_SHELVES } from "@seconds/core";
 import type { Database } from "../client.js";
 import * as schema from "../schema.js";
 
@@ -32,7 +32,7 @@ export async function ensureDefaultShelves(database: Database, userId: string): 
 }
 
 /**
- * Map a Clerk identity onto a NomNom user row, creating it on first sight.
+ * Map a Clerk identity onto a Second Breakfast user row, creating it on first sight.
  * This is the only place a Clerk id becomes an internal user id.
  */
 export async function upsertUserFromClerk(

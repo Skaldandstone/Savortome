@@ -1,4 +1,4 @@
-import { timestampUrl, type Recipe, type Step } from "@nomnom/core/format";
+import { timestampUrl, type Recipe, type Step } from "@seconds/core/format";
 import styles from "./StepList.module.css";
 
 const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;

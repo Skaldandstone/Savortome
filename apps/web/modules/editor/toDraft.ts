@@ -1,4 +1,4 @@
-import { draftFromRecipe, type RecipeDraft } from "@nomnom/core/format";
+import { draftFromRecipe, type RecipeDraft } from "@seconds/core/format";
 import type { RecipeRow } from "@/modules/recipe";
 
 /**

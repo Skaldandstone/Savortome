@@ -1,6 +1,6 @@
 "use client";
 
-import { SHELF_ACTION, STATUS_SHELVES, type StatusShelf } from "@nomnom/core/format";
+import { SHELF_ACTION, STATUS_SHELVES, type StatusShelf } from "@seconds/core/format";
 import { Button } from "@/ui";
 import styles from "./shelves.module.css";
 

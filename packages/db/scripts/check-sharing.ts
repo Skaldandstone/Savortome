@@ -14,7 +14,7 @@ import { readFileSync } from "node:fs";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { and, eq, inArray } from "drizzle-orm";
-import type { Ingredient, Visibility } from "@nomnom/core";
+import type { Ingredient, Visibility } from "@seconds/core";
 import * as schema from "../src/schema.js";
 import { getSharedRecipe, saveSharedRecipe, setRecipeVisibility } from "../src/queries/sharing.js";
 

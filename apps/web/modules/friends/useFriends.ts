@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import type { FeedItem, FriendsOverview } from "@nomnom/core/format";
+import type { FeedItem, FriendsOverview } from "@seconds/core/format";
 import { api } from "@/lib/client";
 
 const EMPTY: FriendsOverview = { friends: [], incoming: [], outgoing: [] };
