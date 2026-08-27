@@ -1,4 +1,4 @@
-import { desc, eq, ilike } from "drizzle-orm";
+import { and, desc, eq, gte, ilike, isNotNull, ne, sql } from "drizzle-orm";
 import * as schema from "../schema.js";
 import type { Database } from "../client.js";
 
@@ -55,5 +55,48 @@ export async function recentImportsFor(database: Database, userId: string, limit
     .from(schema.imports)
     .where(eq(schema.imports.userId, userId))
     .orderBy(desc(schema.imports.createdAt))
+    .limit(limit);
+}
+
+/**
+ * Failed imports across all users, grouped by their error string. This is the
+ * "is one thing broken or are these unrelated bugs" view — a spike in one
+ * bucket means an upstream resolver broke, scattered singletons mean per-recipe
+ * problems. Support's first stop when import complaints come in.
+ */
+export async function failedImportBuckets(database: Database, sinceHours = 48, limit = 30) {
+  const since = new Date(Date.now() - sinceHours * 3600_000);
+  return database
+    .select({
+      error: schema.imports.error,
+      count: sql<number>`cast(count(*) as int)`,
+      lastAt: sql<Date>`max(${schema.imports.createdAt})`,
+    })
+    .from(schema.imports)
+    .where(and(eq(schema.imports.status, "failed"), gte(schema.imports.createdAt, since)))
+    .groupBy(schema.imports.error)
+    .orderBy(desc(sql`count(*)`))
+    .limit(limit);
+}
+
+/**
+ * Recent free-text reviews across all users — the primary UGC surface a
+ * moderator scans. Only rows that actually carry review text are returned.
+ */
+export async function recentReviews(database: Database, limit = 50) {
+  return database
+    .select({
+      userId: schema.ratings.userId,
+      recipeId: schema.ratings.recipeId,
+      stars: schema.ratings.stars,
+      review: schema.ratings.review,
+      createdAt: schema.ratings.createdAt,
+      authorEmail: schema.users.email,
+      authorHandle: schema.users.handle,
+    })
+    .from(schema.ratings)
+    .innerJoin(schema.users, eq(schema.users.id, schema.ratings.userId))
+    .where(and(isNotNull(schema.ratings.review), ne(schema.ratings.review, "")))
+    .orderBy(desc(schema.ratings.createdAt))
     .limit(limit);
 }
