@@ -307,6 +307,37 @@ curl -X POST localhost:3000/api/pantry/reindex
 
 ---
 
+## Planning the week
+
+`/plan` is a week of meals — seven days, three slots each, every gap visible.
+An empty Thursday is the thing a plan is meant to surface, so the grid never
+hides one.
+
+The payoff is one button: **add this week to the shopping list**. Every distinct
+recipe on the calendar goes through the merge that already existed, so
+duplicates combine, quantities add up in compatible units, and anything already
+in the pantry drops off. A recipe planned twice is one shopping trip.
+
+Two decisions worth knowing:
+
+- **Dates are `date` columns and ISO `YYYY-MM-DD` strings**, never timestamps
+  or `Date` objects. A meal planned for Tuesday has to stay on Tuesday for
+  someone in Auckland and someone in Los Angeles, and the moment a local `Date`
+  meets a UTC boundary it starts drifting a day. Week arithmetic is done in UTC
+  for the same reason — the daylight-saving Sunday that has twenty-five hours
+  in it is a real week someone will plan, and it's a test.
+- **The key is `(user, date, slot, recipe)`.** Several recipes in one slot is
+  the normal case — a main and a side — while the same recipe twice in one
+  sitting is only ever a double-tap, so it's a no-op rather than an error.
+
+Moving a meal inserts before it deletes, because the destination slot may
+already hold that recipe and an update would collide with the primary key.
+
+`pnpm check:plan` asserts all of it against a real database, including that
+nobody can put anything on anybody else's calendar.
+
+---
+
 ## Shopping lists and carts
 
 Add a recipe from its card, or just the missing ingredients straight from a
@@ -755,7 +786,11 @@ pnpm check:grocery
 pnpm check:library
 ```
 
-All eight work on their own fixtures and are safe to re-run. `check:shelves` imports
+```bash
+pnpm check:plan
+```
+
+All nine work on their own fixtures and are safe to re-run. `check:shelves` imports
 a real recipe and leaves it in the library, so point it at a development
 database.
 

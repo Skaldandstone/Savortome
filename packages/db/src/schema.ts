@@ -3,6 +3,7 @@ import {
   type AnyPgColumn,
   boolean,
   customType,
+  date,
   index,
   integer,
   jsonb,
@@ -45,6 +46,8 @@ export const extractionMethod = pgEnum("extraction_method", [
 export const shelfType = pgEnum("shelf_type", ["want_to_cook", "cooking", "cooked", "custom"]);
 
 export const visibility = pgEnum("visibility", ["private", "friends", "public"]);
+
+export const mealSlot = pgEnum("meal_slot", ["breakfast", "lunch", "dinner"]);
 
 export const friendshipStatus = pgEnum("friendship_status", ["pending", "accepted", "blocked"]);
 
@@ -275,6 +278,34 @@ export const ratings = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.recipeId] }), index("ratings_recipe_idx").on(t.recipeId)],
+);
+
+/**
+ * What someone plans to cook, and when.
+ *
+ * The date is a `date` column rather than a timestamp on purpose: a meal
+ * planned for Tuesday is planned for Tuesday, not for an instant that lands on
+ * Monday for anyone far enough west.
+ *
+ * The key allows several recipes in one slot — a main and a side is the normal
+ * case — while making the same recipe twice in one sitting impossible, which
+ * is only ever a double-tap.
+ */
+export const mealPlanEntries = pgTable(
+  "meal_plan_entries",
+  {
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    recipeId: uuid("recipe_id").notNull().references(() => recipes.id, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    slot: mealSlot("slot").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.userId, t.date, t.slot, t.recipeId] }),
+    // "What's this week" is the only read that matters, and it's this index.
+    index("meal_plan_user_date_idx").on(t.userId, t.date),
+    index("meal_plan_recipe_idx").on(t.recipeId),
+  ],
 );
 
 // ---------------------------------------------------------------- pantry, lists, carts

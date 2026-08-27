@@ -21,6 +21,7 @@ function Masthead({ children }: { children: ReactNode }) {
       <span className={styles.tagline}>recipes, from anywhere</span>
       <nav className={styles.nav}>
         <Link href="/">Library</Link>
+        <Link href="/plan">Plan</Link>
         <Link href="/cook">What can I make?</Link>
         <Link href="/list">Shopping list</Link>
         <Link href="/friends">Friends</Link>

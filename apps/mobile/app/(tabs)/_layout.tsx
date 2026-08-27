@@ -2,7 +2,7 @@ import { Tabs } from "expo-router";
 import { usePalette } from "@/ui";
 
 /**
- * The five things you do with the app. Labels rather than icons: no icon
+ * The six things you do with the app. Labels rather than icons: no icon
  * package is installed, and a wrong-looking icon reads worse than a clear word.
  */
 export default function TabsLayout() {
@@ -19,6 +19,7 @@ export default function TabsLayout() {
       }}
     >
       <Tabs.Screen name="index" options={{ title: "Library" }} />
+      <Tabs.Screen name="plan" options={{ title: "Plan" }} />
       <Tabs.Screen name="cook" options={{ title: "Cook" }} />
       <Tabs.Screen name="list" options={{ title: "List" }} />
       <Tabs.Screen name="friends" options={{ title: "Friends" }} />

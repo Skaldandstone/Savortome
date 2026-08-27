@@ -25,6 +25,7 @@
     "check:editor": "pnpm --filter @seconds/db check:editor",
     "check:grocery": "pnpm --filter @seconds/db check:grocery",
     "check:library": "pnpm --filter @seconds/db check:library",
+    "check:plan": "pnpm --filter @seconds/db check:plan",
     "kroger:stub": "node scripts/kroger-stub.mjs",
     "mobile:bundle": "pnpm --filter @seconds/mobile exec expo export --platform android --output-dir .expo-export"
   },
