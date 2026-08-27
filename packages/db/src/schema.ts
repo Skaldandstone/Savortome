@@ -169,6 +169,13 @@ export const creditPurchases = pgTable(
     /** Stripe's checkout session id, for reconciling against their dashboard. */
     stripeSessionId: text("stripe_session_id"),
     /**
+     * Set when a staff refund has been issued against this purchase. Its
+     * presence blocks a second refund of the same purchase, and the amount
+     * (which may be partial) reconciles against Stripe. Null = not refunded.
+     */
+    refundedAt: timestamp("refunded_at", { withTimezone: true }),
+    refundedCents: integer("refunded_cents"),
+    /**
      * Null until the credits/tier this purchase paid for have actually been
      * applied. The neon-http driver has no interactive transactions, so the
      * insert of this row and the write that fulfils it are two separate

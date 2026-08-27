@@ -102,6 +102,63 @@ export async function recentReviews(database: Database, limit = 50) {
     .limit(limit);
 }
 
+/** One purchase, for the refund flow. Null if it isn't this user's. */
+export async function purchaseForRefund(database: Database, userId: string, purchaseId: string) {
+  const row = await database.query.creditPurchases.findFirst({
+    where: and(eq(schema.creditPurchases.id, purchaseId), eq(schema.creditPurchases.userId, userId)),
+    columns: {
+      id: true, cents: true, credits: true, stripeSessionId: true,
+      fulfilledAt: true, refundedAt: true, refundedCents: true, productId: true,
+    },
+  });
+  return row ?? null;
+}
+
+/** Purchases with their refund state, for the admin billing view. */
+export async function adminPurchases(database: Database, userId: string, limit = 25) {
+  return database
+    .select({
+      id: schema.creditPurchases.id,
+      productId: schema.creditPurchases.productId,
+      cents: schema.creditPurchases.cents,
+      credits: schema.creditPurchases.credits,
+      stripeSessionId: schema.creditPurchases.stripeSessionId,
+      fulfilledAt: schema.creditPurchases.fulfilledAt,
+      refundedAt: schema.creditPurchases.refundedAt,
+      refundedCents: schema.creditPurchases.refundedCents,
+      createdAt: schema.creditPurchases.createdAt,
+    })
+    .from(schema.creditPurchases)
+    .where(eq(schema.creditPurchases.userId, userId))
+    .orderBy(desc(schema.creditPurchases.createdAt))
+    .limit(limit);
+}
+
+/**
+ * Record a refund and claw back unspent credits in one shot. `clawback` is the
+ * caller-computed number of still-unspent purchased credits to remove (never
+ * more than the balance, so it can't drive it negative). Marks the purchase
+ * refunded so it can't be refunded twice.
+ */
+export async function recordRefund(
+  database: Database,
+  userId: string,
+  purchaseId: string,
+  refundedCents: number,
+  clawback: number,
+) {
+  await database.batch([
+    database
+      .update(schema.creditPurchases)
+      .set({ refundedAt: new Date(), refundedCents })
+      .where(eq(schema.creditPurchases.id, purchaseId)),
+    database
+      .update(schema.users)
+      .set({ creditsPurchased: sql`greatest(0, ${schema.users.creditsPurchased} - ${clawback})` })
+      .where(eq(schema.users.id, userId)),
+  ]);
+}
+
 /** Set a user's moderation state (active | suspended | banned). Reversible. */
 export async function setUserStatus(
   database: Database,

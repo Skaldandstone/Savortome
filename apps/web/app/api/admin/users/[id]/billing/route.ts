@@ -1,4 +1,4 @@
-import { adminUserById, purchaseHistory, recentSpends } from "@seconds/db";
+import { adminPurchases, adminUserById, recentSpends } from "@seconds/db";
 import { withAdmin } from "@/lib/admin";
 
 /**
@@ -14,7 +14,7 @@ export async function GET(request: Request, { params }: Params) {
   return withAdmin(request, async (database) => {
     if (!(await adminUserById(database, id))) return undefined;
     return {
-      purchases: await purchaseHistory(database, id),
+      purchases: await adminPurchases(database, id),
       spends: await recentSpends(database, id),
     };
   });
