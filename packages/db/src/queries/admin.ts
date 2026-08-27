@@ -90,6 +90,7 @@ export async function recentReviews(database: Database, limit = 50) {
       recipeId: schema.ratings.recipeId,
       stars: schema.ratings.stars,
       review: schema.ratings.review,
+      hiddenAt: schema.ratings.hiddenAt,
       createdAt: schema.ratings.createdAt,
       authorEmail: schema.users.email,
       authorHandle: schema.users.handle,
@@ -99,4 +100,33 @@ export async function recentReviews(database: Database, limit = 50) {
     .where(and(isNotNull(schema.ratings.review), ne(schema.ratings.review, "")))
     .orderBy(desc(schema.ratings.createdAt))
     .limit(limit);
+}
+
+/** Set a user's moderation state (active | suspended | banned). Reversible. */
+export async function setUserStatus(
+  database: Database,
+  userId: string,
+  status: "active" | "suspended" | "banned",
+) {
+  const [row] = await database
+    .update(schema.users)
+    .set({ status })
+    .where(eq(schema.users.id, userId))
+    .returning({ id: schema.users.id, status: schema.users.status });
+  return row ?? null;
+}
+
+/** Hide or unhide a review's free text (soft; the row and stars stay). */
+export async function setReviewHidden(
+  database: Database,
+  userId: string,
+  recipeId: string,
+  hidden: boolean,
+) {
+  const [row] = await database
+    .update(schema.ratings)
+    .set({ hiddenAt: hidden ? new Date() : null })
+    .where(and(eq(schema.ratings.userId, userId), eq(schema.ratings.recipeId, recipeId)))
+    .returning({ userId: schema.ratings.userId, recipeId: schema.ratings.recipeId, hiddenAt: schema.ratings.hiddenAt });
+  return row ?? null;
 }
