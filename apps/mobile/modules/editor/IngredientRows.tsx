@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
-import { formatAmount, ingredientFromLine, type Ingredient } from "@nomnom/core/format";
+import {
+  formatAmount,
+  ingredientFromLine,
+  isGroupHeading,
+  type Ingredient,
+} from "@nomnom/core/format";
 import { Field, radius, space, type as typeScale, usePalette } from "@/ui";
 import { RowActions } from "./RowActions";
 
@@ -17,12 +22,14 @@ export function IngredientRows({
   ingredients,
   onReplace,
   onAdd,
+  onAddHeading,
   onRemove,
   onMove,
 }: {
   ingredients: Ingredient[];
   onReplace: (index: number, ingredient: Ingredient) => void;
   onAdd: () => void;
+  onAddHeading: () => void;
   onRemove: (index: number) => void;
   onMove: (from: number, to: number) => void;
 }) {
@@ -42,7 +49,10 @@ export function IngredientRows({
         />
       ))}
 
-      <AddRow label="+ Add ingredient" onPress={onAdd} />
+      <View style={styles.addRows}>
+        <AddRow label="+ Add ingredient" onPress={onAdd} />
+        <AddRow label="+ Add section" onPress={onAddHeading} />
+      </View>
     </View>
   );
 }
@@ -105,14 +115,21 @@ function IngredientRow({
   const canonical = ingredient.canonicalItem.trim();
   const showCanonical = !editing && canonical && canonical !== text.trim().toLowerCase();
 
+  // A heading names the section everything under it belongs to. It buys
+  // nothing, so it has no pantry name and can't be optional.
+  const heading = isGroupHeading(ingredient);
+
   return (
-    <View style={styles.row}>
+    <View style={[styles.row, heading && styles.headingRow]}>
       <View style={styles.rowTop}>
         <Field
           value={text}
-          placeholder="2 tbsp olive oil"
-          accessibilityLabel={`Ingredient ${index + 1}`}
-          style={styles.lineInput}
+          placeholder={heading ? "For the sauce:" : "2 tbsp olive oil"}
+          accessibilityLabel={heading ? `Section ${index + 1}` : `Ingredient ${index + 1}`}
+          style={[
+            styles.lineInput,
+            heading && { backgroundColor: c.surfaceSunken, color: c.textMuted, fontWeight: "700" },
+          ]}
           onChangeText={parse}
           onFocus={() => setEditing(true)}
           onBlur={() => setEditing(false)}
@@ -120,30 +137,32 @@ function IngredientRow({
         <RowActions
           index={index}
           count={count}
-          label="ingredient"
+          label={heading ? "section" : "ingredient"}
           onMove={onMove}
           onRemove={onRemove}
         />
       </View>
 
-      <View style={styles.rowMeta}>
-        {showCanonical ? (
-          <Text style={[styles.canonical, { color: c.textMuted }]}>
-            Matches <Text style={styles.canonicalName}>{canonical}</Text> in your pantry
-          </Text>
-        ) : (
-          <View style={styles.canonicalSpacer} />
-        )}
+      {heading ? null : (
+        <View style={styles.rowMeta}>
+          {showCanonical ? (
+            <Text style={[styles.canonical, { color: c.textMuted }]}>
+              Matches <Text style={styles.canonicalName}>{canonical}</Text> in your pantry
+            </Text>
+          ) : (
+            <View style={styles.canonicalSpacer} />
+          )}
 
-        <View style={styles.optional}>
-          <Text style={{ color: c.textMuted, fontSize: typeScale.micro }}>Optional</Text>
-          <Switch
-            value={ingredient.optional}
-            accessibilityLabel={`Ingredient ${index + 1} is optional`}
-            onValueChange={(optional) => onReplace(index, { ...ingredient, optional })}
-          />
+          <View style={styles.optional}>
+            <Text style={{ color: c.textMuted, fontSize: typeScale.micro }}>Optional</Text>
+            <Switch
+              value={ingredient.optional}
+              accessibilityLabel={`Ingredient ${index + 1} is optional`}
+              onValueChange={(optional) => onReplace(index, { ...ingredient, optional })}
+            />
+          </View>
         </View>
-      </View>
+      )}
     </View>
   );
 }
@@ -169,6 +188,8 @@ export function AddRow({ label, onPress }: { label: string; onPress: () => void 
 const styles = StyleSheet.create({
   rows: { gap: space.sm },
   row: { gap: space.xs },
+  headingRow: { marginTop: space.sm },
+  addRows: { flexDirection: "row", flexWrap: "wrap", gap: space.sm },
   rowTop: { flexDirection: "row", alignItems: "center", gap: space.sm },
   lineInput: { flex: 1 },
   rowMeta: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
