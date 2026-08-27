@@ -115,6 +115,10 @@ export async function updateRecipe(
   recipeId: string,
   draft: RecipeDraft,
 ): Promise<boolean> {
+  // Same reasoning as getRecipe: a malformed id is "no such recipe", not a
+  // raised Postgres error.
+  if (!isUuid(recipeId)) return false;
+
   const clean = normalizeDraft(draft);
   validateDraft(clean);
 
@@ -138,6 +142,8 @@ export async function deleteRecipe(
   ownerId: string,
   recipeId: string,
 ): Promise<boolean> {
+  if (!isUuid(recipeId)) return false;
+
   const [deleted] = await database
     .delete(schema.recipes)
     .where(and(eq(schema.recipes.id, recipeId), eq(schema.recipes.ownerId, ownerId)))

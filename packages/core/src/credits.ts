@@ -202,4 +202,7 @@ export const packById = (id: string): CreditPack | undefined =>
   CREDIT_PACKS.find((pack) => pack.id === id);
 
 /** "$2.99" — packs are priced in cents and shown in dollars. */
-export const formatPackPrice = (pack: CreditPack): string => `$${(pack.cents / 100).toFixed(2)}`;
+/** "$29.99" — everything in this module is priced in whole cents. */
+export const formatCents = (cents: number): string => `$${(cents / 100).toFixed(2)}`;
+
+export const formatPackPrice = (pack: CreditPack): string => formatCents(pack.cents);

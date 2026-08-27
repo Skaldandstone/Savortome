@@ -86,6 +86,10 @@ export async function renameShelf(
   shelfId: string,
   rawName: string,
 ): Promise<void> {
+  // A malformed id is "no such shelf" everywhere else in this file; renaming
+  // one that doesn't exist is the same case whether the id is well-formed or not.
+  if (!isUuid(shelfId)) throw new ShelfValidationError("That shelf can't be renamed.");
+
   const name = normalizeShelfName(rawName);
   const updated = await database
     .update(schema.shelves)
@@ -111,6 +115,8 @@ export async function setShelfVisibility(
   shelfId: string,
   visibility: Visibility,
 ): Promise<void> {
+  if (!isUuid(shelfId)) return;
+
   await database
     .update(schema.shelves)
     .set({ visibility })
@@ -122,6 +128,8 @@ export async function deleteShelf(
   userId: string,
   shelfId: string,
 ): Promise<void> {
+  if (!isUuid(shelfId)) return;
+
   const deleted = await database
     .delete(schema.shelves)
     .where(

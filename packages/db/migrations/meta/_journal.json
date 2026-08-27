@@ -57,6 +57,13 @@
       "when": 1787814207802,
       "tag": "0007_stripe",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1787821844151,
+      "tag": "0008_purchase-fulfillment",
+      "breakpoints": true
     }
   ]
 }
