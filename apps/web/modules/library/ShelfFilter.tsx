@@ -9,16 +9,27 @@ import styles from "./library.module.css";
 export function ShelfFilter({
   shelves,
   activeShelfId,
+  query = "",
 }: {
   shelves: ShelfSummary[];
   activeShelfId?: string;
+  /** Carried through the tabs so switching shelf doesn't drop the search. */
+  query?: string;
 }) {
   if (shelves.length === 0) return null;
+
+  const href = (shelfId?: string) => {
+    const params = new URLSearchParams();
+    if (shelfId) params.set("shelf", shelfId);
+    if (query.trim()) params.set("q", query.trim());
+    const qs = params.toString();
+    return qs ? `/?${qs}` : "/";
+  };
 
   return (
     <nav className={styles.filter} aria-label="Filter by shelf">
       <Link
-        href="/"
+        href={href()}
         className={styles.tab}
         aria-current={activeShelfId ? undefined : "page"}
       >
@@ -27,7 +38,7 @@ export function ShelfFilter({
       {shelves.map((shelf) => (
         <Link
           key={shelf.id}
-          href={`/?shelf=${shelf.id}`}
+          href={href(shelf.id)}
           className={styles.tab}
           aria-current={activeShelfId === shelf.id ? "page" : undefined}
         >

@@ -6,6 +6,7 @@ import {
   listRecipes,
   listShelves,
   recipeIdsOnShelf,
+  searchRecipes,
   statusByRecipe,
 } from "@seconds/db";
 import type { LibraryEntry } from "@/modules/library";
@@ -26,7 +27,11 @@ const NO_DATABASE =
 
 const SIGNED_OUT = "Sign in to see the recipes you've saved.";
 
-export async function loadLibrary(shelfId?: string, limit = 30): Promise<LibraryResult> {
+export async function loadLibrary(
+  shelfId?: string,
+  query = "",
+  limit = 30,
+): Promise<LibraryResult> {
   if (!databaseConfigured()) return { kind: "unavailable", reason: NO_DATABASE };
 
   try {
@@ -36,8 +41,16 @@ export async function loadLibrary(shelfId?: string, limit = 30): Promise<Library
 
     const shelves = await listShelves(database, userId);
 
-    // A shelf filter is a list of ids; no filter is just the newest recipes.
-    const ids = shelfId ? await recipeIdsOnShelf(database, userId, shelfId) : undefined;
+    // A shelf filter and a search each narrow to a set of ids; together they
+    // intersect, so "the Korean thing on my baking shelf" works.
+    const shelfIds = shelfId ? await recipeIdsOnShelf(database, userId, shelfId) : null;
+    const matchIds = query.trim() ? await searchRecipes(database, userId, query) : null;
+
+    const ids =
+      matchIds && shelfIds
+        ? matchIds.filter((id) => shelfIds.includes(id))
+        : (matchIds ?? shelfIds ?? undefined);
+
     const rows = await listRecipes(database, userId, { limit, ids });
 
     // One query for every badge, rather than one per row.

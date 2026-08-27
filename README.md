@@ -215,6 +215,38 @@ apply identical logic.
 
 ---
 
+## Searching your own library
+
+Discovery searches what other people shared; pantry search asks what you can
+make right now. Neither answers the ordinary question — *where did I put that
+recipe?* — which is what the library search box does.
+
+Three ways in, because people look for a saved recipe by all three and remember
+only one of them:
+
+- **The words on the card** - name, cuisine, description - through the same
+  generated `tsvector` discovery uses, so the title outranks a passing mention.
+- **A tag**, matched exactly rather than stemmed. "vegetarian" means vegetarian.
+- **An ingredient**, through the canonical index the pantry already joins on.
+  This is the one discovery structurally cannot do, and the one that answers
+  "what did I make with that jar of gochujang".
+
+Any of the three is a hit, ranked by full-text relevance and falling back to
+newest first. Searching a real library found `Cast-iron cornbread` for
+"cornmeal" and the Caribbean sandwich for "tofu" - in both cases a word that
+appears nowhere but the ingredient list.
+
+Search and the shelf filter **compose**: both narrow to a set of ids and the
+results intersect, so "the Korean thing on my baking shelf" works. On the web
+it is a plain GET form, like the shelf tabs beside it - the result is a real
+URL that survives a refresh and can be sent to someone, and it needs no
+JavaScript at all.
+
+`pnpm check:library-search` asserts all of it against a real database,
+including that it never reaches another person's recipes.
+
+---
+
 ## Pantry search
 
 *What can I make from what I have.* Type a list of ingredients, or describe what
@@ -700,7 +732,11 @@ pnpm check:editor
 pnpm check:grocery
 ```
 
-All seven work on their own fixtures and are safe to re-run. `check:shelves` imports
+```bash
+pnpm check:library-search
+```
+
+All eight work on their own fixtures and are safe to re-run. `check:shelves` imports
 a real recipe and leaves it in the library, so point it at a development
 database.
 

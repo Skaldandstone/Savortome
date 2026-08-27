@@ -51,6 +51,8 @@ export type OwnedRecipe = Recipe & { visibility: Visibility; verifiedAt: string 
 export interface LibraryResponse {
   shelves: ShelfSummary[];
   recipes: LibraryRecipe[];
+  /** Echoed back so a stale response can't overwrite a newer search. */
+  query?: string;
 }
 
 export interface DiscoverQuery {
@@ -185,7 +187,7 @@ export interface SecondsClient {
   feed: () => Promise<FeedItem[]>;
   discover: (query?: DiscoverQuery) => Promise<DiscoverResponse>;
   similarRecipes: (recipeId: string) => Promise<DiscoverCard[]>;
-  library: (shelfId?: string) => Promise<LibraryResponse>;
+  library: (shelfId?: string, query?: string) => Promise<LibraryResponse>;
   krogerStatus: () => Promise<KrogerStatus>;
   krogerStores: (zipCode: string) => Promise<GroceryStore[]>;
   setKrogerStore: (store: GroceryStore) => Promise<KrogerStatus>;
@@ -351,8 +353,13 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
 
     similarRecipes: (recipeId) => send<DiscoverCard[]>(`/api/recipes/${recipeId}/similar`),
 
-    library: (shelfId) =>
-      send<LibraryResponse>(`/api/recipes${shelfId ? `?shelf=${shelfId}` : ""}`),
+    library: (shelfId, query) => {
+      const params = new URLSearchParams();
+      if (shelfId) params.set("shelf", shelfId);
+      if (query?.trim()) params.set("q", query.trim());
+      const qs = params.toString();
+      return send<LibraryResponse>(`/api/recipes${qs ? `?${qs}` : ""}`);
+    },
 
     krogerStatus: () => send<KrogerStatus>("/api/grocery/kroger"),
 

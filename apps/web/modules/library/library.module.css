@@ -62,3 +62,45 @@
 }
 
 .text { flex: 1; min-width: 0; }
+
+/* --- searching your own recipes ----------------------------------------- */
+
+.search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.searchInput {
+  flex: 1 1 260px;
+  min-width: 0;
+  padding: 10px 13px;
+  font: inherit;
+  font-size: var(--step-3);
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.searchInput:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+.searchButton {
+  flex: none;
+  padding: 10px 16px;
+  font: inherit;
+  font-size: var(--step-2);
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.searchButton:hover { opacity: 0.9; }
+
+.clear { font-size: var(--step-2); color: var(--text-muted); }
+.clear:hover { color: var(--accent); }

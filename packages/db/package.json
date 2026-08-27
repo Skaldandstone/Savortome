@@ -20,7 +20,8 @@
     "check:friends": "tsx scripts/check-friends.ts",
     "check:discover": "tsx scripts/check-discover.ts",
     "check:editor": "tsx scripts/check-editor.ts",
-    "check:grocery": "tsx scripts/check-grocery.ts"
+    "check:grocery": "tsx scripts/check-grocery.ts",
+    "check:library-search": "tsx scripts/check-library-search.ts"
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

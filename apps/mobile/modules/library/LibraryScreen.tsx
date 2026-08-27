@@ -10,7 +10,7 @@ import {
 } from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { SignOutButton } from "@/modules/account";
-import { Button, Callout, radius, space, type as typeScale, usePalette } from "@/ui";
+import { Button, Callout, Field, radius, space, type as typeScale, usePalette } from "@/ui";
 
 function ShelfBadge({ status }: { status: LibraryRecipe["status"] }) {
   const c = usePalette();
@@ -65,15 +65,16 @@ export function LibraryScreen() {
   const [shelves, setShelves] = useState<ShelfSummary[]>([]);
   const [recipes, setRecipes] = useState<LibraryRecipe[]>([]);
   const [activeShelf, setActiveShelf] = useState<string | undefined>();
+  const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
   const c = usePalette();
 
-  const load = useCallback(async (shelfId?: string) => {
+  const load = useCallback(async (shelfId?: string, search = "") => {
     setError(null);
     try {
-      const data = await api.library(shelfId);
+      const data = await api.library(shelfId, search);
       setShelves(data.shelves);
       setRecipes(data.recipes);
     } catch (err) {
@@ -87,8 +88,8 @@ export function LibraryScreen() {
   // coming back to a stale list is the most obvious kind of wrong.
   useFocusEffect(
     useCallback(() => {
-      void load(activeShelf);
-    }, [load, activeShelf]),
+      void load(activeShelf, query);
+    }, [load, activeShelf, query]),
   );
 
   return (
@@ -96,7 +97,7 @@ export function LibraryScreen() {
       style={{ backgroundColor: c.bg }}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + space.lg }]}
       refreshControl={
-        <RefreshControl refreshing={loading} onRefresh={() => void load(activeShelf)} tintColor={c.accent} />
+        <RefreshControl refreshing={loading} onRefresh={() => void load(activeShelf, query)} tintColor={c.accent} />
       }
     >
       <View style={styles.masthead}>
@@ -110,6 +111,20 @@ export function LibraryScreen() {
           <Text style={styles.importCtaText}>Import a recipe</Text>
         </Pressable>
       </Link>
+
+      <View style={styles.searchRow}>
+        <Field
+          value={query}
+          placeholder="Search — a name, a tag, an ingredient"
+          autoCapitalize="none"
+          returnKeyType="search"
+          accessibilityLabel="Search your recipes"
+          style={styles.searchInput}
+          onChangeText={setQuery}
+          onSubmitEditing={() => void load(activeShelf, query)}
+        />
+        <Button label="Search" onPress={() => void load(activeShelf, query)} />
+      </View>
 
       {shelves.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.shelfRow}>
@@ -150,6 +165,8 @@ export function LibraryScreen() {
 
 const styles = StyleSheet.create({
   content: { padding: space.lg + 4, paddingBottom: space.xxl * 2 },
+  searchRow: { flexDirection: "row", alignItems: "center", gap: space.sm, marginBottom: space.md },
+  searchInput: { flex: 1 },
   masthead: { flexDirection: "row", alignItems: "center", marginBottom: space.lg },
   wordmark: { fontSize: typeScale.display, fontWeight: "700", letterSpacing: -0.5 },
   spacer: { flex: 1 },
