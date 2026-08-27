@@ -3,6 +3,7 @@ import type { LibrarySort, ShelfSummary } from "@seconds/core";
 import {
   db,
   getRecipe,
+  countRecipes,
   listRecipes,
   listShelves,
   recipeIdsOnShelf,
@@ -19,7 +20,7 @@ import { NotSignedInError, currentUserId, databaseConfigured } from "./session";
  */
 
 export type LibraryResult =
-  | { kind: "ok"; entries: LibraryEntry[]; shelves: ShelfSummary[] }
+  | { kind: "ok"; entries: LibraryEntry[]; shelves: ShelfSummary[]; total: number }
   | { kind: "unavailable"; reason: string };
 
 const NO_DATABASE =
@@ -54,6 +55,10 @@ export async function loadLibrary(
 
     const rows = await listRecipes(database, userId, { limit, ids, sort });
 
+    // The list is filtered and paged; the export isn't. A count taken here is
+    // the only honest number to put next to "download everything".
+    const total = await countRecipes(database, userId);
+
     // One query for every badge, rather than one per row.
     const statuses = await statusByRecipe(
       database,
@@ -64,6 +69,7 @@ export async function loadLibrary(
     return {
       kind: "ok",
       shelves,
+      total,
       entries: rows.map((row) => ({
         id: row.id,
         title: row.title,

@@ -649,6 +649,45 @@ phone has no such limit.
 
 ---
 
+## Printing and getting your recipes out
+
+A recipe collection you can't leave with isn't really yours.
+
+**Print** is the one people actually reach for. A page propped against the
+kettle doesn't lock, doesn't sleep and doesn't need a battery, which still
+makes paper the most reliable way to cook from a screen. The print stylesheet
+drops the app entirely - masthead, shelf buttons, the serving scaler, the
+action row - and leaves the recipe: title, times, ingredients, method,
+equipment and where it came from. Headings won't split from what they
+introduce, and steps won't break across pages.
+
+Chrome opts out by marking itself `data-print="hide"`, which is one explicit
+greppable list rather than print rules scattered through a dozen CSS Modules
+chasing hashed class names.
+
+**One recipe** also exports as Markdown for a notes app, as a plain text file,
+or straight to the clipboard. Plain text isn't Markdown with the syntax
+stripped - headings become underlines and the lists lose their bullets,
+because somewhere that renders nothing `#` and `-` are just litter.
+
+All of it exports **what's on screen**, so a recipe scaled to six servings
+prints, copies and downloads scaled to six.
+
+**The whole library** downloads as one JSON file from the bottom of the
+library page - every recipe in full, method and provenance included, in an
+envelope stamped with a format name and a version so a file found on a hard
+drive in three years can still say what it is. It's a plain link to
+`/api/export` rather than a button, so it works with a middle click, a
+right-click "save as", or a script. The count next to it is the whole library
+rather than what's on screen, because that's what the file will contain - the
+list above it is filtered and paged.
+
+**On the phone** there's no print dialog, so the equivalent is the native share
+sheet: plain text into Messages, Mail, Notes or anything else installed,
+without this app needing to know any of them exist.
+
+---
+
 ## Optional pieces
 
 **Persistence** - set `DATABASE_URL` in `apps/web/.env.local` (the db package

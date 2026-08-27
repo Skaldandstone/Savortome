@@ -1,5 +1,6 @@
 import { ImportPanel } from "@/modules/import";
 import {
+  LibraryExport,
   LibraryList,
   LibraryNotice,
   LibrarySearch,
@@ -46,6 +47,7 @@ async function Library({
       ) : (
         <LibraryList entries={library.entries} />
       )}
+      <LibraryExport total={library.total} />
     </>
   );
 }

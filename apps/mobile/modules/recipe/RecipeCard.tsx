@@ -5,6 +5,7 @@ import { ShelfControls } from "@/modules/shelves";
 import { IngredientList, ServingScaler } from "./IngredientList";
 import { Provenance } from "./Provenance";
 import { RecipeFacts, TagList } from "./RecipeFacts";
+import { RecipeShare } from "./RecipeShare";
 import { RecipeHeader, RecipeHero } from "./RecipeHeader";
 import { StepList } from "./StepList";
 import { useServings } from "./useServings";
@@ -56,6 +57,8 @@ export function RecipeCard({
         ) : null}
 
         <ShelfControls recipeId={shelvedId} />
+
+        <RecipeShare recipe={recipe} ingredients={ingredients} servings={servings} />
 
         <Provenance recipe={recipe} verifiedAt={verifiedAt} />
       </View>

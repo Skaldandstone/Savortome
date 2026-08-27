@@ -1,0 +1,24 @@
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.action {
+  padding: 7px 13px;
+  font: inherit;
+  font-size: var(--step-2);
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.action:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
