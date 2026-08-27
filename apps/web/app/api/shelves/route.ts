@@ -1,4 +1,4 @@
-import { createShelf, listShelves } from "@nomnom/db";
+import { createShelf, listShelves } from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
 
 export const runtime = "nodejs";

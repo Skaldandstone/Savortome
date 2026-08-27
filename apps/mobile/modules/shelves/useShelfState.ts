@@ -7,7 +7,7 @@ import {
   type RecipeShelfState,
   type ShelfSummary,
   type StatusShelf,
-} from "@nomnom/core/format";
+} from "@seconds/core/format";
 import { api } from "@/lib/client";
 
 export interface ShelfController {
@@ -23,7 +23,7 @@ export interface ShelfController {
 
 /**
  * Shelf and rating state for one recipe. The decisions live in
- * `@nomnom/core/format`; this is the React shell around them.
+ * `@seconds/core/format`; this is the React shell around them.
  */
 export function useShelfState(recipeId: string | null): ShelfController {
   const [shelves, setShelves] = useState<ShelfSummary[]>([]);

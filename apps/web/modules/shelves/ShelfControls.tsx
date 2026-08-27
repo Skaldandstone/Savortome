@@ -1,6 +1,6 @@
 "use client";
 
-import { SHELF_LABEL } from "@nomnom/core/format";
+import { SHELF_LABEL } from "@seconds/core/format";
 import { Callout } from "@/ui";
 import { ShelfChecklist } from "./ShelfChecklist";
 import { StarRating } from "./StarRating";

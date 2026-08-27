@@ -1,5 +1,5 @@
 {
-  "name": "@nomnom/db",
+  "name": "@seconds/db",
   "version": "0.1.0",
   "type": "module",
   "main": "./src/index.ts",
@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",
-    "@nomnom/core": "workspace:*",
+    "@seconds/core": "workspace:*",
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {

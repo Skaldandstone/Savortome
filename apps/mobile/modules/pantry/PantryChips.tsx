@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import { formatAmount, type PantryEntry } from "@nomnom/core/format";
+import { formatAmount, type PantryEntry } from "@seconds/core/format";
 import { Button, Field, radius, space, type as typeScale, usePalette } from "@/ui";
 
 /** Everything the cook has said is in the kitchen, as tap-to-remove chips. */

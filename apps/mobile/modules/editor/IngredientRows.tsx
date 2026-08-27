@@ -5,7 +5,7 @@ import {
   ingredientFromLine,
   isGroupHeading,
   type Ingredient,
-} from "@nomnom/core/format";
+} from "@seconds/core/format";
 import { Field, radius, space, type as typeScale, usePalette } from "@/ui";
 import { RowActions } from "./RowActions";
 

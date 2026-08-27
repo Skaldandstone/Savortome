@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import type { RecipeDraft } from "@nomnom/core/format";
+import type { RecipeDraft } from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { Button, Callout, Panel, PanelHeader } from "@/ui";
 import { Basics, Details } from "./DetailFields";

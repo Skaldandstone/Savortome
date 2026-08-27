@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
-import type { OwnedRecipe } from "@nomnom/core/format";
+import type { OwnedRecipe } from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { CookScreen } from "@/modules/cook";
 import { Callout, space, usePalette } from "@/ui";

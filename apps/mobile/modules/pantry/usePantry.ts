@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { PantryEntry, PantrySearchResponse } from "@nomnom/core/format";
+import type { PantryEntry, PantrySearchResponse } from "@seconds/core/format";
 import { api } from "@/lib/client";
 
 export interface PantryController {

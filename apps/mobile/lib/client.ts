@@ -1,9 +1,9 @@
-import { createClient } from "@nomnom/core/format";
+import { createClient } from "@seconds/core/format";
 import { getClerkInstance } from "@clerk/expo";
 import { apiBaseUrl } from "./api";
 
 /**
- * Network client for the NomNom server. Unlike the web app there is no cookie
+ * Network client for the Second Breakfast server. Unlike the web app there is no cookie
  * to ride on, so every request carries a Clerk session token.
  *
  * The token is read from Clerk's singleton rather than a hook, so non-component

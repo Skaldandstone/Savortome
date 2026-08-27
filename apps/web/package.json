@@ -1,5 +1,5 @@
 {
-  "name": "@nomnom/web",
+  "name": "@seconds/web",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -10,8 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@nomnom/core": "workspace:*",
-    "@nomnom/db": "workspace:*",
+    "@seconds/core": "workspace:*",
+    "@seconds/db": "workspace:*",
     "next": "^15.1.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",

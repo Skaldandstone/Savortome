@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import type { RecipeDraft } from "@nomnom/core/format";
+import type { RecipeDraft } from "@seconds/core/format";
 import { Button, Field, space, type as typeScale, usePalette } from "@/ui";
 
 type Setter = <K extends keyof RecipeDraft>(key: K, value: RecipeDraft[K]) => void;

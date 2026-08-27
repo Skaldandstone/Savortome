@@ -7,7 +7,7 @@ import {
   type FeedItem,
   type FriendsOverview,
   type PersonSummary,
-} from "@nomnom/core/format";
+} from "@seconds/core/format";
 import { api } from "@/lib/client";
 import {
   Button,

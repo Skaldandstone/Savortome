@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyWebhook } from "@clerk/nextjs/webhooks";
-import { db, deleteUserByClerkId, upsertUserFromClerk } from "@nomnom/db";
+import { db, deleteUserByClerkId, upsertUserFromClerk } from "@seconds/db";
 
 /**
  * Keeps the local `users` table in step with Clerk.
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
         const primary =
           data.email_addresses.find((e) => e.id === data.primary_email_address_id) ??
           data.email_addresses[0];
-        const email = primary?.email_address ?? `${data.id}@users.nomnom.local`;
+        const email = primary?.email_address ?? `${data.id}@users.secondbreakfast.local`;
         const name = [data.first_name, data.last_name].filter(Boolean).join(" ");
 
         await upsertUserFromClerk(database, {

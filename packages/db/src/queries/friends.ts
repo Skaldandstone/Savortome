@@ -9,14 +9,14 @@ import {
   type FriendshipStatus,
   type PersonSummary,
   type RelationshipState,
-} from "@nomnom/core";
+} from "@seconds/core";
 import type { Database } from "../client.js";
 import * as schema from "../schema.js";
 
 /**
  * Friend requests, and the feed of what friends have been cooking.
  *
- * One row per direction — see the note in `@nomnom/core/friends` for why. The
+ * One row per direction — see the note in `@seconds/core/friends` for why. The
  * short version: an accepted friendship writes both rows, a pending request
  * writes only the requester's, so who asked whom is never ambiguous.
  */

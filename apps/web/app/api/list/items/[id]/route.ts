@@ -1,4 +1,4 @@
-import { currentShoppingList, getShoppingList, removeListItem, setItemChecked } from "@nomnom/db";
+import { currentShoppingList, getShoppingList, removeListItem, setItemChecked } from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
 
 export const runtime = "nodejs";

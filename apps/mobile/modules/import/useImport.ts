@@ -5,7 +5,7 @@ import {
   type ImportFailure,
   type ImportRequest,
   type ImportResponse,
-} from "@nomnom/core/format";
+} from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { apiBaseUrl } from "@/lib/api";
 
@@ -41,7 +41,7 @@ export function useImport(): ImportController {
         setError({
           message:
             err instanceof Error
-              ? `${err.message} (is the NomNom server running at ${apiBaseUrl()}?)`
+              ? `${err.message} (is the Second Breakfast server running at ${apiBaseUrl()}?)`
               : "The import failed.",
         });
       }

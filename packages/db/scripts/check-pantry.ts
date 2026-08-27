@@ -12,7 +12,7 @@ import { readFileSync } from "node:fs";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq } from "drizzle-orm";
-import { matchRecipe, requirementsFor, type Ingredient } from "@nomnom/core";
+import { matchRecipe, requirementsFor, type Ingredient } from "@seconds/core";
 import * as schema from "../src/schema.js";
 import { addPantryItems, listPantry, removePantryItems, searchByPantry } from "../src/queries/pantry.js";
 

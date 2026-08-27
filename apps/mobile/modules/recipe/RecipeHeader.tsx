@@ -1,5 +1,5 @@
 import { Image, Linking, StyleSheet, Text, View } from "react-native";
-import type { Recipe } from "@nomnom/core/format";
+import type { Recipe } from "@seconds/core/format";
 import { space, type as typeScale, usePalette } from "@/ui";
 
 export function RecipeHero({ imageUrl }: { imageUrl: string | null }) {

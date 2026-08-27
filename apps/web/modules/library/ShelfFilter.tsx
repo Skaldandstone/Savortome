@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ShelfSummary } from "@nomnom/core/format";
+import type { ShelfSummary } from "@seconds/core/format";
 import styles from "./library.module.css";
 
 /**

@@ -1,4 +1,4 @@
-import type { SharedRecipeView } from "@nomnom/core/format";
+import type { SharedRecipeView } from "@seconds/core/format";
 import styles from "./sharing.module.css";
 
 /** Who put this in front of you, and how many people kept it. */

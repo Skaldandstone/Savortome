@@ -1,5 +1,5 @@
 {
-  "name": "@nomnom/mobile",
+  "name": "@seconds/mobile",
   "version": "0.1.0",
   "private": true,
   "main": "expo-router/entry",
@@ -12,7 +12,7 @@
   "dependencies": {
     "@clerk/expo": "4.5.2",
     "@expo/metro-runtime": "~57.0.13",
-    "@nomnom/core": "workspace:*",
+    "@seconds/core": "workspace:*",
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~57.0.16",
     "expo-clipboard": "~57.0.1",

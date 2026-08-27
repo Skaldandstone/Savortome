@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { krogerAuthorizeUrl } from "@nomnom/core";
+import { krogerAuthorizeUrl } from "@seconds/core";
 import { errorResponse } from "@/lib/api";
 import { KROGER_STATE_COOKIE, requireKrogerCredentials } from "@/lib/kroger";
 import { requireUserId } from "@/lib/session";
-import { db } from "@nomnom/db";
+import { db } from "@seconds/db";
 
 export const runtime = "nodejs";
 

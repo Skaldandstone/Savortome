@@ -10,7 +10,7 @@ import {
   timerState,
   type CookTimer,
   type Step,
-} from "@nomnom/core/format";
+} from "@seconds/core/format";
 
 /**
  * Every timer running in a cook session.

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { Recipe } from "@nomnom/core/format";
+import type { Recipe } from "@seconds/core/format";
 import { ShelfControls } from "@/modules/shelves";
 import { AddToListButton } from "@/modules/list";
 import { IngredientList, ServingScaler } from "./IngredientList";

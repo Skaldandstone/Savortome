@@ -1,6 +1,6 @@
 "use client";
 
-import type { PersonSummary } from "@nomnom/core/format";
+import type { PersonSummary } from "@seconds/core/format";
 import { Button } from "@/ui";
 import styles from "./friends.module.css";
 

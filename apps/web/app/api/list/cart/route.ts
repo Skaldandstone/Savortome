@@ -5,8 +5,8 @@ import {
   createInstacartList,
   sendListToKroger,
   type CartProviderId,
-} from "@nomnom/core";
-import { currentShoppingList, getShoppingList, recordCartHandoff } from "@nomnom/db";
+} from "@seconds/core";
+import { currentShoppingList, getShoppingList, recordCartHandoff } from "@seconds/db";
 import { errorResponse, readJson, withUser } from "@/lib/api";
 import { catalogueToken, krogerApi, liveConnection } from "@/lib/kroger";
 
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
     const handoff =
       provider === "instacart"
-        ? await createInstacartList(lines, { title: list?.name ?? "NomNom shopping list" })
+        ? await createInstacartList(lines, { title: list?.name ?? "Second Breakfast shopping list" })
         : provider === "kroger"
           ? await sendListToKroger(lines, await liveConnection(database, userId), {
               ...krogerApi(),

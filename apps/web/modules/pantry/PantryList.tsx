@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { PantryEntry } from "@nomnom/core/format";
-import { formatAmount } from "@nomnom/core/format";
+import type { PantryEntry } from "@seconds/core/format";
+import { formatAmount } from "@seconds/core/format";
 import { Button, FieldRow, TextField } from "@/ui";
 import styles from "./pantry.module.css";
 

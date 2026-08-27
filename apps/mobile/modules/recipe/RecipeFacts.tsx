@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { formatMinutes, type Recipe } from "@nomnom/core/format";
+import { formatMinutes, type Recipe } from "@seconds/core/format";
 import { radius, space, type as typeScale, usePalette } from "@/ui";
 
 /** The at-a-glance strip: how long, how many, what kind. */

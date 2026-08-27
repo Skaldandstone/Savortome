@@ -19,9 +19,9 @@ import {
 import type { ShoppingLine } from "../src/shopping.js";
 
 const credentials = {
-  clientId: "nomnom-test",
+  clientId: "seconds-test",
   clientSecret: "shhh",
-  redirectUri: "https://nomnom.test/api/grocery/kroger/callback",
+  redirectUri: "https://secondbreakfast.test/api/grocery/kroger/callback",
   apiBase: "https://api.kroger.com/v1",
 };
 
@@ -283,7 +283,7 @@ describe("talking to the API", () => {
 
     const sent = requests[0]!;
     assert.equal(sent.method, "POST");
-    assert.equal(sent.auth, `Basic ${Buffer.from("nomnom-test:shhh").toString("base64")}`);
+    assert.equal(sent.auth, `Basic ${Buffer.from("seconds-test:shhh").toString("base64")}`);
     assert.equal(new URLSearchParams(sent.body).get("scope"), "product.compact");
   });
 

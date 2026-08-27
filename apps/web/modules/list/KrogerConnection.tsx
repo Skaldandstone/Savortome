@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import type { GroceryStore, KrogerStatus } from "@nomnom/core/format";
+import type { GroceryStore, KrogerStatus } from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { Button, Callout, TextField } from "@/ui";
 import styles from "./list.module.css";

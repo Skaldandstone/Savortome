@@ -4,7 +4,7 @@ import type {
   CartProvider,
   CartProviderId,
   ShoppingListView,
-} from "@nomnom/core/format";
+} from "@seconds/core/format";
 import { api } from "@/lib/client";
 
 export interface ListController {

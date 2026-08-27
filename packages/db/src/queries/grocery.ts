@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import type { KrogerConnection, KrogerToken } from "@nomnom/core";
+import type { KrogerConnection, KrogerToken } from "@seconds/core";
 import type { Database } from "../client.js";
 import * as schema from "../schema.js";
 

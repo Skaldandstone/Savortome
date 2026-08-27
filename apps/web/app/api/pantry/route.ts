@@ -1,5 +1,5 @@
-import { parsePantryInput } from "@nomnom/core";
-import { addPantryItems, clearPantry, listPantry, removePantryItems } from "@nomnom/db";
+import { parsePantryInput } from "@seconds/core";
+import { addPantryItems, clearPantry, listPantry, removePantryItems } from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
 
 export const runtime = "nodejs";

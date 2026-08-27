@@ -1,7 +1,7 @@
 import Constants from "expo-constants";
 
 /**
- * Where the NomNom server lives. On a simulator "localhost" reaches the host
+ * Where the Second Breakfast server lives. On a simulator "localhost" reaches the host
  * machine; on a physical device it does not, so this falls back to the LAN
  * address Expo already knows it is being served from.
  */

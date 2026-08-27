@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { scaleIngredients, type Ingredient, type Recipe } from "@nomnom/core/format";
+import { scaleIngredients, type Ingredient, type Recipe } from "@seconds/core/format";
 
 export interface ServingsControl {
   /** Null when the source never stated a serving count — scaling is hidden. */

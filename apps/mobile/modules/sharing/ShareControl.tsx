@@ -6,7 +6,7 @@ import {
   VISIBILITY_LABEL,
   shareUrl,
   type Visibility,
-} from "@nomnom/core/format";
+} from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { apiBaseUrl } from "@/lib/api";
 import { Button, Callout, radius, space, type as typeScale, usePalette } from "@/ui";

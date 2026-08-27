@@ -1,5 +1,5 @@
 {
-  "name": "@nomnom/core",
+  "name": "@seconds/core",
   "version": "0.1.0",
   "type": "module",
   "main": "./src/index.ts",

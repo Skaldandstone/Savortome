@@ -1,4 +1,4 @@
-import { emptyDraft } from "@nomnom/core/format";
+import { emptyDraft } from "@seconds/core/format";
 import { RecipeEditorScreen } from "@/modules/editor";
 
 /** Write a recipe from nothing. The other half of importing one. */

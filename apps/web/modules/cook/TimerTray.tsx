@@ -1,6 +1,6 @@
 "use client";
 
-import { formatDuration, type CookTimer, type TimerState } from "@nomnom/core/format";
+import { formatDuration, type CookTimer, type TimerState } from "@seconds/core/format";
 import styles from "./cook.module.css";
 
 /**

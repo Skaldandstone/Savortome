@@ -15,7 +15,7 @@ import { readFileSync } from "node:fs";
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { eq, inArray } from "drizzle-orm";
-import { emptyDraft, ingredientFromLine, type RecipeDraft } from "@nomnom/core";
+import { emptyDraft, ingredientFromLine, type RecipeDraft } from "@seconds/core";
 import * as schema from "../src/schema.js";
 import { createRecipe, deleteRecipe, getRecipe, updateRecipe } from "../src/queries/recipes.js";
 

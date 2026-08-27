@@ -1,5 +1,5 @@
 import { StyleSheet, View } from "react-native";
-import type { ImportMode } from "@nomnom/core/format";
+import type { ImportMode } from "@seconds/core/format";
 import { Button, space } from "@/ui";
 
 const MODES: { value: ImportMode; label: string }[] = [

@@ -1,4 +1,4 @@
-import type { Recipe, Visibility } from "@nomnom/core/format";
+import type { Recipe, Visibility } from "@seconds/core/format";
 
 /** The database row shape, expressed without importing the server-only db package. */
 export interface RecipeRow {

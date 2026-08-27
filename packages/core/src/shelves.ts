@@ -1,5 +1,5 @@
 /**
- * Shelves are NomNom's answer to Goodreads' want-to-read / reading / read.
+ * Shelves are Second Breakfast's answer to Goodreads' want-to-read / reading / read.
  * Pure domain types and rules, shared by both clients and the server.
  */
 

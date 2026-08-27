@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import type { Recipe } from "@nomnom/core/format";
+import type { Recipe } from "@seconds/core/format";
 import { radius, space, type as typeScale, usePalette } from "@/ui";
 import { ShelfControls } from "@/modules/shelves";
 import { IngredientList, ServingScaler } from "./IngredientList";

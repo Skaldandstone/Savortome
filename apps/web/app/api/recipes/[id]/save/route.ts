@@ -1,4 +1,4 @@
-import { saveSharedRecipe } from "@nomnom/db";
+import { saveSharedRecipe } from "@seconds/db";
 import { withUser } from "@/lib/api";
 
 export const runtime = "nodejs";

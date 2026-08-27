@@ -1,5 +1,5 @@
 {
-  "name": "nomnom",
+  "name": "seconds",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -7,25 +7,25 @@
     "node": ">=20"
   },
   "scripts": {
-    "dev": "pnpm --filter @nomnom/web dev",
-    "dev:mobile": "pnpm --filter @nomnom/mobile start",
+    "dev": "pnpm --filter @seconds/web dev",
+    "dev:mobile": "pnpm --filter @seconds/mobile start",
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "db:push": "pnpm --filter @nomnom/db push",
-    "db:studio": "pnpm --filter @nomnom/db studio",
-    "ingest": "pnpm --filter @nomnom/core ingest --",
-    "test": "pnpm --filter @nomnom/core test",
+    "db:push": "pnpm --filter @seconds/db push",
+    "db:studio": "pnpm --filter @seconds/db studio",
+    "ingest": "pnpm --filter @seconds/core ingest --",
+    "test": "pnpm --filter @seconds/core test",
     "check:shelves": "node scripts/check-shelves.mjs",
-    "db:generate": "pnpm --filter @nomnom/db generate",
-    "db:migrate": "pnpm --filter @nomnom/db migrate",
-    "check:pantry": "pnpm --filter @nomnom/db check:pantry",
-    "check:sharing": "pnpm --filter @nomnom/db check:sharing",
-    "check:friends": "pnpm --filter @nomnom/db check:friends",
-    "check:discover": "pnpm --filter @nomnom/db check:discover",
-    "check:editor": "pnpm --filter @nomnom/db check:editor",
-    "check:grocery": "pnpm --filter @nomnom/db check:grocery",
+    "db:generate": "pnpm --filter @seconds/db generate",
+    "db:migrate": "pnpm --filter @seconds/db migrate",
+    "check:pantry": "pnpm --filter @seconds/db check:pantry",
+    "check:sharing": "pnpm --filter @seconds/db check:sharing",
+    "check:friends": "pnpm --filter @seconds/db check:friends",
+    "check:discover": "pnpm --filter @seconds/db check:discover",
+    "check:editor": "pnpm --filter @seconds/db check:editor",
+    "check:grocery": "pnpm --filter @seconds/db check:grocery",
     "kroger:stub": "node scripts/kroger-stub.mjs",
-    "mobile:bundle": "pnpm --filter @nomnom/mobile exec expo export --platform android --output-dir .expo-export"
+    "mobile:bundle": "pnpm --filter @seconds/mobile exec expo export --platform android --output-dir .expo-export"
   },
   "devDependencies": {
     "typescript": "^5.7.3"

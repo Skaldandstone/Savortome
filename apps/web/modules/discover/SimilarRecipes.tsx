@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { DiscoverCard } from "@nomnom/core/format";
+import type { DiscoverCard } from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { DiscoverCards } from "./DiscoverCards";
 import styles from "./discover.module.css";

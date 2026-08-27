@@ -32,7 +32,7 @@ export function SignInScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: c.bg }]}>
-      <Text style={[styles.wordmark, { color: c.text }]}>NomNom</Text>
+      <Text style={[styles.wordmark, { color: c.text }]}>Second Breakfast</Text>
       <Text style={[styles.tagline, { color: c.textMuted }]}>recipes, from anywhere</Text>
 
       <Panel style={styles.panel}>

@@ -7,7 +7,7 @@ import {
   VISIBILITY_LABEL,
   shareUrl,
   type Visibility,
-} from "@nomnom/core/format";
+} from "@seconds/core/format";
 import { Button, Callout } from "@/ui";
 import { api } from "@/lib/client";
 import styles from "./sharing.module.css";

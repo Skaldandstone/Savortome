@@ -17,10 +17,10 @@ import {
   uuid,
   vector,
 } from "drizzle-orm/pg-core";
-import type { Ingredient, Step } from "@nomnom/core";
+import type { Ingredient, Step } from "@seconds/core";
 
 /**
- * The full NomNom data model. Only the recipe/import path is wired up in the
+ * The full Second Breakfast data model. Only the recipe/import path is wired up in the
  * app today, but shelves, ratings, friends, pantry, and lists are defined here
  * so later slices land as features rather than migrations of live data.
  */

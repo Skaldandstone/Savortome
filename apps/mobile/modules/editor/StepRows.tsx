@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import type { Step } from "@nomnom/core/format";
+import type { Step } from "@seconds/core/format";
 import { Field, space, type as typeScale, usePalette } from "@/ui";
 import { AddRow } from "./IngredientRows";
 import { RowActions } from "./RowActions";

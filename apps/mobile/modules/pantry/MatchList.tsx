@@ -6,7 +6,7 @@ import {
   formatMinutes,
   type PantrySearchResponse,
   type PantrySearchResult,
-} from "@nomnom/core/format";
+} from "@seconds/core/format";
 import { radius, space, type as typeScale, usePalette } from "@/ui";
 
 function MatchRow({ match }: { match: PantrySearchResult }) {

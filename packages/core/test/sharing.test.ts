@@ -63,10 +63,10 @@ describe("isShared", () => {
 describe("share links", () => {
   it("builds a path and a full URL", () => {
     assert.equal(sharePath("abc"), "/r/abc");
-    assert.equal(shareUrl("abc", "https://nomnom.app"), "https://nomnom.app/r/abc");
+    assert.equal(shareUrl("abc", "https://secondbreakfast.app"), "https://secondbreakfast.app/r/abc");
   });
 
   it("tolerates a trailing slash on the origin", () => {
-    assert.equal(shareUrl("abc", "https://nomnom.app/"), "https://nomnom.app/r/abc");
+    assert.equal(shareUrl("abc", "https://secondbreakfast.app/"), "https://secondbreakfast.app/r/abc");
   });
 });

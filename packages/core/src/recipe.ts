@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * The canonical recipe shape. Everything in NomNom — hand-authored recipes,
+ * The canonical recipe shape. Everything in Second Breakfast — hand-authored recipes,
  * blog scrapes, and recipes reconstructed from a spoken-word video — lands here.
  * The extractor, the database, and both clients all agree on this one schema.
  */

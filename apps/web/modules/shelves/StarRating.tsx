@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MAX_STARS } from "@nomnom/core/format";
+import { MAX_STARS } from "@seconds/core/format";
 import styles from "./shelves.module.css";
 
 const STARS = Array.from({ length: MAX_STARS }, (_, i) => i + 1);

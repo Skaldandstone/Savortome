@@ -1,5 +1,5 @@
-import { findStores, krogerCredentials, type KrogerStatus } from "@nomnom/core";
-import { getConnection, removeConnection, setConnectionStore, type Database } from "@nomnom/db";
+import { findStores, krogerCredentials, type KrogerStatus } from "@seconds/core";
+import { getConnection, removeConnection, setConnectionStore, type Database } from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
 import { catalogueToken, krogerApi } from "@/lib/kroger";
 

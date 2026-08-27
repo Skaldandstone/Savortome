@@ -1,6 +1,6 @@
 import "server-only";
 import { auth, currentUser } from "@clerk/nextjs/server";
-import { db, ensureDevUser, upsertUserFromClerk, type Database } from "@nomnom/db";
+import { db, ensureDevUser, upsertUserFromClerk, type Database } from "@seconds/db";
 
 /**
  * The single seam between "who is making this request" and the rest of the app.
@@ -57,7 +57,7 @@ export async function currentUserId(database: Database = db()): Promise<string |
     user?.emailAddresses[0]?.emailAddress ??
     // Phone-only and OAuth-only accounts can have no email; the column is
     // required, so synthesize a stable stand-in rather than failing sign-in.
-    `${clerkId}@users.nomnom.local`;
+    `${clerkId}@users.secondbreakfast.local`;
 
   return upsertUserFromClerk(database, {
     clerkId,

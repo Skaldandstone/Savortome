@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import type { RecipeDraft } from "@nomnom/core";
-import { deleteRecipe, getRecipe, updateRecipe } from "@nomnom/db";
+import type { RecipeDraft } from "@seconds/core";
+import { deleteRecipe, getRecipe, updateRecipe } from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
 
 /**

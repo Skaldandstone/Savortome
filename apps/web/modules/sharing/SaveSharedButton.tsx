@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import type { SharedRecipeView } from "@nomnom/core/format";
+import type { SharedRecipeView } from "@seconds/core/format";
 import { Button, Callout } from "@/ui";
 import { api } from "@/lib/client";
 import styles from "./sharing.module.css";

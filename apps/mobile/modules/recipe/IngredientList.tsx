@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { formatAmount, type Ingredient } from "@nomnom/core/format";
+import { formatAmount, type Ingredient } from "@seconds/core/format";
 import { Button, space, type as typeScale, usePalette } from "@/ui";
 
 export function ServingScaler({

@@ -9,7 +9,7 @@ import {
   formatDuration,
   timestampUrl,
   type Recipe,
-} from "@nomnom/core/format";
+} from "@seconds/core/format";
 import { IngredientList, ServingScaler, useServings } from "@/modules/recipe";
 import { Button, Callout, radius, space, type as typeScale, usePalette } from "@/ui";
 import { FinishPanel } from "./FinishPanel";

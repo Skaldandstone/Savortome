@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-import type { ShelfSummary } from "@nomnom/core/format";
+import type { ShelfSummary } from "@seconds/core/format";
 import { Button, Field, radius, space, type as typeScale, usePalette } from "@/ui";
 
 /** Custom shelves, where a recipe can sit on as many as you like. */

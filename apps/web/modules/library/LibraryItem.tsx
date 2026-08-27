@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { formatMinutes, type StatusShelf } from "@nomnom/core/format";
+import { formatMinutes, type StatusShelf } from "@seconds/core/format";
 import { ShelfBadge } from "@/modules/shelves";
 import styles from "./library.module.css";
 

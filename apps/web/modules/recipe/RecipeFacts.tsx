@@ -1,4 +1,4 @@
-import { formatMinutes, type Recipe } from "@nomnom/core/format";
+import { formatMinutes, type Recipe } from "@seconds/core/format";
 import styles from "./RecipeFacts.module.css";
 
 /** The at-a-glance strip: how long, how many, what kind. */

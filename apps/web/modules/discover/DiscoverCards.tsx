@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { formatMinutes, type DiscoverCard } from "@nomnom/core/format";
+import { formatMinutes, type DiscoverCard } from "@seconds/core/format";
 import styles from "./discover.module.css";
 
 /** One shared recipe, as it appears while browsing. */

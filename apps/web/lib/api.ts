@@ -5,10 +5,10 @@ import {
   KrogerError,
   RecipeValidationError,
   ShelfValidationError,
-} from "@nomnom/core";
-import { FriendshipError } from "@nomnom/core";
-import { SaveRecipeError } from "@nomnom/db";
-import { db, type Database } from "@nomnom/db";
+} from "@seconds/core";
+import { FriendshipError } from "@seconds/core";
+import { SaveRecipeError } from "@seconds/db";
+import { db, type Database } from "@seconds/db";
 import {
   NotConfiguredError,
   NotSignedInError,

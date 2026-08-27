@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db, getSharedRecipe } from "@nomnom/db";
+import { db, getSharedRecipe } from "@seconds/db";
 import { errorResponse } from "@/lib/api";
 import { databaseConfigured, viewerId } from "@/lib/session";
 

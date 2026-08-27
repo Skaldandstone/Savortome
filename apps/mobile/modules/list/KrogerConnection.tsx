@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import * as WebBrowser from "expo-web-browser";
-import type { GroceryStore, KrogerStatus } from "@nomnom/core/format";
+import type { GroceryStore, KrogerStatus } from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { apiBaseUrl } from "@/lib/api";
 import {

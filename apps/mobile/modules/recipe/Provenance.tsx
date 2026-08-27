@@ -1,5 +1,5 @@
 import { StyleSheet, Text, View } from "react-native";
-import { provenanceTone, type ExtractionMethod, type Recipe } from "@nomnom/core/format";
+import { provenanceTone, type ExtractionMethod, type Recipe } from "@seconds/core/format";
 import { Callout, space, type as typeScale, usePalette } from "@/ui";
 
 const METHOD_LABEL: Record<ExtractionMethod, string> = {

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { formatMinutes, type DiscoverCard, type DiscoverResponse } from "@nomnom/core/format";
+import { formatMinutes, type DiscoverCard, type DiscoverResponse } from "@seconds/core/format";
 import { api } from "@/lib/client";
 import {
   Button,

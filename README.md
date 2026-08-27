@@ -1,4 +1,4 @@
-# NomNom
+# Second Breakfast
 
 Goodreads for recipes - with an importer that turns a YouTube video, a TikTok, a
 Reel, or a 2,000-word blog post into a recipe card you can actually cook from.
@@ -26,13 +26,13 @@ Both apps use the same shape: thin route/entry files, feature folders under
 both - library, import, shelves, pantry search, lists, sharing, friends, and
 discovery. Anything platform-agnostic -
 request shapes, shelf rules, quantity scaling, the optimistic-update logic -
-lives in `@nomnom/core/format` so the two clients can't drift apart.
+lives in `@seconds/core/format` so the two clients can't drift apart.
 
-`@nomnom/core` has two entry points:
+`@seconds/core` has two entry points:
 
-- `@nomnom/core` - the full pipeline. Server only; pulls in `node:dns`,
+- `@seconds/core` - the full pipeline. Server only; pulls in `node:dns`,
   `child_process`, and the Anthropic SDK.
-- `@nomnom/core/format` - pure model, formatting, shelf rules, and the HTTP
+- `@seconds/core/format` - pure model, formatting, shelf rules, and the HTTP
   client. Safe in a browser or React Native bundle.
 
 ---
@@ -568,7 +568,7 @@ caption extraction rather than failing.
 **Mobile** - `pnpm dev:mobile`. It talks to the web app's API, so run both, and
 copy the web app's publishable key into `apps/mobile/.env`. On a simulator
 `localhost` resolves to your machine; on a physical device the app falls back to
-the LAN address Expo is already serving from. Copy a link in any app and NomNom
+the LAN address Expo is already serving from. Copy a link in any app and Second Breakfast
 offers to import it when you switch back.
 
 Five tabs - Library, Cook, List, Friends, Discover - with importing, recipes,

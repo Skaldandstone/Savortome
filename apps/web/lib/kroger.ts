@@ -7,8 +7,8 @@ import {
   refreshToken,
   type KrogerConnection,
   type KrogerCredentials,
-} from "@nomnom/core";
-import { getConnection, saveConnection, type Database } from "@nomnom/db";
+} from "@seconds/core";
+import { getConnection, saveConnection, type Database } from "@seconds/db";
 
 /**
  * The bits of the Kroger flow that both the cart route and the connection
@@ -16,7 +16,7 @@ import { getConnection, saveConnection, type Database } from "@nomnom/db";
  */
 
 /** The cookie the OAuth `state` is parked in between leaving and coming back. */
-export const KROGER_STATE_COOKIE = "nomnom_kroger_state";
+export const KROGER_STATE_COOKIE = "seconds_kroger_state";
 
 /**
  * Where to send Kroger's non-OAuth calls.

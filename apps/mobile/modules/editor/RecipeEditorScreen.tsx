@@ -2,7 +2,7 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { RecipeDraft } from "@nomnom/core/format";
+import type { RecipeDraft } from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { Button, Callout, Panel, PanelHeader, space, type as typeScale, usePalette } from "@/ui";
 import { Basics, Details } from "./DetailFields";

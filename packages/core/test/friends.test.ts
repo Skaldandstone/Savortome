@@ -11,7 +11,7 @@ import {
 
 describe("normalizeHandle", () => {
   it("accepts the ways people actually type a handle", () => {
-    for (const input of ["sam", "@sam", " Sam ", "https://nomnom.app/@sam", "nomnom.app/sam"]) {
+    for (const input of ["sam", "@sam", " Sam ", "https://secondbreakfast.app/@sam", "secondbreakfast.app/sam"]) {
       assert.equal(normalizeHandle(input), "sam", `"${input}" should resolve to sam`);
     }
   });

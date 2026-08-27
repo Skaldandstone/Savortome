@@ -1,5 +1,5 @@
-import type { RecipeDraft } from "@nomnom/core";
-import { createRecipe, listRecipes, listShelves, recipeIdsOnShelf, statusByRecipe } from "@nomnom/db";
+import type { RecipeDraft } from "@seconds/core";
+import { createRecipe, listRecipes, listShelves, recipeIdsOnShelf, statusByRecipe } from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
 
 /**
