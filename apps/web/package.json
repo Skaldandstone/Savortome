@@ -10,14 +10,15 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@clerk/nextjs": "7.8.0",
     "@seconds/core": "workspace:*",
     "@seconds/db": "workspace:*",
+    "drizzle-orm": "^0.45.2",
     "next": "^15.1.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
-    "drizzle-orm": "^0.45.2",
     "server-only": "^0.0.1",
-    "@clerk/nextjs": "7.8.0"
+    "stripe": "^22.5.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",

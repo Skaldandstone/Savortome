@@ -745,11 +745,16 @@ identifiers (`free`, `plus`, `pro`) and `TIER_LABEL` maps them to whatever the
 tiers are currently called - renaming a tier is a one-line label change, not a
 migration.
 
-| Plan | Credits / month |
-|---|---|
-| free | 3 |
-| plus | 25 |
-| pro | 50 |
+| Plan | Shown as | Credits / month | Price |
+|---|---|---|---|
+| `free` | Elevenses | 3 | - |
+| `plus` | Luncheon | 25 | $29.99/yr |
+| `pro` | Feast | 50 | $49.99/yr |
+
+The names are hobbit meals, to match the app's own. Their one weakness is that
+the ordering isn't self-evident unless you know the reference, so anywhere a
+tier is named it's shown next to its credit count - the number does the
+ranking, the name does the personality.
 
 Allowances are sized so that a subscriber who burns every credit every month is
 still profitable on the current extraction pipeline. That's the point of a cap:
@@ -794,6 +799,63 @@ costs to serve, with the bigger pack cheaper per credit - a unit test enforces
 both, having caught the first draft pricing the 100-pack *worse* per credit
 than the 25. **Payments aren't wired up**: the UI shows the packs disabled and
 says so.
+
+---
+
+## Payments
+
+Stripe, and optional in exactly the way the database and Clerk are: without
+`STRIPE_SECRET_KEY` the checkout route answers `501` and says which variable is
+missing, and the app runs on the free tier. Everything below was built and
+tested without a Stripe account.
+
+**The client never says what something costs.** A checkout request names a
+product id; the server looks up the price, the credit count, and the tier from
+`packages/core/src/billing.ts`. A client that can name its own price will
+eventually name zero.
+
+**Fulfilment happens on the webhook, never on the success redirect.** A browser
+redirect can be missed, replayed, or forged, and someone who closes the tab has
+still paid. The webhook is the only delivery that is both guaranteed and
+authenticated.
+
+**Three things guard the money path**, and each is checked rather than assumed:
+
+- *Signature verification.* The raw body is read with `request.text()`, not
+  `.json()` - parsing and re-serialising changes the bytes and the signature
+  would never verify. A forged signature gets a `400`, and so does a valid
+  signature over a body that was tampered with afterwards.
+- *Idempotency.* Stripe retries until it gets a 2xx, so the same event arrives
+  more than once in normal operation. The event id is claimed by inserting it
+  as a primary key before any work happens - two concurrent deliveries race,
+  one wins, the loser stops. Checking first and writing after would leave a
+  window where both believe they're first.
+- *A second belt.* `credit_purchases` has a unique index on the checkout
+  session id, so even if the event guard were bypassed a replayed purchase
+  writes nothing and grants nothing.
+
+A failed fulfilment releases its claim and returns `500`, so Stripe's retry
+gets a real second attempt rather than being dismissed as a duplicate.
+
+`past_due` deliberately keeps the paid tier. A card that failed at 3am usually
+succeeds on retry, and removing someone's features over it costs more goodwill
+than a few days of access costs money. An unrecognised subscription status
+drops to free - failing closed on anything to do with money.
+
+```bash
+pnpm check:billing
+```
+
+Asserts the lot against real Postgres, including three concurrent claims of one
+event resolving to exactly one winner. No Stripe account needed: the events are
+synthesised, because what's being tested is what this app does with one.
+
+**To go live**, set `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` and
+`NEXT_PUBLIC_APP_URL`, then point a Stripe webhook endpoint at
+`/api/billing/webhook` subscribed to `checkout.session.completed`,
+`customer.subscription.updated` and `customer.subscription.deleted`. Products
+and prices are created inline from `billing.ts`, so there is nothing to
+configure in the Stripe dashboard beyond the endpoint.
 
 ---
 

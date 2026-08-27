@@ -15,6 +15,7 @@
     "push": "drizzle-kit push",
     "studio": "drizzle-kit studio",
     "migrate": "tsx src/migrate.ts",
+    "check:billing": "tsx scripts/check-billing.ts",
     "check:credits": "tsx scripts/check-credits.ts",
     "check:pantry": "tsx scripts/check-pantry.ts",
     "check:sharing": "tsx scripts/check-sharing.ts",

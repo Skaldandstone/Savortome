@@ -81,6 +81,10 @@ export const users = pgTable(
     displayName: text("display_name").notNull(),
     avatarUrl: text("avatar_url"),
     tier: userTier("tier").notNull().default("free"),
+    /** Stripe's customer id, so a returning buyer isn't created twice. */
+    stripeCustomerId: text("stripe_customer_id"),
+    /** The live subscription, when there is one. Null on the free tier. */
+    stripeSubscriptionId: text("stripe_subscription_id"),
     /**
      * Every credit ever bought, not the remaining balance. What's left is this
      * minus the purchased spends in the ledger, which keeps the balance
@@ -94,6 +98,9 @@ export const users = pgTable(
     uniqueIndex("users_clerk_idx").on(t.clerkId),
     uniqueIndex("users_email_idx").on(t.email),
     uniqueIndex("users_handle_idx").on(t.handle),
+    uniqueIndex("users_stripe_customer_idx").on(t.stripeCustomerId),
+    // The subscription webhooks arrive knowing the subscription, not the user.
+    index("users_stripe_subscription_idx").on(t.stripeSubscriptionId),
   ],
 );
 
@@ -110,6 +117,55 @@ export const friendships = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.friendId] }), index("friendships_friend_idx").on(t.friendId)],
+);
+
+/**
+ * Every Stripe event this app has already acted on.
+ *
+ * Stripe retries a webhook until it gets a 2xx, and a retry that granted
+ * credits a second time would be handing out money. The event id is the
+ * primary key, so a duplicate insert fails and the handler knows to stop
+ * rather than fulfil again.
+ *
+ * Kept forever on purpose. It's a few bytes a row, and "did we already
+ * process this?" is a question that can be asked about an event from any point
+ * in the past.
+ */
+export const stripeEvents = pgTable("stripe_events", {
+  /** Stripe's own event id — `evt_...`. */
+  id: text("id").primaryKey(),
+  type: text("type").notNull(),
+  processedAt: timestamp("processed_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/**
+ * What someone bought, and what it did to their account.
+ *
+ * Separate from `credit_spends` because they answer different questions: one
+ * is where credits went, this is where they came from. Together they're the
+ * whole story of a balance.
+ */
+export const creditPurchases = pgTable(
+  "credit_purchases",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    /** The product id from `@seconds/core` — `pack-25`, `plan-pro`. */
+    productId: text("product_id").notNull(),
+    /** Whole cents actually charged, as reported by Stripe rather than assumed. */
+    cents: integer("cents").notNull(),
+    credits: integer("credits").notNull().default(0),
+    tier: userTier("tier"),
+    /** Stripe's checkout session id, for reconciling against their dashboard. */
+    stripeSessionId: text("stripe_session_id"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    index("credit_purchases_user_idx").on(t.userId),
+    // One row per checkout session, so a replayed fulfilment can't duplicate a
+    // purchase even if the event-level guard were somehow bypassed.
+    uniqueIndex("credit_purchases_session_idx").on(t.stripeSessionId),
+  ],
 );
 
 /**
