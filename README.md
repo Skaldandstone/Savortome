@@ -80,11 +80,60 @@ took (visible under "How this import ran" on every card).
 | Blog without it | Page prose → Claude | One call |
 | YouTube | Caption track (+ description) → Claude | One call |
 | TikTok / Instagram / Facebook | Post caption → Claude | One call |
-| Video with no captions | yt-dlp → ASR → Claude | One call + ASR |
+| Video whose captions we can't fetch directly | yt-dlp → caption track → Claude | One call |
+| Video with no captions at all | yt-dlp → audio → ASR → Claude | One call + ASR |
 
 Most food blogs publish structured recipe data, and those imports are instant
 and free. Everything else goes through `claude-opus-5` with adaptive thinking, a
 cached system prompt, and a Zod-validated structured output.
+
+### YouTube captions need yt-dlp today
+
+Measured 2026-08-26, and worth knowing before you judge a video import.
+
+YouTube still lists caption tracks in the watch page, and the pipeline still
+finds them - but `/api/timedtext` now answers a plain server-side request with
+an **empty 200**. Not an error, not a 403: zero bytes. Every URL variant tried
+(`fmt=json3`, `fmt=srv3`, bare, `&c=WEB`) behaves the same, and the InnerTube
+`ANDROID` client route 400s. The endpoint is gated behind browser session
+tokens now, which is exactly what `yt-dlp` exists to handle.
+
+**yt-dlp can still fetch them**, which is why it's the first thing the pipeline
+reaches for when the direct fetch comes back empty - ahead of transcribing
+audio, because it's free, takes a second or two rather than minutes, and a
+human-written caption track beats any ASR pass. (The automatic track on the
+test video renders "Jacques Pépin" as "zck Pepa".)
+
+```bash
+winget install yt-dlp.yt-dlp Gyan.FFmpeg
+```
+
+winget installs both **without adding them to PATH**, so name them explicitly
+in `.env.local` rather than fighting your environment:
+
+```
+YT_DLP_PATH=C:\...\WinGet\Packages\yt-dlp.yt-dlp_...\yt-dlp.exe
+FFMPEG_PATH=C:\...\WinGet\Packages\Gyan.FFmpeg_...in
+```
+
+Only audio extraction needs ffmpeg; subtitles don't touch it.
+
+**What it's worth**, measured on the same Jacques Pépin video:
+
+| | Without yt-dlp | With it |
+|---|---|---|
+| Path | description → Claude | transcript → Claude |
+| Confidence | 0.20 | **0.78** |
+| Ingredients | 4 | **17**, with real quantities |
+| Steps | 3 | **14**, each timestamped |
+
+An ASR key (`GROQ_API_KEY`, free tier, or `DEEPGRAM_API_KEY`) is still worth
+setting, but it is now the *third* resort - for videos that publish no captions
+at all.
+
+The trace says exactly which of these happened, because they need different
+fixes: "the video publishes no captions", "captions exist but YouTube won't
+serve them to a server directly", "yt-dlp: 41 caption cues".
 
 **Video timestamps.** Steps extracted from a transcript carry the second they
 happen at, and the card links straight into the video at that moment. Where the
