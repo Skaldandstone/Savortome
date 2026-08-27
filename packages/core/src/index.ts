@@ -31,3 +31,4 @@ export {
 export * from "./staples.js";
 export * from "./aisles.js";
 export * from "./export.js";
+export * from "./step-ingredients.js";
