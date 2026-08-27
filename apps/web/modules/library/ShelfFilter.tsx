@@ -10,11 +10,14 @@ export function ShelfFilter({
   shelves,
   activeShelfId,
   query = "",
+  sort,
 }: {
   shelves: ShelfSummary[];
   activeShelfId?: string;
   /** Carried through the tabs so switching shelf doesn't drop the search. */
   query?: string;
+  /** Likewise the order. Omitted when it's the default. */
+  sort?: string;
 }) {
   if (shelves.length === 0) return null;
 
@@ -22,6 +25,7 @@ export function ShelfFilter({
     const params = new URLSearchParams();
     if (shelfId) params.set("shelf", shelfId);
     if (query.trim()) params.set("q", query.trim());
+    if (sort && sort !== "newest") params.set("sort", sort);
     const qs = params.toString();
     return qs ? `/?${qs}` : "/";
   };

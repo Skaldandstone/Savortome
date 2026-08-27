@@ -2,6 +2,7 @@ export * from "./recipe.js";
 export * from "./source-kind.js";
 export * from "./import-client.js";
 export * from "./shelves.js";
+export * from "./library.js";
 export * from "./sharing.js";
 export * from "./editor.js";
 export * from "./cook.js";

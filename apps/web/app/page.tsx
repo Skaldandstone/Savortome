@@ -1,12 +1,28 @@
 import { ImportPanel } from "@/modules/import";
-import { LibraryList, LibraryNotice, LibrarySearch, ShelfFilter } from "@/modules/library";
+import {
+  LibraryList,
+  LibraryNotice,
+  LibrarySearch,
+  LibrarySort,
+  ShelfFilter,
+} from "@/modules/library";
+import { librarySortOr } from "@seconds/core/format";
 import { loadLibrary } from "@/lib/library";
 import styles from "./layout.module.css";
 
 export const dynamic = "force-dynamic";
 
-async function Library({ shelfId, query }: { shelfId?: string; query: string }) {
-  const library = await loadLibrary(shelfId, query);
+async function Library({
+  shelfId,
+  query,
+  sort,
+}: {
+  shelfId?: string;
+  query: string;
+  sort: string;
+}) {
+  const order = librarySortOr(sort);
+  const library = await loadLibrary(shelfId, query, order);
 
   if (library.kind === "unavailable") {
     return <LibraryNotice>{library.reason}</LibraryNotice>;
@@ -14,8 +30,14 @@ async function Library({ shelfId, query }: { shelfId?: string; query: string }) 
 
   return (
     <>
-      <LibrarySearch query={query} shelfId={shelfId} />
-      <ShelfFilter shelves={library.shelves} activeShelfId={shelfId} query={query} />
+      <LibrarySearch query={query} shelfId={shelfId} sort={order} />
+      <ShelfFilter
+        shelves={library.shelves}
+        activeShelfId={shelfId}
+        query={query}
+        sort={order}
+      />
+      <LibrarySort sort={order} shelfId={shelfId} query={query} />
       {query && library.entries.length === 0 ? (
         <LibraryNotice>
           Nothing in your recipes matches “{query}”. Discover searches what other people have
@@ -31,16 +53,16 @@ async function Library({ shelfId, query }: { shelfId?: string; query: string }) 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ shelf?: string; q?: string }>;
+  searchParams: Promise<{ shelf?: string; q?: string; sort?: string }>;
 }) {
-  const { shelf, q } = await searchParams;
+  const { shelf, q, sort } = await searchParams;
 
   return (
     <main>
       <ImportPanel />
       <section className={styles.section}>
         <h2 className={styles.sectionHeading}>Your recipes</h2>
-        <Library shelfId={shelf} query={q ?? ""} />
+        <Library shelfId={shelf} query={q ?? ""} sort={sort ?? ""} />
       </section>
     </main>
   );

@@ -7,6 +7,11 @@ import {
   SHELF_LABEL,
   type LibraryRecipe,
   type ShelfSummary,
+  DEFAULT_LIBRARY_SORT,
+  LIBRARY_SORTS,
+  LIBRARY_SORT_LABEL,
+  cookedLabel,
+  type LibrarySort,
 } from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { SignOutButton } from "@/modules/account";
@@ -36,6 +41,7 @@ function RecipeRow({ recipe }: { recipe: LibraryRecipe }) {
     recipe.attribution,
     formatMinutes(recipe.totalMinutes),
     recipe.ingredientCount ? `${recipe.ingredientCount} ingredients` : null,
+    cookedLabel(recipe.timesCooked),
   ]
     .filter(Boolean)
     .join(" · ");
@@ -54,6 +60,17 @@ function RecipeRow({ recipe }: { recipe: LibraryRecipe }) {
         <Text style={{ color: c.textMuted, fontSize: typeScale.small }} numberOfLines={1}>
           {meta}
         </Text>
+        {/* Your own verdict, not the community's. Cooked-but-unrated shows
+            nothing rather than an accusing zero. */}
+        {recipe.stars && recipe.stars > 0 ? (
+          <Text
+            style={{ color: c.accent, fontSize: typeScale.micro, letterSpacing: 1 }}
+            accessibilityLabel={`You rated this ${recipe.stars} out of 5`}
+          >
+            {"★".repeat(recipe.stars)}
+            <Text style={{ color: c.border }}>{"★".repeat(5 - recipe.stars)}</Text>
+          </Text>
+        ) : null}
       </View>
       <ShelfBadge status={recipe.status} />
     </Pressable>
@@ -66,15 +83,17 @@ export function LibraryScreen() {
   const [recipes, setRecipes] = useState<LibraryRecipe[]>([]);
   const [activeShelf, setActiveShelf] = useState<string | undefined>();
   const [query, setQuery] = useState("");
+  const [sort, setSort] = useState<LibrarySort>(DEFAULT_LIBRARY_SORT);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const insets = useSafeAreaInsets();
   const c = usePalette();
 
-  const load = useCallback(async (shelfId?: string, search = "") => {
+  const load = useCallback(
+    async (shelfId?: string, search = "", order: LibrarySort = DEFAULT_LIBRARY_SORT) => {
     setError(null);
     try {
-      const data = await api.library(shelfId, search);
+      const data = await api.library(shelfId, search, order);
       setShelves(data.shelves);
       setRecipes(data.recipes);
     } catch (err) {
@@ -82,14 +101,16 @@ export function LibraryScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  },
+    [],
+  );
 
   // Refetch on focus: importing or shelving happens on other screens, and
   // coming back to a stale list is the most obvious kind of wrong.
   useFocusEffect(
     useCallback(() => {
-      void load(activeShelf, query);
-    }, [load, activeShelf, query]),
+      void load(activeShelf, query, sort);
+    }, [load, activeShelf, query, sort]),
   );
 
   return (
@@ -97,7 +118,7 @@ export function LibraryScreen() {
       style={{ backgroundColor: c.bg }}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + space.lg }]}
       refreshControl={
-        <RefreshControl refreshing={loading} onRefresh={() => void load(activeShelf, query)} tintColor={c.accent} />
+        <RefreshControl refreshing={loading} onRefresh={() => void load(activeShelf, query, sort)} tintColor={c.accent} />
       }
     >
       <View style={styles.masthead}>
@@ -121,10 +142,22 @@ export function LibraryScreen() {
           accessibilityLabel="Search your recipes"
           style={styles.searchInput}
           onChangeText={setQuery}
-          onSubmitEditing={() => void load(activeShelf, query)}
+          onSubmitEditing={() => void load(activeShelf, query, sort)}
         />
-        <Button label="Search" onPress={() => void load(activeShelf, query)} />
+        <Button label="Search" onPress={() => void load(activeShelf, query, sort)} />
       </View>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.sortRow}>
+        {LIBRARY_SORTS.map((option) => (
+          <Button
+            key={option}
+            label={LIBRARY_SORT_LABEL[option]}
+            variant="toggle"
+            selected={sort === option}
+            onPress={() => setSort(option)}
+          />
+        ))}
+      </ScrollView>
 
       {shelves.length > 0 ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.shelfRow}>
@@ -166,6 +199,7 @@ export function LibraryScreen() {
 const styles = StyleSheet.create({
   content: { padding: space.lg + 4, paddingBottom: space.xxl * 2 },
   searchRow: { flexDirection: "row", alignItems: "center", gap: space.sm, marginBottom: space.md },
+  sortRow: { marginBottom: space.sm },
   searchInput: { flex: 1 },
   masthead: { flexDirection: "row", alignItems: "center", marginBottom: space.lg },
   wordmark: { fontSize: typeScale.display, fontWeight: "700", letterSpacing: -0.5 },

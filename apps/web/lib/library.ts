@@ -1,5 +1,5 @@
 import "server-only";
-import type { ShelfSummary } from "@seconds/core";
+import type { LibrarySort, ShelfSummary } from "@seconds/core";
 import {
   db,
   getRecipe,
@@ -30,6 +30,7 @@ const SIGNED_OUT = "Sign in to see the recipes you've saved.";
 export async function loadLibrary(
   shelfId?: string,
   query = "",
+  sort?: LibrarySort,
   limit = 30,
 ): Promise<LibraryResult> {
   if (!databaseConfigured()) return { kind: "unavailable", reason: NO_DATABASE };
@@ -51,7 +52,7 @@ export async function loadLibrary(
         ? matchIds.filter((id) => shelfIds.includes(id))
         : (matchIds ?? shelfIds ?? undefined);
 
-    const rows = await listRecipes(database, userId, { limit, ids });
+    const rows = await listRecipes(database, userId, { limit, ids, sort });
 
     // One query for every badge, rather than one per row.
     const statuses = await statusByRecipe(
@@ -71,6 +72,8 @@ export async function loadLibrary(
         ingredientCount: row.ingredients.length,
         attribution: row.sourceAuthor ?? row.sourceSiteName ?? row.sourceKind,
         status: statuses.get(row.id) ?? null,
+        stars: row.stars,
+        timesCooked: row.timesCooked ?? 0,
       })),
     };
   } catch (err) {
