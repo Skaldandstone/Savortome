@@ -456,9 +456,19 @@ Ticking the last step marks the recipe cooked — bumping `timesCooked`, which
 pantry search and discovery both lean on — and asks for a rating there and
 then, which is the one moment anyone has an opinion.
 
-**Not persisted.** Reload the page or cold-start the app mid-cook and the
-progress and running timers are gone. Doing it properly means local
-notifications so a timer can ring with the app closed, which is its own slice.
+**Sessions survive a reload.** Progress and running timers are kept per recipe
+- `localStorage` on the web, `AsyncStorage` on the phone - and restored for 12
+hours, which is longer than any cook and shorter than "yesterday". Timers come
+back *correct* rather than approximate, which falls out of anchoring them to
+the wall clock: `endsAt` is an absolute instant, so a timer written before a
+reload and read after it has simply been counting down the whole time.
+
+The screen says "Picked up where you left off" rather than silently jumping to
+step 8, and offers to start over. A session is dropped if it belongs to another
+recipe, is stale, or points past a recipe that has since been edited shorter.
+
+**Still not done:** a timer ringing while the app is closed. That needs local
+notifications, which is its own slice.
 
 ---
 
@@ -619,5 +629,6 @@ Modelled in `packages/db/src/schema.ts`, in rough dependency order:
    ingredient-overlap approach visibly runs out, not before.
 4. **Ingredient groups in the editor.** "For the sauce" headings survive an
    edit untouched, but there's no way to add or change one by hand yet.
-5. **Cook sessions that survive a reload**, and timers that ring with the app
-   closed. Both want local notifications rather than more state.
+5. **Timers that ring with the app closed.** Sessions themselves now survive a
+   reload; a timer going off while you're in another app needs local
+   notifications, which is a different problem.

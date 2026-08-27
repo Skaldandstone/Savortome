@@ -13,6 +13,7 @@
     "@clerk/expo": "4.5.2",
     "@expo/metro-runtime": "~57.0.13",
     "@nomnom/core": "workspace:*",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~57.0.16",
     "expo-clipboard": "~57.0.1",
     "expo-constants": "~57.0.14",

@@ -14,6 +14,7 @@ import { IngredientList, ServingScaler, useServings } from "@/modules/recipe";
 import { Button, Callout, radius, space, type as typeScale, usePalette } from "@/ui";
 import { FinishPanel } from "./FinishPanel";
 import { TimerTray } from "./TimerTray";
+import { useCookSession } from "./useCookSession";
 import { useTimers } from "./useTimers";
 
 /**
@@ -28,6 +29,13 @@ export function CookScreen({ recipe, recipeId }: { recipe: Recipe; recipeId: str
   const [index, setIndex] = useState(0);
   const [done, setDone] = useState<ReadonlySet<number>>(() => new Set());
   const [showIngredients, setShowIngredients] = useState(false);
+  const [showResumed, setShowResumed] = useState(false);
+  /**
+   * Whether the saved session has been dealt with — restored, or found absent.
+   * State rather than a ref, so a remount correctly re-reads instead of
+   * saving over what it was about to restore.
+   */
+  const [settled, setSettled] = useState(false);
   const timers = useTimers();
   const servings = useServings(recipe);
   const insets = useSafeAreaInsets();
@@ -41,10 +49,44 @@ export function CookScreen({ recipe, recipeId }: { recipe: Recipe; recipeId: str
   useKeepAwake();
 
   const steps = recipe.steps;
+  // Destructured: the hook returns a fresh object every render, and depending
+  // on it would fire the save effect on every timer tick.
+  const { restored, checked, save, clear } = useCookSession(recipeId, steps.length);
   const step = steps[clampStep(index, steps.length)];
   const progress = cookProgress(done, steps.length);
 
+  // Apply a saved session once the read has landed, then let saving begin.
+  useEffect(() => {
+    if (!checked || settled) return;
+    if (restored) {
+      setIndex(restored.stepIndex);
+      setDone(restored.done);
+      timers.restore(restored.timers);
+      setShowResumed(true);
+    }
+    setSettled(true);
+    // timers is rebuilt every render; depending on it would re-run this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checked, restored, settled]);
+
+  // Never write before the restore has settled, or this saves the empty state
+  // it starts in over the session it is about to read.
+  useEffect(() => {
+    if (!settled) return;
+    if (progress.finished) clear();
+    else save(index, done, timers.timers);
+  }, [settled, index, done, timers.timers, progress.finished, save, clear]);
+
   const go = (delta: number) => setIndex((i) => clampStep(i + delta, steps.length));
+
+  /** Throw the restored session away and begin the recipe again. */
+  const startOver = () => {
+    setShowResumed(false);
+    setIndex(0);
+    setDone(new Set());
+    for (const timer of timers.timers) timers.dismiss(timer.stepN);
+    clear();
+  };
 
   const toggleDone = (n: number) =>
     setDone((current) => {
@@ -130,6 +172,15 @@ export function CookScreen({ recipe, recipeId }: { recipe: Recipe; recipeId: str
           onReset={timers.reset}
           onDismiss={timers.dismiss}
         />
+
+        {showResumed ? (
+          <View style={[styles.resumed, { backgroundColor: c.surfaceSunken }]}>
+            <Text style={{ color: c.textMuted, fontSize: typeScale.small, flex: 1 }}>
+              Picked up where you left off.
+            </Text>
+            <Button label="Start over" variant="ghost" onPress={startOver} />
+          </View>
+        ) : null}
 
         <View
           style={[styles.progress, { backgroundColor: c.surfaceSunken }]}
@@ -233,6 +284,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: radius.md,
     maxHeight: 280,
+  },
+  resumed: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: space.sm,
+    paddingVertical: space.sm,
+    paddingHorizontal: space.md,
+    borderRadius: radius.sm,
   },
   progress: { height: 4, borderRadius: radius.pill, overflow: "hidden" },
   progressFill: { height: "100%" },

@@ -159,3 +159,111 @@ export function cookProgress(doneSteps: ReadonlySet<number>, total: number): Coo
 /** Move through the steps without ever falling off either end. */
 export const clampStep = (index: number, total: number): number =>
   total === 0 ? 0 : Math.min(Math.max(index, 0), total - 1);
+
+// ---------------------------------------------------------------- sessions
+
+/**
+ * A cook in progress, as it survives a reload.
+ *
+ * Worth keeping because the moment someone closes the tab mid-recipe is
+ * usually not a decision — it's a phone locking, a browser evicting a
+ * background tab, an app being swapped out while the oven preheats. Coming
+ * back to step 1 with every timer gone is the app failing at the exact moment
+ * it was supposed to be useful.
+ *
+ * Timers restore *correctly* rather than approximately, which falls out of
+ * anchoring them to the wall clock in the first place: `endsAt` is an absolute
+ * instant, so a timer written before a reload and read after it has simply
+ * been counting down the whole time.
+ */
+export interface CookSession {
+  recipeId: string;
+  stepIndex: number;
+  /** Step numbers ticked off. An array because a Set doesn't survive JSON. */
+  done: number[];
+  timers: CookTimer[];
+  savedAt: number;
+}
+
+/**
+ * How long a session stays worth restoring.
+ *
+ * Longer than any cook, shorter than "yesterday". Offering to resume a recipe
+ * from last week — and worse, restoring its long-dead timers — is noise, not
+ * help.
+ */
+export const SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+
+export function serializeSession(
+  recipeId: string,
+  stepIndex: number,
+  done: ReadonlySet<number>,
+  timers: readonly CookTimer[],
+  now: number = Date.now(),
+): string {
+  const session: CookSession = {
+    recipeId,
+    stepIndex,
+    done: [...done].sort((a, b) => a - b),
+    timers: [...timers],
+    savedAt: now,
+  };
+  return JSON.stringify(session);
+}
+
+export interface RestoredSession {
+  stepIndex: number;
+  done: Set<number>;
+  timers: CookTimer[];
+}
+
+/**
+ * Read a stored session back, or decide it isn't worth restoring.
+ *
+ * Everything here is a reason to return null rather than to trust the blob:
+ * it is whatever was in storage, which may be corrupt, may belong to a
+ * different recipe, may be stale, and may describe a recipe that has since
+ * been edited to have fewer steps.
+ */
+export function restoreSession(
+  raw: string | null,
+  recipeId: string,
+  stepCount: number,
+  now: number = Date.now(),
+): RestoredSession | null {
+  if (!raw) return null;
+
+  let session: Partial<CookSession>;
+  try {
+    session = JSON.parse(raw) as Partial<CookSession>;
+  } catch {
+    return null;
+  }
+
+  if (session.recipeId !== recipeId) return null;
+  if (typeof session.savedAt !== "number" || now - session.savedAt > SESSION_MAX_AGE_MS) {
+    return null;
+  }
+
+  // The recipe may have been edited since. Anything pointing past the end of
+  // it is dropped rather than allowed to claim progress that doesn't exist.
+  const done = new Set(
+    (Array.isArray(session.done) ? session.done : []).filter(
+      (n) => Number.isInteger(n) && n >= 1 && n <= stepCount,
+    ),
+  );
+  const timers = (Array.isArray(session.timers) ? session.timers : []).filter(
+    (t): t is CookTimer =>
+      Boolean(t) && typeof t.stepN === "number" && t.stepN >= 1 && t.stepN <= stepCount,
+  );
+
+  const stepIndex = clampStep(
+    typeof session.stepIndex === "number" ? session.stepIndex : 0,
+    stepCount,
+  );
+
+  // Nothing left worth restoring — don't interrupt someone to tell them so.
+  if (done.size === 0 && timers.length === 0 && stepIndex === 0) return null;
+
+  return { stepIndex, done, timers };
+}

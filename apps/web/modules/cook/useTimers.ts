@@ -19,8 +19,8 @@ import {
  * oven — so they're keyed by the step they came from and live above the step
  * you happen to be looking at.
  */
-export function useTimers() {
-  const [timers, setTimers] = useState<CookTimer[]>([]);
+export function useTimers(initial: CookTimer[] = []) {
+  const [timers, setTimers] = useState<CookTimer[]>(initial);
   const [now, setNow] = useState(() => Date.now());
   const alarmed = useRef(new Set<number>());
 
@@ -68,6 +68,13 @@ export function useTimers() {
     dismiss: (stepN: number) => {
       alarmed.current.delete(stepN);
       setTimers((current) => current.filter((t) => t.stepN !== stepN));
+    },
+    /** Put back a set of timers read out of a saved session. */
+    restore: (saved: CookTimer[]) => {
+      // Anything already ringing when the session was saved has had its alarm;
+      // re-sounding it on a reload would be startling rather than useful.
+      for (const t of saved) alarmed.current.add(t.stepN);
+      setTimers(saved);
     },
     timerFor: (stepN: number) => timers.find((t) => t.stepN === stepN) ?? null,
     remaining: (timer: CookTimer) => remainingSeconds(timer, now),
