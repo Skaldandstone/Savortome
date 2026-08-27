@@ -23,3 +23,9 @@ allowBuilds:
 overrides:
   react: 19.2.3
   react-dom: 19.2.3
+  # expo install wanted 57.0.15 of both, published hours earlier, and wrote a
+  # minimumReleaseAge exclusion to get them past the policy. Pinning the
+  # previous patch instead keeps the supply-chain guard doing its job; expo
+  # pulls expo-constants in transitively, so the pin has to be an override.
+  expo-constants: 57.0.14
+  expo-notifications: 57.0.14

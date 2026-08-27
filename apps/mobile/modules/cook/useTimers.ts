@@ -10,6 +10,7 @@ import {
   type CookTimer,
   type Step,
 } from "@seconds/core/format";
+import { cancelTimerNotification, scheduleTimerNotification } from "./notify";
 
 /**
  * Every timer running in a cook session.
@@ -18,7 +19,7 @@ import {
  * oven — so they're keyed by the step they came from and live above the step
  * you happen to be looking at.
  */
-export function useTimers() {
+export function useTimers(recipeTitle = "") {
   const [timers, setTimers] = useState<CookTimer[]>([]);
   const [now, setNow] = useState(() => Date.now());
   const alarmed = useRef(new Set<number>());
@@ -48,35 +49,61 @@ export function useTimers() {
     setTimers((current) => current.map((t) => (t.stepN === stepN ? change(t) : t)));
   }, []);
 
-  const start = useCallback((step: Step) => {
-    alarmed.current.delete(step.n);
-    setTimers((current) => [
-      ...current.filter((t) => t.stepN !== step.n),
-      startTimer(step, Date.now()),
-    ]);
-  }, []);
+  const start = useCallback(
+    (step: Step) => {
+      alarmed.current.delete(step.n);
+      const timer = startTimer(step, Date.now());
+      setTimers((current) => [...current.filter((t) => t.stepN !== step.n), timer]);
+      // The OS holds this one, so it fires with the app closed — which is the
+      // entire reason anyone sets a cook timer.
+      void scheduleTimerNotification(timer, recipeTitle);
+    },
+    [recipeTitle],
+  );
 
   return {
     timers,
     now,
     start,
-    pause: (stepN: number) => replace(stepN, (t) => pauseTimer(t, Date.now())),
-    resume: (stepN: number) => replace(stepN, (t) => resumeTimer(t, Date.now())),
+    pause: (stepN: number) => {
+      // Cancel first: a paused timer that still rings the phone is worse than
+      // no timer at all.
+      void cancelTimerNotification(stepN);
+      replace(stepN, (t) => pauseTimer(t, Date.now()));
+    },
+    resume: (stepN: number) =>
+      replace(stepN, (t) => {
+        const resumed = resumeTimer(t, Date.now());
+        void scheduleTimerNotification(resumed, recipeTitle);
+        return resumed;
+      }),
     reset: (stepN: number) => {
       alarmed.current.delete(stepN);
+      void cancelTimerNotification(stepN);
       replace(stepN, resetTimer);
     },
     dismiss: (stepN: number) => {
       alarmed.current.delete(stepN);
+      void cancelTimerNotification(stepN);
       Vibration.cancel();
       setTimers((current) => current.filter((t) => t.stepN !== stepN));
     },
     /** Put back a set of timers read out of a saved session. */
     restore: (saved: CookTimer[]) => {
-      // Anything already ringing when the session was saved has had its buzz;
-      // re-firing it on reopen would be startling rather than useful.
-      for (const t of saved) alarmed.current.add(t.stepN);
+      const at = Date.now();
+      // Only a timer that had *already* finished has had its buzz; re-firing
+      // that one on reopen would be startling. One still counting down has not
+      // rung yet and must be allowed to, or restoring a session quietly
+      // disarms every timer in it.
+      for (const t of saved) {
+        if (timerState(t, at) === "ringing") alarmed.current.add(t.stepN);
+      }
       setTimers(saved);
+      // Reopening the app after it was killed loses whatever the OS had
+      // queued, so anything still running is handed back to it.
+      for (const t of saved) {
+        if (t.endsAt !== null) void scheduleTimerNotification(t, recipeTitle);
+      }
     },
     timerFor: (stepN: number) => timers.find((t) => t.stepN === stepN) ?? null,
     remaining: (timer: CookTimer) => remainingSeconds(timer, now),

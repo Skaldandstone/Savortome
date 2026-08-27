@@ -39,7 +39,7 @@ export function CookMode({ recipe, recipeId }: { recipe: Recipe; recipeId: strin
    * quietly let the second mount save before it had restored.
    */
   const [settled, setSettled] = useState(false);
-  const timers = useTimers();
+  const timers = useTimers([], recipe.title);
   const servings = useServings(recipe);
   const steps = recipe.steps;
   // Destructured: the hook returns a fresh object every render, and depending

@@ -532,8 +532,22 @@ The screen says "Picked up where you left off" rather than silently jumping to
 step 8, and offers to start over. A session is dropped if it belongs to another
 recipe, is stale, or points past a recipe that has since been edited shorter.
 
-**Still not done:** a timer ringing while the app is closed. That needs local
-notifications, which is its own slice.
+**Timers reach you when you've moved on.** On the phone the alarm is handed to
+the OS the moment a timer starts, so it fires whether the app is backgrounded,
+swapped out, or killed — which is the whole reason anyone sets a cook timer.
+Pausing, resetting or clearing cancels it, because a paused timer that still
+rings the phone is worse than no timer. On the web a system notification is
+raised when the tab isn't the one you're looking at.
+
+Permission is asked when the first timer starts, never at launch: an unprompted
+prompt is the one people deny by reflex, and on iOS a denial is close to
+permanent.
+
+**The web has a real limit here.** Notifications raised by a page belong to
+that page, so they only fire while it is still open, even if backgrounded.
+Close the tab and the timer goes with it. Surviving that needs a service worker
+with its own scheduler, which is more machinery than a cook timer earns. The
+phone has no such limit.
 
 ---
 
@@ -743,6 +757,11 @@ Modelled in `packages/db/src/schema.ts`, in rough dependency order:
    first real run to turn up schema details a stand-in can't.
 3. **Semantic search** - `recipes.embedding` is unused. Worth doing when the
    ingredient-overlap approach visibly runs out, not before.
-4. **Timers that ring with the app closed.** Sessions themselves now survive a
-   reload; a timer going off while you're in another app needs local
-   notifications, which is a different problem.
+4. **Web timers still stop at the tab.** Close it and the timer is gone —
+   see "Cooking from a card". The phone hands its alarms to the OS and has no
+   such limit. Fixing the web side means a service worker with its own
+   scheduler.
+5. **The mobile home-screen label.** `app.json` uses the full "Second
+   Breakfast", which iOS truncates near 12 characters to "Second Brea…". Left
+   as-is deliberately — a naming convention is well down the priority list, and
+   "Seconds" wasn't the right call. Worth a look before any store listing.
