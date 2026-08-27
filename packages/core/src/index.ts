@@ -29,3 +29,4 @@ export {
   type TranscriptCue,
 } from "./sources/index.js";
 export * from "./staples.js";
+export * from "./aisles.js";
