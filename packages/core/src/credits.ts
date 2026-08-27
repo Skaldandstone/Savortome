@@ -25,11 +25,18 @@ import type { ExtractionMethod } from "./recipe.js";
 export const TIERS = ["free", "plus", "pro"] as const;
 export type Tier = (typeof TIERS)[number];
 
-/** Display names. Placeholders — rename at will, nothing else depends on these. */
+/**
+ * Display names. Nothing else depends on these — renaming is a one-line change.
+ *
+ * Hobbit meals, to match the app's own name. The one weakness of the set is
+ * that the ordering isn't self-evident unless you know the reference, so
+ * anywhere a tier is named it should be shown next to its credit count. The
+ * number does the ranking; the name does the personality.
+ */
 export const TIER_LABEL: Record<Tier, string> = {
-  free: "Recipe box",
-  plus: "Cook",
-  pro: "Kitchen",
+  free: "Elevenses",
+  plus: "Luncheon",
+  pro: "Feast",
 };
 
 /**
