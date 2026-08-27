@@ -11,7 +11,14 @@
       "expo-router",
       "@clerk/expo",
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#b4451f"
+        }
+      ]
     ],
     "ios": {
       "supportsTablet": true,
@@ -21,10 +28,28 @@
       }
     },
     "android": {
-      "package": "com.secondbreakfast.app"
+      "package": "com.secondbreakfast.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#b4451f"
+      },
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ]
     },
     "extra": {
       "apiBaseUrl": "http://localhost:3000"
+    },
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#fbf8f4",
+      "dark": {
+        "image": "./assets/splash-icon.png",
+        "backgroundColor": "#16130f"
+      }
     }
   }
 }

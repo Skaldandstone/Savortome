@@ -1100,9 +1100,10 @@ version at least a day old.
 
 Modelled in `packages/db/src/schema.ts`, in rough dependency order:
 
-1. **Running mobile on a device.** It bundles, but has never been opened on a
-   phone or simulator - no device was available. Expect the first run to turn
-   up layout and native-module issues that bundling can't catch.
+1. **Running mobile on a device.** It bundles, typechecks, and a real Android
+   prebuild against the current config succeeds cleanly, but it has never been
+   opened on a phone or simulator - no device was available. Expect the first
+   run to turn up layout and native-module issues that bundling can't catch.
 2. **Kroger against the live API.** Built and exercised end to end against a
    local stand-in, but never run with real Kroger credentials - expect the
    first real run to turn up schema details a stand-in can't.
