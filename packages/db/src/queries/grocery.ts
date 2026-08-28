@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import type { KrogerConnection, KrogerToken } from "@seconds/core";
+import { decryptSecret, encryptSecret, type KrogerConnection, type KrogerToken } from "@seconds/core";
 import type { Database } from "../client.js";
 import * as schema from "../schema.js";
 
@@ -10,9 +10,19 @@ import * as schema from "../schema.js";
  * rather than accumulating them, and the store they picked survives a
  * reconnect — being made to choose a store again because a token expired would
  * be a strange thing to do to someone.
+ *
+ * The access and refresh tokens are live bearer credentials for the shopper's
+ * real Kroger account, so they are encrypted on the way in and decrypted on the
+ * way out (see secret-box in @seconds/core). The row's identity is bound into
+ * each token's authentication tag, so a ciphertext can't be moved between rows.
  */
 
 export type GroceryProvider = "kroger";
+
+/** Ties a stored token's ciphertext to the row and field it belongs to. */
+function tokenAad(userId: string, provider: GroceryProvider, field: "access" | "refresh"): string {
+  return `grocery:${provider}:${userId}:${field}`;
+}
 
 export async function getConnection(
   database: Database,
@@ -28,8 +38,11 @@ export async function getConnection(
   if (!row) return null;
 
   return {
-    accessToken: row.accessToken,
-    refreshToken: row.refreshToken,
+    accessToken: decryptSecret(row.accessToken, tokenAad(userId, provider, "access")),
+    refreshToken:
+      row.refreshToken === null
+        ? null
+        : decryptSecret(row.refreshToken, tokenAad(userId, provider, "refresh")),
     expiresAt: row.expiresAt.toISOString(),
     locationId: row.locationId,
     locationName: row.locationName,
@@ -44,8 +57,11 @@ export async function saveConnection(
   token: KrogerToken,
 ): Promise<void> {
   const values = {
-    accessToken: token.accessToken,
-    refreshToken: token.refreshToken,
+    accessToken: encryptSecret(token.accessToken, tokenAad(userId, provider, "access")),
+    refreshToken:
+      token.refreshToken === null
+        ? null
+        : encryptSecret(token.refreshToken, tokenAad(userId, provider, "refresh")),
     expiresAt: new Date(token.expiresAt),
     updatedAt: new Date(),
   };

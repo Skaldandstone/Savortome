@@ -500,9 +500,14 @@ export const shoppingListItems = pgTable(
  * it takes an OAuth token belonging to that person, and it prices and stocks
  * per store, so the chosen location lives here too.
  *
- * The tokens are stored as they come. Neon encrypts at rest; encrypting them
- * again with an application key would mean a key to manage and rotate, and
- * anyone who can read this table can already read `users`.
+ * The access and refresh tokens are live bearer credentials for the shopper's
+ * real Kroger account, so they are encrypted with an application key
+ * (GROCERY_TOKEN_KEY) before they land here and decrypted on read -- see
+ * saveConnection/getConnection and secret-box in @seconds/core. Neon's at-rest
+ * encryption only covers a stolen disk; app-layer encryption is what keeps a
+ * leak of the database *contents* from yielding usable tokens, because the key
+ * lives outside the database. Existing plaintext rows are read as-is and
+ * upgraded to ciphertext the next time they are written.
  */
 export const groceryConnections = pgTable(
   "grocery_connections",
