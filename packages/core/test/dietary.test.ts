@@ -42,6 +42,38 @@ describe("allergensIn", () => {
     assert.deepEqual(allergensIn("almond"), ["tree-nuts"]);
     assert.deepEqual(allergensIn("peanut"), ["peanuts"]);
   });
+
+  it("doesn't flag an allergen word embedded inside an unrelated ingredient", () => {
+    // A bare substring check would catch "egg" inside "eggplant" and "wheat"
+    // inside "buckwheat" — real, common, unrelated ingredients.
+    assert.deepEqual(allergensIn("eggplant"), []);
+    assert.deepEqual(allergensIn("buckwheat flour"), []);
+  });
+
+  it("doesn't flag a plant milk as dairy just because it says 'milk'", () => {
+    // Same false-positive shape as the butter case: the wrong warning here
+    // is worse than a missed one.
+    assert.deepEqual(allergensIn("coconut milk"), []);
+    assert.deepEqual(allergensIn("almond milk"), ["tree-nuts"]);
+    assert.deepEqual(allergensIn("oat milk"), []);
+    assert.deepEqual(allergensIn("soy milk"), ["soy"]);
+  });
+
+  it("flags real milk even when the ingredient has other words around it", () => {
+    assert.deepEqual(allergensIn("whole milk"), ["milk"]);
+  });
+
+  it("flags a shellfish ingredient as shellfish, not just fish", () => {
+    // "shellfish" contains "fish" as a substring, which a naive check would
+    // catch instead of (or as well as) the actual allergen.
+    assert.deepEqual(allergensIn("mixed shellfish"), ["shellfish"]);
+    assert.deepEqual(allergensIn("shellfish stock"), ["shellfish"]);
+  });
+
+  it("still flags real fish on its own", () => {
+    assert.deepEqual(allergensIn("cod"), ["fish"]);
+    assert.deepEqual(allergensIn("fish sauce"), ["fish"]);
+  });
 });
 
 describe("flagsForRecipe", () => {

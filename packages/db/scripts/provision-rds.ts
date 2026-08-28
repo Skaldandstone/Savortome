@@ -11,6 +11,7 @@
  * isn't trusted for regular owners).
  */
 import pg from "pg";
+import { RDS_SSL_CONFIG } from "../src/client.js";
 
 const adminUrl = process.env.ADMIN_DATABASE_URL;
 const password = process.env.SB_DB_PASSWORD;
@@ -18,7 +19,7 @@ if (!adminUrl || !password) {
   throw new Error("ADMIN_DATABASE_URL and SB_DB_PASSWORD are required");
 }
 
-const admin = new pg.Client({ connectionString: adminUrl });
+const admin = new pg.Client({ connectionString: adminUrl, ssl: RDS_SSL_CONFIG });
 await admin.connect();
 
 const role = await admin.query("SELECT 1 FROM pg_roles WHERE rolname = 'secondbreakfast'");
@@ -45,6 +46,7 @@ await admin.end();
 
 const adminOnSb = new pg.Client({
   connectionString: adminUrl.replace(/\/postgres(\?|$)/, "/secondbreakfast$1"),
+  ssl: RDS_SSL_CONFIG,
 });
 await adminOnSb.connect();
 await adminOnSb.query("CREATE EXTENSION IF NOT EXISTS vector");

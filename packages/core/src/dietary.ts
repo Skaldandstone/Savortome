@@ -53,17 +53,20 @@ export const ALLERGEN_DISCLAIMER =
   "Guessed from ingredient names, not verified against real allergen or nutrition data — always check the actual ingredients and packaging yourself.";
 
 /**
- * Keyword -> allergen, checked as a substring of the canonical ingredient
- * name. Deliberately small and specific: a false negative here is "the app
- * missed one," which the disclaimer already covers; a false positive on a
- * word too generic to trust would train someone to stop reading the warning
- * at all, which is the worse failure for something safety-adjacent.
+ * Keyword -> allergen, matched as a whole word in the canonical ingredient
+ * name (never a bare substring — see `matchesWord` below). Deliberately
+ * small and specific: a false negative here is "the app missed one," which
+ * the disclaimer already covers; a false positive on a word too generic to
+ * trust would train someone to stop reading the warning at all, which is
+ * the worse failure for something safety-adjacent.
  */
 const ALLERGEN_KEYWORDS: Record<Allergen, string[]> = {
   milk: ["milk", "cheese", "cream", "yogurt", "yoghurt", "ghee", "whey", "casein", "buttermilk"],
   eggs: ["egg"],
   fish: ["salmon", "tuna", "cod", "anchovy", "anchovies", "sardine", "halibut", "trout", "fish sauce", "fish"],
-  shellfish: ["shrimp", "prawn", "crab", "lobster", "scallop", "clam", "mussel", "oyster", "squid", "calamari"],
+  shellfish: [
+    "shellfish", "shrimp", "prawn", "crab", "lobster", "scallop", "clam", "mussel", "oyster", "squid", "calamari",
+  ],
   "tree-nuts": [
     "almond", "walnut", "cashew", "pecan", "pistachio", "hazelnut", "macadamia", "brazil nut", "pine nut",
   ],
@@ -74,23 +77,44 @@ const ALLERGEN_KEYWORDS: Record<Allergen, string[]> = {
 };
 
 /**
- * "Butter" alone would flag peanut butter, cocoa butter, shea butter, and
- * apple butter as dairy — a false positive worse than missing real butter,
- * since it's exactly the kind of wrong warning that teaches someone to stop
- * reading the disclaimer. Those nut butters are already caught by their own
- * allergen anyway.
+ * A bare substring check would flag "eggplant" as eggs and "buckwheat" as
+ * wheat — real, common, unrelated ingredients that happen to contain an
+ * allergen word as part of a longer one. Matching on a word boundary instead
+ * means the keyword has to appear as its own word, not embedded in another.
  */
+function matchesWord(text: string, word: string): boolean {
+  const escaped = word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`\\b${escaped}\\b`).test(text);
+}
+
+/**
+ * Words whose allergen meaning a plant-based modifier cancels out. "Butter"
+ * alone would flag peanut butter, cocoa butter, shea butter, and apple
+ * butter as dairy; "milk" alone would flag coconut, almond, oat, and soy
+ * milk the same way. Both are worse than missing the real thing, since a
+ * wrong warning is exactly what teaches someone to stop reading the
+ * disclaimer — and the nut-based versions are already caught by their own
+ * allergen regardless.
+ */
+const NON_DAIRY_MODIFIERS: Partial<Record<Allergen, string[]>> = {
+  milk: ["coconut", "almond", "cashew", "oat", "soy", "rice", "hemp", "pea"],
+  wheat: ["buckwheat", "almond", "coconut", "rice", "oat", "chickpea", "corn", "cassava", "tapioca"],
+};
 const NON_DAIRY_BUTTERS = ["peanut", "almond", "cashew", "cocoa", "shea", "apple", "sunflower", "seed"];
 
 /** Which of a viewer's flagged allergens might be in one ingredient's name. */
 export function allergensIn(canonicalItem: string): Allergen[] {
   const text = canonicalItem.toLowerCase();
-  const found = ALLERGENS.filter((allergen) => ALLERGEN_KEYWORDS[allergen].some((word) => text.includes(word)));
+  const found = ALLERGENS.filter((allergen) => {
+    if (!ALLERGEN_KEYWORDS[allergen].some((word) => matchesWord(text, word))) return false;
+    const modifiers = NON_DAIRY_MODIFIERS[allergen];
+    return !modifiers?.some((word) => matchesWord(text, word));
+  });
 
   if (
-    text.includes("butter") &&
+    matchesWord(text, "butter") &&
     !found.includes("milk") &&
-    !NON_DAIRY_BUTTERS.some((word) => text.includes(word))
+    !NON_DAIRY_BUTTERS.some((word) => matchesWord(text, word))
   ) {
     found.push("milk");
   }
