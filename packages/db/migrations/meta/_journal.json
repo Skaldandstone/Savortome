@@ -78,6 +78,13 @@
       "when": 1787877092138,
       "tag": "0010_meal-templates",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1787878093617,
+      "tag": "0011_plan-suggestions",
+      "breakpoints": true
     }
   ]
 }

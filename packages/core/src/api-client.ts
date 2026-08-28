@@ -69,7 +69,7 @@ import type { CreditBalance, CreditPack } from "./credits.js";
 import type { Recipe } from "./recipe.js";
 import type { RecipeDraft } from "./editor.js";
 import type { LibrarySort } from "./library.js";
-import type { MealSlot, PlannedMeal } from "./plan.js";
+import type { MealSlot, PlannedMeal, PlanSuggestion } from "./plan.js";
 import type { SharedRecipeView } from "./sharing.js";
 import type { PairingSuggestions } from "./pairing.js";
 import type { MealTemplate, TemplateRole } from "./template.js";
@@ -234,6 +234,14 @@ export interface SecondsClient {
   ) => Promise<PlanResponse>;
   planClearWeek: (week: string) => Promise<PlanResponse>;
   planToShoppingList: (week: string) => Promise<PlanResponse>;
+  mySuggestions: () => Promise<{ suggestions: PlanSuggestion[] }>;
+  suggestForFriend: (
+    ownerId: string,
+    recipeId: string,
+    date: string,
+    slot: MealSlot,
+  ) => Promise<{ ok: boolean }>;
+  respondToSuggestion: (id: string, action: "accept" | "dismiss") => Promise<{ ok: boolean }>;
   krogerStatus: () => Promise<KrogerStatus>;
   krogerStores: (zipCode: string) => Promise<GroceryStore[]>;
   setKrogerStore: (store: GroceryStore) => Promise<KrogerStatus>;
@@ -454,6 +462,20 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
       send<PlanResponse>("/api/plan", {
         method: "POST",
         body: body({ action: "toShoppingList", week }),
+      }),
+
+    mySuggestions: () => send<{ suggestions: PlanSuggestion[] }>("/api/plan/suggestions"),
+
+    suggestForFriend: (ownerId, recipeId, date, slot) =>
+      send<{ ok: boolean }>("/api/plan/suggestions", {
+        method: "POST",
+        body: body({ ownerId, recipeId, date, slot }),
+      }),
+
+    respondToSuggestion: (id, action) =>
+      send<{ ok: boolean }>(`/api/plan/suggestions/${id}`, {
+        method: "POST",
+        body: body({ action }),
       }),
 
     krogerStatus: () => send<KrogerStatus>("/api/grocery/kroger"),

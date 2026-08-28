@@ -7,7 +7,7 @@ import {
   ShelfValidationError,
 } from "@seconds/core";
 import { FriendshipError } from "@seconds/core";
-import { SaveRecipeError, SaveTemplateError } from "@seconds/db";
+import { SaveRecipeError, SaveTemplateError, SuggestionError } from "@seconds/db";
 import { db, type Database } from "@seconds/db";
 import {
   NotConfiguredError,
@@ -28,6 +28,7 @@ export function errorResponse(err: unknown): NextResponse {
     err instanceof ShelfValidationError ||
     err instanceof SaveRecipeError ||
     err instanceof SaveTemplateError ||
+    err instanceof SuggestionError ||
     err instanceof FriendshipError ||
     err instanceof RecipeValidationError
   ) {
