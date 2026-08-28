@@ -1241,3 +1241,11 @@ Modelled in `packages/db/src/schema.ts`, in rough dependency order:
    see "Cooking from a card". The phone hands its alarms to the OS and has no
    such limit. Fixing the web side means a service worker with its own
    scheduler.
+
+## Deploying to AWS
+
+The live app (secondbreakfast.skaldandstone.com) runs on ECS in AWS account
+574921529762. `scripts/deploy-aws.ps1` ships whatever is on origin/main:
+it zips the branch, uploads to the CodeBuild source bucket, builds the
+Docker image, and rolls the ECS service. Schema changes additionally need
+the one-off `secondbreakfast-migrate` ECS task after the deploy.
