@@ -15,6 +15,7 @@ export * from "./queries/ratings.js";
 export * from "./queries/pantry.js";
 export * from "./queries/shopping.js";
 export * from "./queries/sharing.js";
+export * from "./queries/templates.js";
 export * from "./queries/friends.js";
 export * from "./queries/discover.js";
 export * from "./queries/grocery.js";

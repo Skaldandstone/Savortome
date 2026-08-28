@@ -528,6 +528,38 @@ export const cartHandoffs = pgTable(
   (t) => [index("cart_handoffs_list_idx").on(t.listId)],
 );
 
+// ---------------------------------------------------------------- meal templates
+
+/**
+ * A named, reusable meal — a main plus whichever side, drink, and dessert go
+ * with it. Built from the same picks a "full meal" nutrition total already
+ * uses; saving one just gives that combination a name and, optionally, a
+ * link to hand someone else.
+ */
+export const mealTemplates = pgTable("meal_templates", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  ownerId: uuid("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  name: text("name").notNull(),
+  visibility: visibility("visibility").notNull().default("private"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const templateRole = pgEnum("template_role", ["main", "side", "drink", "dessert"]);
+
+/**
+ * One recipe per role per template — at most one main, one side, one drink,
+ * one dessert, the same shape the full-meal total already assumes.
+ */
+export const mealTemplateItems = pgTable(
+  "meal_template_items",
+  {
+    templateId: uuid("template_id").notNull().references(() => mealTemplates.id, { onDelete: "cascade" }),
+    role: templateRole("role").notNull(),
+    recipeId: uuid("recipe_id").notNull().references(() => recipes.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.templateId, t.role] })],
+);
+
 // ---------------------------------------------------------------- relations
 
 export const usersRelations = relations(users, ({ many }) => ({
