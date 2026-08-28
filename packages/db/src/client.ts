@@ -22,10 +22,18 @@ function createNeonDb(connectionString: string) {
 
 function createPgDb(connectionString: string) {
   const pool = new pg.Pool({ connectionString, max: 5 });
-  // The two drizzle flavors expose the same query API for everything this
-  // codebase does (neon-http is the narrower of the two), so the pg-backed
-  // instance is presented under the shared Database type.
-  return drizzlePg(pool, { schema }) as unknown as Database;
+  const instance = drizzlePg(pool, { schema }) as unknown as Database;
+  // neon-http exposes batch(); the node-postgres flavor does not. The query
+  // modules only rely on "run these and hand back the results in order", so
+  // emulate it by awaiting each builder sequentially. Neon's batch is atomic
+  // and this shim is not - the call sites are small delete+insert pairs that
+  // tolerate it, and a true transaction would need tx-bound builders anyway.
+  (instance as { batch?: unknown }).batch = async (queries: PromiseLike<unknown>[]) => {
+    const results: unknown[] = [];
+    for (const q of queries) results.push(await q);
+    return results;
+  };
+  return instance;
 }
 
 export function createDb(connectionString = process.env.DATABASE_URL) {
