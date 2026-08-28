@@ -5,6 +5,7 @@ import type { Recipe } from "@seconds/core/format";
 import { ShelfControls } from "@/modules/shelves";
 import { AddToListButton } from "@/modules/list";
 import { SuggestMeal } from "@/modules/plan";
+import { AllergenWarning } from "@/modules/profile";
 import { IngredientList, ServingScaler } from "./IngredientList";
 import { ImportTrace, Provenance } from "./Provenance";
 import { NutritionFacts } from "./NutritionFacts";
@@ -41,6 +42,7 @@ export function RecipeCard({
       <div className={styles.body}>
         <RecipeHeader recipe={recipe} />
         <RecipeFacts recipe={recipe} />
+        <AllergenWarning ingredients={recipe.ingredients} />
         <NutritionFacts recipe={recipe} shelvedId={shelvedId} />
         <TagList tags={recipe.tags} />
 
@@ -82,7 +84,7 @@ export function RecipeCard({
           ) : null}
         </div>
 
-        {shelvedId ? <SuggestMeal recipeId={shelvedId} /> : null}
+        {shelvedId ? <SuggestMeal recipeId={shelvedId} ingredients={recipe.ingredients} /> : null}
 
         <RecipeExport recipe={recipe} ingredients={ingredients} servings={servings} />
 

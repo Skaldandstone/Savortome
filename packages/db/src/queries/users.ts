@@ -1,7 +1,8 @@
 import { eq } from "drizzle-orm";
-import { DEFAULT_SHELVES } from "@seconds/core";
+import { DEFAULT_SHELVES, type Allergen, type DietaryProfile, type DietaryTag } from "@seconds/core";
 import type { Database } from "../client.js";
 import * as schema from "../schema.js";
+import { friendIdsOf } from "./sharing.js";
 
 export interface ClerkProfile {
   clerkId: string;
@@ -114,4 +115,51 @@ export async function ensureDevUser(database: Database): Promise<string> {
   if (!row) throw new Error("Could not create the development user");
   await ensureDefaultShelves(database, row.id);
   return row.id;
+}
+
+/** Someone's own dietary preferences and allergies, for editing them. */
+export async function getDietaryProfile(
+  database: Database,
+  userId: string,
+): Promise<DietaryProfile> {
+  const row = await database.query.users.findFirst({
+    where: eq(schema.users.id, userId),
+    columns: { dietaryTags: true, allergens: true },
+  });
+  return {
+    dietaryTags: (row?.dietaryTags ?? []) as DietaryTag[],
+    allergens: (row?.allergens ?? []) as Allergen[],
+  };
+}
+
+export async function setDietaryProfile(
+  database: Database,
+  userId: string,
+  profile: DietaryProfile,
+): Promise<void> {
+  await database
+    .update(schema.users)
+    .set({ dietaryTags: profile.dietaryTags, allergens: profile.allergens })
+    .where(eq(schema.users.id, userId));
+}
+
+/**
+ * A friend's allergies — never their preferences, and never a stranger's
+ * anything. This exists for exactly one purpose: warning someone suggesting a
+ * recipe before they send it, the same trust boundary `suggestForFriend`
+ * already requires.
+ */
+export async function friendAllergens(
+  database: Database,
+  viewerId: string,
+  friendId: string,
+): Promise<Allergen[] | null> {
+  const friends = await friendIdsOf(database, viewerId);
+  if (!friends.has(friendId)) return null;
+
+  const row = await database.query.users.findFirst({
+    where: eq(schema.users.id, friendId),
+    columns: { allergens: true },
+  });
+  return (row?.allergens ?? []) as Allergen[];
 }

@@ -102,6 +102,17 @@ export const users = pgTable(
      * column ships without changing anyone's access yet.
      */
     status: userStatus("status").notNull().default("active"),
+    /**
+     * Soft preferences — vegetarian, gluten-free, and the like. Used to steer
+     * suggestions, never to block anything outright the way an allergy does.
+     */
+    dietaryTags: text("dietary_tags").array().notNull().default([]),
+    /**
+     * Hard constraints. Matched against ingredient names by keyword, which is
+     * a guess, not a lab test — see `packages/core/src/dietary.ts` for why
+     * every place this renders carries a real disclaimer.
+     */
+    allergens: text("allergens").array().notNull().default([]),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

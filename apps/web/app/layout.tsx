@@ -27,6 +27,7 @@ function Masthead({ children }: { children: ReactNode }) {
         <Link href="/list">Shopping list</Link>
         <Link href="/friends">Friends</Link>
         <Link href="/discover">Discover</Link>
+        <Link href="/profile">Dietary profile</Link>
         <Link href="/plans">Plans</Link>
       </nav>
       {children}
