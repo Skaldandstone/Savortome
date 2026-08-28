@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type DragEvent } from "react";
 import Link from "next/link";
 import {
   MEAL_SLOTS,
@@ -35,6 +35,7 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sentToList, setSentToList] = useState<number | null>(null);
+  const [dragOver, setDragOver] = useState<{ date: string; slot: MealSlot } | null>(null);
 
   const today = todayISO();
 
@@ -76,6 +77,25 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
 
   const grid = groupByDay(meals, week);
   const planned = recipeIdsIn(meals).length;
+
+  const dragMeal = (event: DragEvent, recipeId: string, date: string, slot: MealSlot) => {
+    event.dataTransfer.setData("text/plain", JSON.stringify({ recipeId, date, slot }));
+    event.dataTransfer.effectAllowed = "move";
+  };
+
+  const dropMeal = (event: DragEvent, date: string, slot: MealSlot) => {
+    event.preventDefault();
+    setDragOver(null);
+    let from: { recipeId: string; date: string; slot: MealSlot };
+    try {
+      from = JSON.parse(event.dataTransfer.getData("text/plain"));
+    } catch {
+      return;
+    }
+    // Dropping a meal back on the slot it came from is a no-op, not a request.
+    if (from.date === date && from.slot === slot) return;
+    void run(() => api.planMove(from.recipeId, { date: from.date, slot: from.slot }, { date, slot }, week));
+  };
 
   return (
     <>
@@ -146,11 +166,32 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
             </h3>
 
             {day.slots.map(({ slot, meals: inSlot }) => (
-              <div key={slot} className={styles.slot}>
+              <div
+                key={slot}
+                className={styles.slot}
+                data-drag-over={
+                  dragOver?.date === day.date && dragOver?.slot === slot ? true : undefined
+                }
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver({ date: day.date, slot });
+                }}
+                onDragLeave={() =>
+                  setDragOver((prev) =>
+                    prev?.date === day.date && prev?.slot === slot ? null : prev,
+                  )
+                }
+                onDrop={(e) => dropMeal(e, day.date, slot)}
+              >
                 <span className={styles.slotLabel}>{MEAL_SLOT_LABEL[slot]}</span>
 
                 {inSlot.map((planned) => (
-                  <div key={planned.recipeId} className={styles.meal}>
+                  <div
+                    key={planned.recipeId}
+                    className={styles.meal}
+                    draggable={!busy}
+                    onDragStart={(e) => dragMeal(e, planned.recipeId, day.date, slot)}
+                  >
                     <Link className={styles.mealTitle} href={`/recipe/${planned.recipeId}`}>
                       {planned.title}
                     </Link>

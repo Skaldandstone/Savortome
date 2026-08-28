@@ -58,7 +58,17 @@
   letter-spacing: 0.06em;
 }
 
-.slot { display: flex; flex-direction: column; gap: 5px; }
+.slot {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 4px;
+  margin: -4px;
+  border-radius: var(--radius-sm);
+  border: 2px dashed transparent;
+}
+
+.slot[data-drag-over] { border-color: var(--accent); background: var(--surface-sunken); }
 
 .slotLabel {
   font-size: var(--step-1);
@@ -75,7 +85,10 @@
   padding: 7px 9px;
   background: var(--surface-sunken);
   border-radius: var(--radius-sm);
+  cursor: grab;
 }
+
+.meal:active { cursor: grabbing; }
 
 .mealTitle { flex: 1; font-size: var(--step-2); line-height: 1.3; min-width: 0; }
 
