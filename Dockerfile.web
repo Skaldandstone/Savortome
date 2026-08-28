@@ -23,8 +23,13 @@ RUN apt-get update \
     && curl -fsSL -o /usr/local/bin/yt-dlp https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux \
     && chmod a+rx /usr/local/bin/yt-dlp
 
+# Amazon RDS certificate bundle, so `sslmode=require` against RDS verifies
+# cleanly instead of failing on an unknown CA.
+RUN curl -fsSL -o /etc/ssl/rds-global-bundle.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+
 ENV NODE_ENV=production \
     PORT=3000 \
+    NODE_EXTRA_CA_CERTS=/etc/ssl/rds-global-bundle.pem \
     YT_DLP_PATH=/usr/local/bin/yt-dlp \
     FFMPEG_PATH=/usr/bin/ffmpeg
 EXPOSE 3000
