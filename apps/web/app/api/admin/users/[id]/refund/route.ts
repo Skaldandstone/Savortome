@@ -6,7 +6,7 @@ import {
   purchaseForRefund,
   releaseRefundClaim,
 } from "@seconds/db";
-import { readJson } from "@/lib/api";
+import { BadRequestError, readJson } from "@/lib/api";
 import { withAdmin } from "@/lib/admin";
 import { stripe, stripeConfigured } from "@/lib/stripe";
 
@@ -29,21 +29,24 @@ export async function POST(request: Request, { params }: Params) {
   const { id } = await params;
   const body = await readJson<{ purchaseId: string; cents?: number }>(request);
   return withAdmin(request, async (database) => {
+    // Stripe being unconfigured is an operational fault, not the caller's — it
+    // stays a plain Error (logged, generic 500), unlike the request problems
+    // below, which are safe to tell the caller with a 400.
     if (!stripeConfigured()) throw new Error("Stripe is not configured; cannot issue refunds.");
-    if (!body.purchaseId) throw new Error("purchaseId is required");
+    if (!body.purchaseId) throw new BadRequestError("purchaseId is required");
     if (!(await adminUserById(database, id))) return undefined;
 
     const purchase = await purchaseForRefund(database, id, body.purchaseId);
-    if (!purchase) throw new Error("Purchase not found for this user");
-    if (!purchase.fulfilledAt) throw new Error("Purchase was never fulfilled; nothing to refund");
-    if (purchase.refundedAt) throw new Error("This purchase has already been refunded");
-    if (!purchase.stripeSessionId) throw new Error("Purchase has no Stripe session to refund against");
+    if (!purchase) throw new BadRequestError("Purchase not found for this user");
+    if (!purchase.fulfilledAt) throw new BadRequestError("Purchase was never fulfilled; nothing to refund");
+    if (purchase.refundedAt) throw new BadRequestError("This purchase has already been refunded");
+    if (!purchase.stripeSessionId) throw new BadRequestError("Purchase has no Stripe session to refund against");
 
     const cap = Number(process.env.SB_REFUND_CAP_CENTS) || DEFAULT_CAP_CENTS;
     const requested = body.cents == null ? purchase.cents : Math.trunc(Number(body.cents));
-    if (!Number.isFinite(requested) || requested <= 0) throw new Error("Refund amount must be positive");
-    if (requested > purchase.cents) throw new Error("Refund cannot exceed the amount charged");
-    if (requested > cap) throw new Error(`Refund exceeds the per-refund cap of ${cap} cents`);
+    if (!Number.isFinite(requested) || requested <= 0) throw new BadRequestError("Refund amount must be positive");
+    if (requested > purchase.cents) throw new BadRequestError("Refund cannot exceed the amount charged");
+    if (requested > cap) throw new BadRequestError(`Refund exceeds the per-refund cap of ${cap} cents`);
 
     // Resolve the payment intent from the checkout session.
     const session = await stripe().checkout.sessions.retrieve(purchase.stripeSessionId);
@@ -62,7 +65,7 @@ export async function POST(request: Request, { params }: Params) {
     // Claim BEFORE touching Stripe: a lost claim means someone else is already
     // refunding this purchase, so we never issue a second Stripe refund.
     if (!(await claimRefund(database, purchase.id))) {
-      throw new Error("This purchase is already being refunded");
+      throw new BadRequestError("This purchase is already being refunded");
     }
 
     let refund;

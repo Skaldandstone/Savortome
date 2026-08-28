@@ -1,5 +1,5 @@
 import { setReviewHidden } from "@seconds/db";
-import { readJson } from "@/lib/api";
+import { BadRequestError, readJson } from "@/lib/api";
 import { withAdmin } from "@/lib/admin";
 
 /**
@@ -13,7 +13,7 @@ export async function POST(request: Request) {
   const body = await readJson<{ userId: string; recipeId: string; hidden: boolean }>(request);
   return withAdmin(request, async (database) => {
     if (!body.userId || !body.recipeId) {
-      throw new Error("userId and recipeId are required");
+      throw new BadRequestError("userId and recipeId are required");
     }
     const row = await setReviewHidden(database, body.userId, body.recipeId, body.hidden !== false);
     return row ?? undefined;
