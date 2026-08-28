@@ -15,8 +15,8 @@
  *   pnpm backfill:grocery-encryption -- --dry-run
  */
 import { readFileSync } from "node:fs";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import pg from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { and, eq } from "drizzle-orm";
 import * as schema from "../src/schema.js";
 import { encryptSecret, isEncrypted } from "../src/crypto.js";
@@ -31,7 +31,7 @@ if (!url) {
   process.exit(1);
 }
 
-const db = drizzle(neon(url), { schema });
+const db = drizzle(new pg.Pool({ connectionString: url, ssl: { rejectUnauthorized: false } }), { schema });
 
 // Reading a token column proves the key is usable before we touch a single row;
 // better to fail here than halfway through a table.

@@ -12,8 +12,8 @@
  * Works on its own fixture users and deletes everything it created.
  */
 import { readFileSync } from "node:fs";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import pg from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, inArray } from "drizzle-orm";
 import { emptyDraft, ingredientFromLine, type RecipeDraft } from "@seconds/core";
 import * as schema from "../src/schema.js";
@@ -22,7 +22,7 @@ import { createRecipe, deleteRecipe, getRecipe, updateRecipe } from "../src/quer
 const url =
   process.env.DATABASE_URL ??
   /DATABASE_URL=(.+)/.exec(readFileSync("../../apps/web/.env.local", "utf8"))![1]!.trim();
-const db = drizzle(neon(url), { schema });
+const db = drizzle(new pg.Pool({ connectionString: url, ssl: { rejectUnauthorized: false } }), { schema });
 
 let failures = 0;
 const expect = (label: string, actual: unknown, expected: unknown) => {
