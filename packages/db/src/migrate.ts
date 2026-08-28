@@ -9,9 +9,9 @@
  */
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
-import { migrate } from "drizzle-orm/neon-http/migrator";
+import { Client } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
 
 function databaseUrl(): string {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
@@ -33,15 +33,17 @@ function databaseUrl(): string {
 }
 
 const url = databaseUrl();
-const sql = neon(url);
+const client = new Client({ connectionString: url });
+await client.connect();
 
 // The schema declares a pgvector column, and the extension has to exist before
 // the first migration runs. Creating it here keeps setup to one command.
-await sql`CREATE EXTENSION IF NOT EXISTS vector`;
+await client.query("CREATE EXTENSION IF NOT EXISTS vector");
 
 const host = new URL(url.replace(/^postgres(ql)?:/, "http:")).host;
 console.log(`Migrating ${host}…`);
 
-await migrate(drizzle(sql), { migrationsFolder: "./migrations" });
+await migrate(drizzle(client), { migrationsFolder: "./migrations" });
 
 console.log("Migrations applied.");
+await client.end();

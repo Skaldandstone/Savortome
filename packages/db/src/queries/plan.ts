@@ -108,12 +108,12 @@ export async function movePlanEntry(
 ): Promise<void> {
   // Insert-then-delete rather than an update: the destination may already hold
   // this recipe, and an update would collide with the primary key.
-  await database.batch([
-    database
+  await database.transaction(async (tx) => {
+    await tx
       .insert(schema.mealPlanEntries)
       .values({ userId, recipeId, date: to.date, slot: to.slot })
-      .onConflictDoNothing(),
-    database
+      .onConflictDoNothing();
+    await tx
       .delete(schema.mealPlanEntries)
       .where(
         and(
@@ -122,8 +122,8 @@ export async function movePlanEntry(
           eq(schema.mealPlanEntries.date, from.date),
           eq(schema.mealPlanEntries.slot, from.slot),
         ),
-      ),
-  ]);
+      );
+  });
 }
 
 /** Empty a run of days — how "clear this week" is done. */

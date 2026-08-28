@@ -192,21 +192,21 @@ export async function addRecipesToList(
   const pantry = usePantry ? await listPantry(database, userId) : [];
   const lines = buildShoppingList(byRecipe, { pantry, skipStaples, skipOptional });
 
-  const clear = database
-    .delete(schema.shoppingListItems)
-    .where(eq(schema.shoppingListItems.listId, listId));
-
   if (lines.length === 0) {
-    await clear;
+    await database
+      .delete(schema.shoppingListItems)
+      .where(eq(schema.shoppingListItems.listId, listId));
     return (await getShoppingList(database, userId, listId))!;
   }
 
   // Ticked-off items stay ticked when the list is rebuilt.
   const wasChecked = new Set(existing.filter((e) => e.checked).map((e) => e.canonicalItem));
 
-  await database.batch([
-    clear,
-    database.insert(schema.shoppingListItems).values(
+  await database.transaction(async (tx) => {
+    await tx
+      .delete(schema.shoppingListItems)
+      .where(eq(schema.shoppingListItems.listId, listId));
+    await tx.insert(schema.shoppingListItems).values(
       lines.map((line) => ({
         listId,
         canonicalItem: line.canonicalItem,
@@ -217,8 +217,8 @@ export async function addRecipesToList(
         recipeIds: line.recipeIds.filter((id) => id !== "__existing__"),
         checked: wasChecked.has(line.canonicalItem),
       })),
-    ),
-  ]);
+    );
+  });
 
   return (await getShoppingList(database, userId, listId))!;
 }

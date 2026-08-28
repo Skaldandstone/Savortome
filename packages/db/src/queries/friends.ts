@@ -109,8 +109,8 @@ export async function acceptFriendRequest(
   });
   if (!pending) throw new FriendshipError("There's no request from them to accept.");
 
-  await database.batch([
-    database
+  await database.transaction(async (tx) => {
+    await tx
       .update(schema.friendships)
       .set({ status: "accepted" })
       .where(
@@ -118,15 +118,15 @@ export async function acceptFriendRequest(
           eq(schema.friendships.userId, requesterId),
           eq(schema.friendships.friendId, userId),
         ),
-      ),
-    database
+      );
+    await tx
       .insert(schema.friendships)
       .values({ userId, friendId: requesterId, status: "accepted" })
       .onConflictDoUpdate({
         target: [schema.friendships.userId, schema.friendships.friendId],
         set: { status: "accepted" },
-      }),
-  ]);
+      });
+  });
 }
 
 /** Turn down a request, or withdraw one you sent. */
