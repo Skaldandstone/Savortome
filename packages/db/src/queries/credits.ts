@@ -37,7 +37,7 @@ export async function creditsFor(
 ): Promise<CreditBalance> {
   const month = creditMonth(now);
 
-  const [user, allowanceRow, purchasedRow] = await database.batch([
+  const [user, allowanceRow, purchasedRow] = await Promise.all([
     database
       .select({ tier: schema.users.tier, purchased: schema.users.creditsPurchased })
       .from(schema.users)
