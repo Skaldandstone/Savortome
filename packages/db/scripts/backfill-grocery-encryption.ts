@@ -88,3 +88,7 @@ console.log(
   `\n${dryRun ? "[dry run] " : ""}${converted} row(s) ${dryRun ? "would be " : ""}encrypted, ` +
     `${alreadyDone} already encrypted, ${rows.length} total.`,
 );
+
+// pg.Pool holds an open, keep-alive connection unlike the stateless HTTP
+// driver this replaced — without this the process just hangs after printing.
+process.exit(0);

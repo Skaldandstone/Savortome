@@ -64,3 +64,7 @@ console.log(`Account   ${account.handle} (${TIER_LABEL[after.tier]})`);
 console.log(`Credits   ${describeCredits(before)}  ->  ${describeCredits(after)}`);
 console.log(`Cleared   ${removed.length} spend${removed.length === 1 ? "" : "s"}`);
 console.log(`Untouched ${recipes.length} recipes, and every shelf, plan and list`);
+
+// pg.Pool holds an open, keep-alive connection unlike the stateless HTTP
+// driver this replaced — without this the process just hangs after printing.
+process.exit(0);

@@ -33,7 +33,9 @@ export function SuggestMeal({
   const [slot, setSlot] = useState<MealSlot>("dinner");
   const [state, setState] = useState<"idle" | "sending" | "sent" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
-  const [friendAllergens, setFriendAllergens] = useState<Allergen[]>([]);
+  // "loading"/"error" are both "unknown," not "none" — a friend's allergens
+  // failing to load must never silently read the same as them having none.
+  const [friendAllergens, setFriendAllergens] = useState<Allergen[] | "loading" | "error">("loading");
 
   useEffect(() => {
     void api
@@ -47,13 +49,19 @@ export function SuggestMeal({
 
   useEffect(() => {
     if (!friendId) return;
+    // Reset before the new fetch starts, not after — otherwise the previous
+    // friend's allergens (or lack of them) stay on screen and can be acted
+    // on during the gap, which is exactly backwards for a safety warning.
+    setFriendAllergens("loading");
     let cancelled = false;
     void api
       .friendAllergens(friendId)
       .then((result) => {
         if (!cancelled) setFriendAllergens(result?.allergens ?? []);
       })
-      .catch(() => setFriendAllergens([]));
+      .catch(() => {
+        if (!cancelled) setFriendAllergens("error");
+      });
     return () => {
       cancelled = true;
     };
@@ -61,7 +69,8 @@ export function SuggestMeal({
 
   if (!friends || friends.length === 0) return null;
 
-  const conflicts = flagsForRecipe(ingredients, friendAllergens);
+  const allergensKnown = Array.isArray(friendAllergens);
+  const conflicts = allergensKnown ? flagsForRecipe(ingredients, friendAllergens) : [];
   const conflictAllergens = [...new Set(conflicts.map((f) => f.allergen))];
 
   return (
@@ -85,7 +94,7 @@ export function SuggestMeal({
         </select>
         <button
           type="button"
-          disabled={state === "sending" || !friendId}
+          disabled={state === "sending" || !friendId || !allergensKnown}
           onClick={async () => {
             setState("sending");
             setError(null);
@@ -101,7 +110,13 @@ export function SuggestMeal({
           {state === "sending" ? "Sending…" : state === "sent" ? "Sent ✓" : "Suggest"}
         </button>
       </div>
-      {conflictAllergens.length > 0 ? (
+      {friendAllergens === "loading" ? (
+        <span className={styles.suggestError}>Checking their allergies…</span>
+      ) : friendAllergens === "error" ? (
+        <span className={styles.suggestError}>
+          Couldn't check their allergies just now — try picking them again.
+        </span>
+      ) : conflictAllergens.length > 0 ? (
         <span className={styles.suggestError}>
           They've flagged {conflictAllergens.map((a) => ALLERGEN_LABEL[a]).join(", ")} — this recipe
           may contain it. Guessed from ingredient names, not verified.

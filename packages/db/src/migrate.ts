@@ -12,6 +12,7 @@ import { resolve } from "node:path";
 import { Client } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { RDS_SSL_CONFIG } from "./client.js";
 
 function databaseUrl(): string {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
@@ -33,9 +34,7 @@ function databaseUrl(): string {
 }
 
 const url = databaseUrl();
-// Same reasoning as client.ts: encrypt without validating RDS's cert chain
-// rather than shipping the RDS CA bundle.
-const client = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
+const client = new Client({ connectionString: url, ssl: RDS_SSL_CONFIG });
 await client.connect();
 
 // The schema declares a pgvector column, and the extension has to exist before

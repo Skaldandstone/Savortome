@@ -47,6 +47,16 @@ export function DietaryProfileForm() {
 
   const dirty = JSON.stringify(profile) !== JSON.stringify(saved);
 
+  // Same guard the recipe editor uses for the same reason: an allergy
+  // toggled and then lost to an accidental tab close is the one silent data
+  // loss this app should never risk.
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
   const save = async () => {
     setSaving(true);
     setError(null);
