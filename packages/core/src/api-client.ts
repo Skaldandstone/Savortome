@@ -72,6 +72,7 @@ import type { LibrarySort } from "./library.js";
 import type { MealSlot, PlannedMeal } from "./plan.js";
 import type { SharedRecipeView } from "./sharing.js";
 import type { PairingSuggestions } from "./pairing.js";
+import type { MealTemplate, TemplateRole } from "./template.js";
 
 /**
  * One typed client for the Second Breakfast HTTP API, shared by both apps.
@@ -202,6 +203,14 @@ export interface SecondsClient {
   sendToCart: (provider: CartProviderId) => Promise<CartHandoff>;
   setVisibility: (recipeId: string, visibility: Visibility) => Promise<{ visibility: Visibility | null }>;
   saveSharedRecipe: (recipeId: string) => Promise<{ recipeId: string }>;
+  myTemplates: () => Promise<{ templates: MealTemplate[] }>;
+  createTemplate: (
+    name: string,
+    items: { role: TemplateRole; recipeId: string }[],
+  ) => Promise<{ id: string }>;
+  deleteTemplate: (id: string) => Promise<{ ok: boolean }>;
+  setTemplateVisibility: (id: string, visibility: Visibility) => Promise<{ visibility: Visibility | null }>;
+  saveSharedTemplate: (id: string) => Promise<{ id: string }>;
   friends: () => Promise<FriendsOverview>;
   addFriend: (handle: string) => Promise<FriendsOverview>;
   updateFriendship: (
@@ -365,6 +374,21 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
 
     saveSharedRecipe: (recipeId) =>
       send<{ recipeId: string }>(`/api/recipes/${recipeId}/save`, { method: "POST" }),
+
+    myTemplates: () => send<{ templates: MealTemplate[] }>("/api/templates"),
+
+    createTemplate: (name, items) =>
+      send<{ id: string }>("/api/templates", { method: "POST", body: body({ name, items }) }),
+
+    deleteTemplate: (id) => send<{ ok: boolean }>(`/api/templates/${id}`, { method: "DELETE" }),
+
+    setTemplateVisibility: (id, visibility) =>
+      send<{ visibility: Visibility | null }>(`/api/templates/${id}/share`, {
+        method: "PUT",
+        body: body({ visibility }),
+      }),
+
+    saveSharedTemplate: (id) => send<{ id: string }>(`/api/templates/${id}/save`, { method: "POST" }),
 
     friends: () => send<FriendsOverview>("/api/friends"),
 

@@ -483,6 +483,22 @@ path goes through `canView`, and `pnpm check:sharing` asserts the negative
 cases against a real database - including that a friends-only recipe is not
 reachable by a signed-out visitor holding the link.
 
+**A saved meal shares the same way, one level up.** Picking a side, a drink,
+and a dessert on a recipe's "pairs well with" section and naming the
+combination saves it as a template at `/templates`, shareable at `/t/<id>`
+with the same private / friends / anyone-with-the-link control as a recipe.
+Saving someone else's copies each dish into your library the same way saving
+a shared recipe does - reusing `saveSharedRecipe` for each one, so the same
+one-copy-per-source rule applies.
+
+**A template's own visibility is not a promise about what's inside it.**
+Each recipe in a shared template is still gated by its own visibility on top
+of the template's: making a template public exposes only the dishes in it
+that were already shareable on their own, silently leaving out anything its
+owner kept private, rather than accidentally publishing it. `packages/db/src/queries/templates.ts`
+applies `canView` twice - once for the template, once per dish - and
+`pnpm check:templates` asserts exactly that layering against a real database.
+
 ---
 
 ## Friends

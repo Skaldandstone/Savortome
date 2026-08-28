@@ -5,6 +5,7 @@ export * from "./shelves.js";
 export * from "./library.js";
 export * from "./plan.js";
 export * from "./sharing.js";
+export * from "./template.js";
 export * from "./editor.js";
 export * from "./cook.js";
 export * from "./friends.js";

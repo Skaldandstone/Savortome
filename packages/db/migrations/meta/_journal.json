@@ -71,6 +71,13 @@
       "when": 1787857603378,
       "tag": "0009_recipe-nutrition",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1787877092138,
+      "tag": "0010_meal-templates",
+      "breakpoints": true
     }
   ]
 }

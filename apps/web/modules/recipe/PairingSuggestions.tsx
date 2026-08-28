@@ -9,6 +9,7 @@ import {
   type PairingSlot,
   type PairingSuggestions as Suggestions,
   type RecipeNutrition,
+  type TemplateRole,
 } from "@seconds/core/format";
 import { api } from "@/lib/client";
 import styles from "./PairingSuggestions.module.css";
@@ -48,6 +49,9 @@ export function PairingSuggestions({
     dessert: null,
   });
   const [guests, setGuests] = useState(servings && servings > 0 ? servings : 4);
+  const [mealName, setMealName] = useState("");
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "failed">("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!recipeId) return;
@@ -58,12 +62,13 @@ export function PairingSuggestions({
         if (cancelled) return;
         setSuggestions(next);
         // Default to the top-ranked candidate that actually has nutrition to
-        // contribute — picking one with nothing to add would make the total
-        // look complete while quietly leaving a course out of it.
+        // contribute, so a full-meal total starts complete rather than
+        // quietly missing a course; falling back to the top pick either way
+        // means there's always something ready to save as a meal.
         setSelected((prev) => {
           const out = { ...prev };
           for (const slot of SLOTS) {
-            out[slot] = next[slot].find((c) => c.nutrition)?.id ?? null;
+            out[slot] = next[slot].find((c) => c.nutrition)?.id ?? next[slot][0]?.id ?? null;
           }
           return out;
         });
@@ -106,23 +111,21 @@ export function PairingSuggestions({
             <ul className={styles.list}>
               {suggestions[slot].map((candidate) => (
                 <li key={candidate.id} className={styles.item}>
-                  {mainNutrition ? (
-                    <label className={styles.pick}>
-                      <input
-                        type="checkbox"
-                        checked={selected[slot] === candidate.id}
-                        onChange={() =>
-                          setSelected((prev) => ({
-                            ...prev,
-                            [slot]: prev[slot] === candidate.id ? null : candidate.id,
-                          }))
-                        }
-                      />
-                      {!candidate.nutrition ? (
-                        <span className={styles.noNutrition}>no nutrition yet</span>
-                      ) : null}
-                    </label>
-                  ) : null}
+                  <label className={styles.pick}>
+                    <input
+                      type="checkbox"
+                      checked={selected[slot] === candidate.id}
+                      onChange={() =>
+                        setSelected((prev) => ({
+                          ...prev,
+                          [slot]: prev[slot] === candidate.id ? null : candidate.id,
+                        }))
+                      }
+                    />
+                    {mainNutrition && !candidate.nutrition ? (
+                      <span className={styles.noNutrition}>no nutrition yet</span>
+                    ) : null}
+                  </label>
                   <Link className={styles.card} href={`/recipe/${candidate.id}`}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img className={styles.thumb} src={candidate.imageUrl ?? undefined} alt="" />
@@ -171,6 +174,49 @@ export function PairingSuggestions({
           <p className={styles.disclaimer}>{NUTRITION_DISCLAIMER}</p>
         </div>
       ) : null}
+
+      <div className={styles.saveMeal}>
+        {saveState !== "saved" ? (
+          <input
+            type="text"
+            className={styles.saveMealName}
+            placeholder="Name this meal (e.g. Taco Night)"
+            value={mealName}
+            onChange={(e) => setMealName(e.target.value)}
+          />
+        ) : null}
+        <button
+          type="button"
+          className={styles.saveMealButton}
+          disabled={saveState === "saving" || saveState === "saved" || !recipeId}
+          onClick={async () => {
+            if (!recipeId) return;
+            setSaveState("saving");
+            setSaveError(null);
+            try {
+              const items: { role: TemplateRole; recipeId: string }[] = [{ role: "main", recipeId }];
+              for (const slot of SLOTS) {
+                const id = selected[slot];
+                if (id) items.push({ role: slot, recipeId: id });
+              }
+              await api.createTemplate(mealName, items);
+              setSaveState("saved");
+            } catch (err) {
+              setSaveState("failed");
+              setSaveError(err instanceof Error ? err.message : "Couldn't save that.");
+            }
+          }}
+        >
+          {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved ✓" : "Save this meal"}
+        </button>
+        {saveState === "saved" ? (
+          <span className={styles.saveMealNote}>
+            See it, name it, or share it from <a href="/templates">your meals</a>.
+          </span>
+        ) : saveError ? (
+          <span className={styles.saveMealNote}>{saveError}</span>
+        ) : null}
+      </div>
     </section>
   );
 }
