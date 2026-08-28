@@ -58,6 +58,9 @@ export const friendshipStatus = pgEnum("friendship_status", ["pending", "accepte
  */
 export const userTier = pgEnum("user_tier", ["free", "plus", "pro"]);
 
+/** Moderation state, set from the Adminhelper. See users.status. */
+export const userStatus = pgEnum("user_status", ["active", "suspended", "banned"]);
+
 /** Which pool a credit came out of. The allowance expires; purchases don't. */
 export const creditSource = pgEnum("credit_source", ["allowance", "purchased"]);
 
@@ -92,6 +95,13 @@ export const users = pgTable(
      * race each other to update.
      */
     creditsPurchased: integer("credits_purchased").notNull().default(0),
+    /**
+     * Moderation state. "active" is the norm; "suspended" is a reversible
+     * time-out; "banned" is a hard stop for abuse. Set from the Adminhelper;
+     * enforcing it in request handlers is a deliberate follow-up so this
+     * column ships without changing anyone's access yet.
+     */
+    status: userStatus("status").notNull().default("active"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
@@ -158,6 +168,13 @@ export const creditPurchases = pgTable(
     tier: userTier("tier"),
     /** Stripe's checkout session id, for reconciling against their dashboard. */
     stripeSessionId: text("stripe_session_id"),
+    /**
+     * Set when a staff refund has been issued against this purchase. Its
+     * presence blocks a second refund of the same purchase, and the amount
+     * (which may be partial) reconciles against Stripe. Null = not refunded.
+     */
+    refundedAt: timestamp("refunded_at", { withTimezone: true }),
+    refundedCents: integer("refunded_cents"),
     /**
      * Null until the credits/tier this purchase paid for have actually been
      * applied. The neon-http driver has no interactive transactions, so the
@@ -394,6 +411,12 @@ export const ratings = pgTable(
     recipeId: uuid("recipe_id").notNull().references(() => recipes.id, { onDelete: "cascade" }),
     stars: integer("stars").notNull(),
     review: text("review"),
+    /**
+     * When a moderator hid this review's free text. Soft, not a delete: the
+     * row (and the star rating) stays, the text is suppressed from public view
+     * and preserved for audit. Null = visible.
+     */
+    hiddenAt: timestamp("hidden_at", { withTimezone: true }),
     /** Times this person has actually cooked it — a stronger signal than stars alone. */
     timesCooked: integer("times_cooked").notNull().default(0),
     lastCookedAt: timestamp("last_cooked_at", { withTimezone: true }),

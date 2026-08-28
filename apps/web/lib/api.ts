@@ -17,6 +17,19 @@ import {
 } from "./session";
 
 /**
+ * A caller-facing "you sent something invalid" error. Its message is safe to
+ * return, and it maps to 400 — the way for a handler to reject bad input while
+ * still saying why. Plain `Error`s stay in the 500 "a bug" bucket on purpose,
+ * so an unexpected throw never leaks its message to the caller.
+ */
+export class BadRequestError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "BadRequestError";
+  }
+}
+
+/**
  * One place that turns a thrown domain error into the right status code, so
  * every route handler can be about its own job and nothing else.
  */
@@ -25,6 +38,7 @@ export function errorResponse(err: unknown): NextResponse {
     return NextResponse.json({ error: err.message }, { status: 401 });
   }
   if (
+    err instanceof BadRequestError ||
     err instanceof ShelfValidationError ||
     err instanceof SaveRecipeError ||
     err instanceof SaveTemplateError ||
