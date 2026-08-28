@@ -56,4 +56,13 @@ describe("secret-box", () => {
     const prodNoKey = { NODE_ENV: "production" } as NodeJS.ProcessEnv;
     assert.throws(() => encryptSecret("token", AAD, prodNoKey), /GROCERY_TOKEN_KEY/);
   });
+
+  it("still stores plaintext on a keyless non-dev host (staging) — but see the warning", () => {
+    // Not "production", so it doesn't throw and break the deploy; not
+    // "development"/"test" either, so encryptSecret warns loudly that tokens
+    // are going in unencrypted. We assert the value is unchanged; the warning
+    // is the operator-facing signal, not something to assert on here.
+    const stagingNoKey = { NODE_ENV: "staging" } as NodeJS.ProcessEnv;
+    assert.equal(encryptSecret("token", AAD, stagingNoKey), "token");
+  });
 });

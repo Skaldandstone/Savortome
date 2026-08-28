@@ -49,9 +49,13 @@ export function isEncrypted(value: string): boolean {
 /**
  * Encrypt a secret for storage, binding `aad` (the row identity) into the
  * authentication tag. With no key configured this returns the plaintext
- * unchanged in dev/test so the app runs without ceremony -- but throws in
- * production, where storing a grocery token in the clear is not acceptable.
+ * unchanged in local development/test so the app runs without ceremony -- but
+ * throws in production, and warns loudly anywhere else (e.g. a staging deploy
+ * with the key left unset), so real tokens are never stored in the clear
+ * silently.
  */
+let warnedPlaintext = false;
+
 export function encryptSecret(
   plaintext: string,
   aad: string,
@@ -62,6 +66,16 @@ export function encryptSecret(
     if (env.NODE_ENV === "production") {
       throw new Error(
         "GROCERY_TOKEN_KEY must be set in production before storing grocery tokens.",
+      );
+    }
+    // Local development/test is expected to run keyless; anything else (staging,
+    // an unset NODE_ENV on a real host) storing a token in the clear is a
+    // misconfiguration worth shouting about, once, rather than doing quietly.
+    if (env.NODE_ENV !== "development" && env.NODE_ENV !== "test" && !warnedPlaintext) {
+      warnedPlaintext = true;
+      console.warn(
+        "GROCERY_TOKEN_KEY is not set; storing grocery tokens in PLAINTEXT. " +
+          "Set it on any deployed environment.",
       );
     }
     return plaintext;
