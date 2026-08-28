@@ -256,26 +256,26 @@ async function reindexIngredients(
     byItem.set(key, { optional: (existing?.optional ?? true) && ing.optional });
   }
 
-  const clear = database
-    .delete(schema.recipeIngredients)
-    .where(eq(schema.recipeIngredients.recipeId, recipeId));
-
   if (byItem.size === 0) {
-    await clear;
+    await database
+      .delete(schema.recipeIngredients)
+      .where(eq(schema.recipeIngredients.recipeId, recipeId));
     return;
   }
 
-  await database.batch([
-    clear,
-    database.insert(schema.recipeIngredients).values(
+  await database.transaction(async (tx) => {
+    await tx
+      .delete(schema.recipeIngredients)
+      .where(eq(schema.recipeIngredients.recipeId, recipeId));
+    await tx.insert(schema.recipeIngredients).values(
       [...byItem].map(([canonicalItem, { optional }]) => ({
         recipeId,
         canonicalItem,
         optional,
         isStaple: isStaple(canonicalItem),
       })),
-    ),
-  ]);
+    );
+  });
 }
 
 export interface ListRecipesOptions {

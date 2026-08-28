@@ -17,9 +17,8 @@ import * as schema from "../schema.js";
 /**
  * Shelf reads and writes.
  *
- * The neon-http driver has no interactive transactions, so multi-statement
- * writes go through `database.batch(...)`, which sends them as one atomic
- * round-trip. Anything that genuinely needs a read between writes is sequenced
+ * Multi-statement writes go through `database.transaction(...)` so they land
+ * atomically. Anything that genuinely needs a read between writes is sequenced
  * and written to be idempotent instead.
  */
 
@@ -199,30 +198,35 @@ export async function setRecipeStatus(
   const statusIds = [...shelfIds.values()];
   if (statusIds.length === 0) throw new ShelfValidationError("This account has no shelves yet.");
 
-  const clear = database
-    .delete(schema.shelfRecipes)
-    .where(
-      and(
-        eq(schema.shelfRecipes.recipeId, recipeId),
-        inArray(schema.shelfRecipes.shelfId, statusIds),
-      ),
-    );
-
   if (status === null) {
-    await clear;
+    await database
+      .delete(schema.shelfRecipes)
+      .where(
+        and(
+          eq(schema.shelfRecipes.recipeId, recipeId),
+          inArray(schema.shelfRecipes.shelfId, statusIds),
+        ),
+      );
     return getRecipeShelfState(database, userId, recipeId);
   }
 
   const targetId = shelfIds.get(status);
   if (!targetId) throw new ShelfValidationError(`No "${status}" shelf on this account.`);
 
-  await database.batch([
-    clear,
-    database
+  await database.transaction(async (tx) => {
+    await tx
+      .delete(schema.shelfRecipes)
+      .where(
+        and(
+          eq(schema.shelfRecipes.recipeId, recipeId),
+          inArray(schema.shelfRecipes.shelfId, statusIds),
+        ),
+      );
+    await tx
       .insert(schema.shelfRecipes)
       .values({ shelfId: targetId, recipeId })
-      .onConflictDoNothing(),
-  ]);
+      .onConflictDoNothing();
+  });
 
   // Marking something cooked is the one move with a side effect.
   if (shouldCountAsCook(before.status, status)) {
