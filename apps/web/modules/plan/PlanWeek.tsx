@@ -14,6 +14,7 @@ import {
   type LibraryRecipe,
   type MealSlot,
   type PlannedMeal,
+  type PlanSuggestion,
 } from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { Button, Callout, Panel, PanelHeader } from "@/ui";
@@ -36,6 +37,8 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
   const [error, setError] = useState<string | null>(null);
   const [sentToList, setSentToList] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<{ date: string; slot: MealSlot } | null>(null);
+  const [suggestions, setSuggestions] = useState<PlanSuggestion[]>([]);
+  const [respondingTo, setRespondingTo] = useState<string | null>(null);
 
   const today = todayISO();
 
@@ -60,6 +63,31 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
       .then((data) => setLibrary(data.recipes))
       .catch(() => undefined);
   }, []);
+
+  const loadSuggestions = useCallback(() => {
+    void api
+      .mySuggestions()
+      .then((data) => setSuggestions(data.suggestions))
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => loadSuggestions(), [loadSuggestions]);
+
+  const respond = async (suggestion: PlanSuggestion, action: "accept" | "dismiss") => {
+    setRespondingTo(suggestion.id);
+    setError(null);
+    try {
+      await api.respondToSuggestion(suggestion.id, action);
+      setSuggestions((prev) => prev.filter((s) => s.id !== suggestion.id));
+      // An accepted suggestion just wrote to whichever week it was planned
+      // for, which may not be the one currently on screen — reload either way.
+      if (action === "accept") void load(week);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "That didn't work.");
+    } finally {
+      setRespondingTo(null);
+    }
+  };
 
   const run = async (work: () => Promise<{ meals: PlannedMeal[]; addedToList?: number }>) => {
     setBusy(true);
@@ -149,6 +177,36 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
           <Callout tone="error" role="alert">
             {error}
           </Callout>
+        ) : null}
+
+        {suggestions.length > 0 ? (
+          <div className={styles.suggestions}>
+            {suggestions.map((suggestion) => (
+              <div key={suggestion.id} className={styles.suggestionRow}>
+                <span className={styles.suggestionText}>
+                  <strong>{suggestion.suggestedBy.displayName}</strong> suggested{" "}
+                  <Link href={`/recipe/${suggestion.recipeId}`}>{suggestion.title}</Link> for{" "}
+                  {MEAL_SLOT_LABEL[suggestion.slot]} on {dayLabel(suggestion.date)}
+                </span>
+                <div className={styles.suggestionActions}>
+                  <button
+                    type="button"
+                    disabled={respondingTo === suggestion.id}
+                    onClick={() => void respond(suggestion, "accept")}
+                  >
+                    Accept
+                  </button>
+                  <button
+                    type="button"
+                    disabled={respondingTo === suggestion.id}
+                    onClick={() => void respond(suggestion, "dismiss")}
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         ) : null}
       </Panel>
 

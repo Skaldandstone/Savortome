@@ -340,9 +340,28 @@ Two decisions worth knowing:
 
 Moving a meal inserts before it deletes, because the destination slot may
 already hold that recipe and an update would collide with the primary key.
+Dragging a meal chip onto another day or slot on the grid calls this same
+move, one step instead of a remove-then-add.
 
 `pnpm check:plan` asserts all of it against a real database, including that
 nobody can put anything on anybody else's calendar.
+
+**A friend can propose; only you can plan.** From a recipe's page, suggest it
+to a friend's plan for a date and slot of your choosing. Nothing lands on
+their calendar - it sits as a pending suggestion on their own `/plan` page
+until they accept it (which copies the recipe into their library through the
+same path as saving a shared recipe, then plans it) or dismiss it. This is
+the one deliberate exception to "`nobody can put anything on anybody else's
+calendar`" above, and it isn't really an exception: the write itself still
+only ever happens as the owner's own accept action, going through the same
+`addToPlan` that guarantee already covers.
+
+Suggesting requires the two of you to already be friends, and the recipe to
+already be something the friend could see - suggesting is not a way to
+preview a private recipe's title through a door that's shut. A dish that goes
+private after being suggested but before being accepted fails the accept
+cleanly and clears itself from the pending pile, rather than dangling
+forever. `pnpm check:suggestions` asserts all of this against a real database.
 
 ---
 

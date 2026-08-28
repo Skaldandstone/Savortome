@@ -431,6 +431,40 @@ export const mealPlanEntries = pgTable(
   ],
 );
 
+export const planSuggestionStatus = pgEnum("plan_suggestion_status", [
+  "pending", "accepted", "dismissed",
+]);
+
+/**
+ * A friend's proposal for someone else's calendar — never a write to it.
+ * `mealPlanEntries` above already guarantees no path lets one account plan
+ * directly onto another's week; a suggestion only becomes a real entry when
+ * the owner accepts it, which runs through the normal `addToPlan` and so
+ * inherits that same guarantee.
+ */
+export const planSuggestions = pgTable(
+  "plan_suggestions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerId: uuid("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    suggestedById: uuid("suggested_by_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    recipeId: uuid("recipe_id").notNull().references(() => recipes.id, { onDelete: "cascade" }),
+    date: date("date").notNull(),
+    slot: mealSlot("slot").notNull(),
+    status: planSuggestionStatus("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // The pending pile someone's own plan page reads on every visit.
+    index("plan_suggestions_owner_idx").on(t.ownerId, t.status),
+    // Suggesting the same dish for the same slot twice updates the one
+    // pending row rather than piling up duplicates a friend can't tell apart.
+    uniqueIndex("plan_suggestions_unique_idx").on(
+      t.ownerId, t.suggestedById, t.recipeId, t.date, t.slot,
+    ),
+  ],
+);
+
 // ---------------------------------------------------------------- pantry, lists, carts
 
 export const pantryItems = pgTable(

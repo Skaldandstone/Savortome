@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { Recipe } from "@seconds/core/format";
 import { ShelfControls } from "@/modules/shelves";
 import { AddToListButton } from "@/modules/list";
+import { SuggestMeal } from "@/modules/plan";
 import { IngredientList, ServingScaler } from "./IngredientList";
 import { ImportTrace, Provenance } from "./Provenance";
 import { NutritionFacts } from "./NutritionFacts";
@@ -80,6 +81,8 @@ export function RecipeCard({
             </Link>
           ) : null}
         </div>
+
+        {shelvedId ? <SuggestMeal recipeId={shelvedId} /> : null}
 
         <RecipeExport recipe={recipe} ingredients={ingredients} servings={servings} />
 

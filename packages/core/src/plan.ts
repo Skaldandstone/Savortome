@@ -37,6 +37,25 @@ export interface PlannedMeal {
   totalMinutes: number | null;
 }
 
+export const SUGGESTION_STATUSES = ["pending", "accepted", "dismissed"] as const;
+export type SuggestionStatus = (typeof SUGGESTION_STATUSES)[number];
+
+/**
+ * A friend's proposal for your calendar — never a write to it. Shows up on
+ * your own plan page until you accept it (which copies the recipe into your
+ * library and plans it, same as saving a shared recipe) or dismiss it.
+ */
+export interface PlanSuggestion {
+  id: string;
+  date: string;
+  slot: MealSlot;
+  recipeId: string;
+  title: string;
+  imageUrl: string | null;
+  suggestedBy: { handle: string; displayName: string; avatarUrl: string | null };
+  status: SuggestionStatus;
+}
+
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 export const isISODate = (value: string): boolean =>
