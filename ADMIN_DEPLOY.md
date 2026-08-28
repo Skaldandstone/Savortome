@@ -4,7 +4,7 @@ This covers the staff/CS admin surface added on `claude/admin-api`: the
 `/api/admin/*` routes under `apps/web/app/api/admin/`, their `withAdmin` gate
 (`apps/web/lib/admin.ts`), the admin query module
 (`packages/db/src/queries/admin.ts`), and the Stripe refund flow. Second
-Breakfast (NomNom) has never been deployed to a host — see the **Deploying**
+Breakfast has never been deployed to a host — see the **Deploying**
 section of `README.md` for the general host constraints (Clerk mandatory in
 prod, `yt-dlp`/`ffmpeg` on the box, `NEXT_PUBLIC_*` at build time). This doc
 adds only what the admin surface needs on top of that.
