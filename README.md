@@ -547,6 +547,30 @@ Access follows the friendship in both directions: accept and a friends-only
 recipe becomes reachable, unfriend or get blocked and it 404s again. That's
 asserted in `pnpm check:friends`, along with the whole state machine.
 
+**A dietary profile at `/profile`** holds two different kinds of thing on
+purpose. *Preferences* (vegetarian, gluten-free, and the like) are soft -
+they're just there for future suggestions to lean on. *Allergies* are a hard
+flag: every recipe card checks its ingredients against your own flagged
+allergens and shows a warning banner when something matches, and suggesting a
+recipe to a friend checks it against *their* allergens before you send it.
+
+**This is a guess, never a clearance.** `packages/core/src/dietary.ts` matches
+ingredient names against a small, hand-curated keyword table (the FDA's major
+allergens, plus sesame) - the same shape as `isStaple` and `courseBucket`
+elsewhere in this codebase. No flags shown is not a promise the recipe is
+safe, and every place a flag renders carries a disclaimer saying so. One
+specific trap worth knowing about: a bare "butter" keyword would flag peanut
+butter, cocoa butter, and shea butter as dairy, which is wrong and exactly the
+kind of false positive that teaches someone to stop trusting the warning - so
+"butter" only counts as milk when none of a short list of known non-dairy
+butters also appear in the name.
+
+**Reading a friend's allergens is the one place this app reads another
+account's private data**, and only when the two are actually friends -
+`friendAllergens` in `packages/db/src/queries/users.ts` refuses anyone else,
+the same shape as every other friend-gated read. `pnpm check:dietary` asserts
+that boundary against a real database, alongside your own profile round-tripping.
+
 ---
 
 ## Discovery

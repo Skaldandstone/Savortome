@@ -30,6 +30,7 @@ export {
   type TranscriptCue,
 } from "./sources/index.js";
 export * from "./staples.js";
+export * from "./dietary.js";
 export * from "./aisles.js";
 export * from "./billing.js";
 export * from "./nutrition.js";

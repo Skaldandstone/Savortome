@@ -73,6 +73,7 @@ import type { MealSlot, PlannedMeal, PlanSuggestion } from "./plan.js";
 import type { SharedRecipeView } from "./sharing.js";
 import type { PairingSuggestions } from "./pairing.js";
 import type { MealTemplate, TemplateRole } from "./template.js";
+import type { Allergen, DietaryProfile } from "./dietary.js";
 
 /**
  * One typed client for the Second Breakfast HTTP API, shared by both apps.
@@ -212,6 +213,9 @@ export interface SecondsClient {
   setTemplateVisibility: (id: string, visibility: Visibility) => Promise<{ visibility: Visibility | null }>;
   saveSharedTemplate: (id: string) => Promise<{ id: string }>;
   friends: () => Promise<FriendsOverview>;
+  dietaryProfile: () => Promise<DietaryProfile>;
+  setDietaryProfile: (profile: DietaryProfile) => Promise<DietaryProfile>;
+  friendAllergens: (friendId: string) => Promise<{ allergens: Allergen[] } | null>;
   addFriend: (handle: string) => Promise<FriendsOverview>;
   updateFriendship: (
     personId: string,
@@ -399,6 +403,22 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
     saveSharedTemplate: (id) => send<{ id: string }>(`/api/templates/${id}/save`, { method: "POST" }),
 
     friends: () => send<FriendsOverview>("/api/friends"),
+
+    dietaryProfile: () => send<DietaryProfile>("/api/profile/dietary"),
+
+    setDietaryProfile: (profile) =>
+      send<DietaryProfile>("/api/profile/dietary", { method: "PUT", body: body(profile) }),
+
+    friendAllergens: async (friendId) => {
+      try {
+        return await send<{ allergens: Allergen[] }>(`/api/friends/${friendId}/allergens`);
+      } catch (err) {
+        // Not a friend (any more) is a normal answer here, not a failure —
+        // the caller just skips the warning it would have shown.
+        if (err instanceof ApiError && err.status === 404) return null;
+        throw err;
+      }
+    },
 
     addFriend: (handle) =>
       send<FriendsOverview>("/api/friends", { method: "POST", body: body({ handle }) }),

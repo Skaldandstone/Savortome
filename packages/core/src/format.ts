@@ -6,6 +6,7 @@ export * from "./recipe.js";
 export * from "./units.js";
 export * from "./source-kind.js";
 export * from "./staples.js";
+export * from "./dietary.js";
 export * from "./aisles.js";
 export * from "./billing.js";
 export * from "./nutrition.js";

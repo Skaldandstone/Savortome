@@ -30,7 +30,8 @@
     "check:plan": "tsx scripts/check-plan.ts",
     "check:pairings": "tsx scripts/check-pairings.ts",
     "check:templates": "tsx scripts/check-templates.ts",
-    "check:suggestions": "tsx scripts/check-suggestions.ts"
+    "check:suggestions": "tsx scripts/check-suggestions.ts",
+    "check:dietary": "tsx scripts/check-dietary.ts"
   },
   "dependencies": {
     "@seconds/core": "workspace:*",

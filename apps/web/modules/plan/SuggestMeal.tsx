@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from "react";
 import {
+  ALLERGEN_LABEL,
   MEAL_SLOTS,
   MEAL_SLOT_LABEL,
+  flagsForRecipe,
   todayISO,
+  type Allergen,
   type MealSlot,
   type PersonSummary,
 } from "@seconds/core/format";
@@ -17,13 +20,20 @@ import styles from "./plan.module.css";
  * co-op shape as everything else here: your move, then theirs, whenever they
  * next look.
  */
-export function SuggestMeal({ recipeId }: { recipeId: string }) {
+export function SuggestMeal({
+  recipeId,
+  ingredients,
+}: {
+  recipeId: string;
+  ingredients: readonly { canonicalItem: string; optional: boolean }[];
+}) {
   const [friends, setFriends] = useState<PersonSummary[] | null>(null);
   const [friendId, setFriendId] = useState("");
   const [date, setDate] = useState(todayISO());
   const [slot, setSlot] = useState<MealSlot>("dinner");
   const [state, setState] = useState<"idle" | "sending" | "sent" | "failed">("idle");
   const [error, setError] = useState<string | null>(null);
+  const [friendAllergens, setFriendAllergens] = useState<Allergen[]>([]);
 
   useEffect(() => {
     void api
@@ -35,7 +45,24 @@ export function SuggestMeal({ recipeId }: { recipeId: string }) {
       .catch(() => setFriends([]));
   }, []);
 
+  useEffect(() => {
+    if (!friendId) return;
+    let cancelled = false;
+    void api
+      .friendAllergens(friendId)
+      .then((result) => {
+        if (!cancelled) setFriendAllergens(result?.allergens ?? []);
+      })
+      .catch(() => setFriendAllergens([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [friendId]);
+
   if (!friends || friends.length === 0) return null;
+
+  const conflicts = flagsForRecipe(ingredients, friendAllergens);
+  const conflictAllergens = [...new Set(conflicts.map((f) => f.allergen))];
 
   return (
     <div className={styles.suggest} data-print="hide">
@@ -74,6 +101,12 @@ export function SuggestMeal({ recipeId }: { recipeId: string }) {
           {state === "sending" ? "Sending…" : state === "sent" ? "Sent ✓" : "Suggest"}
         </button>
       </div>
+      {conflictAllergens.length > 0 ? (
+        <span className={styles.suggestError}>
+          They've flagged {conflictAllergens.map((a) => ALLERGEN_LABEL[a]).join(", ")} — this recipe
+          may contain it. Guessed from ingredient names, not verified.
+        </span>
+      ) : null}
       {error ? <span className={styles.suggestError}>{error}</span> : null}
     </div>
   );
