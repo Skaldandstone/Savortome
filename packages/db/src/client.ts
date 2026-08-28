@@ -1,29 +1,8 @@
-import { neon } from "@neondatabase/serverless";
-import { drizzle as drizzleNeon } from "drizzle-orm/neon-http";
-import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
-import pg from "pg";
+import { Pool } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
 import * as schema from "./schema.js";
 
-export type Database = ReturnType<typeof createNeonDb>;
-
-/** Neon's serverless driver only speaks to Neon's proxy; everything else
- * (RDS, plain Postgres, localhost) goes through node-postgres. */
-export function isNeonUrl(connectionString: string): boolean {
-  try {
-    return /\.neon\.tech$/i.test(new URL(connectionString.replace(/^postgres(ql)?:/, "http:")).hostname);
-  } catch {
-    return false;
-  }
-}
-
-function createNeonDb(connectionString: string) {
-  return drizzleNeon(neon(connectionString), { schema });
-}
-
-function createPgDb(connectionString: string) {
-  const pool = new pg.Pool({ connectionString, max: 5 });
-  return drizzlePg(pool, { schema }) as unknown as Database;
-}
+export type Database = ReturnType<typeof createDb>;
 
 export function createDb(connectionString = process.env.DATABASE_URL) {
   if (!connectionString) {
@@ -31,7 +10,10 @@ export function createDb(connectionString = process.env.DATABASE_URL) {
       "DATABASE_URL is not set. Copy .env.example to .env.local and point it at your database.",
     );
   }
-  return isNeonUrl(connectionString) ? createNeonDb(connectionString) : createPgDb(connectionString);
+  // RDS presents a cert chained to Amazon's own CA, which isn't in Node's
+  // default trust store — encrypt the connection without validating the
+  // chain, rather than shipping and maintaining the RDS CA bundle.
+  return drizzle(new Pool({ connectionString, ssl: { rejectUnauthorized: false } }), { schema });
 }
 
 /** Lazily created so importing this module never requires a live database. */
