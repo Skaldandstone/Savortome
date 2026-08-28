@@ -830,11 +830,16 @@ Permission is asked when the first timer starts, never at launch: an unprompted
 prompt is the one people deny by reflex, and on iOS a denial is close to
 permanent.
 
-**The web has a real limit here.** Notifications raised by a page belong to
-that page, so they only fire while it is still open, even if backgrounded.
-Close the tab and the timer goes with it. Surviving that needs a service worker
-with its own scheduler, which is more machinery than a cook timer earns. The
-phone has no such limit.
+**The web has a real limit here, but it's narrower than "close the tab and
+it's gone."** The timer itself survives a closed tab fine - it's stored as an
+absolute end time, not a countdown, and persists to `localStorage` alongside
+the rest of the cook session, so reopening the recipe later shows the correct
+state, ringing or not. What doesn't survive is the *notification*:
+notifications raised by a page belong to that page, so they only fire while
+it's still open, even if backgrounded. Nobody gets pulled back to the tab
+early - the timer is just quietly correct whenever they do return to it.
+Fixing that last part needs a service worker with its own scheduler, which is
+more machinery than a cook timer earns. The phone has no such limit.
 
 ---
 
@@ -1261,10 +1266,11 @@ Modelled in `packages/db/src/schema.ts`, in rough dependency order:
    first real run to turn up schema details a stand-in can't.
 3. **Semantic search** - `recipes.embedding` is unused. Worth doing when the
    ingredient-overlap approach visibly runs out, not before.
-4. **Web timers still stop at the tab.** Close it and the timer is gone —
-   see "Cooking from a card". The phone hands its alarms to the OS and has no
-   such limit. Fixing the web side means a service worker with its own
-   scheduler.
+4. **Web timers don't notify while the tab is closed.** The timer state
+   itself survives fine (see "Cooking from a card") - only the proactive
+   alert doesn't reach you if you've walked away and closed the tab. The
+   phone hands its alarms to the OS and has no such limit. Fixing the web
+   side means a service worker with its own scheduler.
 
 ## Deploying to AWS
 
