@@ -12,8 +12,8 @@
  * an empty app, which is the opposite of ready. Only the meter is reset.
  */
 import { readFileSync } from "node:fs";
-import { neon } from "@neondatabase/serverless";
-import { drizzle } from "drizzle-orm/neon-http";
+import pg from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import { TIER_LABEL, describeCredits } from "@seconds/core";
 import * as schema from "../src/schema.js";
@@ -22,7 +22,7 @@ import { creditsFor } from "../src/queries/credits.js";
 const url =
   process.env.DATABASE_URL ??
   /DATABASE_URL=(.+)/.exec(readFileSync("../../apps/web/.env.local", "utf8"))![1]!.trim();
-const db = drizzle(neon(url), { schema });
+const db = drizzle(new pg.Pool({ connectionString: url, ssl: { rejectUnauthorized: false } }), { schema });
 
 const wanted = process.argv[2];
 
