@@ -13,12 +13,13 @@
  *
  * Works on its own fixture users and deletes everything it created.
  */
-import { readFileSync } from "node:fs";
 import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, inArray } from "drizzle-orm";
 import type { KrogerToken } from "@seconds/core";
 import * as schema from "../src/schema.js";
+import { RDS_SSL_CONFIG, SCRIPT_POOL_MAX } from "../src/client.js";
+import { loadEnvLocal } from "../src/loadEnv.js";
 import {
   getConnection,
   removeConnection,
@@ -27,10 +28,12 @@ import {
 } from "../src/queries/grocery.js";
 import { isEncrypted } from "../src/crypto.js";
 
-const url =
-  process.env.DATABASE_URL ??
-  /DATABASE_URL=(.+)/.exec(readFileSync("../../apps/web/.env.local", "utf8"))![1]!.trim();
-const db = drizzle(new pg.Pool({ connectionString: url, ssl: { rejectUnauthorized: false } }), { schema });
+// GROCERY_TOKEN_ENCRYPTION_KEY (read by crypto.ts, not this file directly)
+// needs to actually reach process.env — DATABASE_URL alone isn't enough here.
+loadEnvLocal();
+
+const url = process.env.DATABASE_URL!;
+const db = drizzle(new pg.Pool({ connectionString: url, ssl: RDS_SSL_CONFIG, max: SCRIPT_POOL_MAX }), { schema });
 
 let failures = 0;
 const expect = (label: string, actual: unknown, expected: unknown) => {
