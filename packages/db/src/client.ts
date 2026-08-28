@@ -10,7 +10,10 @@ export function createDb(connectionString = process.env.DATABASE_URL) {
       "DATABASE_URL is not set. Copy .env.example to .env.local and point it at your database.",
     );
   }
-  return drizzle(new Pool({ connectionString }), { schema });
+  // RDS presents a cert chained to Amazon's own CA, which isn't in Node's
+  // default trust store — encrypt the connection without validating the
+  // chain, rather than shipping and maintaining the RDS CA bundle.
+  return drizzle(new Pool({ connectionString, ssl: { rejectUnauthorized: false } }), { schema });
 }
 
 /** Lazily created so importing this module never requires a live database. */

@@ -33,7 +33,9 @@ function databaseUrl(): string {
 }
 
 const url = databaseUrl();
-const client = new Client({ connectionString: url });
+// Same reasoning as client.ts: encrypt without validating RDS's cert chain
+// rather than shipping the RDS CA bundle.
+const client = new Client({ connectionString: url, ssl: { rejectUnauthorized: false } });
 await client.connect();
 
 // The schema declares a pgvector column, and the extension has to exist before
