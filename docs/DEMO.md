@@ -1,7 +1,7 @@
 # Demo runbook
 
 A walking order for showing Second Breakfast, plus the setup and the honest
-gaps. Written 2026-08-27 after an overnight session; see `README.md` for how
+gaps. Written 2026-08-27 after an overnight session; see `PRODUCT.md` for how
 any of this actually works.
 
 ## Before you start
@@ -66,7 +66,7 @@ that, sign-in loops, which blocks the credit meter and checkout both.
 - **Kroger.** Never tested against the live API, only a local stand-in.
 - **The service worker / true offline mode.** Installable and the offline
   banner both work, but the actual caching layer is intentionally switched
-  off pending a real-browser check — see README's "Installing it, and
+  off pending a real-browser check — see `PRODUCT.md`'s "Installing it, and
   losing signal".
 - **Mobile on an actual phone or emulator.** Bundles, typechecks, and a real
   Android prebuild succeeds — but nobody has watched it render on a screen
