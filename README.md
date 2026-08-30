@@ -89,5 +89,6 @@ pnpm test
 | [docs/CONSTRAINTS.md](docs/CONSTRAINTS.md) | Genuinely constrained parts (grocery APIs, social scraping, SSRF) and what is not built yet |
 | [docs/DEMO.md](docs/DEMO.md) | Demo walkthrough, written 2026-08-27 |
 | [docs/WISPLING-INTEGRATION.md](docs/WISPLING-INTEGRATION.md) | The low-effort food handoff from Wispling and its privacy and safety boundaries |
+| [docs/RESTAURANT-DISCOVERY.md](docs/RESTAURANT-DISCOVERY.md) | Proposed dish and restaurant discovery, dietary boundaries, review evidence, and dining-environment preferences; not implemented |
 | [STYLE_GUIDE.md](STYLE_GUIDE.md) | Visual system and brand |
 
