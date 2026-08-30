@@ -55,11 +55,11 @@
 
 /* The plan is the better answer for most people, so it leads. */
 .pack[data-primary="true"] {
-  color: #fff;
+  color: var(--on-accent, #fff);
   background: var(--accent);
   border-color: var(--accent);
 }
-.pack[data-primary="true"]:hover:not(:disabled) { color: #fff; opacity: 0.9; }
+.pack[data-primary="true"]:hover:not(:disabled) { color: var(--on-accent, #fff); opacity: 0.9; }
 
 .meterProblem {
   flex-basis: 100%;

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { KitchenWelcome } from '@/modules/woodland/KitchenWelcome';
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Callout, Field, Panel, PanelHeader, radius, space, type as typeScale, usePalette } from "@/ui";
@@ -27,6 +28,7 @@ export function CookScreen() {
       contentContainerStyle={[styles.content, { paddingTop: insets.top + space.lg }]}
       keyboardShouldPersistTaps="handled"
     >
+      <KitchenWelcome />
       <Panel>
         <PanelHeader
           title="What can I make?"

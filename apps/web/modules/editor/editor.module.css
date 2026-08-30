@@ -167,3 +167,9 @@
   .optional, .rowActions { padding-top: 0; }
   .danger { margin-left: 0; }
 }
+
+@media(max-width:640px) {
+  :global([data-woodland='true']) .row { flex-wrap:wrap; }
+  :global([data-woodland='true']) .rowMain { flex-basis:100%; }
+  :global([data-woodland='true']) .optional { min-height:44px; padding-top:0; }
+}

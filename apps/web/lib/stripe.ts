@@ -26,15 +26,33 @@ const missingVars = (): string[] =>
     process.env.STRIPE_WEBHOOK_SECRET ? null : "STRIPE_WEBHOOK_SECRET",
   ].filter((v): v is string => v !== null);
 
-/** Checkout needs only the secret key; the webhook secret is checked separately. */
-export const stripeConfigured = (): boolean => Boolean(process.env.STRIPE_SECRET_KEY);
+/** A key from the wrong environment is unavailable, even when it is present. */
+export const stripeConfigured = (): boolean => {
+  const mode = process.env.STRIPE_LIVEMODE === "true" ? "live" : "test";
+  return new RegExp(`^(rk|sk)_${mode}_`).test(process.env.STRIPE_SECRET_KEY ?? "");
+};
 
 export const webhookConfigured = (): boolean => Boolean(process.env.STRIPE_WEBHOOK_SECRET);
+
+/** Stable sandbox/live Prices are injected by the deployment, never by a buyer. */
+export function priceForProduct(productId: string): string | undefined {
+  const prices: Record<string, string | undefined> = {
+    "plan-plus": process.env.STRIPE_PRICE_PLUS_ANNUAL,
+    "plan-pro": process.env.STRIPE_PRICE_PRO_ANNUAL,
+    "pack-25": process.env.STRIPE_PRICE_PACK_25,
+    "pack-100": process.env.STRIPE_PRICE_PACK_100,
+  };
+  return prices[productId];
+}
 
 let client: Stripe | null = null;
 
 export function stripe(): Stripe {
   if (!process.env.STRIPE_SECRET_KEY) throw new StripeNotConfiguredError(missingVars());
+  const mode = process.env.STRIPE_LIVEMODE === "true" ? "live" : "test";
+  if (!stripeConfigured()) {
+    throw new StripeNotConfiguredError([`a ${mode} Stripe key matching STRIPE_LIVEMODE`]);
+  }
   // Built once. A new client per request leaks sockets under load.
   client ??= new Stripe(process.env.STRIPE_SECRET_KEY);
   return client;

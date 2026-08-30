@@ -30,6 +30,7 @@
     "mobile:bundle": "pnpm --filter @seconds/mobile exec expo export --platform android --output-dir .expo-export"
   },
   "devDependencies": {
+    "esbuild": "0.25.12",
     "typescript": "^5.7.3"
   }
 }

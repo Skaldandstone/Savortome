@@ -38,13 +38,13 @@ export function LibraryItem({ entry }: { entry: LibraryEntry }) {
         </span>
         {/* Your own verdict, not the community's — this is your shelf. A
             recipe cooked but never rated shows nothing rather than zero. */}
-        {entry.stars && entry.stars > 0 ? (
+        <span className={styles.verdict}>{entry.stars && entry.stars > 0 ? (
           <span className={styles.stars} aria-label={`You rated this ${entry.stars} out of 5`}>
             {"★".repeat(entry.stars)}
             <span className={styles.starsEmpty}>{"★".repeat(5 - entry.stars)}</span>
           </span>
         ) : null}
-        <ShelfBadge status={entry.status} />
+        <ShelfBadge status={entry.status} /></span>
       </Link>
     </li>
   );

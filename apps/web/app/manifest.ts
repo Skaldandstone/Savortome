@@ -3,8 +3,8 @@ import type { MetadataRoute } from "next";
 /**
  * Installable to a home screen.
  *
- * The point isn't the icon — it's that a recipe you've already opened stays
- * readable in a kitchen with no signal, which is exactly where phones lose it.
+ * Only public assets and a generic care shell are available offline.
+ * Private recipes and account responses are never stored by the worker.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -21,7 +21,7 @@ export default function manifest(): MetadataRoute.Manifest {
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+      { src: "/icons/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }

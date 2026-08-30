@@ -12,7 +12,7 @@ import { resolve } from "node:path";
 import { Client } from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
-import { RDS_SSL_CONFIG } from "./client.js";
+import { connectionOptions } from './connection.js';
 
 function databaseUrl(): string {
   if (process.env.DATABASE_URL) return process.env.DATABASE_URL;
@@ -34,7 +34,7 @@ function databaseUrl(): string {
 }
 
 const url = databaseUrl();
-const client = new Client({ connectionString: url, ssl: RDS_SSL_CONFIG });
+const client = new Client(connectionOptions(url));
 await client.connect();
 
 // The schema declares a pgvector column, and the extension has to exist before

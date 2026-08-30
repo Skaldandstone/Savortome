@@ -1,0 +1,39 @@
+imported "Healthy Banana Bread" -> 1cdc2396-afe0-4dd8-854d-cd78b9bb05d7
+
+PASS  import saved the recipe
+PASS  baseline: no status
+PASS  baseline: no rating
+PASS  re-import updates the same recipe
+PASS  importing an unshelved recipe puts it on Want to cook
+PASS  moves to Cooking
+PASS  moving to Cooking does not count as a cook
+PASS  status shelves stay exclusive
+PASS  moves to Cooked
+PASS  marking Cooked records a cook
+PASS  cooked but unrated is 0 stars
+PASS  cooking it again counts again
+PASS  re-marking Cooked does not double-count
+PASS  clearing the status unshelves it
+PASS  unshelving keeps the cook history
+PASS  re-shelving as Cooked counts a cook
+PASS  rating saves stars
+PASS  rating leaves the cook count alone
+PASS  rejects an out-of-range rating
+PASS  re-import leaves Cooked alone
+PASS  re-import keeps the rating
+PASS  re-import keeps the cook count
+PASS  creates a custom shelf
+PASS  normalizes the shelf name
+PASS  refuses a duplicate shelf name
+PASS  refuses a blank shelf name
+PASS  adds to a custom shelf
+PASS  custom shelves sit alongside the status
+PASS  now on two shelves
+PASS  built-in shelves reject the custom-shelf path
+PASS  built-in shelves cannot be deleted
+PASS  Cooked holds the recipe
+PASS  Want to cook is back where it started
+PASS  the custom shelf holds it too
+PASS  custom shelves can be deleted
+
+ALL CHECKS PASSED

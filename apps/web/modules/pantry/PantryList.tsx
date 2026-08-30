@@ -32,6 +32,7 @@ export function PantryList({
       >
         <FieldRow>
           <TextField
+            aria-label="Ingredients to add to your pantry"
             type="text"
             value={text}
             onChange={(e) => setText(e.target.value)}

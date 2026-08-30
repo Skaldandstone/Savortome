@@ -25,6 +25,7 @@ export function DiscoverPanel() {
         >
           <FieldRow>
             <TextField
+              aria-label="Search shared recipes"
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}

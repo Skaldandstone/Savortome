@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { formatCents, productById, TIER_LABEL } from "@seconds/core";
+import { productById } from "@seconds/core";
 import { linkStripeCustomer } from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
-import { appOrigin, stripe, stripeConfigured } from "@/lib/stripe";
+import { appOrigin, priceForProduct, stripe, stripeConfigured, webhookConfigured } from "@/lib/stripe";
 
 /**
  * Start a checkout.
@@ -14,7 +14,13 @@ import { appOrigin, stripe, stripeConfigured } from "@/lib/stripe";
  */
 export const runtime = "nodejs";
 
+// Generated once for this integration; keep stable across requests and deploys.
+const CHECKOUT_INTEGRATION_IDENTIFIER = "secondbreakfast-web-checkout-fpkhuarf";
+
 export async function POST(request: Request) {
+  if (process.env.STRIPE_CHECKOUT_ENABLED !== "true") {
+    return NextResponse.json({ error: "Checkout is not enabled for this beta." }, { status: 403 });
+  }
   const body = await readJson<{ productId?: string }>(request);
   const product = body.productId ? productById(body.productId) : undefined;
 
@@ -25,11 +31,12 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!stripeConfigured()) {
+  const price = priceForProduct(product.id);
+  if (!stripeConfigured() || !webhookConfigured() || !price) {
     return NextResponse.json(
       {
         error:
-          "Payments aren't set up yet. Set STRIPE_SECRET_KEY in .env.local to enable checkout.",
+          "Payments aren't set up yet. Configure the Stripe key, webhook, and product price.",
       },
       { status: 501 },
     );
@@ -47,40 +54,24 @@ export async function POST(request: Request) {
     // rather than scattering across a new customer per checkout.
     const customerId =
       user?.stripeCustomerId ??
-      (await client.customers.create({ email: user?.email, metadata: { userId } })).id;
+      (await client.customers.create({ email: user?.email, metadata: { app: "secondbreakfast", userId } })).id;
 
     if (customerId !== user?.stripeCustomerId) {
       await linkStripeCustomer(database, userId, customerId);
     }
 
     const isPlan = product.kind === "plan";
-    const name = isPlan
-      ? `Second Breakfast — ${TIER_LABEL[product.tier!]}`
-      : `${product.credits} AI import credits`;
+    const metadata = { app: "secondbreakfast", userId, productId: product.id };
 
     const session = await client.checkout.sessions.create({
+      integration_identifier: CHECKOUT_INTEGRATION_IDENTIFIER,
       mode: isPlan ? "subscription" : "payment",
       customer: customerId,
-      line_items: [
-        {
-          quantity: 1,
-          price_data: {
-            currency: "usd",
-            unit_amount: product.cents,
-            ...(isPlan ? { recurring: { interval: "year" as const } } : {}),
-            product_data: {
-              name,
-              description: isPlan
-                ? `${formatCents(product.cents)} a year`
-                : "Credits never expire.",
-            },
-          },
-        },
-      ],
+      line_items: [{ quantity: 1, price }],
       // Fulfilment reads these back off the webhook. The userId matters most:
       // the webhook arrives with no session of its own.
-      metadata: { userId, productId: product.id },
-      ...(isPlan ? { subscription_data: { metadata: { userId, productId: product.id } } } : {}),
+      metadata,
+      ...(isPlan ? { subscription_data: { metadata } } : {}),
       success_url: `${appOrigin()}/?checkout=done`,
       cancel_url: `${appOrigin()}/?checkout=cancelled`,
     });

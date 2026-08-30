@@ -263,3 +263,5 @@
 @media (width < 900px) {
   .week { grid-template-columns: 1fr; overflow-x: visible; }
 }
+
+:global([data-woodland='true']) .dialog { max-height:calc(100dvh - 32px); overflow-y:auto; }

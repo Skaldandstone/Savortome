@@ -1,0 +1,120 @@
+{
+  "verifiedAt": "2026-08-30T15:34:58.2282917-07:00",
+  "database": "Disposable PostgreSQL at loopback port 55494",
+  "assertionsPassed": 335.0,
+  "suites": [
+    {
+      "suite": "pantry",
+      "passed": 34,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "docs/beta/checks/care-data-db-pantry.txt"
+    },
+    {
+      "suite": "sharing",
+      "passed": 27,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "docs/beta/checks/care-data-db-sharing.txt"
+    },
+    {
+      "suite": "friends",
+      "passed": 32,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "docs/beta/checks/care-data-db-friends.txt"
+    },
+    {
+      "suite": "discover",
+      "passed": 27,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "docs/beta/checks/care-data-db-discover.txt"
+    },
+    {
+      "suite": "editor",
+      "passed": 31,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "docs/beta/checks/care-data-db-editor.txt"
+    },
+    {
+      "suite": "grocery",
+      "passed": 17,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "docs/beta/checks/care-data-db-grocery.txt"
+    },
+    {
+      "suite": "library",
+      "passed": 29,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "docs/beta/checks/care-data-db-library.txt"
+    },
+    {
+      "suite": "plan",
+      "passed": 23,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "docs/beta/checks/care-data-db-plan.txt"
+    },
+    {
+      "suite": "dietary",
+      "passed": 7,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "docs/beta/checks/care-data-db-dietary.txt"
+    },
+    {
+      "suite": "credits",
+      "passed": 32,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "docs/beta/checks/care-data-db-credits.txt"
+    },
+    {
+      "suite": "billing",
+      "passed": 25,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "docs/beta/checks/care-data-db-billing.txt"
+    },
+    {
+      "suite": "nutrition",
+      "passed": 8,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "docs/beta/checks/care-data-db-nutrition-retry.txt"
+    },
+    {
+      "suite": "pairings",
+      "passed": 9,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "docs/beta/checks/care-data-db-pairings.txt"
+    },
+    {
+      "suite": "templates",
+      "passed": 18,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "docs/beta/checks/care-data-db-templates.txt"
+    },
+    {
+      "suite": "suggestions",
+      "passed": 16,
+      "failed": 0,
+      "exitCode": 0,
+      "log": "docs/beta/checks/care-data-db-suggestions.txt"
+    }
+  ],
+  "transactionScenariosPassed": 10,
+  "coreTestsPassed": 540,
+  "focusedTestsPassed": 21,
+  "limits": [
+    "No production database or real TLS handshake verification",
+    "Local schema uses double precision array instead of pgvector",
+    "Initial nutrition process shutdown failed; preserved in care-data-db-nutrition.txt and successful retry in care-data-db-nutrition-retry.txt"
+  ]
+}

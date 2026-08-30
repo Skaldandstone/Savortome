@@ -4,9 +4,9 @@ The admin portal has its own runbook: [ADMIN_DEPLOY.md](ADMIN_DEPLOY.md).
 
 ## Deploying
 
-Never deployed, but the production build has been run and exercised end to end
-locally - with and without Clerk - so the following is measured rather than
-assumed.
+The public AWS-hosted site responded HTTP 200 on 30 August 2026. The current deployed revision and rollback task definition could not be read because the AWS session expired. Do not infer either from an HTTP response.
+
+The woodland private beta is not deployed. Its current evidence and release gates are recorded in [beta/README.md](beta/README.md). The statements below about earlier Clerk checks are historical; invited/non-invited and expired-session checks must be repeated for this candidate.
 
 **Clerk is mandatory in production.** The single local development account is
 refused when `NODE_ENV=production`, deliberately: a shared implicit account on

@@ -1,0 +1,34 @@
+PASS  strangers start with no relationship
+PASS  a request finds the person however the handle was typed
+PASS  the requester sees it as sent
+PASS  the recipient sees it as received
+PASS  the recipient gets a badge count
+PASS  the requester does not
+PASS  asking twice is refused
+PASS  asking back is redirected to accepting
+PASS  adding yourself is refused
+PASS  an unknown handle is refused
+PASS  both sides read as friends
+PASS  ...from either direction
+PASS  the request no longer waits
+PASS  the friend appears in the list
+PASS  with no leftover requests
+PASS  accepting a request that was never made is refused
+PASS  a friend can now see a friends-only recipe
+PASS  a non-friend still cannot
+PASS  the feed carries a friend's shared and public recipes
+PASS  the feed never carries a private recipe
+PASS  the feed reports what happened
+PASS  the feed is newest first
+PASS  a stranger's feed is empty
+PASS  the blocker sees the block
+PASS  the blocked person sees nothing at all
+PASS  blocking ends the friendship
+PASS  a blocked person loses access to friends-only recipes
+PASS  the blocker cannot re-add them
+PASS  unblocking clears it
+PASS  they're friends again
+PASS  either side can end it
+PASS  ...and it's gone from both lists
+
+ALL CHECKS PASSED

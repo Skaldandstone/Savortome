@@ -1,6 +1,36 @@
 # Second Breakfast Style Guide
 
-Status: current implementation baseline, 28 August 2026.
+Status: private woodland beta implemented 30 August 2026. Release remains gated pending device and invited-account review.
+
+## Woodland private beta
+
+The approved family direction is Tomte woodland field guide and Wispling illustrated support, translated into a kitchen. The beta uses native text and controls over separate raster art. The current public palette below remains the fallback for non-invited accounts.
+
+| Token | Beta light | Beta dark |
+| --- | --- | --- |
+| Background | `#F3EDDF` | `#111E1D` |
+| Surface | `#FFFAF0` | `#1B2B28` |
+| Text | `#24342E` | `#F0E7D5` |
+| Muted text | `#566258` | `#B5BDAA` |
+| Accent | `#795022` | `#E2B97B` |
+| Text on filled accent | `#FFFFFF` | `#111E1D` |
+| Border | `#BDB29C` | `#5B6452` |
+
+Use Georgia or the platform serif for headings, native sans for body copy, ingredients, forms, and timers. Main controls have at least 44 px touch targets. Warm brass, parchment, pine, dark timber, and hearth light define the beta. No new mascot is introduced.
+
+The original skillet mark is retained through the supersampled, mask-safe icon work from PR #38. Concepts live in `design/concepts`; the optional existing Wispling visitor is comparison artwork only. Never ship text flattened into a concept image.
+
+Use `hearth.png` on library and care entry surfaces. Use `kettle-journal.png` as a quiet secondary ornament. Recipe instructions and forms keep plain surfaces and strong contrast. Reduced decoration removes scene and prop images without hiding controls. Respect reduced motion. Web Appearance offers system/light/dark; Android follows the system. Screenshots in `docs/beta` record browser visual checks, not Android device validation.
+
+Care has no scores, streaks, prescribed intake, medical claims, or completion reporting. Dietary flags remove detected conflicts only; packaging and cross-contact remain unverified. Color never means a food is safe.
+
+Web Display options contains theme, text size (100%, 125%, 150%, 200%), and reduced decoration. These preferences stay on the device. Beta typography uses rem units so instructions, form labels, and actions enlarge together. Keep controls at least 44 px high, let rows wrap, and retain visible keyboard outlines. Navigation names remain visible, with the current page marked by text color and an underline. A keyboard skip link leads past navigation.
+
+Filled actions use `--on-accent`, never a fixed white label on the dark theme's pale brass. Existing public colors retain their fallback. Recipe rows place ratings and shelf status below the text on narrow screens. Practical pages inherit the woodland palette and typography without adding scene art behind ingredients, timers, forms, lists, or sharing controls.
+
+Care preserves a selected idea locally through sign-in and marks it with both a label and outline. Restored storage is validated; the only allowed app return is `wispling://care-return`. Selections, pantry settings, appetite, and dietary restrictions never become outgoing link parameters. Pantry matches use ingredient names, not quantity or preparation form. The selected card is hidden if changed restrictions exclude it, and saving still requires an explicit successful list write.
+
+## Existing public baseline
 
 This guide describes the visual system already shipped in `apps/web/ui/tokens.css`. The active
 `Second Breakfast - UI Draft` Figma file is a working design reference; changes from that file
@@ -23,11 +53,11 @@ menu, or glossy food-delivery app.
 | Text | `#241D17` | `#F2ECE4` | Primary copy |
 | Muted text | `#6F6459` | `#A89C8E` | Metadata and hints |
 | Accent | `#B4451F` | `#F08D5F` | Terracotta action and appetite cue |
-| Good | `#2F6B46` | `#7FC59B` | Herb green for success and safe substitutions |
+| Good | `#2F6B46` | `#7FC59B` | Herb green for success and status |
 | Warning | `#8A6100` | `#E2B768` | Mustard for timing and attention |
 
 The accent is for actions and key food information, not broad decorative fields. Green means a
-positive or safe state. Warning gold should remain legible without reading as an error.
+positive state, never an allergen safety guarantee. Warning gold should remain legible without reading as an error.
 
 ## Typography and information hierarchy
 

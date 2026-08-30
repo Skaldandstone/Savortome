@@ -34,6 +34,7 @@ export function ImportForm({
           {mode === "url" ? (
             <TextField
               type="url"
+              aria-label="Recipe URL"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://www.youtube.com/watch?v=..."
@@ -42,6 +43,7 @@ export function ImportForm({
             />
           ) : (
             <TextArea
+              aria-label="Recipe text"
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Paste a recipe, a screenshot transcription, or a text from your mum."

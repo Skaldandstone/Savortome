@@ -34,6 +34,7 @@ export function FriendsPanel() {
         >
           <FieldRow>
             <TextField
+              aria-label="Friend's handle"
               type="text"
               value={handle}
               onChange={(e) => setHandle(e.target.value)}

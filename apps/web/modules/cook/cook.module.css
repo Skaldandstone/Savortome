@@ -255,3 +255,9 @@
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
+
+:global([data-woodland='true']) .text { font-size:1.5625rem; }
+:global([data-woodland='true']) .timerClock { font-size:1.875rem; }
+:global([data-woodland='true']) :is(.header,.resumed,.timerHead,.timerActions) { flex-wrap:wrap; }
+:global([data-woodland='true']) .exit { white-space:normal; min-height:44px; display:flex; align-items:center; }
+@media(max-width:560px) { :global([data-woodland='true']) .text { font-size:1.3125rem; } :global([data-woodland='true']) .timerClock { font-size:1.5rem; } }

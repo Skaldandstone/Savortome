@@ -1,0 +1,27 @@
+PASS  a new event can be claimed
+PASS  ...and the same one can't be claimed twice
+PASS  ...and it's recorded as seen
+PASS  an unrelated event is not seen
+PASS  concurrent deliveries of one event: exactly one wins
+PASS  buying a pack grants its credits
+PASS  ...on top of the monthly allowance
+PASS  ...and doesn't change the tier
+PASS  replaying the same purchase does nothing
+PASS  ...and grants no second helping of credits
+PASS  ...leaving one purchase on the record
+PASS  a genuinely new purchase does grant again
+PASS  subscribing moves the tier
+PASS  ...granting the bigger allowance
+PASS  ...and no lump of purchased credits
+PASS  a subscription can be traced back to its account
+PASS  ...or via the customer when the subscription isn't linked yet
+PASS  an unknown subscription resolves to nobody
+PASS  a failed payment keeps the plan for now
+PASS  cancelling drops to free
+PASS  ...and the allowance shrinks with it
+PASS  ...and the dead subscription is unlinked
+PASS  purchased credits survive everything, because they were paid for
+PASS  a purchase stranded before fulfilment is completed on the next attempt
+PASS  ...and a later retry of the now-fulfilled row grants nothing more
+
+All good.

@@ -10,6 +10,8 @@ import {
 import { librarySortOr } from "@seconds/core/format";
 import { loadLibrary } from "@/lib/library";
 import styles from "./layout.module.css";
+import { canUseBeta } from '@/lib/beta';
+import { KitchenWelcome } from '@/modules/woodland/Woodland';
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +63,7 @@ export default async function Home({
 
   return (
     <main>
+      {await canUseBeta() ? <KitchenWelcome /> : null}
       <ImportPanel />
       <section className={styles.section}>
         <h2 className={styles.sectionHeading}>Your recipes</h2>

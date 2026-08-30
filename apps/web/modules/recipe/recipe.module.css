@@ -27,7 +27,7 @@
   padding: 12px 20px;
   font-size: var(--step-3);
   font-weight: 600;
-  color: #fff;
+  color: var(--on-accent, #fff);
   background: var(--accent);
   border-radius: var(--radius-sm);
 }
@@ -36,3 +36,6 @@
 
 .edit { font-size: var(--step-2); color: var(--text-muted); }
 .edit:hover { color: var(--accent); }
+
+:global([data-woodland='true']) :is(.ingredientsHeading,.listAction) { flex-wrap:wrap; }
+:global([data-woodland='true']) :is(.cook,.edit) { display:inline-flex; align-items:center; min-height:44px; }

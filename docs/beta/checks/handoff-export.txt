@@ -1,0 +1,48 @@
+Starting Metro Bundler
+
+| (node:24492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:24492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:24492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:24492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:24492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:24492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:24492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:24492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:24492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+| (node:24492) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+| (Use `node --trace-warnings ...` to show where the warning was created)
+Android Bundled 22648ms index.ts (1022 modules)
+
+› Assets (27):
+..\..\wispling\node_modules\@expo-google-fonts\atkinson-hyperlegible\400Regular_Italic\AtkinsonHyperlegible_400Regular_Italic.ttf (54KB)
+..\..\wispling\node_modules\@expo-google-fonts\atkinson-hyperlegible\400Regular\AtkinsonHyperlegible_400Regular.ttf (54KB)
+..\..\wispling\node_modules\@expo-google-fonts\atkinson-hyperlegible\700Bold_Italic\AtkinsonHyperlegible_700Bold_Italic.ttf (55KB)
+..\..\wispling\node_modules\@expo-google-fonts\atkinson-hyperlegible\700Bold\AtkinsonHyperlegible_700Bold.ttf (54KB)
+..\..\wispling\node_modules\@expo-google-fonts\gabarito\400Regular\Gabarito_400Regular.ttf (102KB)
+..\..\wispling\node_modules\@expo-google-fonts\gabarito\500Medium\Gabarito_500Medium.ttf (102KB)
+..\..\wispling\node_modules\@expo-google-fonts\gabarito\600SemiBold\Gabarito_600SemiBold.ttf (102KB)
+..\..\wispling\node_modules\@expo-google-fonts\gabarito\700Bold\Gabarito_700Bold.ttf (102KB)
+..\..\wispling\node_modules\@expo-google-fonts\gabarito\800ExtraBold\Gabarito_800ExtraBold.ttf (102KB)
+..\..\wispling\node_modules\@expo-google-fonts\gabarito\900Black\Gabarito_900Black.ttf (102KB)
+..\..\wispling\node_modules\@react-navigation\elements\lib\module\assets\back-icon-mask.png (653B)
+..\..\wispling\node_modules\@react-navigation\elements\lib\module\assets\back-icon.png (4 variations | 152B)
+..\..\wispling\node_modules\@react-navigation\elements\lib\module\assets\clear-icon.png (4 variations | 425B)
+..\..\wispling\node_modules\@react-navigation\elements\lib\module\assets\close-icon.png (4 variations | 235B)
+..\..\wispling\node_modules\@react-navigation\elements\lib\module\assets\search-icon.png (4 variations | 599B)
+
+› android bundles (1):
+_expo/static/js/android/index-79104d2f311b4a71fabe41b405cc952e.hbc (2.2MB)
+
+› Files (1):
+metadata.json (1.9KB)
+
+Exported: .expo/handoff-export

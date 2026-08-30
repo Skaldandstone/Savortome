@@ -1,3 +1,4 @@
+import { connectionOptions } from "../src/connection.js";
 /**
  * Checks nutrition — the real per-ingredient pipeline and its persistence —
  * against a real database and the real USDA FoodData Central API.
@@ -24,7 +25,8 @@ import { createRecipe, getRecipe, saveRecipe, updateRecipe } from "../src/querie
 const url =
   process.env.DATABASE_URL ??
   /DATABASE_URL=(.+)/.exec(readFileSync("../../apps/web/.env.local", "utf8"))![1]!.trim();
-const db = drizzle(new pg.Pool({ connectionString: url, ssl: { rejectUnauthorized: false } }), { schema });
+const pool = new pg.Pool(connectionOptions(url));
+const db = drizzle(pool, { schema });
 
 let failures = 0;
 const expect = (label: string, actual: unknown, expected: unknown) => {
@@ -145,4 +147,7 @@ await db.delete(schema.recipes).where(eq(schema.recipes.ownerId, userId));
 await db.delete(schema.users).where(eq(schema.users.id, userId));
 
 console.log(failures === 0 ? "\nAll good." : `\n${failures} failed.`);
-process.exit(failures === 0 ? 0 : 1);
+// Allow pending network handles to close normally. Forcing process.exit while
+// fetch/pg handles are closing can abort the Windows runtime after passing.
+await pool.end();
+process.exitCode = failures === 0 ? 0 : 1;

@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import type Stripe from "stripe";
 import {
   fulfilmentFor,
+  fulfillableCheckoutProduct,
   isHandledEvent,
   isPayableTier,
-  productById,
   tierForSubscriptionStatus,
 } from "@seconds/core";
 import {
@@ -13,7 +13,6 @@ import {
   claimStripeEvent,
   db,
   linkStripeCustomer,
-  releaseStripeEvent,
   userForSubscription,
 } from "@seconds/db";
 import { requireWebhookSecret, stripe, stripeConfigured, webhookConfigured } from "@/lib/stripe";
@@ -65,12 +64,16 @@ export async function POST(request: Request) {
   try {
     event = stripe().webhooks.constructEvent(payload, signature, requireWebhookSecret());
   } catch (err) {
-    // A bad signature is not a retryable condition, so 400 rather than 500 —
-    // telling Stripe to stop rather than to try the same forgery again.
+    // Reject invalid signatures without processing. Stripe can retry non-2xx
+    // deliveries, including 400; this response does not disable retries.
     return NextResponse.json(
       { error: `Signature verification failed: ${err instanceof Error ? err.message : "unknown"}` },
       { status: 400 },
     );
+  }
+
+  if (event.livemode !== (process.env.STRIPE_LIVEMODE === "true")) {
+    return NextResponse.json({ error: "Stripe environment does not match." }, { status: 400 });
   }
 
   // Anything not on the allow-list is understood and deliberately ignored.
@@ -79,67 +82,51 @@ export async function POST(request: Request) {
     return NextResponse.json({ received: true, handled: false, type: event.type });
   }
 
-  const database = db();
-
-  // Claimed before any work: two concurrent deliveries race to insert, one
-  // wins, and the loser stops. Checking first and writing after would leave a
-  // window in which both believe they are the first.
-  if (!(await claimStripeEvent(database, event.id, event.type))) {
-    return NextResponse.json({ received: true, duplicate: true });
-  }
-
   try {
-    switch (event.type) {
-      case "checkout.session.completed":
-        await onCheckoutCompleted(database, event.data.object);
-        break;
-      case "customer.subscription.updated":
-      case "customer.subscription.deleted":
-        await onSubscriptionChanged(database, event.data.object);
-        break;
-    }
+    const handled = await db().transaction(async (database) => {
+      // The claim and fulfilment commit together, including after process loss.
+      if (!(await claimStripeEvent(database, event.id, event.type))) return false;
+      switch (event.type) {
+        case "checkout.session.completed":
+        case "checkout.session.async_payment_succeeded":
+          await onCheckoutCompleted(database, event.data.object);
+          break;
+        case "checkout.session.async_payment_failed":
+          // No grant has occurred while payment was pending. Nothing to revoke.
+          break;
+        case "customer.subscription.updated":
+        case "customer.subscription.deleted":
+          await onSubscriptionChanged(database, event.data.object);
+          break;
+      }
+      return true;
+    });
+    return NextResponse.json({ received: true, handled, ...(!handled ? { duplicate: true } : {}) });
   } catch (err) {
-    // A 500 asks Stripe to retry. The event id is already claimed, so the
-    // retry would be treated as a duplicate and do nothing — which is why the
-    // claim is released here, so a genuine transient failure gets its retry.
+    // Rollback releases the claim as well as any partial grant.
     console.error(`Stripe webhook fulfilment failed for ${event.id} (${event.type}):`, err);
-    try {
-      await releaseStripeEvent(database, event.id);
-    } catch (releaseErr) {
-      // If the release itself fails, the event stays claimed and every future
-      // retry silently no-ops forever — the one outcome worse than a slow
-      // retry. Logged loudly rather than swallowed, because this is the last
-      // point where anything can say "a payment may be stuck."
-      console.error(
-        `...and releasing its claim also failed — ${event.id} may be stuck ` +
-          `unfulfilled until this is fixed by hand:`,
-        releaseErr,
-      );
-    }
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Fulfilment failed." },
+      { error: "Fulfilment failed. Please retry." },
       { status: 500 },
     );
   }
-
-  return NextResponse.json({ received: true, handled: true });
 }
 
 /** A one-off pack, or the first payment of a subscription. */
 async function onCheckoutCompleted(
-  database: ReturnType<typeof db>,
+  database: Parameters<typeof applyPurchase>[0],
   session: Stripe.Checkout.Session,
 ): Promise<void> {
   const userId = session.metadata?.userId;
   const productId = session.metadata?.productId;
   if (!userId || !productId) return;
 
-  const product = productById(productId);
+  const product = fulfillableCheckoutProduct(session);
   if (!product) return;
 
   const customerId = typeof session.customer === "string" ? session.customer : null;
   const subscriptionId = typeof session.subscription === "string" ? session.subscription : null;
-  if (customerId) await linkStripeCustomer(database, userId, customerId, subscriptionId);
+  if (customerId) await linkStripeCustomer(database, userId, customerId, subscriptionId ?? undefined);
 
   await applyPurchase(
     database,
@@ -160,9 +147,10 @@ async function onCheckoutCompleted(
 
 /** A plan renewed, lapsed, changed, or was cancelled. */
 async function onSubscriptionChanged(
-  database: ReturnType<typeof db>,
+  database: Parameters<typeof applyPurchase>[0],
   subscription: Stripe.Subscription,
 ): Promise<void> {
+  if (subscription.metadata?.app !== "secondbreakfast") return;
   const customerId = typeof subscription.customer === "string" ? subscription.customer : null;
   const userId =
     subscription.metadata?.userId ??

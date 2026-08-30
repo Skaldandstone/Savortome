@@ -15,3 +15,5 @@
 .field:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 .area { min-height: 140px; resize: vertical; font-size: 14px; }
+
+:global([data-woodland='true']) .field { font-size:1rem; }

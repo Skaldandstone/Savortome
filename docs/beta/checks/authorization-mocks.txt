@@ -1,0 +1,15 @@
+✔ disabled server gate ignores invited identity and frontend flags without reading auth (46.0435ms)
+✔ signed-out redirect contains only validated handoff fields (17.8214ms)
+✔ non-invited user cannot forge access or redirect through query fields (12.2012ms)
+✔ invited user receives only validated care props; arbitrary return rejected (16.9749ms)
+✔ missing Clerk configuration cannot enable local preview in production (20.1799ms)
+✔ local development preview remains usable without an account (47.6674ms)
+✔ unavailable/expired auth fails closed and never renders care (26.0507ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12189.5541

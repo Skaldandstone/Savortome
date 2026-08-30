@@ -1,0 +1,26 @@
+$ tsx scripts/check-suggestions.ts
+--- suggesting ---
+PASS  a non-friend cannot suggest anything to you
+PASS  a friend cannot suggest a dish you wouldn't be able to see
+PASS  the suggestion shows up on the owner's pending pile
+PASS  ...naming who suggested it
+PASS  ...and what it's for
+PASS  the calendar is untouched until the suggestion is accepted
+
+--- dismissing ---
+PASS  nobody but the owner can dismiss it
+
+--- accepting ---
+PASS  the owner can accept it
+PASS  accepting actually plans it
+PASS  ...with a title that reads correctly
+PASS  the planned recipe is the owner's own copy, not the friend's
+PASS  ...recorded as copied from the original
+PASS  the accepted suggestion leaves the pending pile
+PASS  accepting an already-accepted suggestion is a no-op, not a duplicate plan entry
+
+--- the recipe going private in the meantime ---
+PASS  accepting a suggestion whose dish went private fails cleanly
+PASS  ...and clears it from the pending pile rather than offering it forever
+
+All good.

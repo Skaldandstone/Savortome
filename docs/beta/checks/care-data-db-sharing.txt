@@ -1,0 +1,30 @@
+$ tsx scripts/check-sharing.ts
+PASS  owner sees their private recipe
+PASS  owner sees their friends-only recipe
+PASS  owner sees their public recipe
+PASS  a friend cannot see a private recipe
+PASS  a stranger cannot see a private recipe
+PASS  a signed-out visitor cannot see a private recipe
+PASS  a friend sees a friends-only recipe
+PASS  a stranger cannot see a friends-only recipe
+PASS  a signed-out link visitor cannot see a friends-only recipe
+PASS  a stranger sees a public recipe
+PASS  a signed-out visitor sees a public recipe
+PASS  owner can publish
+PASS  a stranger cannot change someone else's visibility
+PASS  ...and the recipe is untouched
+PASS  owner can unpublish, and the link stops working
+PASS  the copy belongs to whoever saved it
+PASS  the copy records where it came from
+PASS  a saved copy starts private
+PASS  the copy keeps the original's ingredients
+PASS  the copy is indexed for pantry search
+PASS  saving twice returns the same copy rather than duplicating
+PASS  the shared view reports it as already saved
+PASS  the shared view counts saves
+PASS  the shared view names who shared it
+PASS  the owner is not offered a save of their own recipe
+PASS  saving your own recipe is refused
+PASS  saving a recipe you cannot see is refused
+
+ALL CHECKS PASSED

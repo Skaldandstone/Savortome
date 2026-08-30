@@ -31,6 +31,11 @@ export const dark: typeof light = {
 };
 
 export type Palette = typeof light;
+// Private Android builds opt into the woodland beta. This never grants API authorization.
+if (process.env.EXPO_PUBLIC_WOODLAND_BETA === 'true') {
+  Object.assign(light, { bg:'#f3eddf',surface:'#fffaf0',surfaceSunken:'#e9e1d0',border:'#bdb29c',text:'#24342e',textMuted:'#566258',accent:'#795022',accentSoft:'#eadfc8' });
+  Object.assign(dark, { bg:'#111e1d',surface:'#1b2b28',surfaceSunken:'#22352e',border:'#5b6452',text:'#f0e7d5',textMuted:'#b5bdaa',accent:'#e2b97b',accentSoft:'#3c3827' });
+}
 
 export const radius = { sm: 10, md: 14, pill: 999 };
 export const space = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 };

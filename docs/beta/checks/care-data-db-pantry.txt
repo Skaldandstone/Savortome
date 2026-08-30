@@ -1,0 +1,37 @@
+$ tsx scripts/check-pantry.ts
+PASS  pantry stores what was added
+PASS  pantry keeps quantities
+PASS  re-adding updates rather than duplicating
+PASS  re-adding overwrites the detail
+PASS  removing works
+PASS  staples are assumed, so chicken+rice is cookable
+PASS  the stale is_staple column is ignored
+PASS  optional ingredients are reported, not required
+PASS  cookable recipes rank first
+PASS  an all-staple recipe is always cookable
+PASS  an all-staple recipe scores full coverage
+PASS  perishables are never assumed
+PASS  missing perishables are listed
+PASS  SQL agrees with the rules for "Chicken and rice" (cookable)
+PASS  SQL agrees with the rules for "Chicken and rice" (missing)
+PASS  SQL agrees with the rules for "Chicken and rice" (coverage)
+PASS  SQL agrees with the rules for "Onion soup" (cookable)
+PASS  SQL agrees with the rules for "Onion soup" (missing)
+PASS  SQL agrees with the rules for "Onion soup" (coverage)
+PASS  SQL agrees with the rules for "Salted flatbread" (cookable)
+PASS  SQL agrees with the rules for "Salted flatbread" (missing)
+PASS  SQL agrees with the rules for "Salted flatbread" (coverage)
+PASS  SQL agrees with the rules for "Peanut noodles" (cookable)
+PASS  SQL agrees with the rules for "Peanut noodles" (missing)
+PASS  SQL agrees with the rules for "Peanut noodles" (coverage)
+PASS  tag filter narrows the set
+PASS  time filter drops the slow one
+PASS  time filter keeps the quick ones
+PASS  course filter works
+PASS  exclusion removes the recipe entirely
+PASS  filters combine
+PASS  everything cookable comes before anything that isn't
+PASS  an empty pantry still returns the all-staple recipe as cookable
+PASS  an empty pantry returns everything, ranked
+
+ALL CHECKS PASSED

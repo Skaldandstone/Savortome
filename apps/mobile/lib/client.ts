@@ -1,6 +1,7 @@
 import { createClient } from "@seconds/core/format";
 import { getClerkInstance } from "@clerk/expo";
 import { apiBaseUrl } from "./api";
+import { getAccountToken } from './accountToken';
 
 /**
  * Network client for the Second Breakfast server. Unlike the web app there is no cookie
@@ -20,3 +21,8 @@ export const api = createClient({
     }
   },
 });
+
+/** Sensitive writes cannot acquire another account's token during an account switch. */
+export function createAccountClient(accountId: string) {
+  return createClient({ baseUrl: apiBaseUrl(), getToken: () => getAccountToken(accountId, () => getClerkInstance().session) });
+}

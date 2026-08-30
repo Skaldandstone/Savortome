@@ -1,0 +1,34 @@
+$ tsx scripts/check-editor.ts
+PASS  a hand-written recipe saves
+PASS  ...with no source to attribute
+PASS  ...and nothing was inferred
+PASS  ...so it starts out checked
+PASS  ...and pantry search can find it
+PASS  two hand-written recipes don't collide on the one-per-source rule
+PASS  a recipe needs a name
+PASS  a recipe needs an ingredient
+PASS  a recipe needs a step
+PASS  times can't be negative
+PASS  and none of those wrote anything
+PASS  an imported card starts unchecked
+PASS  the edit saved
+PASS  ...the correction stuck
+PASS  ...pantry search follows the correction
+PASS  ...steps are renumbered by position
+PASS  ...tags are tidied and deduplicated
+PASS  ...and it counts as checked now
+PASS  ...but where it came from is untouched
+PASS  ...as is what we admit we guessed
+PASS  ...and who can see it
+PASS  an edit is validated too
+PASS  ...and a rejected edit changes nothing
+PASS  you can't edit someone else's recipe
+PASS  ...and it really didn't change
+PASS  you can't delete someone else's recipe
+PASS  editing a recipe that doesn't exist is a no-op, not an error
+PASS  you can delete your own
+PASS  ...it's gone
+PASS  ...and it took its search index with it
+PASS  deleting it twice is harmless
+
+All good.

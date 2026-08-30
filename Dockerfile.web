@@ -8,6 +8,11 @@ WORKDIR /app
 # has to arrive as a build arg, not a task-definition env var.
 ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ARG NEXT_PUBLIC_ENABLE_SW=false
+ENV NEXT_PUBLIC_ENABLE_SW=$NEXT_PUBLIC_ENABLE_SW
+ARG SB_RELEASE_COMMIT=unknown
+LABEL org.opencontainers.image.revision=$SB_RELEASE_COMMIT
+LABEL com.secondbreakfast.public-cache-version="3"
 
 COPY . .
 # --filter @seconds/web... skips apps/mobile's expo dependency tree entirely.

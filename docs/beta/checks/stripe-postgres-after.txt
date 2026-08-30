@@ -1,0 +1,8 @@
+(node:64296) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+PASS standalone purchase, credit grant and marker all roll back after an injected post-grant failure
+PASS event receipt and customer link roll back with failed fulfillment
+PASS retried and distinct concurrent event IDs grant a Session once and preserve the existing subscription
+PASS two real PostgreSQL connections serialize a pending Session and grant it exactly once
+PASS all grants and customer changes remain scoped to the fixture owner
+PASS 5 local PostgreSQL billing scenarios; no Stripe network requests

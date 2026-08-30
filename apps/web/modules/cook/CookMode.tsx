@@ -158,7 +158,7 @@ export function CookMode({ recipe, recipeId }: { recipe: Recipe; recipeId: strin
       </header>
 
       {showIngredients ? (
-        <div className={styles.ingredients}>
+        <div className={styles.ingredients} role="region" aria-label="Recipe ingredients" tabIndex={0}>
           {servings.canScale && servings.servings !== null ? (
             <ServingScaler
               servings={servings.servings}
@@ -202,7 +202,7 @@ export function CookMode({ recipe, recipeId }: { recipe: Recipe; recipeId: strin
         <div className={styles.progressFill} style={{ width: `${progress.fraction * 100}%` }} />
       </div>
 
-      <main className={styles.stage}>
+      <section className={styles.stage} aria-label="Current cooking step">
         <p className={styles.counter}>
           Step {step.n} of {steps.length}
         </p>
@@ -246,9 +246,9 @@ export function CookMode({ recipe, recipeId }: { recipe: Recipe; recipeId: strin
             </a>
           ) : null}
         </div>
-      </main>
+      </section>
 
-      <nav className={styles.controls}>
+      <nav className={styles.controls} aria-label="Cooking steps">
         <Button type="button" variant="ghost" disabled={index === 0} onClick={() => go(-1)}>
           ← Back
         </Button>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   MEAL_SLOT_LABEL,
   dayLabel,
@@ -34,6 +34,7 @@ export function AddMealDialog({
 }) {
   const [filter, setFilter] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
 
   useEffect(() => {
     dialog.current?.showModal();
@@ -46,10 +47,10 @@ export function AddMealDialog({
   }, [filter, recipes]);
 
   return (
-    <dialog ref={dialog} className={styles.dialog} onClose={onClose}>
+    <dialog ref={dialog} className={styles.dialog} onClose={onClose} aria-labelledby={titleId}>
       <form method="dialog" className={styles.dialogHead}>
         <div>
-          <h2 className={styles.dialogTitle}>
+          <h2 className={styles.dialogTitle} id={titleId}>
             {MEAL_SLOT_LABEL[slot]}, {dayLabel(date)}
           </h2>
           <p className={styles.dialogHint}>Pick something from your recipes.</p>

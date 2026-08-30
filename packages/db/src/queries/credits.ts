@@ -8,8 +8,10 @@ import {
   type ExtractionMethod,
   type Tier,
 } from "@seconds/core";
-import type { Database } from "../client.js";
+import type { Database as ConnectionDatabase } from "../client.js";
 import * as schema from "../schema.js";
+
+type Database = Pick<ConnectionDatabase, "select" | "insert" | "update">;
 
 /**
  * Reading and spending AI credits.

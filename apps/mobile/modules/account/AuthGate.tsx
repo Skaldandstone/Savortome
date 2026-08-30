@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
-import { ActivityIndicator, StyleSheet, View } from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { Link } from 'expo-router';
 import { ClerkLoaded, ClerkLoading, Show } from "@clerk/expo";
 import { usePalette } from "@/ui";
 import { SignInScreen } from "./SignInScreen";
@@ -11,6 +12,7 @@ import { SignInScreen } from "./SignInScreen";
  */
 export function AuthGate({ children }: { children: ReactNode }) {
   const c = usePalette();
+  if (!process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY) return <View style={{ padding:24, backgroundColor:c.bg }}><Text style={{color:c.text}}>Account features need the beta account configuration. Feed me gently works without an account.</Text><Link href="/care" style={{color:c.accent,paddingVertical:20}}>Open Feed me gently</Link></View>;
 
   return (
     <>

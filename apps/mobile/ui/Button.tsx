@@ -23,7 +23,7 @@ export function Button({
 
   const background =
     variant === "primary" ? c.accent : selected ? c.accentSoft : "transparent";
-  const color = variant === "primary" ? "#fff" : selected ? c.accent : c.textMuted;
+  const color = variant === "primary" ? (c.accent === '#e2b97b' ? '#111e1d' : '#fff') : selected ? c.accent : c.textMuted;
   const borderColor = variant === "ghost" || (variant === "toggle" && selected) ? c.border : "transparent";
 
   return (
@@ -47,9 +47,9 @@ export function Button({
 }
 
 const styles = StyleSheet.create({
-  base: { borderRadius: radius.sm, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  base: { borderRadius: radius.sm, borderWidth: 1, minHeight: 44, maxWidth: "100%", alignItems: "center", justifyContent: "center" },
   primary: { paddingVertical: 12, paddingHorizontal: 20 },
   compact: { paddingVertical: 6, paddingHorizontal: 12 },
-  label: { fontWeight: "600", fontSize: typeScale.body },
+  label: { textAlign: "center", fontWeight: "600", fontSize: typeScale.body },
   compactLabel: { fontSize: typeScale.small, fontWeight: "500" },
 });

@@ -1,0 +1,430 @@
+[
+  {
+    "path": "apps/mobile/app/_layout.tsx",
+    "sha256": "12112bc132579fea028e56b3da7805863b505fb1e0a46d57780a5f131a81f771"
+  },
+  {
+    "path": "apps/mobile/app/+native-intent.tsx",
+    "sha256": "0711875c8afaae83b8bee938cbdecfcf842eac2a5d52edbc12a390cf5535e6f7"
+  },
+  {
+    "path": "apps/mobile/app/care.tsx",
+    "sha256": "3cccdf084c369d72c66ab225d74bca06110d83e9e79f01345c256bf847d89807"
+  },
+  {
+    "path": "apps/mobile/app/legal.tsx",
+    "sha256": "f72a4dc1fe1e3ca8673d85c6812e96a89dab209c21801d6159d26a439af0a346"
+  },
+  {
+    "path": "apps/mobile/app/(protected)/_layout.tsx",
+    "sha256": "3a747a942f11cff4d27bf4889a1e73c91240b219fcc3a7ed80c3fbaf16ffe8a5"
+  },
+  {
+    "path": "apps/mobile/app/(protected)/import.tsx",
+    "sha256": "418ea9c1ef96375dbf95eca19aa8f3eac5a0f7038ca7b910dde9dd98914c5135"
+  },
+  {
+    "path": "apps/mobile/app/(protected)/(tabs)/_layout.tsx",
+    "sha256": "dc05191952c92a5d9653a3192864513b4665890b033a7ab24199c53174dbbbcf"
+  },
+  {
+    "path": "apps/mobile/app/(protected)/(tabs)/cook.tsx",
+    "sha256": "ba3141b99e46ba5f46d34abdeea72a6777fe3917a213496170ab0b61148eb016"
+  },
+  {
+    "path": "apps/mobile/app/(protected)/(tabs)/discover.tsx",
+    "sha256": "f60410a16e6007e84d431064dc857fedda5c00cbd660704c9e4eeb207f294feb"
+  },
+  {
+    "path": "apps/mobile/app/(protected)/(tabs)/friends.tsx",
+    "sha256": "852066b4fe6a862204d930d685b39487a3b254a67e3ba6437c2532538f17a7a5"
+  },
+  {
+    "path": "apps/mobile/app/(protected)/(tabs)/index.tsx",
+    "sha256": "7d3c7146e26f423a236680b55586e547d13e546fa1e370858b4fcda26de15990"
+  },
+  {
+    "path": "apps/mobile/app/(protected)/(tabs)/list.tsx",
+    "sha256": "e2279908d44d0b8335fe5241e695b9571f1e165cb6fd056adba5cecc31f4e5f0"
+  },
+  {
+    "path": "apps/mobile/app/(protected)/(tabs)/plan.tsx",
+    "sha256": "93a4a1dd59b2d7369e28ac25eae4f4d947e4ac7b7b38dbe02d770995178c10ef"
+  },
+  {
+    "path": "apps/mobile/app/(protected)/r/[id].tsx",
+    "sha256": "97eec996a18f1dd36de0092e4ce1e7ff2ddef591b9a90bab9a5bca0378f5aa40"
+  },
+  {
+    "path": "apps/mobile/app/(protected)/recipe/new.tsx",
+    "sha256": "1f219bc38bc54aae4c007b34167965e56d3aa5263251ba60585b24ea6ee1d06a"
+  },
+  {
+    "path": "apps/mobile/app/(protected)/recipe/[id]/cook.tsx",
+    "sha256": "19035f3ef35f6b7fc3c5ef295890723d0eefa4ffb09a9ec626bfafdf10c6dea9"
+  },
+  {
+    "path": "apps/mobile/app/(protected)/recipe/[id]/edit.tsx",
+    "sha256": "3dc6066f347e5e43dfab3a72678d9b5c5fe48efde83dc51e003921d472459259"
+  },
+  {
+    "path": "apps/mobile/app/(protected)/recipe/[id]/index.tsx",
+    "sha256": "c2f05ff316a24200fe80d83fa9a14fff39e207f212548c7b169dcec337e2a34d"
+  },
+  {
+    "path": "apps/mobile/assets/adaptive-icon.png",
+    "sha256": "1d7d5710bc3e38e232edb22ef215374a965721daa90862689727c92727e1ec9f"
+  },
+  {
+    "path": "apps/mobile/assets/hearth.png",
+    "sha256": "14b5667c03722b56809c5e900d76afd3d61df129f99bf7854c1bb8124f045bad"
+  },
+  {
+    "path": "apps/mobile/assets/icon.png",
+    "sha256": "92992a1322314d9d9b39c5f1ccd79c5f858c07498a06aae33e03180eae7ab9ab"
+  },
+  {
+    "path": "apps/mobile/assets/kettle-journal.png",
+    "sha256": "a7e472cdec2f7f8371b88d08e0599e3ca7b520a46fbbd6ea4c8cdf0e497c93d1"
+  },
+  {
+    "path": "apps/mobile/assets/notification-icon.png",
+    "sha256": "399c6f8d0be2a9b085120251c1e2daa38acb93f8f5e651fa6fb0762da95c0e1d"
+  },
+  {
+    "path": "apps/mobile/assets/splash-icon.png",
+    "sha256": "ad1c11b39dd823e3d164a4eb24df9d60256022055acf7650baf9c4049c7beca4"
+  },
+  {
+    "path": "apps/mobile/lib/accountToken.ts",
+    "sha256": "da9764bec57275858002b5b071efe4946c74d526b27d741f0289a855b45480dd"
+  },
+  {
+    "path": "apps/mobile/lib/api.ts",
+    "sha256": "cba056cbe3445a9eec1b67ff17a3a477f59ad4e6336840358f5156d63bfc1424"
+  },
+  {
+    "path": "apps/mobile/lib/client.ts",
+    "sha256": "1e702a587c166851270e8bd708971fe307473f286dd7b15c9b4bef7aba9be4a4"
+  },
+  {
+    "path": "apps/mobile/modules/account/AuthGate.tsx",
+    "sha256": "9490a185013ec50b092889fd74acfadd4580591d56368fc514abd482bfa8c72c"
+  },
+  {
+    "path": "apps/mobile/modules/account/index.ts",
+    "sha256": "b81007f3e85e71427c8648e6de4591aedf2d8bd9c648cb7baafa1a35c76dd733"
+  },
+  {
+    "path": "apps/mobile/modules/account/SignInScreen.tsx",
+    "sha256": "eacf162839637a1b0afcef6c2d1883a88bc9c82a518d2442be6521f1353e552d"
+  },
+  {
+    "path": "apps/mobile/modules/account/SignOutButton.tsx",
+    "sha256": "e1c1b35df3a13869302209a7e7df4ea78a3281101ad459c0f88d4652f8c89050"
+  },
+  {
+    "path": "apps/mobile/modules/care/CareScreen.tsx",
+    "sha256": "c58a3391401c3ec382e83a3d4263781dbe477d6881da44843e08cdb4febaa553"
+  },
+  {
+    "path": "apps/mobile/modules/care/nativeLink.ts",
+    "sha256": "d3fd00693834ca97e6d3152552fed549f0e6867f74b7917436b5e3c0501b91c4"
+  },
+  {
+    "path": "apps/mobile/modules/care/saveIdea.ts",
+    "sha256": "26faf477ff3dd52ac52f3cc326127e68b62b444066f3b7568324e65e97cfb979"
+  },
+  {
+    "path": "apps/mobile/modules/cook/CookScreen.tsx",
+    "sha256": "1f03c087adf90cdceee254369fa4d316952e28988c9fb7baaa0b9a9ad4ef4880"
+  },
+  {
+    "path": "apps/mobile/modules/cook/FinishPanel.tsx",
+    "sha256": "2cac81ab437e692827eefe9bbbf38af75c6fe6829b33085772e35e27b9a5f454"
+  },
+  {
+    "path": "apps/mobile/modules/cook/index.ts",
+    "sha256": "48ce91827c0a38a9e536eea42524dc9cee8920d16d5ed0ccfed52b4130f7099f"
+  },
+  {
+    "path": "apps/mobile/modules/cook/notify.ts",
+    "sha256": "77f679fd0f3d7e36450f0d0e3b3eb1f8634134411138c022b7017d36093db2a8"
+  },
+  {
+    "path": "apps/mobile/modules/cook/TimerTray.tsx",
+    "sha256": "f987f35c84b27b5cb581d4ca0881a3d17c9974993fb4230b322b7f5cf5a5bf11"
+  },
+  {
+    "path": "apps/mobile/modules/cook/useCookSession.ts",
+    "sha256": "5d7af5ba17f330a26720f47d5218411aada69fad8534fd325352d8092bf57cfa"
+  },
+  {
+    "path": "apps/mobile/modules/cook/useTimers.ts",
+    "sha256": "5a308f83568e3fa26d0eea6a6f309be152b4dc6217975be22e22559fe2a203fd"
+  },
+  {
+    "path": "apps/mobile/modules/discover/DiscoverScreen.tsx",
+    "sha256": "f127af9c7656fe7bc158a9211d487e71766b40e38f047160fceb881a917dce8b"
+  },
+  {
+    "path": "apps/mobile/modules/discover/index.ts",
+    "sha256": "20828ef85a03088a9ef659662da23c11040e4a0948622492ff9dea1c2de26a26"
+  },
+  {
+    "path": "apps/mobile/modules/editor/DetailFields.tsx",
+    "sha256": "bfa66d5777577c1ead8594b4238033dad48eed168268199abcd6aa14e4d375f3"
+  },
+  {
+    "path": "apps/mobile/modules/editor/index.ts",
+    "sha256": "3a345e2130d21a75bc460b9c37df4c37fcc1cfbfab26169ad78511df15633ef6"
+  },
+  {
+    "path": "apps/mobile/modules/editor/IngredientRows.tsx",
+    "sha256": "f062d78ace6dfe6aae409740dd3438af0bfbb9dd97a7e6df64340baea631aad3"
+  },
+  {
+    "path": "apps/mobile/modules/editor/RecipeEditorScreen.tsx",
+    "sha256": "0bbee6297e2a0b8813b7f07e52e1a3b4c154e950a9a2b735de2a88c8d15beba1"
+  },
+  {
+    "path": "apps/mobile/modules/editor/RowActions.tsx",
+    "sha256": "44c1823c3abc6dde02416530ea6100d598c77e160ff7942f4614e67c7e48c993"
+  },
+  {
+    "path": "apps/mobile/modules/editor/StepRows.tsx",
+    "sha256": "77af6644bc8f4cb41ab179583b5cf2b9c667b0f9e0dec9134919180e51ba41e9"
+  },
+  {
+    "path": "apps/mobile/modules/editor/useDraft.ts",
+    "sha256": "72f38636328e2969fe616f762d262ca59ea4e5c6c871da9f82aa0f420361bcd6"
+  },
+  {
+    "path": "apps/mobile/modules/friends/FriendsScreen.tsx",
+    "sha256": "be977dcb05e78aa36c2d82c98e29c3809bd9e64d950646711ae1683b6565fa28"
+  },
+  {
+    "path": "apps/mobile/modules/friends/index.ts",
+    "sha256": "8c6e74a8317b5830e8dde11679506d327a2c6facc729a8d1447e1f57252372f8"
+  },
+  {
+    "path": "apps/mobile/modules/import/ClipboardSuggestion.tsx",
+    "sha256": "bb925a30287fc151bbd2a9f435a3c5c54db106edaac1f9e248e8fcfa799ca8a6"
+  },
+  {
+    "path": "apps/mobile/modules/import/CreditMeter.tsx",
+    "sha256": "9a6bcf2f2e354d9b9d078d15e69e3e114f7719fbc3a463f052c7a8f2ae448355"
+  },
+  {
+    "path": "apps/mobile/modules/import/ImportForm.tsx",
+    "sha256": "fd9f2f82ae6d013f6f36effcab5d72112322a7c561c9e6ab0138833df9a39196"
+  },
+  {
+    "path": "apps/mobile/modules/import/ImportProgress.tsx",
+    "sha256": "c41708a9be19b927d56269e1508178712e042b368a8744bebce093aafdbbaf97"
+  },
+  {
+    "path": "apps/mobile/modules/import/ImportScreen.tsx",
+    "sha256": "d3668bc0c7085dc4b3addb0099dd1327b29e3e87f9ce65603347296eae016bce"
+  },
+  {
+    "path": "apps/mobile/modules/import/index.ts",
+    "sha256": "e4cc2a8ec34a9a671ba95d1f13895cd5a8478250fbd644efac441d0c96fdca2c"
+  },
+  {
+    "path": "apps/mobile/modules/import/ModeSwitch.tsx",
+    "sha256": "d7f6e867e1b9d976f0dfc3b2578ad95e77cdd2f73d0198161749ab066d1f54b3"
+  },
+  {
+    "path": "apps/mobile/modules/import/useClipboardLink.ts",
+    "sha256": "6c0deae18dbd2c5546e291fc14e2d764c4ecbe22c3b94ae5433d5797aa467bd3"
+  },
+  {
+    "path": "apps/mobile/modules/import/useImport.ts",
+    "sha256": "8dbd7857d77ae3cf45691a1446a988a772178ffa83ba5505c3abf5e2ed6caf96"
+  },
+  {
+    "path": "apps/mobile/modules/library/index.ts",
+    "sha256": "faaf3ad3e3f59fa872e4c8a3f6fd53cc38ef7e8940a1783ea869541a60ce6e38"
+  },
+  {
+    "path": "apps/mobile/modules/library/LibraryScreen.tsx",
+    "sha256": "4daa46d86bf7f28ea3d7ef465388f90a8655aa83df058bc077c173f1c7da8f23"
+  },
+  {
+    "path": "apps/mobile/modules/list/index.ts",
+    "sha256": "75c79ca2b086c7419ad751d204b07e9da61dbc6a6656778d8280c8a6d327c524"
+  },
+  {
+    "path": "apps/mobile/modules/list/KrogerConnection.tsx",
+    "sha256": "b6cb6d3d3c032bf7056669c15d8524f15be4cca1152b5d78c0fa99997a738bff"
+  },
+  {
+    "path": "apps/mobile/modules/list/ListScreen.tsx",
+    "sha256": "ea47c31eca1a1522673da0e4ec665256e9c5e153dcd2394752bfd93266ffa131"
+  },
+  {
+    "path": "apps/mobile/modules/list/useShoppingList.ts",
+    "sha256": "a2a7e79eeac36cd3bf04ff5ad1bbe7b708ced41200d491216cc576877ee1a13b"
+  },
+  {
+    "path": "apps/mobile/modules/pantry/CookScreen.tsx",
+    "sha256": "724bf49d70e31b7ffb87d48a8503f4e74c7282b313402587fe214816c6127248"
+  },
+  {
+    "path": "apps/mobile/modules/pantry/index.ts",
+    "sha256": "b7232d60118a21eef46d5fbbab7a5c7e1dea28c90cb41da2f545bbdadfc99e93"
+  },
+  {
+    "path": "apps/mobile/modules/pantry/MatchList.tsx",
+    "sha256": "7f6f9fa7d8b56d1c5395407c765b0d2639d05d7528ad3c61591a3f3611800e94"
+  },
+  {
+    "path": "apps/mobile/modules/pantry/PantryChips.tsx",
+    "sha256": "f43b7452927d2193c1e39b577d1a5037efa1b70a2df432f0a3ce177264c67c3d"
+  },
+  {
+    "path": "apps/mobile/modules/pantry/usePantry.ts",
+    "sha256": "94880a23f31222293815ddfd6b907adab2f7d30618772a3bcac380794adf7d66"
+  },
+  {
+    "path": "apps/mobile/modules/plan/index.ts",
+    "sha256": "f3706acfbd381e2721fdf9e8a07ec113407fa743a9b5b1a268a2b77871eadf6b"
+  },
+  {
+    "path": "apps/mobile/modules/plan/PlanScreen.tsx",
+    "sha256": "bf307855b7ca6dac36a4b284fec92e0026dd03abc7ac2494798844f463aa7b45"
+  },
+  {
+    "path": "apps/mobile/modules/recipe/index.ts",
+    "sha256": "e3e77c98f35f61b83e6a5156b1ac54cb601cc9db8a583a1499c7b096f70a4cfc"
+  },
+  {
+    "path": "apps/mobile/modules/recipe/IngredientList.tsx",
+    "sha256": "0756a255a2b085f2a934c63b776f338158a10365fbb42152cafd0098c6541d32"
+  },
+  {
+    "path": "apps/mobile/modules/recipe/Provenance.tsx",
+    "sha256": "90202cc6562a9ce055af75764e54055069ede018d6632e957e127ea80baf5901"
+  },
+  {
+    "path": "apps/mobile/modules/recipe/RecipeCard.tsx",
+    "sha256": "1a275418146c881daaccd857f0a55e7123c22dc0363a4ad46d0e1413338ca91a"
+  },
+  {
+    "path": "apps/mobile/modules/recipe/RecipeFacts.tsx",
+    "sha256": "2e079d6a13dc164e93f46078b3fbc64d93656698bffb2b5dfbe69bb25f9706e1"
+  },
+  {
+    "path": "apps/mobile/modules/recipe/RecipeHeader.tsx",
+    "sha256": "c706e49320c19e38210ad6756e66b8fdd344b6fb925a9b7ef07d2f0b58268e67"
+  },
+  {
+    "path": "apps/mobile/modules/recipe/RecipeShare.tsx",
+    "sha256": "94a64fa4ad560c847809c25894d355e2464c7d38e9e1ea66a146ab5e6ccfb1c2"
+  },
+  {
+    "path": "apps/mobile/modules/recipe/StepList.tsx",
+    "sha256": "0c906a0bccd47d6e22a3d4cc6bd011b27d747e01883c7b4153416dc235fab9c9"
+  },
+  {
+    "path": "apps/mobile/modules/recipe/useServings.ts",
+    "sha256": "8534f677bfa471e56f7e3447b2719d60e0152ab5b9af8cebd6d3e40a5d597167"
+  },
+  {
+    "path": "apps/mobile/modules/sharing/index.ts",
+    "sha256": "d84b47e346b49b62873e55769a3f3f1aed37cb5a214607a21f4d40c4b27d44cb"
+  },
+  {
+    "path": "apps/mobile/modules/sharing/ShareControl.tsx",
+    "sha256": "472b5f5f3065dc9ffeb8338cf75e237df129490e66fcc129818110d61b402df0"
+  },
+  {
+    "path": "apps/mobile/modules/sharing/SharedRecipeScreen.tsx",
+    "sha256": "4cb334d3dcf05a7d60f02039df39881f4c78ffd48d664d5e4bfcda735071de5b"
+  },
+  {
+    "path": "apps/mobile/modules/shelves/index.ts",
+    "sha256": "c9ce2476f1fcdd536d65cc38cdd171c5de3c3db98b8fbf19e76485d2b07c34c1"
+  },
+  {
+    "path": "apps/mobile/modules/shelves/ShelfChecklist.tsx",
+    "sha256": "2b9d0652ab838550617db14b0103a1d08dd1e014e0bb488bd97912f842655825"
+  },
+  {
+    "path": "apps/mobile/modules/shelves/ShelfControls.tsx",
+    "sha256": "075ff271bf358048d1feda7580312dd1eb1d46f1758e0d71b0902ec30854a5dc"
+  },
+  {
+    "path": "apps/mobile/modules/shelves/StarRating.tsx",
+    "sha256": "320d04aa4ceff95053174e90ec34f2e2476db41e98e7ac8dc171d1f8e6d96be8"
+  },
+  {
+    "path": "apps/mobile/modules/shelves/StatusPicker.tsx",
+    "sha256": "9525e2468127799ae2e0c52551347f450143a0b87c39b8780dce22b3acfcad2a"
+  },
+  {
+    "path": "apps/mobile/modules/shelves/useShelfState.ts",
+    "sha256": "6dbf5de365a9a62a05ba62a9bde29d929aa72fe2af55146ac6b38719ebd0e73c"
+  },
+  {
+    "path": "apps/mobile/modules/woodland/KitchenWelcome.tsx",
+    "sha256": "afe1df3caf90c1f0d47a8ec47cec7dc7ab9a55134cab9c3b5d78c827e8edb18d"
+  },
+  {
+    "path": "apps/mobile/ui/Button.tsx",
+    "sha256": "594924e70460d54d6f8b09f65c3b74f4b0842d9a78f703212779240e670ade68"
+  },
+  {
+    "path": "apps/mobile/ui/Callout.tsx",
+    "sha256": "ee957b704ddf4afc40f4f173084394208ea2f3aa37cf1d5a091feee473761d00"
+  },
+  {
+    "path": "apps/mobile/ui/Field.tsx",
+    "sha256": "a43102aaa4a3b9ac27446e58b9b33411019e313142710a59b42e78c4b8cbff11"
+  },
+  {
+    "path": "apps/mobile/ui/index.ts",
+    "sha256": "ce16d42f16fc98fc486144563ab8831dc12ac1f34869f2b65279815e8c995a55"
+  },
+  {
+    "path": "apps/mobile/ui/Panel.tsx",
+    "sha256": "e8d1551377b714065be067ee99faf2e1537c3e9f5f9745dea98d32e76bb852d8"
+  },
+  {
+    "path": "apps/mobile/ui/theme.ts",
+    "sha256": "4aca377a7bee4452e73f0bd58d50ba88121a46e91aa2799a2081a99a0eb141f7"
+  },
+  {
+    "path": "apps/mobile/ui/ThemeProvider.tsx",
+    "sha256": "959b3c8dcae48375243cfac7d0198ba86e5e673e57f6d442f25ee98dbe4ad6f6"
+  },
+  {
+    "path": "apps/mobile/scripts/build-android-review.ps1",
+    "sha256": "5b1cd0f939e56e3979a04a28410171367fabfb519b7faa5f5a052c6814940d15"
+  },
+  {
+    "path": "apps/mobile/scripts/windows-native.init.gradle",
+    "sha256": "9c2f347cab8c7b48bb188cd6b15a4843752ac380e4ccef6171a9fcf235aff3c2"
+  },
+  {
+    "path": "apps/mobile/app.json",
+    "sha256": "685a370c57c6616f4ef4b373da7fea885b9210d5b2af241711273366025ad00e"
+  },
+  {
+    "path": "apps/mobile/package.json",
+    "sha256": "07044da01fb0e57f472c438da713c266a63ac3179ab130343245a8b7c1fd6e34"
+  },
+  {
+    "path": "packages/core/src/care.ts",
+    "sha256": "f2247e78ffb654123fea0124af637d884f09fecbff203c2ff86316793fa8a8a3"
+  },
+  {
+    "path": "packages/core/src/dietary.ts",
+    "sha256": "4825fbb98c55f35c8f51c0c3d487f8bdca80c3a236e664b141142a54e7096c4d"
+  },
+  {
+    "path": "packages/core/src/units.ts",
+    "sha256": "864c1aa599e425a2fbd5f8acd48aee54fae50ed0c275f950cd91b6febf9db89c"
+  }
+]

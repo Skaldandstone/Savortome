@@ -14,6 +14,7 @@ import {
   type LibrarySort,
 } from "@seconds/core/format";
 import { api } from "@/lib/client";
+import { KitchenWelcome } from '@/modules/woodland/KitchenWelcome';
 import { SignOutButton } from "@/modules/account";
 import { Button, Callout, Field, radius, space, type as typeScale, usePalette } from "@/ui";
 
@@ -126,6 +127,7 @@ export function LibraryScreen() {
         <View style={styles.spacer} />
         <SignOutButton />
       </View>
+      <KitchenWelcome />
 
       <Link href="/import" asChild>
         <Pressable style={[styles.importCta, { backgroundColor: c.accent }]}>

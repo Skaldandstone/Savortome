@@ -32,7 +32,7 @@
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#b4451f"
+        "backgroundColor": "#FFB84D"
       },
       "permissions": [
         "android.permission.POST_NOTIFICATIONS"

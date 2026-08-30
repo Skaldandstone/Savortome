@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
+  async headers() {
+    return [
+      { source: '/api/:path*', headers: [{ key: 'Cache-Control', value: 'private, no-store' }] },
+      { source: '/care', headers: [{ key: 'Cache-Control', value: 'private, no-store' }, { key: 'Referrer-Policy', value: 'no-referrer' }, { key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
+      { source: '/sw.js', headers: [{ key: 'Cache-Control', value: 'no-cache' }] },
+    ];
+  },
   /**
    * `next build` and `next dev` both write to `.next` by default, so building
    * while the dev server is running leaves it serving production chunks it

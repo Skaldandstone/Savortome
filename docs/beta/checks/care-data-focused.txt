@@ -1,0 +1,29 @@
+✔ destructive beta fixtures reject query overrides and every other database (1.6692ms)
+✔ link parser removes private, unknown, duplicate and malformed values (3.2999ms)
+✔ malformed containers and inherited or unknown fields cannot become link parameters (0.8441ms)
+✔ all seven documented handoff fields round trip without any extra personal data (0.3728ms)
+✔ all combinations keep explicit effort and time ceilings and unique choices (11.8826ms)
+✔ each available candidate fills the next slot, including equal-time alternatives (4.1892ms)
+✔ pantry priority remains intact across all slots rather than forcing a slower second choice (1.5986ms)
+✔ pantry names use the existing canonicalizer and complete coverage precedes partial coverage (4.7774ms)
+✔ pantry canonicalization never changes preparation requirements or relaxes restrictions (8.4038ms)
+✔ sensory, appetite and dietary filters apply to every suggestion slot (27.7289ms)
+✔ each known detected allergen conflict is excluded even with a favored pantry match (407.4379ms)
+✔ never broadens impossible requests or uncertain dietary certifications (0.3315ms)
+✔ allergens exclude conflicts including optional future shopping suggestions (2.7174ms)
+✔ pantry ranking is opt-in, deterministic, and does not override sensory preferences (5.5211ms)
+✔ beta is closed by default and a local-preview flag never opens production (0.3628ms)
+✔ database TLS validates remote peers despite connection-string overrides (4.1246ms)
+✔ the actual pg client cannot replace certificate checks with URL SSL options (6.9176ms)
+✔ a query host override cannot turn a remote connection into a plaintext local one (1.515ms)
+✔ connection parsing preserves non-TLS settings and never repeats malformed credentials (3.1763ms)
+✔ environment SSL defaults cannot weaken the explicit remote TLS configuration (1.3438ms)
+✔ only a development loopback database may omit TLS (0.4095ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 21
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5580.2242
