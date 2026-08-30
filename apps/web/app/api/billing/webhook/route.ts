@@ -64,8 +64,8 @@ export async function POST(request: Request) {
   try {
     event = stripe().webhooks.constructEvent(payload, signature, requireWebhookSecret());
   } catch (err) {
-    // A bad signature is not a retryable condition, so 400 rather than 500 —
-    // telling Stripe to stop rather than to try the same forgery again.
+    // Reject invalid signatures without processing. Stripe can retry non-2xx
+    // deliveries, including 400; this response does not disable retries.
     return NextResponse.json(
       { error: `Signature verification failed: ${err instanceof Error ? err.message : "unknown"}` },
       { status: 400 },

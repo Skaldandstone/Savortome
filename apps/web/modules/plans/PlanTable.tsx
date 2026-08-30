@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import type { BillingAvailability } from "@seconds/core";
 import {
   CREDIT_PACKS,
   PLAN_PRICES,
@@ -36,11 +37,12 @@ const ALWAYS_FREE = [
   "Pantry search in plain language — what can I make?",
 ];
 
-export function PlanTable({ current }: { current: Tier }) {
+export function PlanTable({ current, availability }: { current: Tier; availability: BillingAvailability }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
 
   const manageBilling = async () => {
+    if (!availability.portal) return;
     setBusy("portal");
     setProblem(null);
     try {
@@ -56,6 +58,7 @@ export function PlanTable({ current }: { current: Tier }) {
   };
 
   const buy = async (productId: string) => {
+    if (!availability.checkoutProducts.some((id) => id === productId)) return;
     setBusy(productId);
     setProblem(null);
     try {
@@ -79,6 +82,11 @@ export function PlanTable({ current }: { current: Tier }) {
 
   return (
     <>
+      {availability.checkoutNotice ? (
+        <p id="billing-availability" className={styles.availability} role="status">
+          {availability.checkoutNotice}
+        </p>
+      ) : null}
       <div className={styles.grid}>
         {TIERS.map((tier) => {
           const price = PLAN_PRICES.find((p) => p.tier === tier);
@@ -109,7 +117,8 @@ export function PlanTable({ current }: { current: Tier }) {
                 <button
                   type="button"
                   className={styles.buy}
-                  disabled={busy !== null}
+                  disabled={busy !== null || !availability.checkoutProducts.includes(planProductId(price.tier))}
+                  aria-describedby={availability.checkoutNotice ? "billing-availability" : undefined}
                   onClick={() => void buy(planProductId(price.tier))}
                 >
                   {busy === planProductId(price.tier) ? "Opening…" : `Choose ${TIER_LABEL[tier]}`}
@@ -120,9 +129,11 @@ export function PlanTable({ current }: { current: Tier }) {
         })}
       </div>
 
-      <button type="button" className={styles.buy} disabled={busy !== null} onClick={() => void manageBilling()}>
-        {busy === "portal" ? "Opening billing..." : "Manage billing"}
-      </button>
+      {availability.portal ? (
+        <button type="button" className={styles.buy} disabled={busy !== null} onClick={() => void manageBilling()}>
+          {busy === "portal" ? "Opening billing..." : "Manage billing"}
+        </button>
+      ) : null}
 
       {problem ? (
         <Callout tone="warn" title="Billing isn't available" role="status">
@@ -156,7 +167,8 @@ export function PlanTable({ current }: { current: Tier }) {
               key={pack.id}
               type="button"
               className={styles.pack}
-              disabled={busy !== null}
+              disabled={busy !== null || !availability.checkoutProducts.some((id) => id === pack.id)}
+              aria-describedby={availability.checkoutNotice ? "billing-availability" : undefined}
               onClick={() => void buy(pack.id)}
             >
               {pack.credits} credits · {formatPackPrice(pack)}

@@ -14,6 +14,9 @@ import { appOrigin, priceForProduct, stripe, stripeConfigured, webhookConfigured
  */
 export const runtime = "nodejs";
 
+// Generated once for this integration; keep stable across requests and deploys.
+const CHECKOUT_INTEGRATION_IDENTIFIER = "secondbreakfast-web-checkout-fpkhuarf";
+
 export async function POST(request: Request) {
   if (process.env.STRIPE_CHECKOUT_ENABLED !== "true") {
     return NextResponse.json({ error: "Checkout is not enabled for this beta." }, { status: 403 });
@@ -61,6 +64,7 @@ export async function POST(request: Request) {
     const metadata = { app: "secondbreakfast", userId, productId: product.id };
 
     const session = await client.checkout.sessions.create({
+      integration_identifier: CHECKOUT_INTEGRATION_IDENTIFIER,
       mode: isPlan ? "subscription" : "payment",
       customer: customerId,
       line_items: [{ quantity: 1, price }],
