@@ -81,6 +81,16 @@ export function products(): Product[] {
 export const productById = (id: string): Product | undefined =>
   products().find((product) => product.id === id);
 
+/** A completed form can still be waiting for a bank payment to settle. */
+export function fulfillableCheckoutProduct(session: {
+  payment_status?: string;
+  metadata?: Record<string, string> | null;
+}): Product | undefined {
+  if (session.metadata?.app !== "secondbreakfast" || !session.metadata.userId) return undefined;
+  if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") return undefined;
+  return productById(session.metadata.productId ?? "");
+}
+
 /**
  * What a completed payment does to an account.
  *
@@ -111,6 +121,8 @@ export function fulfilmentFor(product: Product): Fulfilment {
  */
 export const HANDLED_EVENTS = [
   "checkout.session.completed",
+  "checkout.session.async_payment_succeeded",
+  "checkout.session.async_payment_failed",
   "customer.subscription.deleted",
   "customer.subscription.updated",
 ] as const;

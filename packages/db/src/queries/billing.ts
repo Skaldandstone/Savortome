@@ -1,8 +1,11 @@
 import { eq } from "drizzle-orm";
 import type { CreditBalance, Fulfilment, Tier } from "@seconds/core";
-import type { Database } from "../client.js";
+import type { Database as ConnectionDatabase } from "../client.js";
 import * as schema from "../schema.js";
 import { creditsFor, grantCredits, setTier } from "./credits.js";
+
+// A transaction has the same query surface, without the connection's $client.
+type Database = Pick<ConnectionDatabase, "query" | "select" | "insert" | "update" | "delete" | "transaction">;
 
 /**
  * Applying what someone paid for.
@@ -69,24 +72,11 @@ export interface PurchaseRecord {
 /**
  * Apply a completed purchase.
  *
- * Records what was bought before changing the balance, so a failure between
- * the two leaves evidence of a payment that didn't land rather than credits
- * with no explanation. The unique index on the session id means a second
- * attempt at the same purchase can't insert a second row for it.
- *
- * That alone isn't enough, though, because the driver has no interactive
- * transactions: the insert and the fulfilment are separate statements, and a
- * process that dies between them — a dropped connection, a killed
- * container — leaves a purchase row on the books with nothing granted for
- * it. A naive "insert failed to conflict, so we're done" read of that state
- * would mean the retry Stripe sends next treats a stranded row as a finished
- * purchase and grants nothing, forever: the customer paid, the record says
- * so, and they got nothing for it.
- *
- * `fulfilledAt` is what tells the two situations apart. Only a null value
- * means "still owed a grant" — a retry against an unfulfilled row finishes
- * the job instead of skipping it; a retry against a fulfilled one is a
- * genuine duplicate delivery and does nothing, as before.
+ * Purchase insertion, grant, and fulfilment marker share a transaction. A
+ * failure rolls them all back. Lock the purchase row even on the conflict path
+ * because completed and delayed-success events can name the same Session.
+ * Existing unfulfilled rows can be recovered; historical partial grants need
+ * reconciliation before this release is adopted on a paid deployment.
  *
  * Returns null when the purchase was already fulfilled.
  */
@@ -95,44 +85,45 @@ export async function applyPurchase(
   record: PurchaseRecord,
   fulfilment: Fulfilment,
 ): Promise<CreditBalance | null> {
-  const inserted = await database
-    .insert(schema.creditPurchases)
-    .values({
-      userId: record.userId,
-      productId: record.productId,
-      cents: record.cents,
-      credits: record.credits,
-      tier: record.tier,
-      stripeSessionId: record.stripeSessionId,
-    })
-    .onConflictDoNothing()
-    .returning({ id: schema.creditPurchases.id, fulfilledAt: schema.creditPurchases.fulfilledAt });
+  return database.transaction(async (transaction) => {
+    const inserted = await transaction
+      .insert(schema.creditPurchases)
+      .values({
+        userId: record.userId,
+        productId: record.productId,
+        cents: record.cents,
+        credits: record.credits,
+        tier: record.tier,
+        stripeSessionId: record.stripeSessionId,
+      })
+      .onConflictDoNothing()
+      .returning({ id: schema.creditPurchases.id, fulfilledAt: schema.creditPurchases.fulfilledAt });
 
-  // The conflict path only fires when a stripeSessionId collides with a row
-  // already on file, so looking that row up here can't race with a second
-  // insert — the unique index already resolved which attempt "won."
-  const purchase =
-    inserted[0] ??
-    (await database.query.creditPurchases.findFirst({
-      where: eq(schema.creditPurchases.stripeSessionId, record.stripeSessionId ?? ""),
-      columns: { id: true, fulfilledAt: true },
-    }));
+    // Serialize fulfilment for the Session, including a recovered pending row.
+    const [purchase] = await transaction
+      .select({ id: schema.creditPurchases.id, fulfilledAt: schema.creditPurchases.fulfilledAt })
+      .from(schema.creditPurchases)
+      .where(inserted[0]
+        ? eq(schema.creditPurchases.id, inserted[0].id)
+        : eq(schema.creditPurchases.stripeSessionId, record.stripeSessionId ?? ""))
+      .for("update");
 
-  if (!purchase || purchase.fulfilledAt !== null) return null;
+    if (!purchase || purchase.fulfilledAt !== null) return null;
 
-  if (fulfilment.grantCredits !== null) {
-    await grantCredits(database, record.userId, fulfilment.grantCredits);
-  }
-  if (fulfilment.setTier !== null) {
-    await setTier(database, record.userId, fulfilment.setTier);
-  }
+    if (fulfilment.grantCredits !== null) {
+      await grantCredits(transaction, record.userId, fulfilment.grantCredits);
+    }
+    if (fulfilment.setTier !== null) {
+      await setTier(transaction, record.userId, fulfilment.setTier);
+    }
 
-  await database
-    .update(schema.creditPurchases)
-    .set({ fulfilledAt: new Date() })
-    .where(eq(schema.creditPurchases.id, purchase.id));
+    await transaction
+      .update(schema.creditPurchases)
+      .set({ fulfilledAt: new Date() })
+      .where(eq(schema.creditPurchases.id, purchase.id));
 
-  return creditsFor(database, record.userId);
+    return creditsFor(transaction, record.userId);
+  });
 }
 
 /** Remember Stripe's ids so a returning buyer isn't created as a new customer. */

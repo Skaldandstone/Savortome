@@ -40,6 +40,21 @@ export function PlanTable({ current }: { current: Tier }) {
   const [busy, setBusy] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
 
+  const manageBilling = async () => {
+    setBusy("portal");
+    setProblem(null);
+    try {
+      const response = await fetch("/api/billing/portal", { method: "POST" });
+      const data = await response.json();
+      if (response.ok && data.url) window.location.href = data.url;
+      else setProblem(data.error ?? "Couldn't open billing management.");
+    } catch {
+      setProblem("Couldn't reach billing management. Please try again.");
+    } finally {
+      setBusy(null);
+    }
+  };
+
   const buy = async (productId: string) => {
     setBusy(productId);
     setProblem(null);
@@ -105,8 +120,12 @@ export function PlanTable({ current }: { current: Tier }) {
         })}
       </div>
 
+      <button type="button" className={styles.buy} disabled={busy !== null} onClick={() => void manageBilling()}>
+        {busy === "portal" ? "Opening billing..." : "Manage billing"}
+      </button>
+
       {problem ? (
-        <Callout tone="warn" title="Checkout isn't available" role="status">
+        <Callout tone="warn" title="Billing isn't available" role="status">
           {problem}
         </Callout>
       ) : null}

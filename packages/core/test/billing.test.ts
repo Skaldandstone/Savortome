@@ -5,6 +5,7 @@ import {
   PLAN_PRICES,
   formatCents,
   fulfilmentFor,
+  fulfillableCheckoutProduct,
   isHandledEvent,
   isPayableTier,
   planPriceFor,
@@ -14,6 +15,25 @@ import {
   tierForSubscriptionStatus,
 } from "../src/billing.js";
 import { CREDIT_PACKS, TIER_ALLOWANCE } from "../src/credits.js";
+
+describe("delayed Checkout fulfilment", () => {
+  const metadata = { app: "secondbreakfast", userId: "buyer", productId: "pack-25" };
+  it("waits for payment after form completion, then grants the purchased pack", () => {
+    assert.equal(fulfillableCheckoutProduct({ metadata, payment_status: "unpaid" }), undefined);
+    const product = fulfillableCheckoutProduct({ metadata, payment_status: "paid" });
+    assert.equal(fulfilmentFor(product!).grantCredits, 25);
+    assert.equal(isHandledEvent("checkout.session.async_payment_succeeded"), true);
+    assert.equal(isHandledEvent("checkout.session.async_payment_failed"), true);
+  });
+  it("accepts a Stripe-approved zero-cost checkout", () => {
+    assert.equal(fulfillableCheckoutProduct({ metadata, payment_status: "no_payment_required" })?.id, "pack-25");
+  });
+  it("rejects other apps, missing state, or an invented product", () => {
+    assert.equal(fulfillableCheckoutProduct({ metadata }), undefined);
+    assert.equal(fulfillableCheckoutProduct({ metadata: { ...metadata, app: "another-app" }, payment_status: "paid" }), undefined);
+    assert.equal(fulfillableCheckoutProduct({ metadata: { ...metadata, productId: "pack-billion" }, payment_status: "paid" }), undefined);
+  });
+});
 
 describe("products", () => {
   it("offers every credit pack and every paid plan", () => {
