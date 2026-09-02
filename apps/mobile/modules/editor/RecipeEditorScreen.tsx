@@ -142,7 +142,7 @@ export function RecipeEditorScreen({
                     Delete this recipe for good?
                   </Text>
                   <View style={styles.dangerButtons}>
-                    <Button label="Yes, delete it" variant="ghost" onPress={() => void remove()} />
+                    <Button label="Yes, delete it" variant="danger" onPress={() => void remove()} />
                     <Button
                       label="Keep it"
                       variant="ghost"
@@ -153,7 +153,7 @@ export function RecipeEditorScreen({
               ) : (
                 <Button
                   label="Delete recipe"
-                  variant="ghost"
+                  variant="danger"
                   onPress={() => setConfirmingDelete(true)}
                 />
               )}
