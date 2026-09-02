@@ -10,7 +10,7 @@
 
 .info { background: var(--surface-sunken); color: var(--text-muted); }
 .warn { background: var(--warn-soft); color: var(--warn); }
-.error { background: var(--accent-soft); color: var(--text); border-color: var(--border); }
+.error { background: var(--error-soft); color: var(--error); }
 
 .callout :global(pre) {
   margin: 8px 0 0;
