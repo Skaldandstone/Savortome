@@ -14,8 +14,9 @@ export function Callout({
   children?: React.ReactNode;
 }) {
   const c = usePalette();
-  const background = tone === "warn" ? c.warnSoft : tone === "error" ? c.accentSoft : c.surfaceSunken;
-  const color = tone === "warn" ? c.warn : c.textMuted;
+  const background =
+    tone === "warn" ? c.warnSoft : tone === "error" ? c.errorSoft : c.surfaceSunken;
+  const color = tone === "warn" ? c.warn : tone === "error" ? c.error : c.textMuted;
 
   return (
     <View style={[styles.callout, { backgroundColor: background }]}>

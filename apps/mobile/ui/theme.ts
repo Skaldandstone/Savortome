@@ -14,6 +14,8 @@ export const light = {
   good: "#2f6b46",
   warn: "#8a6100",
   warnSoft: "#fdf3d9",
+  error: "#b3261e",
+  errorSoft: "#fdeceb",
 };
 
 export const dark: typeof light = {
@@ -28,6 +30,8 @@ export const dark: typeof light = {
   good: "#7fc59b",
   warn: "#e2b768",
   warnSoft: "#322614",
+  error: "#f08d80",
+  errorSoft: "#33201c",
 };
 
 export type Palette = typeof light;
