@@ -16,7 +16,7 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#b4451f"
+          "color": "#E89A0C"
         }
       ]
     ],
@@ -32,7 +32,7 @@
       "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#b4451f"
+        "backgroundColor": "#E89A0C"
       },
       "permissions": [
         "android.permission.POST_NOTIFICATIONS"
