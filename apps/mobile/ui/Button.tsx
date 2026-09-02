@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text } from "react-native";
 import { radius, type as typeScale } from "./theme";
 import { usePalette } from "./ThemeProvider";
 
-export type ButtonVariant = "primary" | "ghost" | "toggle";
+export type ButtonVariant = "primary" | "ghost" | "toggle" | "danger";
 
 export function Button({
   label,
@@ -23,8 +23,20 @@ export function Button({
 
   const background =
     variant === "primary" ? c.accent : selected ? c.accentSoft : "transparent";
-  const color = variant === "primary" ? "#fff" : selected ? c.accent : c.textMuted;
-  const borderColor = variant === "ghost" || (variant === "toggle" && selected) ? c.border : "transparent";
+  const color =
+    variant === "primary"
+      ? "#fff"
+      : variant === "danger"
+        ? c.error
+        : selected
+          ? c.accent
+          : c.textMuted;
+  const borderColor =
+    variant === "danger"
+      ? c.error
+      : variant === "ghost" || (variant === "toggle" && selected)
+        ? c.border
+        : "transparent";
 
   return (
     <Pressable
