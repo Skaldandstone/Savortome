@@ -47,14 +47,18 @@ export const TIER_LABEL: Record<Tier, string> = {
  * cap: the worst case is a number you can work out in advance rather than
  * something you discover from a bill.
  *
- * Measured against the live API (Opus 5, effort "medium", 1h cache): a
- * transcript import — priced at 2 credits via `creditCost` — runs about
- * $0.17 worst case (cold cache, messy speech), an article or caption import
- * about $0.05-0.08. At $0.083/credit-unit that puts Plus's worst case (25
- * credits, all video) around $2.08/month against $2.50 of revenue, and Pro's
- * (50 credits, all video) around $4.15 against $4.17 — Pro's margin is thin
- * enough that it's worth re-measuring against a larger sample before relying
- * on it, not a comfortable floor.
+ * Measured against the live API across four transcripts (Opus 5, effort
+ * "medium", 1h cache): $0.061-0.234/import depending on cache state and
+ * transcript length, averaging ~$0.12 — about $0.059/credit-unit once split
+ * across the 2 credits a transcript costs. The 1h cache genuinely gets hit
+ * in back-to-back imports, not just in theory. Worst *observed* single
+ * import was $0.166 ($0.083/credit); at that rate Plus's worst case (25
+ * credits, all video) runs ~$2.08/month against $2.50 of revenue, and Pro's
+ * (50 credits, all video) breaks roughly even against $4.17 — but the
+ * average case, which is what a real subscriber mix actually looks like,
+ * clears both with real margin (~$1.47 and ~$2.95/month respectively).
+ * Re-measure if the extraction prompt or model changes meaningfully; four
+ * samples is a sanity check, not a bulletproof guarantee.
  *
  * These are floors, not ambitions. Raising them later is an announcement
  * people enjoy; lowering them is why people leave.
