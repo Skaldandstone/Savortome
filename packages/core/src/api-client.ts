@@ -66,7 +66,7 @@ export interface DiscoverQuery {
 }
 import type { ImportRequest, ImportResponse } from "./import-client.js";
 import type { CreditBalance, CreditPack } from "./credits.js";
-import type { Recipe } from "./recipe.js";
+import type { PhotoMediaType, Recipe, RecipePhoto } from "./recipe.js";
 import type { RecipeDraft } from "./editor.js";
 import type { LibrarySort } from "./library.js";
 import type { MealSlot, PlannedMeal, PlanSuggestion } from "./plan.js";
@@ -191,6 +191,12 @@ export interface SecondsClient {
   clearPantry: () => Promise<PantryEntry[]>;
   searchPantry: (query?: string) => Promise<PantrySearchResponse>;
   getRecipe: (recipeId: string) => Promise<OwnedRecipe>;
+  addRecipePhoto: (
+    recipeId: string,
+    imageBase64: string,
+    imageMediaType: PhotoMediaType,
+  ) => Promise<{ photos: RecipePhoto[] }>;
+  removeRecipePhoto: (recipeId: string, key: string) => Promise<{ photos: RecipePhoto[] }>;
   getSharedRecipe: (recipeId: string) => Promise<SharedRecipeResponse>;
   getList: () => Promise<ShoppingListView>;
   addRecipesToList: (recipeIds: string[]) => Promise<ShoppingListView>;
@@ -351,6 +357,18 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
       }),
 
     getRecipe: (recipeId) => send<OwnedRecipe>(`/api/recipes/${recipeId}`),
+
+    addRecipePhoto: (recipeId, imageBase64, imageMediaType) =>
+      send<{ photos: RecipePhoto[] }>(`/api/recipes/${recipeId}/photos`, {
+        method: "POST",
+        body: body({ imageBase64, imageMediaType }),
+      }),
+
+    removeRecipePhoto: (recipeId, key) =>
+      send<{ photos: RecipePhoto[] }>(`/api/recipes/${recipeId}/photos`, {
+        method: "DELETE",
+        body: body({ key }),
+      }),
 
     getSharedRecipe: (recipeId) => send<SharedRecipeResponse>(`/api/shared/${recipeId}`),
 

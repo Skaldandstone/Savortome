@@ -80,6 +80,12 @@ export async function getSharedRecipe(
       title: row.title,
       description: row.description,
       imageUrl: row.imageUrl,
+      // The storage key is never shown to a viewer — see RecipePhotoSchema.
+      // A shared recipe (or its /api/shared/[id] JSON, which serializes this
+      // whole object to anyone who can view it) is the one place that isn't
+      // the owner, so it's the one place that redaction actually has to
+      // happen, not just be a comment on the field.
+      photos: row.photos.map(({ url, createdAt }) => ({ key: "", url, createdAt })),
       servings: row.servings,
       servingsNote: row.servingsNote,
       prepMinutes: row.prepMinutes,

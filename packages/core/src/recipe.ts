@@ -14,6 +14,8 @@ export const SOURCE_KINDS = [
   "web",
   "manual",
   "text",
+  "photo",
+  "paprika",
 ] as const;
 export type SourceKind = (typeof SOURCE_KINDS)[number];
 
@@ -23,7 +25,9 @@ export const EXTRACTION_METHODS = [
   "article-llm", // page prose -> Claude
   "transcript-llm", // spoken audio -> transcript -> Claude
   "caption-llm", // post caption / description -> Claude
+  "photo-llm", // a photographed page -> Claude, read directly as an image
   "manual", // typed by a human
+  "file-import", // a structured export from another recipe app; no model involved
 ] as const;
 export type ExtractionMethod = (typeof EXTRACTION_METHODS)[number];
 
@@ -161,9 +165,50 @@ export const ExtractedRecipeSchema = z.object({
 });
 export type ExtractedRecipe = z.infer<typeof ExtractedRecipeSchema>;
 
+export const RecipePhotoSchema = z.object({
+  /** The R2 object key — needed to delete it later; never shown to the user. */
+  key: z.string(),
+  url: z.string(),
+  createdAt: z.string(),
+});
+export type RecipePhoto = z.infer<typeof RecipePhotoSchema>;
+
+/**
+ * What a photo — a scanned recipe page, or your own photo of a recipe — is
+ * allowed to be. One definition, imported everywhere a photo is accepted or
+ * validated (the scan-import route, the recipe-photo-upload route, both of
+ * their client forms), so the client and server can never silently drift
+ * apart on what they'll accept.
+ */
+export const PHOTO_MEDIA_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+export type PhotoMediaType = (typeof PHOTO_MEDIA_TYPES)[number];
+export const isPhotoMediaType = (v: unknown): v is PhotoMediaType =>
+  (PHOTO_MEDIA_TYPES as readonly unknown[]).includes(v);
+
+/**
+ * How large a photo upload is allowed to be, in decoded bytes — the number
+ * that actually matters (it bounds memory and R2 storage), not a real limit
+ * on what a phone photo can be. The base64-transport limit is derived from
+ * this rather than stated as its own number, so the two can't quietly drift
+ * out of sync the way two independently-chosen constants eventually would.
+ */
+export const MAX_PHOTO_BYTES = 9_000_000;
+export const MAX_PHOTO_BASE64_CHARS = Math.ceil((MAX_PHOTO_BYTES * 4) / 3);
+
+/**
+ * How many of your own photos one recipe can carry. Generous for what this
+ * feature is actually for — a few shots of how the dish turned out — and a
+ * hard ceiling so nothing (a bug, a script, someone testing the upload
+ * button) can grow one recipe's photo array and R2 storage without bound.
+ */
+export const MAX_RECIPE_PHOTOS = 20;
+
 export const RecipeSchema = ExtractedRecipeSchema.extend({
   id: z.string(),
+  /** The one image a source page published, if any — distinct from `photos`. */
   imageUrl: z.string().nullable(),
+  /** Your own photos of the finished dish, uploaded after the fact. */
+  photos: z.array(RecipePhotoSchema),
   source: RecipeSourceSchema,
   /**
    * Null until something has computed it — an old recipe, or one that hasn't

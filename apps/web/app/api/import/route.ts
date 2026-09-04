@@ -3,16 +3,22 @@ import {
   detectSourceKind,
   ExtractionError,
   ingestDocument,
+  isPhotoMediaType,
+  MAX_PHOTO_BASE64_CHARS,
+  methodForTextKind,
   outOfCreditsMessage,
   nextResetISO,
+  photoSource,
+  PHOTO_MEDIA_TYPES,
   resolveSource,
   ResolveError,
   textSource,
   UnsafeUrlError,
   willCallModel,
   type IngestResult,
+  type PhotoMediaType,
 } from "@seconds/core";
-import { creditsFor, db, ensureInitialStatus, saveRecipe, spendCredit } from "@seconds/db";
+import { canSpendCredit, creditsFor, db, ensureInitialStatus, saveRecipe, spendCredit } from "@seconds/db";
 import { errorResponse } from "@/lib/api";
 import { databaseConfigured, requireUserId } from "@/lib/session";
 
@@ -24,6 +30,8 @@ export const maxDuration = 300;
 interface ImportBody {
   url?: string;
   text?: string;
+  imageBase64?: string;
+  imageMediaType?: string;
   title?: string;
   forceModel?: boolean;
 }
@@ -49,8 +57,23 @@ export async function POST(request: Request) {
 
   const url = body.url?.trim();
   const text = body.text?.trim();
-  if (!url && !text) {
-    return NextResponse.json({ error: "Send either a url or some text to import." }, { status: 400 });
+  const imageBase64 = body.imageBase64?.trim();
+  if (!url && !text && !imageBase64) {
+    return NextResponse.json(
+      { error: "Send a url, some text, or a photo to import." },
+      { status: 400 },
+    );
+  }
+  if (imageBase64) {
+    if (!isPhotoMediaType(body.imageMediaType)) {
+      return NextResponse.json(
+        { error: `imageMediaType must be one of: ${PHOTO_MEDIA_TYPES.join(", ")}` },
+        { status: 400 },
+      );
+    }
+    if (imageBase64.length > MAX_PHOTO_BASE64_CHARS) {
+      return NextResponse.json({ error: "That photo is too large. Try a smaller image." }, { status: 400 });
+    }
   }
 
   // Resolve first, then decide whether this will cost anything: a page might
@@ -78,11 +101,18 @@ export async function POST(request: Request) {
 
     const doc = url
       ? await resolveSource(url)
-      : textSource(text as string, body.title);
+      : imageBase64
+        ? photoSource(imageBase64, body.imageMediaType as PhotoMediaType, body.title)
+        : textSource(text as string, body.title);
 
     if (userId && willCallModel(doc, { forceModel: body.forceModel })) {
-      const balance = await creditsFor(db(), userId);
-      if (!balance.canSpend) {
+      // The real cost is now known — a transcript costs 2 credits, an article
+      // or caption 1 — so this is the precise check, not the courtesy one
+      // above. Someone with exactly 1 credit left must not be let into an
+      // extraction that needs 2.
+      const method = methodForTextKind(doc.textKind);
+      if (!(await canSpendCredit(db(), userId, method))) {
+        const balance = await creditsFor(db(), userId);
         // 402 rather than 403: this isn't a permission problem, it's a
         // "top up and try again" one, and the client tells them apart.
         return NextResponse.json(

@@ -18,7 +18,7 @@ import {
   uuid,
   vector,
 } from "drizzle-orm/pg-core";
-import type { Ingredient, RecipeNutrition, Step } from "@seconds/core";
+import type { Ingredient, RecipeNutrition, RecipePhoto, Step } from "@seconds/core";
 
 /**
  * The full Second Breakfast data model. Only the recipe/import path is wired up in the
@@ -35,11 +35,11 @@ const tsvector = customType<{ data: string; driverData: string }>({
 });
 
 export const sourceKind = pgEnum("source_kind", [
-  "youtube", "tiktok", "instagram", "facebook", "web", "manual", "text",
+  "youtube", "tiktok", "instagram", "facebook", "web", "manual", "text", "photo", "paprika",
 ]);
 
 export const extractionMethod = pgEnum("extraction_method", [
-  "schema-org", "article-llm", "transcript-llm", "caption-llm", "manual",
+  "schema-org", "article-llm", "transcript-llm", "caption-llm", "photo-llm", "manual", "file-import",
 ]);
 
 /** Mirrors Goodreads' want-to-read / reading / read triad. */
@@ -187,12 +187,9 @@ export const creditPurchases = pgTable(
     refundedAt: timestamp("refunded_at", { withTimezone: true }),
     refundedCents: integer("refunded_cents"),
     /**
-     * Null until the credits/tier this purchase paid for have actually been
-     * applied. The neon-http driver has no interactive transactions, so the
-     * insert of this row and the write that fulfils it are two separate
-     * statements — if the process dies between them, this column is what
-     * tells a retry to finish the job instead of treating a claimed-but-
-     * unfulfilled row as "already done."
+     * Null until the credits/tier have been applied. New purchases and grants
+     * commit atomically. A null marker on a legacy row needs reconciliation
+     * rather than being treated as a successfully fulfilled purchase.
      */
     fulfilledAt: timestamp("fulfilled_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -249,6 +246,13 @@ export const recipes = pgTable(
     title: text("title").notNull(),
     description: text("description"),
     imageUrl: text("image_url"),
+    /**
+     * Photos someone uploaded themselves — distinct from `imageUrl`, which is
+     * the one image a source page published. Never touched by saveRecipe's
+     * re-import upsert, so re-pulling a source URL can't wipe out a photo the
+     * owner added by hand.
+     */
+    photos: jsonb("photos").$type<RecipePhoto[]>().notNull().default([]),
 
     servings: integer("servings"),
     servingsNote: text("servings_note"),

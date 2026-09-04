@@ -1,4 +1,10 @@
-import type { ExtractedRecipe, ExtractionMethod, RecipeNutrition, SourceKind } from "../recipe.js";
+import type {
+  ExtractedRecipe,
+  ExtractionMethod,
+  PhotoMediaType,
+  RecipeNutrition,
+  SourceKind,
+} from "../recipe.js";
 
 /**
  * Whatever we managed to pull out of a URL before any model is involved.
@@ -11,12 +17,24 @@ export interface SourceDocument {
   author: string | null;
   siteName: string | null;
   imageUrl: string | null;
-  /** Prose the extractor will read: article body, transcript, or caption. */
+  /** Prose the extractor will read: article body, transcript, or caption. Empty for a photo source. */
   text: string;
   /** Which flavour of text `text` holds — picks the extraction prompt. */
-  textKind: "article" | "transcript" | "caption" | "raw";
+  textKind: "article" | "transcript" | "caption" | "raw" | "photo";
+  /** A photographed page — a recipe card, a cookbook spread, a handwritten note. */
+  image?: {
+    base64: string;
+    mediaType: PhotoMediaType;
+  };
   /** Set when the page already published a machine-readable recipe; skips the model entirely. */
   prestructured?: ExtractedRecipe;
+  /**
+   * The extraction method to record when `prestructured` is used. Defaults to
+   * "schema-org" (a page's own JSON-LD) when unset — a structured import from
+   * another app (Paprika, ...) sets this to "file-import" instead so the trust
+   * badge doesn't claim to have read a live web page it never saw.
+   */
+  prestructuredMethod?: ExtractionMethod;
   /** The page's own nutrition figures, when its schema.org data included any. */
   prestructuredNutrition?: RecipeNutrition | null;
   /** Transcript cue points, used to attach `sourceTimestamp` to steps. */
@@ -54,4 +72,6 @@ export const methodForTextKind = (
     ? "transcript-llm"
     : k === "caption"
       ? "caption-llm"
-      : "article-llm";
+      : k === "photo"
+        ? "photo-llm"
+        : "article-llm";

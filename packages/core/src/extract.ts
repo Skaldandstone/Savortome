@@ -76,12 +76,21 @@ const GUIDANCE: Record<SourceDocument["textKind"], string> = {
   caption: `This is the caption or description attached to a short video post. It is often the most reliable part of the post — creators put the real ingredient list here because the video moves too fast to follow. It may be terse, emoji-heavy, and use line breaks instead of punctuation. Strip hashtags, handles, and promo links. If the method is only sketched, write the steps at the level of detail the caption supports and note the thinness rather than padding it out.`,
 
   raw: `This is text the user pasted in directly. It may be a complete recipe, a screenshot transcription, or a fragment.`,
+
+  photo: `This is a photograph of a physical page — a recipe card, a cookbook spread, a handwritten note, a magazine clipping. Read it directly; there is no transcript. Expect: glare or shadow across part of the page, a slight tilt or crop, handwriting of varying legibility, multi-column layouts where ingredients and steps interleave visually rather than in reading order, and marginal notes (a substitution, a doubled amount, "add more next time") that belong in extractionNotes rather than the main recipe. If a word is genuinely illegible, say so in extractionNotes rather than guessing silently. If the photo shows no recipe at all — a random object, a blank page, something unreadable — say so per the "no recipe" rule below rather than fabricating one.`,
 };
 
 export interface ExtractOptions {
   client?: Anthropic;
   model?: string;
-  /** "low" for cheap re-runs, "high" (default) for messy transcripts. */
+  /**
+   * "low" for cheap re-runs, "medium" (default) for everything else.
+   *
+   * Measured against a messy video transcript, "high" cost 29% more than
+   * "medium" for no quality gain — same ingredient/step counts, and actually
+   * a *lower* confidence score. Raise per-call only if a specific source
+   * shape is shown to need it; don't reach for "high" as a default guess.
+   */
   effort?: "low" | "medium" | "high" | "xhigh" | "max";
   signal?: AbortSignal;
 }
@@ -142,16 +151,32 @@ export async function extractRecipe(
     {
       model: opts.model ?? EXTRACTION_MODEL,
       max_tokens: 16_000,
-      system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
+      // 1h TTL: imports across the whole app arrive scattered, rarely two
+      // within the default 5-minute window. A longer-lived cache is what
+      // actually gets hit in practice, not a hypothetical burst.
+      system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral", ttl: "1h" } }],
       thinking: { type: "adaptive" },
       output_config: {
-        effort: opts.effort ?? "high",
+        effort: opts.effort ?? "medium",
         format: zodOutputFormat(ExtractedRecipeSchema),
       },
       messages: [
         {
           role: "user",
-          content: `${GUIDANCE[doc.textKind]}\n\n${header}\n\n--- CONTENT ---\n${doc.text}`,
+          content:
+            doc.textKind === "photo" && doc.image
+              ? [
+                  {
+                    type: "image" as const,
+                    source: {
+                      type: "base64" as const,
+                      media_type: doc.image.mediaType,
+                      data: doc.image.base64,
+                    },
+                  },
+                  { type: "text" as const, text: `${GUIDANCE.photo}\n\n${header}` },
+                ]
+              : `${GUIDANCE[doc.textKind]}\n\n${header}\n\n--- CONTENT ---\n${doc.text}`,
         },
       ],
     },

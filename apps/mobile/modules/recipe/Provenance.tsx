@@ -7,7 +7,9 @@ const METHOD_LABEL: Record<ExtractionMethod, string> = {
   "article-llm": "Reconstructed from the article text",
   "transcript-llm": "Reconstructed from what was said in the video",
   "caption-llm": "Reconstructed from the post caption",
+  "photo-llm": "Reconstructed from a photo of the page",
   manual: "Written by hand",
+  "file-import": "Imported from another recipe app's own export",
 };
 
 /**

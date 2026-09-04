@@ -13,6 +13,7 @@ import { PairingSuggestions } from "./PairingSuggestions";
 import { RecipeFacts, TagList } from "./RecipeFacts";
 import { RecipeExport } from "./RecipeExport";
 import { RecipeHeader, RecipeHero } from "./RecipeHeader";
+import { RecipePhotos } from "./RecipePhotos";
 import { StepList } from "./StepList";
 import { useServings } from "./useServings";
 import styles from "./recipe.module.css";
@@ -27,11 +28,13 @@ export function RecipeCard({
    */
   shelvedId = null,
   verifiedAt = null,
+  headingLevel = 2,
 }: {
   recipe: Recipe;
   trace?: string[];
   shelvedId?: string | null;
   verifiedAt?: string | null;
+  headingLevel?: 1 | 2;
 }) {
   const { servings, canScale, increment, decrement, ingredients } = useServings(recipe);
 
@@ -40,12 +43,13 @@ export function RecipeCard({
       <RecipeHero imageUrl={recipe.imageUrl} />
 
       <div className={styles.body}>
-        <RecipeHeader recipe={recipe} />
+        <RecipeHeader recipe={recipe} headingLevel={headingLevel} />
         <RecipeFacts recipe={recipe} />
         <AllergenWarning ingredients={recipe.ingredients} />
         <NutritionFacts recipe={recipe} shelvedId={shelvedId} />
         <TagList tags={recipe.tags} />
 
+        <section className={styles.journalPage} aria-label="Recipe ingredients">
         <div className={styles.ingredientsHeading}>
           <h3 className={styles.sectionTitle}>Ingredients</h3>
           {canScale && servings !== null ? (
@@ -55,9 +59,20 @@ export function RecipeCard({
           ) : null}
         </div>
         <IngredientList ingredients={ingredients} />
+        </section>
 
+        <section className={styles.journalPage} aria-label="Recipe method">
         <h3 className={styles.sectionTitle}>Method</h3>
         <StepList steps={recipe.steps} source={recipe.source} />
+        </section>
+
+        {/* Photos attach to a saved recipe; a freshly extracted, unsaved card has nothing to attach them to. */}
+        {/* Keyed by recipeId: RecipePhotos owns its state once mounted rather
+            than re-syncing from `initial` on every parent re-render (so an
+            in-flight upload/remove can't be stomped by a stale refetch) —
+            the key instead forces a clean remount if this same card instance
+            is ever reused to show a different recipe. */}
+        {shelvedId ? <RecipePhotos key={shelvedId} recipeId={shelvedId} initial={recipe.photos} /> : null}
 
         {recipe.equipment.length > 0 ? (
           <>

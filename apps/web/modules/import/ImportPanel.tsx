@@ -8,6 +8,7 @@ import { Callout, Panel, PanelHeader } from "@/ui";
 import { CreditMeter } from "./CreditMeter";
 import { ImportForm } from "./ImportForm";
 import { ImportProgress } from "./ImportProgress";
+import { PaprikaImport } from "./PaprikaImport";
 import { useImport } from "./useImport";
 
 /** The app's front door: paste something, get a recipe card. */
@@ -76,6 +77,8 @@ export function ImportPanel() {
           shelvedId={result.saved ? result.recipe.id : null}
         />
       ) : null}
+
+      <PaprikaImport />
     </>
   );
 }

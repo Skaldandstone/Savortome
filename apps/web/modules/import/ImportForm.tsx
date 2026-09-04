@@ -1,9 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { Button, FieldRow, TextArea, TextField } from "@/ui";
+import { useRef, useState } from "react";
+import { Button, Callout, FieldRow, TextArea, TextField } from "@/ui";
 import { ModeSwitch } from "./ModeSwitch";
-import { hintForUrl, type ImportMode, type ImportRequest } from "@seconds/core/format";
+import {
+  hintForUrl,
+  isPhotoMediaType,
+  MAX_PHOTO_BYTES,
+  type ImportMode,
+  type ImportRequest,
+  type PhotoMediaType,
+} from "@seconds/core/format";
+import { readAsBase64 } from "@/lib/photo";
 import styles from "./import.module.css";
 
 export function ImportForm({
@@ -16,45 +24,103 @@ export function ImportForm({
   const [mode, setMode] = useState<ImportMode>("url");
   const [url, setUrl] = useState("");
   const [text, setText] = useState("");
+  const [photo, setPhoto] = useState<{ preview: string; base64: string; mediaType: PhotoMediaType } | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
 
   const hint = mode === "url" ? hintForUrl(url) : undefined;
 
+  async function pickPhoto(file: File | undefined) {
+    setPhotoError(null);
+    if (!file) return;
+    if (!isPhotoMediaType(file.type)) {
+      setPhotoError("That doesn't look like a photo. Try a JPEG, PNG, or WebP.");
+      return;
+    }
+    if (file.size > MAX_PHOTO_BYTES) {
+      setPhotoError("That photo is too large. Try a smaller image.");
+      return;
+    }
+    // Revoke the previous preview before replacing it — an object URL that's
+    // never released is a small leak that adds up over a session of retries.
+    setPhoto((prev) => {
+      if (prev) URL.revokeObjectURL(prev.preview);
+      return prev;
+    });
+    try {
+      const base64 = await readAsBase64(file);
+      setPhoto({ preview: URL.createObjectURL(file), base64, mediaType: file.type });
+    } catch {
+      setPhotoError("Couldn't read that photo. Try again.");
+    }
+  }
+
+  const canSubmit =
+    mode === "url" ? !!url : mode === "text" ? !!text : mode === "photo" ? !!photo : false;
+
   return (
     <>
-      <ModeSwitch mode={mode} onChange={setMode} />
+      <ModeSwitch
+        mode={mode}
+        onChange={(next) => {
+          setMode(next);
+          setPhotoError(null);
+        }}
+      />
 
       <form
         onSubmit={(event) => {
           event.preventDefault();
-          if (busy) return;
-          onSubmit(mode === "url" ? { url } : { text });
+          if (busy || !canSubmit) return;
+          if (mode === "url") onSubmit({ url });
+          else if (mode === "text") onSubmit({ text });
+          else if (photo) onSubmit({ imageBase64: photo.base64, imageMediaType: photo.mediaType });
         }}
       >
         <FieldRow>
           {mode === "url" ? (
             <TextField
               type="url"
+              aria-label="Recipe URL"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
               placeholder="https://www.youtube.com/watch?v=..."
               required
               disabled={busy}
             />
-          ) : (
+          ) : mode === "text" ? (
             <TextArea
+              aria-label="Recipe text"
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Paste a recipe, a screenshot transcription, or a text from your mum."
               required
               disabled={busy}
             />
+          ) : (
+            <div className={styles.photoPicker}>
+              <input
+                ref={fileInput}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                capture="environment"
+                aria-label="Photo of a recipe card, cookbook page, or handwritten note"
+                disabled={busy}
+                onChange={(e) => void pickPhoto(e.target.files?.[0])}
+              />
+              {photo ? (
+                // eslint-disable-next-line @next/next/no-img-element -- a local object URL, not a remote image
+                <img src={photo.preview} alt="Selected recipe photo" className={styles.photoPreview} />
+              ) : null}
+            </div>
           )}
-          <Button type="submit" disabled={busy}>
+          <Button type="submit" disabled={busy || !canSubmit}>
             {busy ? "Importing…" : "Import"}
           </Button>
         </FieldRow>
       </form>
 
+      {photoError ? <Callout tone="error" role="alert">{photoError}</Callout> : null}
       {hint && !busy ? <p className={styles.sourceHint}>{hint}</p> : null}
     </>
   );

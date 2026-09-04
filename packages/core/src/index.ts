@@ -23,11 +23,17 @@ export * from "./ingest.js";
 export {
   resolveSource,
   textSource,
+  photoSource,
+  paprikaSource,
+  parsePaprikaExport,
   ResolveError,
   UnsafeUrlError,
   assertPublicHttpUrl,
+  methodForTextKind,
   type SourceDocument,
   type TranscriptCue,
+  type PaprikaImportItem,
+  type PaprikaImportResult,
 } from "./sources/index.js";
 export * from "./staples.js";
 export * from "./dietary.js";

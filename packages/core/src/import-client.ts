@@ -1,5 +1,5 @@
 import type { CreditBalance } from "./credits.js";
-import type { Recipe } from "./recipe.js";
+import type { PhotoMediaType, Recipe } from "./recipe.js";
 import { detectSourceKind } from "./source-kind.js";
 import { scaleQuantity } from "./units.js";
 
@@ -14,6 +14,9 @@ import { scaleQuantity } from "./units.js";
 export interface ImportRequest {
   url?: string;
   text?: string;
+  /** A photographed recipe card, cookbook page, or handwritten note. */
+  imageBase64?: string;
+  imageMediaType?: PhotoMediaType;
   title?: string;
   /** Ignore a site's own recipe data and run the model anyway. */
   forceModel?: boolean;
@@ -35,7 +38,7 @@ export interface ImportFailure {
   trace?: string[];
 }
 
-export type ImportMode = "url" | "text";
+export type ImportMode = "url" | "text" | "photo";
 
 /**
  * The pipeline's phases. A single JSON response can't stream real progress, so

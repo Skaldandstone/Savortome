@@ -1,3 +1,4 @@
+import { connectionOptions } from "../src/connection.js";
 /**
  * Checks AI credit metering against a real database.
  *
@@ -28,7 +29,7 @@ import {
 const url =
   process.env.DATABASE_URL ??
   /DATABASE_URL=(.+)/.exec(readFileSync("../../apps/web/.env.local", "utf8"))![1]!.trim();
-const db = drizzle(new pg.Pool({ connectionString: url, ssl: { rejectUnauthorized: false } }), { schema });
+const db = drizzle(new pg.Pool(connectionOptions(url)), { schema });
 
 let failures = 0;
 const expect = (label: string, actual: unknown, expected: unknown) => {
@@ -41,7 +42,7 @@ const expect = (label: string, actual: unknown, expected: unknown) => {
 };
 
 // --- fixture ----------------------------------------------------------------
-const HANDLES = ["cr-cook", "cr-other"];
+const HANDLES = ["cr-cook", "cr-other", "cr-boundary"];
 
 async function makeUser(handle: string): Promise<string> {
   const [row] = await db
@@ -52,9 +53,9 @@ async function makeUser(handle: string): Promise<string> {
   return row!.id;
 }
 
-const [cook, other] = (await Promise.all(HANDLES.map(makeUser))) as [string, string];
-await db.delete(schema.creditSpends).where(inArray(schema.creditSpends.userId, [cook, other]));
-await db.delete(schema.recipes).where(inArray(schema.recipes.ownerId, [cook, other]));
+const [cook, other, boundary] = (await Promise.all(HANDLES.map(makeUser))) as [string, string, string];
+await db.delete(schema.creditSpends).where(inArray(schema.creditSpends.userId, [cook, other, boundary]));
+await db.delete(schema.recipes).where(inArray(schema.recipes.ownerId, [cook, other, boundary]));
 
 async function makeRecipe(ownerId: string, title: string): Promise<string> {
   const [row] = await db
@@ -92,16 +93,20 @@ expect(
 // --- spending ---------------------------------------------------------------
 const r1 = await makeRecipe(cook, "From a video");
 const after = await spendCredit(db, cook, "transcript-llm", r1, NOW);
-expect("an AI import takes one credit", after?.total, TIER_ALLOWANCE.free - 1);
+expect("a transcript import takes two credits", after?.total, TIER_ALLOWANCE.free - 2);
 expect("...from the monthly allowance first", after?.purchasedLeft, 0);
 
-// Drain the free tier.
+// Drain the rest of the free tier — one more credit exactly empties it.
 await spendCredit(db, cook, "article-llm", null, NOW);
-await spendCredit(db, cook, "caption-llm", null, NOW);
 const empty = await creditsFor(db, cook, NOW);
 expect("the allowance runs out", empty.total, 0);
 expect("...and says so", empty.canSpend, false);
 expect("...and blocks the next AI import", await canSpendCredit(db, cook, "article-llm", NOW), false);
+expect(
+  "...and blocks a two-credit import even harder",
+  await canSpendCredit(db, cook, "transcript-llm", NOW),
+  false,
+);
 expect(
   "...but still allows a free one",
   await canSpendCredit(db, cook, "schema-org", NOW),
@@ -109,20 +114,25 @@ expect(
 );
 
 // --- topping up -------------------------------------------------------------
+// grantCredits has no `now` param — production callers always mean "right
+// now", so its returned balance reflects the real current month, not this
+// fixture's NOW. Purchased credits aren't month-scoped, so `topped` itself is
+// fine for those; allowance checks re-fetch under the fixed clock instead.
 const topped = await grantCredits(db, cook, 25);
 expect("a top-up restores the ability to import", topped.canSpend, true);
 expect("...and lands in the purchased pool", topped.purchasedLeft, 25);
-expect("...leaving the monthly allowance still empty", topped.allowanceLeft, 0);
-expect("...so the next import draws from purchases", topped.nextFrom, "purchased");
+const toppedNow = await creditsFor(db, cook, NOW);
+expect("...leaving the monthly allowance still empty", toppedNow.allowanceLeft, 0);
+expect("...so the next import draws from purchases", toppedNow.nextFrom, "purchased");
 
 const spent = await spendCredit(db, cook, "transcript-llm", null, NOW);
-expect("spending now draws down purchases", spent?.purchasedLeft, 24);
+expect("spending now draws down purchases by the transcript's two credits", spent?.purchasedLeft, 23);
 
 // --- the month boundary -----------------------------------------------------
 const nextMonth = await creditsFor(db, cook, NEXT);
 expect("a new month restores the allowance", nextMonth.allowanceLeft, TIER_ALLOWANCE.free);
-expect("...and purchased credits survive it", nextMonth.purchasedLeft, 24);
-expect("...so the total is both pools", nextMonth.total, TIER_ALLOWANCE.free + 24);
+expect("...and purchased credits survive it", nextMonth.purchasedLeft, 23);
+expect("...so the total is both pools", nextMonth.total, TIER_ALLOWANCE.free + 23);
 expect(
   "...and last month's spends stay in last month",
   (await creditsFor(db, cook, NOW)).allowanceLeft,
@@ -130,13 +140,17 @@ expect(
 );
 
 // --- changing plans ---------------------------------------------------------
+// setTier has no `now` param either — same reasoning as grantCredits above,
+// so allowance checks re-fetch under the fixed clock rather than trust the
+// returned balance's month.
 const upgraded = await setTier(db, cook, "pro");
 expect("upgrading grants the bigger allowance immediately", upgraded.tier, "pro");
 expect(
-  // Three of the four spends came out of the allowance; the fourth was a
-  // purchased credit and so doesn't touch the monthly count.
+  // Three credits — the transcript's two plus the article's one — came out
+  // of the allowance before it ran dry. The later transcript spend landed
+  // entirely in the purchased pool and so doesn't touch the monthly count.
   "...minus only what the allowance itself paid for",
-  upgraded.allowanceLeft,
+  (await creditsFor(db, cook, NOW)).allowanceLeft,
   TIER_ALLOWANCE.pro - 3,
 );
 
@@ -145,9 +159,31 @@ await setTier(db, other, "pro");
 for (let i = 0; i < TIER_ALLOWANCE.plus + 3; i++) {
   await spendCredit(db, other, "article-llm", null, NOW);
 }
-const downgraded = await setTier(db, other, "plus");
+await setTier(db, other, "plus");
+const downgraded = await creditsFor(db, other, NOW);
 expect("a downgrade can't produce a negative balance", downgraded.allowanceLeft, 0);
 expect("...it just reads as none left", downgraded.canSpend, false);
+
+// --- the boundary between a 1-credit and a 2-credit import ------------------
+// Free tier has 3. Spend 2 (one article), leaving exactly 1 — enough for
+// another article, not enough for a transcript.
+await spendCredit(db, boundary, "article-llm", null, NOW);
+await spendCredit(db, boundary, "article-llm", null, NOW);
+const oneLeft = await creditsFor(db, boundary, NOW);
+expect("exactly one credit left", oneLeft.total, 1);
+expect("...enough for a one-credit import", await canSpendCredit(db, boundary, "article-llm", NOW), true);
+expect(
+  "...but not enough for a two-credit transcript",
+  await canSpendCredit(db, boundary, "transcript-llm", NOW),
+  false,
+);
+// Split across pools: 1 left in the allowance, top up 5 purchased, then a
+// transcript should draw 1 from each rather than refusing or double-dipping.
+const boundaryTopped = await grantCredits(db, boundary, 5);
+expect("top-up lands in purchased", boundaryTopped.purchasedLeft, 5);
+const split = await spendCredit(db, boundary, "transcript-llm", null, NOW);
+expect("the allowance's last credit is used first", split?.allowanceLeft, 0);
+expect("...and only the shortfall comes from purchased", split?.purchasedLeft, 4);
 
 // --- isolation --------------------------------------------------------------
 expect(
@@ -157,8 +193,10 @@ expect(
 );
 
 // --- the ledger -------------------------------------------------------------
+// Five rows, not three imports: a transcript spends two rows, one for each
+// credit it costs, so the ledger's unit is a credit, not an import.
 const ledger = await recentSpends(db, cook);
-expect("every charged import is on the ledger", ledger.length, 4);
+expect("every credit charged is on the ledger", ledger.length, 5);
 expect("...naming the recipe it paid for", ledger.some((e) => e.title === "From a video"), true);
 expect(
   "...and no free extraction is",
@@ -175,9 +213,9 @@ expect(
   3,
 );
 expect(
-  "...and the ledger row survives, just without its recipe",
+  "...and the ledger rows survive, just without their recipe",
   (await recentSpends(db, cook)).length,
-  4,
+  5,
 );
 expect(
   "...with its recipe reference nulled rather than the row cascaded away",
@@ -186,8 +224,8 @@ expect(
 );
 
 // --- cleanup ----------------------------------------------------------------
-await db.delete(schema.creditSpends).where(inArray(schema.creditSpends.userId, [cook, other]));
-await db.delete(schema.recipes).where(inArray(schema.recipes.ownerId, [cook, other]));
+await db.delete(schema.creditSpends).where(inArray(schema.creditSpends.userId, [cook, other, boundary]));
+await db.delete(schema.recipes).where(inArray(schema.recipes.ownerId, [cook, other, boundary]));
 await db.delete(schema.users).where(inArray(schema.users.handle, HANDLES));
 
 console.log(

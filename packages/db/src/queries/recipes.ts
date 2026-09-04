@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, ne, sql, type SQL } from "drizzle-orm";
 import {
   DEFAULT_LIBRARY_SORT,
+  MAX_RECIPE_PHOTOS,
   canonicalize,
   isStaple,
   isUuid,
@@ -11,8 +12,10 @@ import {
   type PairingSuggestions,
   type Recipe,
   type RecipeDraft,
+  type RecipePhoto,
 } from "@seconds/core";
-import type { Database } from "../client.js";
+import type { Database as RootDatabase } from "../client.js";
+type Database = Omit<RootDatabase, '$client'>;
 import * as schema from "../schema.js";
 
 /**
@@ -21,6 +24,12 @@ import * as schema from "../schema.js";
  * creating a second copy — people paste the same link twice all the time.
  */
 export async function saveRecipe(
+  database: Database, ownerId: string, recipe: Recipe,
+): Promise<string> {
+  return database.transaction(tx => saveRecipeAtomic(tx, ownerId, recipe));
+}
+
+async function saveRecipeAtomic(
   database: Database,
   ownerId: string,
   recipe: Recipe,
@@ -78,6 +87,12 @@ export async function saveRecipe(
  * 1, there are no notes, and it counts as verified the moment it's saved.
  */
 export async function createRecipe(
+  database: Database, ownerId: string, draft: RecipeDraft,
+): Promise<string> {
+  return database.transaction(tx => createRecipeAtomic(tx, ownerId, draft));
+}
+
+async function createRecipeAtomic(
   database: Database,
   ownerId: string,
   draft: RecipeDraft,
@@ -113,6 +128,12 @@ export async function createRecipe(
  * the honest part of it.
  */
 export async function updateRecipe(
+  database: Database, ownerId: string, recipeId: string, draft: RecipeDraft,
+): Promise<boolean> {
+  return database.transaction(tx => updateRecipeAtomic(tx, ownerId, recipeId, draft));
+}
+
+async function updateRecipeAtomic(
   database: Database,
   ownerId: string,
   recipeId: string,
@@ -198,18 +219,25 @@ export async function suggestedPairings(
 }
 
 /** Throw away a recipe. Everything hanging off it goes with it, by cascade. */
+/**
+ * Deletes the recipe and hands back the photos it carried, so the caller can
+ * clean up their R2 objects — the database has no way to reach out to R2
+ * itself, and without this the objects behind a deleted recipe's photos
+ * would sit in the bucket forever with nothing left that could ever list or
+ * delete them.
+ */
 export async function deleteRecipe(
   database: Database,
   ownerId: string,
   recipeId: string,
-): Promise<boolean> {
-  if (!isUuid(recipeId)) return false;
+): Promise<{ photos: RecipePhoto[] } | undefined> {
+  if (!isUuid(recipeId)) return undefined;
 
   const [deleted] = await database
     .delete(schema.recipes)
     .where(and(eq(schema.recipes.id, recipeId), eq(schema.recipes.ownerId, ownerId)))
-    .returning({ id: schema.recipes.id });
-  return Boolean(deleted);
+    .returning({ photos: schema.recipes.photos });
+  return deleted ? { photos: deleted.photos } : undefined;
 }
 
 /** The columns a draft owns — everything except provenance and ownership. */
@@ -446,6 +474,100 @@ export async function getRecipe(database: Database, ownerId: string, recipeId: s
   });
 }
 
+/** Why an upload didn't get added, when it wasn't simply added. */
+export type AddRecipePhotoResult =
+  | { ok: true; photos: RecipePhoto[] }
+  | { ok: false; reason: "not_found" | "at_limit" };
+
+/**
+ * Append an uploaded photo to a recipe's gallery.
+ *
+ * A single atomic `||` concat rather than a read-modify-write: two uploads
+ * landing at once must not silently drop one, which a JS-side read-then-write
+ * would risk. The `MAX_RECIPE_PHOTOS` cap is enforced in the same UPDATE's
+ * WHERE clause for the same reason — two uploads racing right at the limit
+ * must not both squeeze through a check-then-write gap and end up one over.
+ */
+export async function addRecipePhoto(
+  database: Database,
+  ownerId: string,
+  recipeId: string,
+  photo: RecipePhoto,
+): Promise<AddRecipePhotoResult> {
+  if (!isUuid(recipeId)) return { ok: false, reason: "not_found" };
+
+  const [updated] = await database
+    .update(schema.recipes)
+    .set({ photos: sql`${schema.recipes.photos} || ${JSON.stringify([photo])}::jsonb` })
+    .where(
+      and(
+        eq(schema.recipes.id, recipeId),
+        eq(schema.recipes.ownerId, ownerId),
+        sql`jsonb_array_length(${schema.recipes.photos}) < ${MAX_RECIPE_PHOTOS}`,
+      ),
+    )
+    .returning({ photos: schema.recipes.photos });
+
+  if (updated) return { ok: true, photos: updated.photos };
+
+  // The update matched nothing — either this caller doesn't own the recipe,
+  // or they do but it's already at the cap. A cheap follow-up read (no
+  // mutation, so no new race) tells the two apart for the route's error message.
+  const existing = await getRecipe(database, ownerId, recipeId);
+  return existing ? { ok: false, reason: "at_limit" } : { ok: false, reason: "not_found" };
+}
+
+/**
+ * Drop one photo by its storage key.
+ *
+ * The caller deletes the R2 object separately, and only when `removed` is
+ * true — this only owns the database side, same division as the rest of this
+ * file. `removed` matters because a key that never belonged to this recipe
+ * must never trigger an R2 delete: the recipe-ownership check alone isn't
+ * enough, since anyone who owns *some* recipe could otherwise pass a photo
+ * key harvested from a different recipe (e.g. a public share) and have this
+ * route delete a stranger's object out from under them. The WHERE clause's
+ * `exists` requires the key to actually be present at update time, so a
+ * concurrent duplicate remove for the same key serializes on the row lock and
+ * correctly finds nothing left to remove the second time.
+ *
+ * Returns undefined when the recipe doesn't exist or isn't owned by this
+ * caller, so the route can 404 rather than leak whether it exists.
+ */
+export async function removeRecipePhoto(
+  database: Database,
+  ownerId: string,
+  recipeId: string,
+  key: string,
+): Promise<{ photos: RecipePhoto[]; removed: boolean } | undefined> {
+  if (!isUuid(recipeId)) return undefined;
+
+  const hasKey = sql`exists (
+    select 1 from jsonb_array_elements(${schema.recipes.photos}) as photo
+    where photo->>'key' = ${key}
+  )`;
+
+  const [updated] = await database
+    .update(schema.recipes)
+    .set({
+      photos: sql`(
+        select coalesce(jsonb_agg(photo), '[]'::jsonb)
+        from jsonb_array_elements(${schema.recipes.photos}) as photo
+        where photo->>'key' != ${key}
+      )`,
+    })
+    .where(and(eq(schema.recipes.id, recipeId), eq(schema.recipes.ownerId, ownerId), hasKey))
+    .returning({ photos: schema.recipes.photos });
+
+  if (updated) return { photos: updated.photos, removed: true };
+
+  // The update matched nothing — either this caller doesn't own the recipe,
+  // or they do but the key wasn't in its list. A cheap follow-up read (no
+  // mutation, so no new race to worry about) tells the two apart.
+  const existing = await getRecipe(database, ownerId, recipeId);
+  return existing ? { photos: existing.photos, removed: false } : undefined;
+}
+
 /** How many recipes someone owns, unfiltered and unpaged. */
 export async function countRecipes(database: Database, ownerId: string): Promise<number> {
   const [row] = await database
@@ -483,6 +605,15 @@ export async function recanonicalizeRecipes(
   database: Database,
   ownerId: string,
 ): Promise<{ recipes: number; changed: number }> {
+  // A failed index rebuild must not leave any rows in this batch using new
+  // ingredient data with an old pantry index.
+  return database.transaction(tx => recanonicalizeRecipesAtomic(tx, ownerId));
+}
+
+async function recanonicalizeRecipesAtomic(
+  database: Database,
+  ownerId: string,
+): Promise<{ recipes: number; changed: number }> {
   const rows = await database.query.recipes.findMany({
     where: eq(schema.recipes.ownerId, ownerId),
     columns: { id: true, ingredients: true },
@@ -505,7 +636,7 @@ export async function recanonicalizeRecipes(
     await database
       .update(schema.recipes)
       .set({ ingredients, updatedAt: new Date() })
-      .where(eq(schema.recipes.id, row.id));
+      .where(and(eq(schema.recipes.id, row.id), eq(schema.recipes.ownerId, ownerId)));
 
     await reindexIngredients(database, row.id, { ingredients } as Recipe);
   }
