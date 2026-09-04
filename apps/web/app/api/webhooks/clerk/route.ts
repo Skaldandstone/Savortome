@@ -1,7 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyWebhook } from "@clerk/nextjs/webhooks";
-import { db, deleteUserByClerkId, upsertUserFromClerk } from "@seconds/db";
+import Stripe from "stripe";
+import {
+  db,
+  deleteUserByClerkId,
+  stripeSubscriptionForClerkId,
+  upsertUserFromClerk,
+} from "@seconds/db";
 import { deleteRecipePhoto } from "@/lib/r2";
+import { stripe, stripeConfigured } from "@/lib/stripe";
 
 /**
  * Keeps the local `users` table in step with Clerk.
@@ -63,10 +70,22 @@ export async function POST(request: NextRequest) {
 
       case "user.deleted": {
         const { id } = event.data as { id?: string };
-        // Recipes, shelves, and ratings all cascade from the user row — but
-        // that cascade is Postgres-only, so the account's R2 photo objects
-        // need cleaning up here rather than relying on the cascade for it.
         if (id) {
+          // Cancel billing *before* the row (and the subscription id with
+          // it) disappears — deleting the account must never be the thing
+          // that leaves someone's subscription running with no account left
+          // to cancel it from. Done first, and left to throw: a real Stripe
+          // failure here should 500 the whole webhook so Clerk retries,
+          // rather than deleting the account and quietly losing the one
+          // piece of information needed to stop the charges.
+          if (stripeConfigured()) {
+            const subscriptionId = await stripeSubscriptionForClerkId(database, id);
+            if (subscriptionId) await cancelSubscription(subscriptionId);
+          }
+
+          // Recipes, shelves, and ratings all cascade from the user row —
+          // but that cascade is Postgres-only, so the account's R2 photo
+          // objects need cleaning up here rather than relying on it.
           const { photos } = await deleteUserByClerkId(database, id);
           await Promise.all(
             photos.map((photo) => deleteRecipePhoto(photo.key).catch(() => undefined)),
@@ -88,4 +107,27 @@ export async function POST(request: NextRequest) {
   }
 
   return NextResponse.json({ ok: true });
+}
+
+/**
+ * Cancels a subscription, treating "there's nothing left to cancel" as
+ * success rather than an error to retry over. Checks the subscription's own
+ * status rather than pattern-matching Stripe's error text for "already
+ * canceled" — a already-gone-on-Stripe's-side subscription (a prior partial
+ * run of this same webhook, an account whose subscription lapsed some other
+ * way) shouldn't block the account deletion waiting on this. Anything else
+ * is a real failure and is left to throw, so the caller's 500 tells Clerk to
+ * retry.
+ */
+async function cancelSubscription(subscriptionId: string): Promise<void> {
+  const client = stripe();
+  let subscription: Stripe.Subscription;
+  try {
+    subscription = await client.subscriptions.retrieve(subscriptionId);
+  } catch (err) {
+    if (err instanceof Stripe.errors.StripeInvalidRequestError && err.code === "resource_missing") return;
+    throw err;
+  }
+  if (subscription.status === "canceled") return;
+  await client.subscriptions.cancel(subscriptionId);
 }

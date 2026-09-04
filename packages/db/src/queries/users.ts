@@ -84,6 +84,24 @@ export async function findUserByClerkId(
 }
 
 /**
+ * The account's Stripe subscription id, if it has one — looked up ahead of
+ * `deleteUserByClerkId` so the caller can cancel billing *before* the row
+ * (and the id) is gone. Deleting the account must not be the thing that
+ * leaves someone's subscription running with no account left to cancel it
+ * from.
+ */
+export async function stripeSubscriptionForClerkId(
+  database: Database,
+  clerkId: string,
+): Promise<string | null> {
+  const row = await database.query.users.findFirst({
+    where: eq(schema.users.clerkId, clerkId),
+    columns: { stripeSubscriptionId: true },
+  });
+  return row?.stripeSubscriptionId ?? null;
+}
+
+/**
  * Deletes the account and hands back every photo every recipe it owned was
  * carrying. The recipes themselves cascade away at the foreign-key level
  * (`recipes.owner_id references users.id on delete cascade`) — fast and
