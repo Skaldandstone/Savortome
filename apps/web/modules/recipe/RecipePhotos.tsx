@@ -4,8 +4,14 @@ import { useRef, useState } from "react";
 import { isPhotoMediaType, MAX_PHOTO_BYTES, type RecipePhoto } from "@seconds/core/format";
 import { Callout } from "@/ui";
 import { api } from "@/lib/client";
-import { readAsBase64 } from "@/lib/photo";
+import { compressForUpload, readAsBase64 } from "@/lib/photo";
 import styles from "./recipe.module.css";
+
+// A sanity bound before even trying to decode, not the real limit — a modern
+// phone photo comfortably clears this; it exists to avoid asking the browser
+// to decode something absurd. The real limit is checked after compression,
+// below, since that's the number that actually determines what gets sent.
+const MAX_PHOTO_BYTES_BEFORE_COMPRESSION = 50_000_000;
 
 /** Your own photos of the finished dish — separate from a source page's own image. */
 export function RecipePhotos({ recipeId, initial }: { recipeId: string; initial: RecipePhoto[] }) {
@@ -22,14 +28,29 @@ export function RecipePhotos({ recipeId, initial }: { recipeId: string; initial:
       setError("That doesn't look like a photo. Try a JPEG, PNG, or WebP.");
       return;
     }
-    if (file.size > MAX_PHOTO_BYTES) {
+    if (file.size > MAX_PHOTO_BYTES_BEFORE_COMPRESSION) {
       setError("That photo is too large. Try a smaller image.");
       return;
     }
     setUploading(true);
     try {
-      const base64 = await readAsBase64(file);
-      const { photos: updated } = await api.addRecipePhoto(recipeId, base64, file.type);
+      // Downscale/re-encode first — most real phone photos shrink well
+      // under the limit this way, so the size check that matters is the one
+      // after compression, not the one on what the camera originally produced.
+      const compressed = await compressForUpload(file);
+      if (compressed.size > MAX_PHOTO_BYTES) {
+        setError("That photo is too large even compressed. Try a smaller image.");
+        return;
+      }
+      // compressForUpload only ever produces the original (already-validated)
+      // type or re-encodes to image/jpeg, but re-checking rather than casting
+      // keeps this honest if that ever changes.
+      if (!isPhotoMediaType(compressed.type)) {
+        setError("Couldn't prepare that photo for upload. Try again.");
+        return;
+      }
+      const base64 = await readAsBase64(compressed);
+      const { photos: updated } = await api.addRecipePhoto(recipeId, base64, compressed.type);
       setPhotos(updated);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't upload that photo.");
