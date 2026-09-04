@@ -219,18 +219,25 @@ export async function suggestedPairings(
 }
 
 /** Throw away a recipe. Everything hanging off it goes with it, by cascade. */
+/**
+ * Deletes the recipe and hands back the photos it carried, so the caller can
+ * clean up their R2 objects — the database has no way to reach out to R2
+ * itself, and without this the objects behind a deleted recipe's photos
+ * would sit in the bucket forever with nothing left that could ever list or
+ * delete them.
+ */
 export async function deleteRecipe(
   database: Database,
   ownerId: string,
   recipeId: string,
-): Promise<boolean> {
-  if (!isUuid(recipeId)) return false;
+): Promise<{ photos: RecipePhoto[] } | undefined> {
+  if (!isUuid(recipeId)) return undefined;
 
   const [deleted] = await database
     .delete(schema.recipes)
     .where(and(eq(schema.recipes.id, recipeId), eq(schema.recipes.ownerId, ownerId)))
-    .returning({ id: schema.recipes.id });
-  return Boolean(deleted);
+    .returning({ photos: schema.recipes.photos });
+  return deleted ? { photos: deleted.photos } : undefined;
 }
 
 /** The columns a draft owns — everything except provenance and ownership. */

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { RecipeDraft } from "@seconds/core";
 import { deleteRecipe, getRecipe, updateRecipe } from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
+import { deleteRecipePhoto } from "@/lib/r2";
 
 /**
  * A single recipe as JSON. The web app renders recipes server-side and doesn't
@@ -68,9 +69,14 @@ export async function PUT(request: Request, { params }: Params) {
 export async function DELETE(_request: Request, { params }: Params) {
   const { id } = await params;
 
-  const response = await withUser(async (userId, database) =>
-    (await deleteRecipe(database, userId, id)) ? { ok: true } : null,
-  );
+  const response = await withUser(async (userId, database) => {
+    const deleted = await deleteRecipe(database, userId, id);
+    if (!deleted) return null;
+    // Best-effort: the row is already gone, so a failed R2 delete here just
+    // leaves an orphaned object rather than blocking or undoing the delete.
+    await Promise.all(deleted.photos.map((photo) => deleteRecipePhoto(photo.key).catch(() => undefined)));
+    return { ok: true };
+  });
   return notFoundIfNull(response);
 }
 
