@@ -2,21 +2,14 @@ import * as cheerio from "cheerio";
 import { decodeHTML } from "entities";
 import { timerFromStep } from "../cook.js";
 import type { ExtractedRecipe, Ingredient, Nutrients, RecipeNutrition, Step } from "../recipe.js";
-import { parseIngredientLine } from "../units.js";
+import { parseIngredientLine, parsePlainDuration } from "../units.js";
 
-/** ISO-8601 duration ("PT1H15M") -> minutes. */
+/** ISO-8601 duration ("PT1H15M") -> minutes, falling back to plain English for the sites that publish "45 minutes" in this field instead. */
 export function isoDurationToMinutes(v: unknown): number | null {
   if (typeof v === "number") return Math.round(v);
   if (typeof v !== "string") return null;
   const m = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$/.exec(v.trim());
-  if (!m) {
-    const plain = /^(\d+)\s*(min|minute|hour|hr)/i.exec(v.trim());
-    if (plain) {
-      const n = Number(plain[1]);
-      return /h/i.test(plain[2] as string) ? n * 60 : n;
-    }
-    return null;
-  }
+  if (!m) return parsePlainDuration(v);
   const [, d, h, min, s] = m;
   const total =
     Number(d ?? 0) * 1440 + Number(h ?? 0) * 60 + Number(min ?? 0) + Number(s ?? 0) / 60;
