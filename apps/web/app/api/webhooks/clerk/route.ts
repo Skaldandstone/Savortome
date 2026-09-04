@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyWebhook } from "@clerk/nextjs/webhooks";
 import { db, deleteUserByClerkId, upsertUserFromClerk } from "@seconds/db";
+import { deleteRecipePhoto } from "@/lib/r2";
 
 /**
  * Keeps the local `users` table in step with Clerk.
@@ -62,8 +63,15 @@ export async function POST(request: NextRequest) {
 
       case "user.deleted": {
         const { id } = event.data as { id?: string };
-        // Recipes, shelves, and ratings all cascade from the user row.
-        if (id) await deleteUserByClerkId(database, id);
+        // Recipes, shelves, and ratings all cascade from the user row — but
+        // that cascade is Postgres-only, so the account's R2 photo objects
+        // need cleaning up here rather than relying on the cascade for it.
+        if (id) {
+          const { photos } = await deleteUserByClerkId(database, id);
+          await Promise.all(
+            photos.map((photo) => deleteRecipePhoto(photo.key).catch(() => undefined)),
+          );
+        }
         break;
       }
 

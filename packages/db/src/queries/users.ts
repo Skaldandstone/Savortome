@@ -1,5 +1,11 @@
 import { eq } from "drizzle-orm";
-import { DEFAULT_SHELVES, type Allergen, type DietaryProfile, type DietaryTag } from "@seconds/core";
+import {
+  DEFAULT_SHELVES,
+  type Allergen,
+  type DietaryProfile,
+  type DietaryTag,
+  type RecipePhoto,
+} from "@seconds/core";
 import type { Database } from "../client.js";
 import * as schema from "../schema.js";
 import { friendIdsOf } from "./sharing.js";
@@ -77,8 +83,32 @@ export async function findUserByClerkId(
   return row?.id ?? null;
 }
 
-export async function deleteUserByClerkId(database: Database, clerkId: string): Promise<void> {
-  await database.delete(schema.users).where(eq(schema.users.clerkId, clerkId));
+/**
+ * Deletes the account and hands back every photo every recipe it owned was
+ * carrying. The recipes themselves cascade away at the foreign-key level
+ * (`recipes.owner_id references users.id on delete cascade`) — fast and
+ * simple, but that cascade runs entirely inside Postgres and never touches
+ * R2, so without this the account's photo objects would silently outlive
+ * the account itself with nothing left that could ever list or delete them.
+ */
+export async function deleteUserByClerkId(
+  database: Database,
+  clerkId: string,
+): Promise<{ photos: RecipePhoto[] }> {
+  const user = await database.query.users.findFirst({
+    where: eq(schema.users.clerkId, clerkId),
+    columns: { id: true },
+  });
+  if (!user) return { photos: [] };
+
+  const rows = await database.query.recipes.findMany({
+    where: eq(schema.recipes.ownerId, user.id),
+    columns: { photos: true },
+  });
+
+  await database.delete(schema.users).where(eq(schema.users.id, user.id));
+
+  return { photos: rows.flatMap((row) => row.photos) };
 }
 
 /**
