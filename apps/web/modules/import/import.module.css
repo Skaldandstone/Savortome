@@ -55,14 +55,34 @@
 
 /* The plan is the better answer for most people, so it leads. */
 .pack[data-primary="true"] {
-  color: #fff;
+  color: var(--on-accent, #fff);
   background: var(--accent);
   border-color: var(--accent);
 }
-.pack[data-primary="true"]:hover:not(:disabled) { color: #fff; opacity: 0.9; }
+.pack[data-primary="true"]:hover:not(:disabled) { color: var(--on-accent, #fff); opacity: 0.9; }
 
 .meterProblem {
   flex-basis: 100%;
   font-size: var(--step-2);
   color: var(--warn);
 }
+
+.photoPicker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2, 8px);
+  flex: 1 1 auto;
+}
+
+.photoPreview {
+  max-width: 220px;
+  max-height: 220px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  object-fit: cover;
+}
+
+:global([data-woodland='true']) .modeSwitch { flex-wrap:wrap; gap:8px; }
+:global([data-woodland='true']) .progress { font-size:.9375rem; line-height:1.65; border:1px solid var(--border); }
+:global([data-woodland='true']) .meter { border-color:var(--border); line-height:1.6; }
+:global([data-woodland='true']) .pack[data-primary='true'] { background:var(--action-surface); color:var(--action-text); border-color:var(--border); }

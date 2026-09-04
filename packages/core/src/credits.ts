@@ -95,6 +95,8 @@ export const tierOr = (value: string | null | undefined): Tier => (isTier(value)
  */
 export function creditCost(method: ExtractionMethod): number {
   if (method === "schema-org" || method === "manual") return 0;
+  // A photo is one bounded image, closer in cost to an article than to a
+  // multi-minute transcript — standard rate, not the transcript's double.
   return method === "transcript-llm" ? 2 : 1;
 }
 

@@ -231,3 +231,27 @@ export function textSource(text: string, title?: string): SourceDocument {
     trace: ["pasted text"],
   };
 }
+
+/**
+ * Wrap a photographed page — a recipe card, a cookbook spread, a handwritten
+ * note — so it goes through the same extractor, reading the image directly
+ * rather than needing OCR run first.
+ */
+export function photoSource(
+  base64: string,
+  mediaType: "image/jpeg" | "image/png" | "image/webp",
+  title?: string,
+): SourceDocument {
+  return {
+    kind: "photo",
+    url: null,
+    title: title ?? null,
+    author: null,
+    siteName: null,
+    imageUrl: null,
+    text: "",
+    textKind: "photo",
+    image: { base64, mediaType },
+    trace: ["photographed page"],
+  };
+}

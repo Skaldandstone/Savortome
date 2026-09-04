@@ -23,6 +23,7 @@ export * from "./ingest.js";
 export {
   resolveSource,
   textSource,
+  photoSource,
   ResolveError,
   UnsafeUrlError,
   assertPublicHttpUrl,

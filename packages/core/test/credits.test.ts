@@ -47,9 +47,10 @@ describe("creditCost", () => {
     assert.equal(creditCost("transcript-llm"), 2);
   });
 
-  it("charges the standard rate for an article or a caption", () => {
+  it("charges the standard rate for an article, a caption, or a photo", () => {
     assert.equal(creditCost("article-llm"), 1);
     assert.equal(creditCost("caption-llm"), 1);
+    assert.equal(creditCost("photo-llm"), 1);
   });
 
   it("charges nothing for what costs nothing to serve", () => {
@@ -58,7 +59,7 @@ describe("creditCost", () => {
   });
 
   it("agrees with costsCredit about which methods charge anything", () => {
-    for (const method of ["schema-org", "article-llm", "transcript-llm", "caption-llm", "manual"] as const) {
+    for (const method of ["schema-org", "article-llm", "transcript-llm", "caption-llm", "photo-llm", "manual"] as const) {
       assert.equal(costsCredit(method), creditCost(method) > 0, method);
     }
   });

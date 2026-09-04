@@ -6,6 +6,7 @@ import {
   methodForTextKind,
   outOfCreditsMessage,
   nextResetISO,
+  photoSource,
   resolveSource,
   ResolveError,
   textSource,
@@ -22,9 +23,19 @@ export const runtime = "nodejs";
 // Transcribing a video is slow; give the pipeline room before the platform cuts it off.
 export const maxDuration = 300;
 
+const PHOTO_MEDIA_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+type PhotoMediaType = (typeof PHOTO_MEDIA_TYPES)[number];
+const isPhotoMediaType = (v: unknown): v is PhotoMediaType =>
+  (PHOTO_MEDIA_TYPES as readonly unknown[]).includes(v);
+// A phone photo comfortably fits well under this; it exists to bound memory
+// and API cost per request, not to constrain a real recipe photo.
+const MAX_PHOTO_BASE64_CHARS = 12_000_000; // ~9 MB decoded
+
 interface ImportBody {
   url?: string;
   text?: string;
+  imageBase64?: string;
+  imageMediaType?: string;
   title?: string;
   forceModel?: boolean;
 }
@@ -50,8 +61,23 @@ export async function POST(request: Request) {
 
   const url = body.url?.trim();
   const text = body.text?.trim();
-  if (!url && !text) {
-    return NextResponse.json({ error: "Send either a url or some text to import." }, { status: 400 });
+  const imageBase64 = body.imageBase64?.trim();
+  if (!url && !text && !imageBase64) {
+    return NextResponse.json(
+      { error: "Send a url, some text, or a photo to import." },
+      { status: 400 },
+    );
+  }
+  if (imageBase64) {
+    if (!isPhotoMediaType(body.imageMediaType)) {
+      return NextResponse.json(
+        { error: `imageMediaType must be one of: ${PHOTO_MEDIA_TYPES.join(", ")}` },
+        { status: 400 },
+      );
+    }
+    if (imageBase64.length > MAX_PHOTO_BASE64_CHARS) {
+      return NextResponse.json({ error: "That photo is too large. Try a smaller image." }, { status: 400 });
+    }
   }
 
   // Resolve first, then decide whether this will cost anything: a page might
@@ -79,7 +105,9 @@ export async function POST(request: Request) {
 
     const doc = url
       ? await resolveSource(url)
-      : textSource(text as string, body.title);
+      : imageBase64
+        ? photoSource(imageBase64, body.imageMediaType as PhotoMediaType, body.title)
+        : textSource(text as string, body.title);
 
     if (userId && willCallModel(doc, { forceModel: body.forceModel })) {
       // The real cost is now known — a transcript costs 2 credits, an article

@@ -14,6 +14,7 @@ export const SOURCE_KINDS = [
   "web",
   "manual",
   "text",
+  "photo",
 ] as const;
 export type SourceKind = (typeof SOURCE_KINDS)[number];
 
@@ -23,6 +24,7 @@ export const EXTRACTION_METHODS = [
   "article-llm", // page prose -> Claude
   "transcript-llm", // spoken audio -> transcript -> Claude
   "caption-llm", // post caption / description -> Claude
+  "photo-llm", // a photographed page -> Claude, read directly as an image
   "manual", // typed by a human
 ] as const;
 export type ExtractionMethod = (typeof EXTRACTION_METHODS)[number];

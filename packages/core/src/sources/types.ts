@@ -11,10 +11,15 @@ export interface SourceDocument {
   author: string | null;
   siteName: string | null;
   imageUrl: string | null;
-  /** Prose the extractor will read: article body, transcript, or caption. */
+  /** Prose the extractor will read: article body, transcript, or caption. Empty for a photo source. */
   text: string;
   /** Which flavour of text `text` holds — picks the extraction prompt. */
-  textKind: "article" | "transcript" | "caption" | "raw";
+  textKind: "article" | "transcript" | "caption" | "raw" | "photo";
+  /** A photographed page — a recipe card, a cookbook spread, a handwritten note. */
+  image?: {
+    base64: string;
+    mediaType: "image/jpeg" | "image/png" | "image/webp";
+  };
   /** Set when the page already published a machine-readable recipe; skips the model entirely. */
   prestructured?: ExtractedRecipe;
   /** The page's own nutrition figures, when its schema.org data included any. */
@@ -54,4 +59,6 @@ export const methodForTextKind = (
     ? "transcript-llm"
     : k === "caption"
       ? "caption-llm"
-      : "article-llm";
+      : k === "photo"
+        ? "photo-llm"
+        : "article-llm";

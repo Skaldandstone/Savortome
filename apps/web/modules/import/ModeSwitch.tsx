@@ -5,6 +5,7 @@ import type { ImportMode } from "@seconds/core/format";
 const MODES: { value: ImportMode; label: string }[] = [
   { value: "url", label: "From a link" },
   { value: "text", label: "Paste text" },
+  { value: "photo", label: "Photo of a page" },
 ];
 
 export function ModeSwitch({

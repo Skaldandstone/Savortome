@@ -109,6 +109,19 @@ const transcriptDoc = (): SourceDocument => ({
   trace: [],
 });
 
+const photoDoc = (): SourceDocument => ({
+  kind: "photo",
+  url: null,
+  title: "Grandma's index card",
+  author: null,
+  siteName: null,
+  imageUrl: null,
+  text: "",
+  textKind: "photo",
+  image: { base64: "ZmFrZS1pbWFnZS1ieXRlcw==", mediaType: "image/jpeg" },
+  trace: ["photographed page"],
+});
+
 describe("extractRecipe request shape", () => {
   it("sends the parameters the extraction depends on", async () => {
     await extractRecipe(transcriptDoc(), { client: client() });
@@ -138,6 +151,28 @@ describe("extractRecipe request shape", () => {
     await extractRecipe({ ...transcriptDoc(), textKind: "article" }, { client: client() });
     const messages = lastBody.messages as { content: string }[];
     assert.match(messages[0]!.content, /food blog page/);
+  });
+
+  it("sends a photo as an image content block, not interpolated text", async () => {
+    await extractRecipe(photoDoc(), { client: client() });
+    const messages = lastBody.messages as {
+      content: { type: string; source?: { type: string; media_type: string; data: string }; text?: string }[];
+    }[];
+    const content = messages[0]!.content;
+    assert.ok(Array.isArray(content), "a photo source must send array content, not a plain string");
+
+    const image = content.find((b) => b.type === "image");
+    assert.ok(image, "the image block must be present");
+    assert.equal(image!.source!.type, "base64");
+    assert.equal(image!.source!.media_type, "image/jpeg");
+    assert.equal(image!.source!.data, "ZmFrZS1pbWFnZS1ieXRlcw==");
+
+    const text = content.find((b) => b.type === "text");
+    assert.match(text!.text!, /photograph of a physical page/);
+    assert.match(text!.text!, /Grandma's index card/);
+    // The empty CONTENT/text-body wrapper used for text sources must not leak
+    // into a photo request, which has no transcript to interpolate.
+    assert.doesNotMatch(text!.text!, /--- CONTENT ---/);
   });
 
   it("honours a lower effort setting for cheap re-runs", async () => {
