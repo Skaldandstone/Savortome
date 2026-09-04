@@ -102,6 +102,14 @@ const NON_DAIRY_MODIFIERS: Partial<Record<Allergen, string[]>> = {
 };
 const NON_DAIRY_BUTTERS = ["peanut", "almond", "cashew", "cocoa", "shea", "apple", "sunflower", "seed"];
 
+/**
+ * The reverse shape of `NON_DAIRY_BUTTERS`: there the modifier comes before
+ * "butter" ("peanut butter"); here "butter" comes first and modifies a food
+ * that has nothing to do with dairy — a butter bean is a lima bean, and
+ * butter lettuce is a lettuce variety.
+ */
+const BUTTER_NOT_DAIRY_PHRASES = [/\bbutter\s*beans?\b/, /\bbutter\s*lettuce\b/];
+
 /** Which of a viewer's flagged allergens might be in one ingredient's name. */
 export function allergensIn(canonicalItem: string): Allergen[] {
   const text = canonicalItem.toLowerCase();
@@ -114,7 +122,8 @@ export function allergensIn(canonicalItem: string): Allergen[] {
   if (
     matchesWord(text, "butter") &&
     !found.includes("milk") &&
-    !NON_DAIRY_BUTTERS.some((word) => matchesWord(text, word))
+    !NON_DAIRY_BUTTERS.some((word) => matchesWord(text, word)) &&
+    !BUTTER_NOT_DAIRY_PHRASES.some((phrase) => phrase.test(text))
   ) {
     found.push("milk");
   }

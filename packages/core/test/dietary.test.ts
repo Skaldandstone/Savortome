@@ -24,6 +24,17 @@ describe("allergensIn", () => {
     assert.deepEqual(allergensIn("cocoa butter"), []);
   });
 
+  it("doesn't flag a butter bean or butter lettuce as dairy — 'butter' names the food, not an ingredient in it", () => {
+    assert.deepEqual(allergensIn("butter beans"), []);
+    assert.deepEqual(allergensIn("butter bean"), []);
+    assert.deepEqual(allergensIn("butter lettuce"), []);
+  });
+
+  it("still flags real butter even alongside a word from the non-dairy phrase list", () => {
+    assert.deepEqual(allergensIn("unsalted butter"), ["milk"]);
+    assert.deepEqual(allergensIn("butter, softened"), ["milk"]);
+  });
+
   it("can match more than one allergen in a single ingredient", () => {
     // Contrived, but the point is the function doesn't stop at the first hit.
     const flagged = allergensIn("sesame tahini");
