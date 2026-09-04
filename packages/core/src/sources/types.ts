@@ -28,6 +28,13 @@ export interface SourceDocument {
   };
   /** Set when the page already published a machine-readable recipe; skips the model entirely. */
   prestructured?: ExtractedRecipe;
+  /**
+   * The extraction method to record when `prestructured` is used. Defaults to
+   * "schema-org" (a page's own JSON-LD) when unset — a structured import from
+   * another app (Paprika, ...) sets this to "file-import" instead so the trust
+   * badge doesn't claim to have read a live web page it never saw.
+   */
+  prestructuredMethod?: ExtractionMethod;
   /** The page's own nutrition figures, when its schema.org data included any. */
   prestructuredNutrition?: RecipeNutrition | null;
   /** Transcript cue points, used to attach `sourceTimestamp` to steps. */

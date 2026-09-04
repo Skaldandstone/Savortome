@@ -9,6 +9,7 @@ const METHOD_LABEL: Record<ExtractionMethod, string> = {
   "caption-llm": "Reconstructed from the post caption",
   "photo-llm": "Reconstructed from a photo of the page",
   manual: "Written by hand",
+  "file-import": "Imported from another recipe app's own export",
 };
 
 /**

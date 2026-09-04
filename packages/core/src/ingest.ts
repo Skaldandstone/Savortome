@@ -88,8 +88,12 @@ export async function ingestDocument(
 
   if (!willCallModel(doc, opts)) {
     extracted = doc.prestructured!;
-    method = "schema-org";
-    trace.push("extraction: used the page's own schema.org recipe (no model call)");
+    method = doc.prestructuredMethod ?? "schema-org";
+    trace.push(
+      method === "schema-org"
+        ? "extraction: used the page's own schema.org recipe (no model call)"
+        : "extraction: read a structured export from another app (no model call)",
+    );
     // Nothing here calls a model, so there's no free per-ingredient fallback
     // guess to lean on. Only the page's own published figures are trustworthy
     // enough to attach automatically; anything else waits for someone to ask
@@ -164,7 +168,7 @@ export async function ingestDocument(
     doc,
   );
 
-  return { recipe, trace, freeExtraction: method === "schema-org" };
+  return { recipe, trace, freeExtraction: method === "schema-org" || method === "file-import" };
 }
 
 /**

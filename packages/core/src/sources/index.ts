@@ -1,4 +1,5 @@
 import type { PhotoMediaType, SourceKind } from "../recipe.js";
+import type { PaprikaImportItem } from "../importers/paprika.js";
 import { detectSourceKind } from "../source-kind.js";
 import { extractArticleText } from "./article.js";
 import { fetchText } from "./fetch.js";
@@ -18,6 +19,11 @@ import { cuesToTranscript, fetchYoutube } from "./youtube.js";
 export * from "./types.js";
 export { assertPublicHttpUrl, UnsafeUrlError } from "./url-guard.js";
 export { extractArticleText } from "./article.js";
+export {
+  parsePaprikaExport,
+  type PaprikaImportItem,
+  type PaprikaImportResult,
+} from "../importers/paprika.js";
 export { extractJsonLdRecipe, isoDurationToMinutes } from "./jsonld.js";
 export { fetchSocial } from "./social.js";
 export { detectSourceKind, socialKind, youtubeVideoId } from "../source-kind.js";
@@ -253,5 +259,26 @@ export function photoSource(
     textKind: "photo",
     image: { base64, mediaType },
     trace: ["photographed page"],
+  };
+}
+
+/**
+ * Wrap one recipe parsed out of another app's export so it goes through the
+ * same `ingestDocument` pipeline as everything else, skipping the model the
+ * same way a page's own schema.org data does.
+ */
+export function paprikaSource(item: PaprikaImportItem): SourceDocument {
+  return {
+    kind: "paprika",
+    url: item.sourceUrl,
+    title: item.recipe.title,
+    author: item.author,
+    siteName: "Paprika",
+    imageUrl: item.imageUrl,
+    text: "",
+    textKind: "raw",
+    prestructured: item.recipe,
+    prestructuredMethod: "file-import",
+    trace: ["paprika: read from the account's exported .paprikarecipes file (no model call)"],
   };
 }

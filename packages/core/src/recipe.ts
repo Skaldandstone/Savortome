@@ -15,6 +15,7 @@ export const SOURCE_KINDS = [
   "manual",
   "text",
   "photo",
+  "paprika",
 ] as const;
 export type SourceKind = (typeof SOURCE_KINDS)[number];
 
@@ -26,6 +27,7 @@ export const EXTRACTION_METHODS = [
   "caption-llm", // post caption / description -> Claude
   "photo-llm", // a photographed page -> Claude, read directly as an image
   "manual", // typed by a human
+  "file-import", // a structured export from another recipe app; no model involved
 ] as const;
 export type ExtractionMethod = (typeof EXTRACTION_METHODS)[number];
 

@@ -98,7 +98,7 @@ export const tierOr = (value: string | null | undefined): Tier => (isTier(value)
  * the cheapest feature in the app feel like the most expensive.
  */
 export function creditCost(method: ExtractionMethod): number {
-  if (method === "schema-org" || method === "manual") return 0;
+  if (method === "schema-org" || method === "manual" || method === "file-import") return 0;
   // A photo is one bounded image, closer in cost to an article than to a
   // multi-minute transcript — standard rate, not the transcript's double.
   return method === "transcript-llm" ? 2 : 1;

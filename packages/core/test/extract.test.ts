@@ -257,6 +257,21 @@ describe("ingest", () => {
     assert.ok(trace.some((t) => t.includes("no model call")));
   });
 
+  it("honors prestructuredMethod, for a prestructured recipe that didn't come from the page's own schema.org data", async () => {
+    const doc = { ...transcriptDoc(), kind: "paprika" as const, textKind: "raw" as const };
+    const before = lastBody;
+    const { recipe, freeExtraction, trace } = await ingestDocument({
+      ...doc,
+      prestructured: { ...modelRecipe, title: "Imported from Paprika" },
+      prestructuredMethod: "file-import",
+    });
+
+    assert.equal(freeExtraction, true);
+    assert.equal(recipe.source.extractionMethod, "file-import");
+    assert.equal(lastBody, before, "no request should have been made");
+    assert.ok(trace.some((t) => t.includes("structured export from another app")));
+  });
+
   it("refuses an extraction with nothing in it, rather than saving an empty card", async () => {
     // How a paywalled newsletter post became a library entry titled
     // "No recipe found" with no ingredients and no steps.

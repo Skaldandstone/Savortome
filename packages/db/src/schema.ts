@@ -35,11 +35,11 @@ const tsvector = customType<{ data: string; driverData: string }>({
 });
 
 export const sourceKind = pgEnum("source_kind", [
-  "youtube", "tiktok", "instagram", "facebook", "web", "manual", "text", "photo",
+  "youtube", "tiktok", "instagram", "facebook", "web", "manual", "text", "photo", "paprika",
 ]);
 
 export const extractionMethod = pgEnum("extraction_method", [
-  "schema-org", "article-llm", "transcript-llm", "caption-llm", "photo-llm", "manual",
+  "schema-org", "article-llm", "transcript-llm", "caption-llm", "photo-llm", "manual", "file-import",
 ]);
 
 /** Mirrors Goodreads' want-to-read / reading / read triad. */
