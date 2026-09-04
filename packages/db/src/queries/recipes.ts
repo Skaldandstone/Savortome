@@ -494,17 +494,32 @@ export async function addRecipePhoto(
 /**
  * Drop one photo by its storage key.
  *
- * The caller deletes the R2 object separately — this only owns the database
- * side, same division as the rest of this file. Returns undefined when the
- * recipe doesn't exist or isn't owned by this caller.
+ * The caller deletes the R2 object separately, and only when `removed` is
+ * true — this only owns the database side, same division as the rest of this
+ * file. `removed` matters because a key that never belonged to this recipe
+ * must never trigger an R2 delete: the recipe-ownership check alone isn't
+ * enough, since anyone who owns *some* recipe could otherwise pass a photo
+ * key harvested from a different recipe (e.g. a public share) and have this
+ * route delete a stranger's object out from under them. The WHERE clause's
+ * `exists` requires the key to actually be present at update time, so a
+ * concurrent duplicate remove for the same key serializes on the row lock and
+ * correctly finds nothing left to remove the second time.
+ *
+ * Returns undefined when the recipe doesn't exist or isn't owned by this
+ * caller, so the route can 404 rather than leak whether it exists.
  */
 export async function removeRecipePhoto(
   database: Database,
   ownerId: string,
   recipeId: string,
   key: string,
-): Promise<RecipePhoto[] | undefined> {
+): Promise<{ photos: RecipePhoto[]; removed: boolean } | undefined> {
   if (!isUuid(recipeId)) return undefined;
+
+  const hasKey = sql`exists (
+    select 1 from jsonb_array_elements(${schema.recipes.photos}) as photo
+    where photo->>'key' = ${key}
+  )`;
 
   const [updated] = await database
     .update(schema.recipes)
@@ -515,10 +530,16 @@ export async function removeRecipePhoto(
         where photo->>'key' != ${key}
       )`,
     })
-    .where(and(eq(schema.recipes.id, recipeId), eq(schema.recipes.ownerId, ownerId)))
+    .where(and(eq(schema.recipes.id, recipeId), eq(schema.recipes.ownerId, ownerId), hasKey))
     .returning({ photos: schema.recipes.photos });
 
-  return updated?.photos;
+  if (updated) return { photos: updated.photos, removed: true };
+
+  // The update matched nothing — either this caller doesn't own the recipe,
+  // or they do but the key wasn't in its list. A cheap follow-up read (no
+  // mutation, so no new race to worry about) tells the two apart.
+  const existing = await getRecipe(database, ownerId, recipeId);
+  return existing ? { photos: existing.photos, removed: false } : undefined;
 }
 
 /** How many recipes someone owns, unfiltered and unpaged. */

@@ -69,13 +69,16 @@ export async function DELETE(request: Request, { params }: Params) {
     const key = body.key?.trim();
     if (!key) throw new BadRequestError("key is required.");
 
-    const photos = await removeRecipePhoto(database, userId, id, key);
-    if (!photos) return null;
-    // Best-effort: the database row is the source of truth for what a viewer
-    // sees, so an R2 delete that fails here leaves an unlisted orphan object
-    // rather than a photo that won't go away.
-    await deleteRecipePhoto(key).catch(() => undefined);
-    return { photos };
+    const result = await removeRecipePhoto(database, userId, id, key);
+    if (!result) return null;
+    // Only ever delete from R2 when this recipe's own array actually had the
+    // key. Owning *a* recipe isn't enough on its own — a key by itself is
+    // just a string, and without this check anyone could pass a key copied
+    // from a different recipe's photo (a public share exposes `url`, but
+    // even `key` reaching a client some other way must not be trusted) and
+    // have it delete a stranger's object.
+    if (result.removed) await deleteRecipePhoto(key).catch(() => undefined);
+    return { photos: result.photos };
   });
   return notFoundIfNull(response);
 }
