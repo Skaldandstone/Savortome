@@ -110,11 +110,28 @@ const NON_DAIRY_BUTTERS = ["peanut", "almond", "cashew", "cocoa", "shea", "apple
  */
 const BUTTER_NOT_DAIRY_PHRASES = [/\bbutter\s*beans?\b/, /\bbutter\s*lettuce\b/];
 
+/**
+ * The ingredient's own name saying it's free of an allergen is the strongest
+ * signal available that a keyword match for that exact allergen is wrong,
+ * not a real hit — "gluten-free bread" and "dairy-free cream cheese" are
+ * named specifically because they *don't* contain what they'd otherwise be
+ * flagged for. "Cream of tartar" and "cream soda" aren't dairy at all
+ * despite the name, which "vegan"/"non-dairy" alone wouldn't catch, so
+ * those get their own exact phrases. Scoped to the two allergens this was
+ * actually observed to misfire on; extend it if another one turns up the
+ * same way.
+ */
+const LABELED_FREE_OF: Partial<Record<Allergen, RegExp>> = {
+  milk: /\b(?:dairy|milk)[\s-]?free\b|\bnon-?dairy\b|\bvegan\b|\bcream\s+of\s+tartar\b|\bcream\s+soda\b/,
+  wheat: /\b(?:gluten|wheat)[\s-]?free\b/,
+};
+
 /** Which of a viewer's flagged allergens might be in one ingredient's name. */
 export function allergensIn(canonicalItem: string): Allergen[] {
   const text = canonicalItem.toLowerCase();
   const found = ALLERGENS.filter((allergen) => {
     if (!ALLERGEN_KEYWORDS[allergen].some((word) => matchesWord(text, word))) return false;
+    if (LABELED_FREE_OF[allergen]?.test(text)) return false;
     const modifiers = NON_DAIRY_MODIFIERS[allergen];
     return !modifiers?.some((word) => matchesWord(text, word));
   });
@@ -123,7 +140,8 @@ export function allergensIn(canonicalItem: string): Allergen[] {
     matchesWord(text, "butter") &&
     !found.includes("milk") &&
     !NON_DAIRY_BUTTERS.some((word) => matchesWord(text, word)) &&
-    !BUTTER_NOT_DAIRY_PHRASES.some((phrase) => phrase.test(text))
+    !BUTTER_NOT_DAIRY_PHRASES.some((phrase) => phrase.test(text)) &&
+    !LABELED_FREE_OF.milk!.test(text)
   ) {
     found.push("milk");
   }

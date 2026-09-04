@@ -35,6 +35,28 @@ describe("allergensIn", () => {
     assert.deepEqual(allergensIn("butter, softened"), ["milk"]);
   });
 
+  it("doesn't flag an ingredient explicitly labeled free of the allergen it would otherwise match", () => {
+    assert.deepEqual(allergensIn("gluten-free bread"), []);
+    assert.deepEqual(allergensIn("gluten-free flour"), []);
+    assert.deepEqual(allergensIn("gluten free pasta"), []);
+    assert.deepEqual(allergensIn("wheat-free flour"), []);
+    assert.deepEqual(allergensIn("dairy-free cream cheese"), []);
+    assert.deepEqual(allergensIn("non-dairy whipped cream"), []);
+    assert.deepEqual(allergensIn("vegan cream cheese"), []);
+  });
+
+  it("doesn't flag cream of tartar or cream soda as dairy — neither one contains any", () => {
+    assert.deepEqual(allergensIn("cream of tartar"), []);
+    assert.deepEqual(allergensIn("cream soda"), []);
+  });
+
+  it("a 'free' or 'vegan' label doesn't blind it to a real allergen match elsewhere in the same ingredient", () => {
+    // The label only cancels the allergen it names — a gluten-free product
+    // can still contain milk, and vice versa.
+    assert.deepEqual(allergensIn("gluten-free bread with milk powder"), ["milk"]);
+    assert.deepEqual(allergensIn("vegan wheat bread"), ["wheat"]);
+  });
+
   it("can match more than one allergen in a single ingredient", () => {
     // Contrived, but the point is the function doesn't stop at the first hit.
     const flagged = allergensIn("sesame tahini");
