@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { ingestDocument, paprikaSource, parsePaprikaExport } from "@seconds/core";
-import { ensureInitialStatus, saveRecipe, spendCredit } from "@seconds/db";
+import { ingestDocument, paprikaSource, parsePaprikaExport, type PaprikaImportItem } from "@seconds/core";
+import { ensureInitialStatus, saveRecipe, spendCredit, type Database } from "@seconds/db";
 import { BadRequestError, withUser } from "@/lib/api";
 
 /**
@@ -11,11 +11,36 @@ import { BadRequestError, withUser } from "@/lib/api";
  * always-free `spendCredit` no-op.
  */
 export const runtime = "nodejs";
+// Up to 500 recipes, each doing a couple of DB round trips even at
+// CONCURRENCY-wide overlap — matches the single-recipe importer's own
+// allowance for the same reason: a slow import shouldn't hit a short
+// platform default and fail partway through.
+export const maxDuration = 300;
 
 // Not a real limit on library size — a guard against one oversized or
 // adversarial file turning into an unbounded loop of database writes.
 const MAX_FILE_BYTES = 200_000_000;
 const MAX_IMPORT_RECIPES = 500;
+// Every recipe's save is independent (its own row, its own shelf-status
+// row), so there's no correctness reason to run them one at a time — only
+// bounded to avoid opening hundreds of DB connections/transactions at once.
+const CONCURRENCY = 10;
+
+async function importOne(database: Database, userId: string, item: PaprikaImportItem): Promise<boolean> {
+  try {
+    const { recipe } = await ingestDocument(paprikaSource(item));
+    const savedId = await saveRecipe(database, userId, recipe);
+    await ensureInitialStatus(database, userId, savedId, "want_to_cook");
+    // Always a no-op cost-wise (file-import is free) — called for the same
+    // reason the single-recipe importer calls it unconditionally: one place
+    // decides what an extraction costs, and this isn't it.
+    await spendCredit(database, userId, "file-import", savedId);
+    return true;
+  } catch (err) {
+    console.error(`Paprika import: failed to save "${item.recipe.title}"`, err);
+    return false;
+  }
+}
 
 export async function POST(request: Request) {
   const form = await request.formData().catch(() => null);
@@ -43,28 +68,17 @@ export async function POST(request: Request) {
     const items = parsed.items.slice(0, MAX_IMPORT_RECIPES);
     const overflow = parsed.items.length - items.length;
 
-    let imported = 0;
-    const failedTitles: string[] = [];
-    for (const item of items) {
-      try {
-        const { recipe } = await ingestDocument(paprikaSource(item));
-        const savedId = await saveRecipe(database, userId, recipe);
-        await ensureInitialStatus(database, userId, savedId, "want_to_cook");
-        // Always a no-op cost-wise (file-import is free) — called for the
-        // same reason the single-recipe importer calls it unconditionally:
-        // one place decides what an extraction costs, and this isn't it.
-        await spendCredit(database, userId, "file-import", savedId);
-        imported++;
-      } catch {
-        failedTitles.push(item.recipe.title);
-      }
+    let failed = 0;
+    for (let i = 0; i < items.length; i += CONCURRENCY) {
+      const chunk = items.slice(i, i + CONCURRENCY);
+      const results = await Promise.all(chunk.map((item) => importOne(database, userId, item)));
+      failed += results.filter((ok) => !ok).length;
     }
 
     return {
-      imported,
+      imported: items.length - failed,
       skipped: parsed.skipped.length,
-      failed: failedTitles.length,
-      failedTitles: failedTitles.slice(0, 20),
+      failed,
       overflow,
     };
   });

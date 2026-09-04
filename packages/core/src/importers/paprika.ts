@@ -106,14 +106,14 @@ function parseSteps(text: string): Step[] {
   }));
 }
 
-/** A bare line ending in ":" with no digits reads as a group header ("For the sauce:"), same convention the recipe editor uses. */
+/** A bare line ending in ":" reads as a group header ("For the sauce:"), the same convention the recipe editor uses (see isGroupHeading in editor.ts). */
 function parseIngredientBlock(text: string): Ingredient[] {
   const ingredients: Ingredient[] = [];
   let group: string | null = null;
   for (const raw of text.split(/\r?\n/)) {
     const line = raw.trim();
     if (!line) continue;
-    if (/:$/.test(line) && !/\d/.test(line)) {
+    if (line.endsWith(":")) {
       group = line.slice(0, -1).trim() || null;
       continue;
     }

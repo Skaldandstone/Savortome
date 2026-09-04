@@ -84,21 +84,20 @@ export async function findUserByClerkId(
 }
 
 /**
- * The account's Stripe subscription id, if it has one — looked up ahead of
- * `deleteUserByClerkId` so the caller can cancel billing *before* the row
- * (and the id) is gone. Deleting the account must not be the thing that
- * leaves someone's subscription running with no account left to cancel it
- * from.
+ * Everything the account-deletion webhook needs before it starts: the
+ * account's id (to delete it and its recipes) and its Stripe subscription
+ * id, if any (to cancel billing *before* the row — and the id — is gone).
+ * One lookup instead of two separate ones for what's always the same event.
  */
-export async function stripeSubscriptionForClerkId(
+export async function findUserForDeletion(
   database: Database,
   clerkId: string,
-): Promise<string | null> {
+): Promise<{ id: string; stripeSubscriptionId: string | null } | null> {
   const row = await database.query.users.findFirst({
     where: eq(schema.users.clerkId, clerkId),
-    columns: { stripeSubscriptionId: true },
+    columns: { id: true, stripeSubscriptionId: true },
   });
-  return row?.stripeSubscriptionId ?? null;
+  return row ?? null;
 }
 
 /**
@@ -108,23 +107,22 @@ export async function stripeSubscriptionForClerkId(
  * simple, but that cascade runs entirely inside Postgres and never touches
  * R2, so without this the account's photo objects would silently outlive
  * the account itself with nothing left that could ever list or delete them.
+ *
+ * Takes the database id rather than the Clerk id: the caller has already
+ * resolved it via `findUserForDeletion` to read the Stripe subscription id,
+ * and re-looking the account up by Clerk id here would just repeat that
+ * same query for no reason.
  */
-export async function deleteUserByClerkId(
+export async function deleteUserById(
   database: Database,
-  clerkId: string,
+  userId: string,
 ): Promise<{ photos: RecipePhoto[] }> {
-  const user = await database.query.users.findFirst({
-    where: eq(schema.users.clerkId, clerkId),
-    columns: { id: true },
-  });
-  if (!user) return { photos: [] };
-
   const rows = await database.query.recipes.findMany({
-    where: eq(schema.recipes.ownerId, user.id),
+    where: eq(schema.recipes.ownerId, userId),
     columns: { photos: true },
   });
 
-  await database.delete(schema.users).where(eq(schema.users.id, user.id));
+  await database.delete(schema.users).where(eq(schema.users.id, userId));
 
   return { photos: rows.flatMap((row) => row.photos) };
 }
