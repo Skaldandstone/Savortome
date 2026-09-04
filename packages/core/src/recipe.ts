@@ -193,6 +193,14 @@ export const isPhotoMediaType = (v: unknown): v is PhotoMediaType =>
 export const MAX_PHOTO_BYTES = 9_000_000;
 export const MAX_PHOTO_BASE64_CHARS = Math.ceil((MAX_PHOTO_BYTES * 4) / 3);
 
+/**
+ * How many of your own photos one recipe can carry. Generous for what this
+ * feature is actually for — a few shots of how the dish turned out — and a
+ * hard ceiling so nothing (a bug, a script, someone testing the upload
+ * button) can grow one recipe's photo array and R2 storage without bound.
+ */
+export const MAX_RECIPE_PHOTOS = 20;
+
 export const RecipeSchema = ExtractedRecipeSchema.extend({
   id: z.string(),
   /** The one image a source page published, if any — distinct from `photos`. */

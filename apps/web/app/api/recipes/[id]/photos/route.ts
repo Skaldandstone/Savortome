@@ -38,19 +38,23 @@ export async function POST(request: Request, { params }: Params) {
     const bytes = Buffer.from(imageBase64, "base64");
     const { key, url } = await uploadRecipePhoto(userId, id, bytes, body.imageMediaType);
 
-    const photos = await addRecipePhoto(database, userId, id, {
+    const result = await addRecipePhoto(database, userId, id, {
       key,
       url,
       createdAt: new Date().toISOString(),
     });
-    if (!photos) {
-      // The recipe vanished (or was never this user's) between the upload and
-      // the write. The upload already happened, so clean up rather than leave
-      // an orphaned object nothing will ever list or delete.
+    if (!result.ok) {
+      // Either the recipe vanished (or was never this user's) between the
+      // upload and the write, or it's already at MAX_RECIPE_PHOTOS. Either
+      // way the upload already happened, so clean up rather than leave an
+      // orphaned object nothing will ever list or delete.
       await deleteRecipePhoto(key).catch(() => undefined);
+      if (result.reason === "at_limit") {
+        throw new BadRequestError("This recipe already has as many photos as it can hold.");
+      }
       return null;
     }
-    return { photos };
+    return { photos: result.photos };
   });
   return notFoundIfNull(response);
 }

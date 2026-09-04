@@ -1,6 +1,7 @@
 import { and, desc, eq, inArray, ne, sql, type SQL } from "drizzle-orm";
 import {
   DEFAULT_LIBRARY_SORT,
+  MAX_RECIPE_PHOTOS,
   canonicalize,
   isStaple,
   isUuid,
@@ -466,29 +467,47 @@ export async function getRecipe(database: Database, ownerId: string, recipeId: s
   });
 }
 
+/** Why an upload didn't get added, when it wasn't simply added. */
+export type AddRecipePhotoResult =
+  | { ok: true; photos: RecipePhoto[] }
+  | { ok: false; reason: "not_found" | "at_limit" };
+
 /**
  * Append an uploaded photo to a recipe's gallery.
  *
  * A single atomic `||` concat rather than a read-modify-write: two uploads
  * landing at once must not silently drop one, which a JS-side read-then-write
- * would risk. Returns undefined when the recipe doesn't exist or isn't owned
- * by this caller, so the route can 404 rather than upload-then-discard.
+ * would risk. The `MAX_RECIPE_PHOTOS` cap is enforced in the same UPDATE's
+ * WHERE clause for the same reason — two uploads racing right at the limit
+ * must not both squeeze through a check-then-write gap and end up one over.
  */
 export async function addRecipePhoto(
   database: Database,
   ownerId: string,
   recipeId: string,
   photo: RecipePhoto,
-): Promise<RecipePhoto[] | undefined> {
-  if (!isUuid(recipeId)) return undefined;
+): Promise<AddRecipePhotoResult> {
+  if (!isUuid(recipeId)) return { ok: false, reason: "not_found" };
 
   const [updated] = await database
     .update(schema.recipes)
     .set({ photos: sql`${schema.recipes.photos} || ${JSON.stringify([photo])}::jsonb` })
-    .where(and(eq(schema.recipes.id, recipeId), eq(schema.recipes.ownerId, ownerId)))
+    .where(
+      and(
+        eq(schema.recipes.id, recipeId),
+        eq(schema.recipes.ownerId, ownerId),
+        sql`jsonb_array_length(${schema.recipes.photos}) < ${MAX_RECIPE_PHOTOS}`,
+      ),
+    )
     .returning({ photos: schema.recipes.photos });
 
-  return updated?.photos;
+  if (updated) return { ok: true, photos: updated.photos };
+
+  // The update matched nothing — either this caller doesn't own the recipe,
+  // or they do but it's already at the cap. A cheap follow-up read (no
+  // mutation, so no new race) tells the two apart for the route's error message.
+  const existing = await getRecipe(database, ownerId, recipeId);
+  return existing ? { ok: false, reason: "at_limit" } : { ok: false, reason: "not_found" };
 }
 
 /**
