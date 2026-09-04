@@ -1,4 +1,3 @@
-import { connectionOptions } from "../src/connection.js";
 /**
  * Checks nutrition — the real per-ingredient pipeline and its persistence —
  * against a real database and the real USDA FoodData Central API.
@@ -14,18 +13,19 @@ import { connectionOptions } from "../src/connection.js";
  *
  * Works on its own fixture user and deletes everything it created.
  */
-import { readFileSync } from "node:fs";
 import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from "drizzle-orm";
 import { computeNutrition, emptyDraft, ingredientFromLine, type RecipeDraft } from "@seconds/core";
 import * as schema from "../src/schema.js";
+import { RDS_SSL_CONFIG, SCRIPT_POOL_MAX } from "../src/client.js";
+import { loadEnvLocal } from "../src/loadEnv.js";
 import { createRecipe, getRecipe, saveRecipe, updateRecipe } from "../src/queries/recipes.js";
 
-const url =
-  process.env.DATABASE_URL ??
-  /DATABASE_URL=(.+)/.exec(readFileSync("../../apps/web/.env.local", "utf8"))![1]!.trim();
-const pool = new pg.Pool(connectionOptions(url));
+loadEnvLocal();
+
+const url = process.env.DATABASE_URL!;
+const pool = new pg.Pool({ connectionString: url, ssl: RDS_SSL_CONFIG, max: SCRIPT_POOL_MAX });
 const db = drizzle(pool, { schema });
 
 let failures = 0;

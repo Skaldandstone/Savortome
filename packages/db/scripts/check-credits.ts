@@ -1,4 +1,3 @@
-import { connectionOptions } from "../src/connection.js";
 /**
  * Checks AI credit metering against a real database.
  *
@@ -11,12 +10,13 @@ import { connectionOptions } from "../src/connection.js";
  *
  * Works on its own fixture users and deletes everything it created.
  */
-import { readFileSync } from "node:fs";
 import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, inArray } from "drizzle-orm";
 import { TIER_ALLOWANCE, creditMonth } from "@seconds/core";
 import * as schema from "../src/schema.js";
+import { RDS_SSL_CONFIG, SCRIPT_POOL_MAX } from "../src/client.js";
+import { loadEnvLocal } from "../src/loadEnv.js";
 import {
   canSpendCredit,
   creditsFor,
@@ -26,10 +26,10 @@ import {
   spendCredit,
 } from "../src/queries/credits.js";
 
-const url =
-  process.env.DATABASE_URL ??
-  /DATABASE_URL=(.+)/.exec(readFileSync("../../apps/web/.env.local", "utf8"))![1]!.trim();
-const db = drizzle(new pg.Pool(connectionOptions(url)), { schema });
+loadEnvLocal();
+
+const url = process.env.DATABASE_URL!;
+const db = drizzle(new pg.Pool({ connectionString: url, ssl: RDS_SSL_CONFIG, max: SCRIPT_POOL_MAX }), { schema });
 
 let failures = 0;
 const expect = (label: string, actual: unknown, expected: unknown) => {
@@ -114,16 +114,11 @@ expect(
 );
 
 // --- topping up -------------------------------------------------------------
-// grantCredits has no `now` param — production callers always mean "right
-// now", so its returned balance reflects the real current month, not this
-// fixture's NOW. Purchased credits aren't month-scoped, so `topped` itself is
-// fine for those; allowance checks re-fetch under the fixed clock instead.
-const topped = await grantCredits(db, cook, 25);
+const topped = await grantCredits(db, cook, 25, NOW);
 expect("a top-up restores the ability to import", topped.canSpend, true);
 expect("...and lands in the purchased pool", topped.purchasedLeft, 25);
-const toppedNow = await creditsFor(db, cook, NOW);
-expect("...leaving the monthly allowance still empty", toppedNow.allowanceLeft, 0);
-expect("...so the next import draws from purchases", toppedNow.nextFrom, "purchased");
+expect("...leaving the monthly allowance still empty", topped.allowanceLeft, 0);
+expect("...so the next import draws from purchases", topped.nextFrom, "purchased");
 
 const spent = await spendCredit(db, cook, "transcript-llm", null, NOW);
 expect("spending now draws down purchases by the transcript's two credits", spent?.purchasedLeft, 23);
@@ -140,27 +135,23 @@ expect(
 );
 
 // --- changing plans ---------------------------------------------------------
-// setTier has no `now` param either — same reasoning as grantCredits above,
-// so allowance checks re-fetch under the fixed clock rather than trust the
-// returned balance's month.
-const upgraded = await setTier(db, cook, "pro");
+const upgraded = await setTier(db, cook, "pro", NOW);
 expect("upgrading grants the bigger allowance immediately", upgraded.tier, "pro");
 expect(
   // Three credits — the transcript's two plus the article's one — came out
   // of the allowance before it ran dry. The later transcript spend landed
   // entirely in the purchased pool and so doesn't touch the monthly count.
   "...minus only what the allowance itself paid for",
-  (await creditsFor(db, cook, NOW)).allowanceLeft,
+  upgraded.allowanceLeft,
   TIER_ALLOWANCE.pro - 3,
 );
 
 // Someone who overspent a big plan then dropped to a small one.
-await setTier(db, other, "pro");
+await setTier(db, other, "pro", NOW);
 for (let i = 0; i < TIER_ALLOWANCE.plus + 3; i++) {
   await spendCredit(db, other, "article-llm", null, NOW);
 }
-await setTier(db, other, "plus");
-const downgraded = await creditsFor(db, other, NOW);
+const downgraded = await setTier(db, other, "plus", NOW);
 expect("a downgrade can't produce a negative balance", downgraded.allowanceLeft, 0);
 expect("...it just reads as none left", downgraded.canSpend, false);
 
@@ -179,7 +170,7 @@ expect(
 );
 // Split across pools: 1 left in the allowance, top up 5 purchased, then a
 // transcript should draw 1 from each rather than refusing or double-dipping.
-const boundaryTopped = await grantCredits(db, boundary, 5);
+const boundaryTopped = await grantCredits(db, boundary, 5, NOW);
 expect("top-up lands in purchased", boundaryTopped.purchasedLeft, 5);
 const split = await spendCredit(db, boundary, "transcript-llm", null, NOW);
 expect("the allowance's last credit is used first", split?.allowanceLeft, 0);
