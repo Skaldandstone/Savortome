@@ -66,7 +66,7 @@ export interface DiscoverQuery {
 }
 import type { ImportRequest, ImportResponse } from "./import-client.js";
 import type { CreditBalance, CreditPack } from "./credits.js";
-import type { Recipe, RecipePhoto } from "./recipe.js";
+import type { PhotoMediaType, Recipe, RecipePhoto } from "./recipe.js";
 import type { RecipeDraft } from "./editor.js";
 import type { LibrarySort } from "./library.js";
 import type { MealSlot, PlannedMeal, PlanSuggestion } from "./plan.js";
@@ -194,7 +194,7 @@ export interface SecondsClient {
   addRecipePhoto: (
     recipeId: string,
     imageBase64: string,
-    imageMediaType: "image/jpeg" | "image/png" | "image/webp",
+    imageMediaType: PhotoMediaType,
   ) => Promise<{ photos: RecipePhoto[] }>;
   removeRecipePhoto: (recipeId: string, key: string) => Promise<{ photos: RecipePhoto[] }>;
   getSharedRecipe: (recipeId: string) => Promise<SharedRecipeResponse>;

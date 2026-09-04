@@ -1,4 +1,4 @@
-import type { SourceKind } from "../recipe.js";
+import type { PhotoMediaType, SourceKind } from "../recipe.js";
 import { detectSourceKind } from "../source-kind.js";
 import { extractArticleText } from "./article.js";
 import { fetchText } from "./fetch.js";
@@ -239,7 +239,7 @@ export function textSource(text: string, title?: string): SourceDocument {
  */
 export function photoSource(
   base64: string,
-  mediaType: "image/jpeg" | "image/png" | "image/webp",
+  mediaType: PhotoMediaType,
   title?: string,
 ): SourceDocument {
   return {

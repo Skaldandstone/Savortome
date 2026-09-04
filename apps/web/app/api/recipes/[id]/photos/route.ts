@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isPhotoMediaType, MAX_PHOTO_BASE64_CHARS, PHOTO_MEDIA_TYPES } from "@seconds/core";
 import { addRecipePhoto, removeRecipePhoto } from "@seconds/db";
 import { BadRequestError, readJson, withUser } from "@/lib/api";
 import { deleteRecipePhoto, r2Configured, uploadRecipePhoto } from "@/lib/r2";
@@ -7,13 +8,6 @@ import { deleteRecipePhoto, r2Configured, uploadRecipePhoto } from "@/lib/r2";
 export const runtime = "nodejs";
 
 type Params = { params: Promise<{ id: string }> };
-
-const PHOTO_MEDIA_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
-type PhotoMediaType = (typeof PHOTO_MEDIA_TYPES)[number];
-const isPhotoMediaType = (v: unknown): v is PhotoMediaType =>
-  (PHOTO_MEDIA_TYPES as readonly unknown[]).includes(v);
-// Bounds memory and R2 cost per request, not a real constraint on a phone photo.
-const MAX_PHOTO_BASE64_CHARS = 12_000_000; // ~9 MB decoded
 
 interface PhotoBody {
   imageBase64?: string;

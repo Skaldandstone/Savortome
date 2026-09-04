@@ -28,6 +28,7 @@ const recipe = (over: Partial<Recipe> = {}): Recipe => ({
   id: "r1",
   title: "Kimchi stew",
   description: "A pot of it, in twenty minutes.",
+  photos: [],
   servings: 2,
   servingsNote: null,
   prepMinutes: 5,

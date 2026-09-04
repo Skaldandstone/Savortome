@@ -67,7 +67,12 @@ export function RecipeCard({
         </section>
 
         {/* Photos attach to a saved recipe; a freshly extracted, unsaved card has nothing to attach them to. */}
-        {shelvedId ? <RecipePhotos recipeId={shelvedId} initial={recipe.photos} /> : null}
+        {/* Keyed by recipeId: RecipePhotos owns its state once mounted rather
+            than re-syncing from `initial` on every parent re-render (so an
+            in-flight upload/remove can't be stomped by a stale refetch) —
+            the key instead forces a clean remount if this same card instance
+            is ever reused to show a different recipe. */}
+        {shelvedId ? <RecipePhotos key={shelvedId} recipeId={shelvedId} initial={recipe.photos} /> : null}
 
         {recipe.equipment.length > 0 ? (
           <>

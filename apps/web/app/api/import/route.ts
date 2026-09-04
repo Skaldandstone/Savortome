@@ -3,16 +3,20 @@ import {
   detectSourceKind,
   ExtractionError,
   ingestDocument,
+  isPhotoMediaType,
+  MAX_PHOTO_BASE64_CHARS,
   methodForTextKind,
   outOfCreditsMessage,
   nextResetISO,
   photoSource,
+  PHOTO_MEDIA_TYPES,
   resolveSource,
   ResolveError,
   textSource,
   UnsafeUrlError,
   willCallModel,
   type IngestResult,
+  type PhotoMediaType,
 } from "@seconds/core";
 import { canSpendCredit, creditsFor, db, ensureInitialStatus, saveRecipe, spendCredit } from "@seconds/db";
 import { errorResponse } from "@/lib/api";
@@ -22,14 +26,6 @@ import { databaseConfigured, requireUserId } from "@/lib/session";
 export const runtime = "nodejs";
 // Transcribing a video is slow; give the pipeline room before the platform cuts it off.
 export const maxDuration = 300;
-
-const PHOTO_MEDIA_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
-type PhotoMediaType = (typeof PHOTO_MEDIA_TYPES)[number];
-const isPhotoMediaType = (v: unknown): v is PhotoMediaType =>
-  (PHOTO_MEDIA_TYPES as readonly unknown[]).includes(v);
-// A phone photo comfortably fits well under this; it exists to bound memory
-// and API cost per request, not to constrain a real recipe photo.
-const MAX_PHOTO_BASE64_CHARS = 12_000_000; // ~9 MB decoded
 
 interface ImportBody {
   url?: string;

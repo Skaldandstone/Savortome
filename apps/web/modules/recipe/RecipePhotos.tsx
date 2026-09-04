@@ -1,29 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import type { RecipePhoto } from "@seconds/core/format";
+import { isPhotoMediaType, MAX_PHOTO_BYTES, type RecipePhoto } from "@seconds/core/format";
 import { Callout } from "@/ui";
 import { api } from "@/lib/client";
+import { readAsBase64 } from "@/lib/photo";
 import styles from "./recipe.module.css";
-
-const PHOTO_MEDIA_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
-type PhotoMediaType = (typeof PHOTO_MEDIA_TYPES)[number];
-const isPhotoMediaType = (v: string): v is PhotoMediaType =>
-  (PHOTO_MEDIA_TYPES as readonly string[]).includes(v);
-const MAX_PHOTO_BYTES = 9_000_000;
-
-function readAsBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Couldn't read that photo."));
-    reader.onload = () => {
-      const result = reader.result as string;
-      const comma = result.indexOf(",");
-      resolve(comma === -1 ? result : result.slice(comma + 1));
-    };
-    reader.readAsDataURL(file);
-  });
-}
 
 /** Your own photos of the finished dish — separate from a source page's own image. */
 export function RecipePhotos({ recipeId, initial }: { recipeId: string; initial: RecipePhoto[] }) {

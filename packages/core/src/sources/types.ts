@@ -1,4 +1,10 @@
-import type { ExtractedRecipe, ExtractionMethod, RecipeNutrition, SourceKind } from "../recipe.js";
+import type {
+  ExtractedRecipe,
+  ExtractionMethod,
+  PhotoMediaType,
+  RecipeNutrition,
+  SourceKind,
+} from "../recipe.js";
 
 /**
  * Whatever we managed to pull out of a URL before any model is involved.
@@ -18,7 +24,7 @@ export interface SourceDocument {
   /** A photographed page — a recipe card, a cookbook spread, a handwritten note. */
   image?: {
     base64: string;
-    mediaType: "image/jpeg" | "image/png" | "image/webp";
+    mediaType: PhotoMediaType;
   };
   /** Set when the page already published a machine-readable recipe; skips the model entirely. */
   prestructured?: ExtractedRecipe;

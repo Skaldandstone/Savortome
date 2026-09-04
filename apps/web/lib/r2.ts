@@ -1,6 +1,8 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import type { PhotoMediaType } from "@seconds/core";
+import { NotConfiguredError } from "./session.js";
 
 /**
  * Cloudflare R2, when it's configured.
@@ -12,7 +14,13 @@ import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client
  * client pointed at Cloudflare's endpoint rather than AWS's.
  */
 
-export class R2NotConfiguredError extends Error {
+/**
+ * Extends the shared `NotConfiguredError` (not a standalone class, the way
+ * `StripeNotConfiguredError` was) so that if this is ever thrown somewhere
+ * `errorResponse` catches it directly instead of behind an explicit
+ * `r2Configured()` pre-check, it still maps to 501 rather than a generic 500.
+ */
+export class R2NotConfiguredError extends NotConfiguredError {
   constructor(missing: string[]) {
     super(
       `Photo uploads need Cloudflare R2. Set ${missing.join(", ")} in .env.local. ` +
@@ -55,7 +63,10 @@ function r2(): S3Client {
   return client;
 }
 
-const PHOTO_MEDIA_TYPES: Record<string, string> = {
+// Keyed by the canonical PhotoMediaType union (not a loose Record<string,
+// string>), so adding a media type in packages/core without an extension
+// here is a compile error instead of a silent runtime "Unsupported photo type".
+const PHOTO_EXTENSIONS: Record<PhotoMediaType, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
   "image/webp": "webp",
@@ -66,10 +77,9 @@ export async function uploadRecipePhoto(
   ownerId: string,
   recipeId: string,
   bytes: Buffer,
-  mediaType: string,
+  mediaType: PhotoMediaType,
 ): Promise<{ key: string; url: string }> {
-  const ext = PHOTO_MEDIA_TYPES[mediaType];
-  if (!ext) throw new Error(`Unsupported photo type: ${mediaType}`);
+  const ext = PHOTO_EXTENSIONS[mediaType];
 
   // Namespaced by owner, not just recipe: a deleted account's cleanup job (if
   // one is ever written) can find everything under one prefix instead of
