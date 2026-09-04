@@ -1,7 +1,7 @@
 import { gunzipSync, inflateRawSync } from "node:zlib";
 import { timerFromStep } from "../cook.js";
 import type { ExtractedRecipe, Ingredient, Step } from "../recipe.js";
-import { parseIngredientLine } from "../units.js";
+import { parseIngredientLine, parsePlainDuration } from "../units.js";
 
 /**
  * Reads a Paprika Recipe Manager export (`.paprikarecipes`) — a zip archive
@@ -122,31 +122,9 @@ function parseIngredientBlock(text: string): Ingredient[] {
   return ingredients;
 }
 
-/** Paprika times are free text ("1 h 20 min", "45 min", "1.5 hours", or a bare number meaning minutes). */
+/** Paprika times are free text ("1 h 20 min", "45 min", "1.5 hours", or a bare number meaning minutes) — the same shape units.ts's parsePlainDuration already reads for a page's own non-ISO duration field. */
 function parseMinutes(v: unknown): number | null {
-  if (typeof v !== "string" || !v.trim()) return null;
-  const s = v.toLowerCase();
-  let total = 0;
-  let matched = false;
-
-  const hours = /(\d+(?:\.\d+)?)\s*(?:h\b|hr|hour)/.exec(s);
-  if (hours) {
-    total += Number(hours[1]) * 60;
-    matched = true;
-  }
-  const minutes = /(\d+(?:\.\d+)?)\s*(?:m\b|min|minute)/.exec(s);
-  if (minutes) {
-    total += Number(minutes[1]);
-    matched = true;
-  }
-  if (!matched) {
-    const bare = /^(\d+(?:\.\d+)?)$/.exec(s.trim());
-    if (bare) {
-      total = Number(bare[1]);
-      matched = true;
-    }
-  }
-  return matched && total > 0 ? Math.round(total) : null;
+  return typeof v === "string" && v.trim() ? parsePlainDuration(v) : null;
 }
 
 function parseServings(v: unknown): { servings: number | null; servingsNote: string | null } {

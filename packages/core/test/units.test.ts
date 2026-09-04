@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   canonicalize,
   parseIngredientLine,
+  parsePlainDuration,
   parseQuantity,
   scaleQuantity,
 } from "../src/units.js";
@@ -132,6 +133,33 @@ describe("canonicalize", () => {
       parseIngredientLine("1 diced Yellow Onion").canonicalItem,
       parseIngredientLine("2 yellow onions, diced").canonicalItem,
     );
+  });
+});
+
+describe("parsePlainDuration", () => {
+  it("reads a single unit", () => {
+    assert.equal(parsePlainDuration("45 minutes"), 45);
+    assert.equal(parsePlainDuration("2 hours"), 120);
+    assert.equal(parsePlainDuration("45 min"), 45);
+    assert.equal(parsePlainDuration("1 hr"), 60);
+  });
+
+  it("combines hours and minutes in one string", () => {
+    assert.equal(parsePlainDuration("1 h 20 min"), 80);
+    assert.equal(parsePlainDuration("1.5 hours"), 90);
+  });
+
+  it("reads a bare number as minutes", () => {
+    assert.equal(parsePlainDuration("30"), 30);
+  });
+
+  it("isn't anchored to the start of the string", () => {
+    assert.equal(parsePlainDuration("about 45 min"), 45);
+  });
+
+  it("returns null for text with no duration in it", () => {
+    assert.equal(parsePlainDuration("a while"), null);
+    assert.equal(parsePlainDuration(""), null);
   });
 });
 

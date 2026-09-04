@@ -278,6 +278,41 @@ export function formatAmount(
   return [amount, ing.unit ?? ""].filter(Boolean).join(" ");
 }
 
+/**
+ * A duration written in plain English ("45 minutes", "1 hour", "1 h 20 min",
+ * a bare number meaning minutes) -> minutes. Not anchored to the start of the
+ * string, so it also reads a duration embedded in a longer phrase ("about 45
+ * min", "1.5 hours ahead"). Shared by every place that has to read a source's
+ * own free-text time field rather than a machine-readable one — a page's
+ * schema.org data falls back to this when it isn't a real ISO-8601 duration,
+ * and a structured import from another app (Paprika, ...) uses it directly
+ * since it never has ISO durations to begin with.
+ */
+export function parsePlainDuration(text: string): number | null {
+  const s = text.toLowerCase();
+  let total = 0;
+  let matched = false;
+
+  const hours = /(\d+(?:\.\d+)?)\s*(?:h\b|hr|hour)/.exec(s);
+  if (hours) {
+    total += Number(hours[1]) * 60;
+    matched = true;
+  }
+  const minutes = /(\d+(?:\.\d+)?)\s*(?:m\b|min|minute)/.exec(s);
+  if (minutes) {
+    total += Number(minutes[1]);
+    matched = true;
+  }
+  if (!matched) {
+    const bare = /^(\d+(?:\.\d+)?)$/.exec(s.trim());
+    if (bare) {
+      total = Number(bare[1]);
+      matched = true;
+    }
+  }
+  return matched && total > 0 ? Math.round(total) : null;
+}
+
 /** "1h 15m" / "45 min" — how long the whole thing takes, said plainly. */
 export function formatMinutes(minutes: number | null): string | null {
   if (minutes === null || minutes <= 0) return null;
