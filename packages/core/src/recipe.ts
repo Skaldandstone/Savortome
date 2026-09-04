@@ -163,9 +163,20 @@ export const ExtractedRecipeSchema = z.object({
 });
 export type ExtractedRecipe = z.infer<typeof ExtractedRecipeSchema>;
 
+export const RecipePhotoSchema = z.object({
+  /** The R2 object key — needed to delete it later; never shown to the user. */
+  key: z.string(),
+  url: z.string(),
+  createdAt: z.string(),
+});
+export type RecipePhoto = z.infer<typeof RecipePhotoSchema>;
+
 export const RecipeSchema = ExtractedRecipeSchema.extend({
   id: z.string(),
+  /** The one image a source page published, if any — distinct from `photos`. */
   imageUrl: z.string().nullable(),
+  /** Your own photos of the finished dish, uploaded after the fact. */
+  photos: z.array(RecipePhotoSchema),
   source: RecipeSourceSchema,
   /**
    * Null until something has computed it — an old recipe, or one that hasn't

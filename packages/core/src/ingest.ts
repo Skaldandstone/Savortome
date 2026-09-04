@@ -151,6 +151,7 @@ export async function ingestDocument(
       ingredientNutritionGuesses: [],
       id: randomUUID(),
       imageUrl: doc.imageUrl,
+      photos: [],
       source: {
         kind: doc.kind,
         url: doc.url,

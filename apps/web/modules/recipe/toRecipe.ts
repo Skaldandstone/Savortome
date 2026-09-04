@@ -1,4 +1,4 @@
-import type { Recipe, RecipeNutrition, Visibility } from "@seconds/core/format";
+import type { Recipe, RecipeNutrition, RecipePhoto, Visibility } from "@seconds/core/format";
 
 /** The database row shape, expressed without importing the server-only db package. */
 export interface RecipeRow {
@@ -6,6 +6,7 @@ export interface RecipeRow {
   title: string;
   description: string | null;
   imageUrl: string | null;
+  photos: RecipePhoto[];
   servings: number | null;
   servingsNote: string | null;
   prepMinutes: number | null;
@@ -39,6 +40,7 @@ export function toRecipe(row: RecipeRow): Recipe {
     title: row.title,
     description: row.description,
     imageUrl: row.imageUrl,
+    photos: row.photos,
     servings: row.servings,
     servingsNote: row.servingsNote,
     prepMinutes: row.prepMinutes,

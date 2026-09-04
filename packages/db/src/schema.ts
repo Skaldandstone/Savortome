@@ -18,7 +18,7 @@ import {
   uuid,
   vector,
 } from "drizzle-orm/pg-core";
-import type { Ingredient, RecipeNutrition, Step } from "@seconds/core";
+import type { Ingredient, RecipeNutrition, RecipePhoto, Step } from "@seconds/core";
 
 /**
  * The full Second Breakfast data model. Only the recipe/import path is wired up in the
@@ -246,6 +246,13 @@ export const recipes = pgTable(
     title: text("title").notNull(),
     description: text("description"),
     imageUrl: text("image_url"),
+    /**
+     * Photos someone uploaded themselves — distinct from `imageUrl`, which is
+     * the one image a source page published. Never touched by saveRecipe's
+     * re-import upsert, so re-pulling a source URL can't wipe out a photo the
+     * owner added by hand.
+     */
+    photos: jsonb("photos").$type<RecipePhoto[]>().notNull().default([]),
 
     servings: integer("servings"),
     servingsNote: text("servings_note"),

@@ -11,8 +11,10 @@ import {
   type PairingSuggestions,
   type Recipe,
   type RecipeDraft,
+  type RecipePhoto,
 } from "@seconds/core";
-import type { Database } from "../client.js";
+import type { Database as RootDatabase } from "../client.js";
+type Database = Omit<RootDatabase, '$client'>;
 import * as schema from "../schema.js";
 
 /**
@@ -21,6 +23,12 @@ import * as schema from "../schema.js";
  * creating a second copy — people paste the same link twice all the time.
  */
 export async function saveRecipe(
+  database: Database, ownerId: string, recipe: Recipe,
+): Promise<string> {
+  return database.transaction(tx => saveRecipeAtomic(tx, ownerId, recipe));
+}
+
+async function saveRecipeAtomic(
   database: Database,
   ownerId: string,
   recipe: Recipe,
@@ -78,6 +86,12 @@ export async function saveRecipe(
  * 1, there are no notes, and it counts as verified the moment it's saved.
  */
 export async function createRecipe(
+  database: Database, ownerId: string, draft: RecipeDraft,
+): Promise<string> {
+  return database.transaction(tx => createRecipeAtomic(tx, ownerId, draft));
+}
+
+async function createRecipeAtomic(
   database: Database,
   ownerId: string,
   draft: RecipeDraft,
@@ -113,6 +127,12 @@ export async function createRecipe(
  * the honest part of it.
  */
 export async function updateRecipe(
+  database: Database, ownerId: string, recipeId: string, draft: RecipeDraft,
+): Promise<boolean> {
+  return database.transaction(tx => updateRecipeAtomic(tx, ownerId, recipeId, draft));
+}
+
+async function updateRecipeAtomic(
   database: Database,
   ownerId: string,
   recipeId: string,
@@ -446,6 +466,61 @@ export async function getRecipe(database: Database, ownerId: string, recipeId: s
   });
 }
 
+/**
+ * Append an uploaded photo to a recipe's gallery.
+ *
+ * A single atomic `||` concat rather than a read-modify-write: two uploads
+ * landing at once must not silently drop one, which a JS-side read-then-write
+ * would risk. Returns undefined when the recipe doesn't exist or isn't owned
+ * by this caller, so the route can 404 rather than upload-then-discard.
+ */
+export async function addRecipePhoto(
+  database: Database,
+  ownerId: string,
+  recipeId: string,
+  photo: RecipePhoto,
+): Promise<RecipePhoto[] | undefined> {
+  if (!isUuid(recipeId)) return undefined;
+
+  const [updated] = await database
+    .update(schema.recipes)
+    .set({ photos: sql`${schema.recipes.photos} || ${JSON.stringify([photo])}::jsonb` })
+    .where(and(eq(schema.recipes.id, recipeId), eq(schema.recipes.ownerId, ownerId)))
+    .returning({ photos: schema.recipes.photos });
+
+  return updated?.photos;
+}
+
+/**
+ * Drop one photo by its storage key.
+ *
+ * The caller deletes the R2 object separately — this only owns the database
+ * side, same division as the rest of this file. Returns undefined when the
+ * recipe doesn't exist or isn't owned by this caller.
+ */
+export async function removeRecipePhoto(
+  database: Database,
+  ownerId: string,
+  recipeId: string,
+  key: string,
+): Promise<RecipePhoto[] | undefined> {
+  if (!isUuid(recipeId)) return undefined;
+
+  const [updated] = await database
+    .update(schema.recipes)
+    .set({
+      photos: sql`(
+        select coalesce(jsonb_agg(photo), '[]'::jsonb)
+        from jsonb_array_elements(${schema.recipes.photos}) as photo
+        where photo->>'key' != ${key}
+      )`,
+    })
+    .where(and(eq(schema.recipes.id, recipeId), eq(schema.recipes.ownerId, ownerId)))
+    .returning({ photos: schema.recipes.photos });
+
+  return updated?.photos;
+}
+
 /** How many recipes someone owns, unfiltered and unpaged. */
 export async function countRecipes(database: Database, ownerId: string): Promise<number> {
   const [row] = await database
@@ -483,6 +558,15 @@ export async function recanonicalizeRecipes(
   database: Database,
   ownerId: string,
 ): Promise<{ recipes: number; changed: number }> {
+  // A failed index rebuild must not leave any rows in this batch using new
+  // ingredient data with an old pantry index.
+  return database.transaction(tx => recanonicalizeRecipesAtomic(tx, ownerId));
+}
+
+async function recanonicalizeRecipesAtomic(
+  database: Database,
+  ownerId: string,
+): Promise<{ recipes: number; changed: number }> {
   const rows = await database.query.recipes.findMany({
     where: eq(schema.recipes.ownerId, ownerId),
     columns: { id: true, ingredients: true },
@@ -505,7 +589,7 @@ export async function recanonicalizeRecipes(
     await database
       .update(schema.recipes)
       .set({ ingredients, updatedAt: new Date() })
-      .where(eq(schema.recipes.id, row.id));
+      .where(and(eq(schema.recipes.id, row.id), eq(schema.recipes.ownerId, ownerId)));
 
     await reindexIngredients(database, row.id, { ingredients } as Recipe);
   }

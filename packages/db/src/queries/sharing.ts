@@ -80,6 +80,7 @@ export async function getSharedRecipe(
       title: row.title,
       description: row.description,
       imageUrl: row.imageUrl,
+      photos: row.photos,
       servings: row.servings,
       servingsNote: row.servingsNote,
       prepMinutes: row.prepMinutes,

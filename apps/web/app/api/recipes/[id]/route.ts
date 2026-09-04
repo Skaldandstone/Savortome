@@ -23,6 +23,7 @@ export async function GET(_request: Request, { params }: Params) {
       title: row.title,
       description: row.description,
       imageUrl: row.imageUrl,
+      photos: row.photos,
       servings: row.servings,
       servingsNote: row.servingsNote,
       prepMinutes: row.prepMinutes,

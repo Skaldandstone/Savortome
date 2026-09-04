@@ -27,7 +27,7 @@
   padding: 12px 20px;
   font-size: var(--step-3);
   font-weight: 600;
-  color: #fff;
+  color: var(--on-accent, #fff);
   background: var(--accent);
   border-radius: var(--radius-sm);
 }
@@ -36,3 +36,52 @@
 
 .edit { font-size: var(--step-2); color: var(--text-muted); }
 .edit:hover { color: var(--accent); }
+
+:global([data-woodland='true']) :is(.ingredientsHeading,.listAction) { flex-wrap:wrap; }
+:global([data-woodland='true']) :is(.cook,.edit) { display:inline-flex; align-items:center; min-height:44px; }
+
+.journalPage { display:contents; }
+:global([data-woodland='true']) .card { max-width:980px; margin:20px auto; background:transparent; border:0; box-shadow:none; overflow:visible; }
+:global([data-woodland='true']) .body { padding:22px 0; }
+:global([data-woodland='true']) .journalPage { display:block; position:relative; margin:24px 0; padding:26px 30px; background-color:#e5d0a9; background-image:linear-gradient(#f3e6c12e,#f3e6c12e),var(--paper); background-size:auto,600px; border:1px solid #af9365; border-radius:3px 5px 2px 4px; box-shadow:inset 0 0 24px #82603125,0 3px 10px #0003; color:#332c20; --text:#332c20; --text-muted:#5d4c35; --accent:#715128; --border:#806742; --surface:#f0dfbe; --surface-sunken:#deca9f; --accent-soft:#d9c193; }
+:global([data-woodland='true']) .journalPage .sectionTitle { text-transform:none; letter-spacing:0; font:1.5rem Georgia,serif; color:#443621; margin:0 0 16px; }
+:global([data-woodland='true']) .cook { background:var(--action-surface); color:var(--action-text); border:1px solid var(--border); border-radius:3px; box-shadow:inset 0 0 0 3px var(--action-surface),inset 0 0 0 4px #b3946255; font:1.2rem Georgia,serif; }
+@media(max-width:640px) { :global([data-woodland='true']) .journalPage { padding:22px 20px; } :global([data-woodland='true']) .listAction { display:grid; grid-template-columns:1fr; } :global([data-woodland='true']) .cook { justify-content:center; } }
+:global([data-decoration='reduced']) .journalPage { background-image:none; box-shadow:none; }
+@media print { :global([data-woodland='true']) .journalPage { background:#fff; border:0; box-shadow:none; padding:0; } }
+
+.note { font-size: var(--step-2); color: var(--text-muted); }
+
+.photoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--space-2, 8px);
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.photoTile { position: relative; aspect-ratio: 1; }
+
+.photoImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+.photoRemove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  line-height: 1;
+}
+.photoRemove:disabled { cursor: progress; opacity: 0.6; }
