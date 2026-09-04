@@ -1,15 +1,17 @@
 import { and, eq, sql } from "drizzle-orm";
 import {
-  costsCredit,
   creditBalance,
+  creditCost,
   creditMonth,
   tierOr,
   type CreditBalance,
   type ExtractionMethod,
   type Tier,
 } from "@seconds/core";
-import type { Database } from "../client.js";
+import type { Database as ConnectionDatabase } from "../client.js";
 import * as schema from "../schema.js";
+
+type Database = Pick<ConnectionDatabase, "select" | "insert" | "update">;
 
 /**
  * Reading and spending AI credits.
@@ -81,8 +83,9 @@ export async function canSpendCredit(
   method: ExtractionMethod,
   now: Date = new Date(),
 ): Promise<boolean> {
-  if (!costsCredit(method)) return true;
-  return (await creditsFor(database, userId, now)).canSpend;
+  const cost = creditCost(method);
+  if (cost === 0) return true;
+  return (await creditsFor(database, userId, now)).total >= cost;
 }
 
 /**
@@ -94,6 +97,13 @@ export async function canSpendCredit(
  * buys is bounded — at worst a few concurrent imports slip past a nearly-empty
  * balance, which costs cents, where a wrongly-charged customer costs trust.
  *
+ * A transcript costs 2 credits (see `creditCost`), recorded as two one-credit
+ * rows rather than a single row with a cost column — each row draws from
+ * whichever pool has room at that instant, so a spend that straddles the
+ * allowance/purchased boundary splits correctly without new bookkeeping. The
+ * ledger's meaning stays "one row, one credit spent," just not always "one
+ * row, one import."
+ *
  * Returns null when the method is free, so callers don't have to ask twice.
  */
 export async function spendCredit(
@@ -103,21 +113,26 @@ export async function spendCredit(
   recipeId: string | null,
   now: Date = new Date(),
 ): Promise<CreditBalance | null> {
-  if (!costsCredit(method)) return null;
+  const cost = creditCost(method);
+  if (cost === 0) return null;
 
   const before = await creditsFor(database, userId, now);
-  // Out of credits still records the spend against the allowance rather than
-  // silently serving a free import — the balance already reads zero, and a
-  // missing row would make the ledger disagree with what actually ran.
-  const source = before.nextFrom ?? "allowance";
+  const fromAllowance = Math.min(cost, before.allowanceLeft);
+  const fromPurchased = Math.min(cost - fromAllowance, before.purchasedLeft);
+  // Out of credits still records the spend (against the allowance, same as a
+  // single-credit shortfall) rather than silently serving a free import — the
+  // balance already reads zero, and a missing row would make the ledger
+  // disagree with what actually ran.
+  const short = cost - fromAllowance - fromPurchased;
+  const sources = [
+    ...Array<"allowance">(fromAllowance).fill("allowance"),
+    ...Array<"purchased">(fromPurchased).fill("purchased"),
+    ...Array<"allowance">(short).fill("allowance"),
+  ];
 
-  await database.insert(schema.creditSpends).values({
-    userId,
-    month: creditMonth(now),
-    source,
-    recipeId,
-    method,
-  });
+  await database.insert(schema.creditSpends).values(
+    sources.map((source) => ({ userId, month: creditMonth(now), source, recipeId, method })),
+  );
 
   return creditsFor(database, userId, now);
 }

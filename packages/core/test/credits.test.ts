@@ -5,6 +5,7 @@ import {
   TIER_ALLOWANCE,
   costsCredit,
   creditBalance,
+  creditCost,
   creditMonth,
   describeCredits,
   formatPackPrice,
@@ -38,6 +39,28 @@ describe("costsCredit", () => {
 
   it("never charges for typing a recipe in by hand", () => {
     assert.equal(costsCredit("manual"), false);
+  });
+});
+
+describe("creditCost", () => {
+  it("charges double for a transcript — measured 2-3x the model spend of an article", () => {
+    assert.equal(creditCost("transcript-llm"), 2);
+  });
+
+  it("charges the standard rate for an article or a caption", () => {
+    assert.equal(creditCost("article-llm"), 1);
+    assert.equal(creditCost("caption-llm"), 1);
+  });
+
+  it("charges nothing for what costs nothing to serve", () => {
+    assert.equal(creditCost("schema-org"), 0);
+    assert.equal(creditCost("manual"), 0);
+  });
+
+  it("agrees with costsCredit about which methods charge anything", () => {
+    for (const method of ["schema-org", "article-llm", "transcript-llm", "caption-llm", "manual"] as const) {
+      assert.equal(costsCredit(method), creditCost(method) > 0, method);
+    }
   });
 });
 

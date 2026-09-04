@@ -26,6 +26,7 @@ export {
   ResolveError,
   UnsafeUrlError,
   assertPublicHttpUrl,
+  methodForTextKind,
   type SourceDocument,
   type TranscriptCue,
 } from "./sources/index.js";

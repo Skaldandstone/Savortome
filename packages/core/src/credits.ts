@@ -47,6 +47,15 @@ export const TIER_LABEL: Record<Tier, string> = {
  * cap: the worst case is a number you can work out in advance rather than
  * something you discover from a bill.
  *
+ * Measured against the live API (Opus 5, effort "medium", 1h cache): a
+ * transcript import — priced at 2 credits via `creditCost` — runs about
+ * $0.17 worst case (cold cache, messy speech), an article or caption import
+ * about $0.05-0.08. At $0.083/credit-unit that puts Plus's worst case (25
+ * credits, all video) around $2.08/month against $2.50 of revenue, and Pro's
+ * (50 credits, all video) around $4.15 against $4.17 — Pro's margin is thin
+ * enough that it's worth re-measuring against a larger sample before relying
+ * on it, not a comfortable floor.
+ *
  * These are floors, not ambitions. Raising them later is an announcement
  * people enjoy; lowering them is why people leave.
  */
@@ -63,19 +72,35 @@ export const isTier = (value: string | null | undefined): value is Tier =>
 export const tierOr = (value: string | null | undefined): Tier => (isTier(value) ? value : "free");
 
 /**
- * Does this extraction spend a credit?
+ * How many credits does this extraction spend?
  *
- * Only the paths that actually call a model. A page publishing its own
- * schema.org recipe is read directly and costs nothing, so charging for it
- * would be inventing a cost to bill for. Typing a recipe in by hand obviously
- * costs nothing either.
+ * Only the paths that actually call a model cost anything. A page publishing
+ * its own schema.org recipe is read directly and costs nothing, so charging
+ * for it would be inventing a cost to bill for. Typing a recipe in by hand
+ * obviously costs nothing either.
+ *
+ * A transcript costs 2, not 1. Measured against the live API, reconstructing
+ * a recipe from a messy auto-generated transcript runs 2-3x the model spend
+ * of a clean blog article or a caption — more input to read, and far more
+ * thinking to untangle misheard words, gestured amounts, and steps described
+ * out of order. Pricing every source the same would make the cheap case
+ * subsidize the expensive one; every subscriber pays for video whether they
+ * import any or not. Splitting the cost keeps a plan's advertised allowance
+ * true in the worst case — someone who spends every credit on video — not
+ * just on the average mix.
  *
  * Pantry search doesn't appear here at all: it's a different action, it's
  * roughly a fifteenth of the price of an import, and metering it would make
  * the cheapest feature in the app feel like the most expensive.
  */
+export function creditCost(method: ExtractionMethod): number {
+  if (method === "schema-org" || method === "manual") return 0;
+  return method === "transcript-llm" ? 2 : 1;
+}
+
+/** Whether this extraction spends anything at all. */
 export function costsCredit(method: ExtractionMethod): boolean {
-  return method !== "schema-org" && method !== "manual";
+  return creditCost(method) > 0;
 }
 
 /**

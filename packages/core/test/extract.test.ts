@@ -117,7 +117,7 @@ describe("extractRecipe request shape", () => {
     assert.deepEqual(lastBody.thinking, { type: "adaptive" });
 
     const outputConfig = lastBody.output_config as Record<string, unknown>;
-    assert.equal(outputConfig.effort, "high");
+    assert.equal(outputConfig.effort, "medium");
     assert.ok(outputConfig.format, "a JSON output format must be attached");
 
     // The system prompt is the stable prefix we want cached across every import.

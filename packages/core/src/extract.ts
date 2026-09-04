@@ -81,7 +81,14 @@ const GUIDANCE: Record<SourceDocument["textKind"], string> = {
 export interface ExtractOptions {
   client?: Anthropic;
   model?: string;
-  /** "low" for cheap re-runs, "high" (default) for messy transcripts. */
+  /**
+   * "low" for cheap re-runs, "medium" (default) for everything else.
+   *
+   * Measured against a messy video transcript, "high" cost 29% more than
+   * "medium" for no quality gain — same ingredient/step counts, and actually
+   * a *lower* confidence score. Raise per-call only if a specific source
+   * shape is shown to need it; don't reach for "high" as a default guess.
+   */
   effort?: "low" | "medium" | "high" | "xhigh" | "max";
   signal?: AbortSignal;
 }
@@ -142,10 +149,13 @@ export async function extractRecipe(
     {
       model: opts.model ?? EXTRACTION_MODEL,
       max_tokens: 16_000,
-      system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
+      // 1h TTL: imports across the whole app arrive scattered, rarely two
+      // within the default 5-minute window. A longer-lived cache is what
+      // actually gets hit in practice, not a hypothetical burst.
+      system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral", ttl: "1h" } }],
       thinking: { type: "adaptive" },
       output_config: {
-        effort: opts.effort ?? "high",
+        effort: opts.effort ?? "medium",
         format: zodOutputFormat(ExtractedRecipeSchema),
       },
       messages: [

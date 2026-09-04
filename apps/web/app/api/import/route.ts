@@ -3,6 +3,7 @@ import {
   detectSourceKind,
   ExtractionError,
   ingestDocument,
+  methodForTextKind,
   outOfCreditsMessage,
   nextResetISO,
   resolveSource,
@@ -12,7 +13,7 @@ import {
   willCallModel,
   type IngestResult,
 } from "@seconds/core";
-import { creditsFor, db, ensureInitialStatus, saveRecipe, spendCredit } from "@seconds/db";
+import { canSpendCredit, creditsFor, db, ensureInitialStatus, saveRecipe, spendCredit } from "@seconds/db";
 import { errorResponse } from "@/lib/api";
 import { databaseConfigured, requireUserId } from "@/lib/session";
 
@@ -81,8 +82,13 @@ export async function POST(request: Request) {
       : textSource(text as string, body.title);
 
     if (userId && willCallModel(doc, { forceModel: body.forceModel })) {
-      const balance = await creditsFor(db(), userId);
-      if (!balance.canSpend) {
+      // The real cost is now known — a transcript costs 2 credits, an article
+      // or caption 1 — so this is the precise check, not the courtesy one
+      // above. Someone with exactly 1 credit left must not be let into an
+      // extraction that needs 2.
+      const method = methodForTextKind(doc.textKind);
+      if (!(await canSpendCredit(db(), userId, method))) {
+        const balance = await creditsFor(db(), userId);
         // 402 rather than 403: this isn't a permission problem, it's a
         // "top up and try again" one, and the client tells them apart.
         return NextResponse.json(
