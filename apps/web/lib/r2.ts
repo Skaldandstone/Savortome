@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import type { PhotoMediaType } from "@seconds/core";
+import type { PhotoMediaType, RecipePhoto } from "@seconds/core";
 import { NotConfiguredError } from "./session.js";
 
 /**
@@ -102,4 +102,16 @@ export async function uploadRecipePhoto(
 /** Delete one recipe photo. Not fatal if it's already gone. */
 export async function deleteRecipePhoto(key: string): Promise<void> {
   await r2().send(new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: key }));
+}
+
+/**
+ * Delete every photo a just-deleted recipe (or a just-deleted account's
+ * recipes) was carrying. Best-effort by design, not by accident: the row
+ * these photos belonged to is already gone by the time a caller has this
+ * list, so a failed R2 delete here just leaves an orphaned object rather
+ * than blocking or undoing a delete that already happened. One shared place
+ * for that policy, rather than each deletion path re-deciding it.
+ */
+export async function deleteRecipePhotos(photos: readonly RecipePhoto[]): Promise<void> {
+  await Promise.all(photos.map((photo) => deleteRecipePhoto(photo.key).catch(() => undefined)));
 }

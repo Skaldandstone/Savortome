@@ -125,11 +125,12 @@ const BUTTER_NOT_DAIRY_PHRASES = [/\bbutter\s*beans?\b/, /\bbutter\s*lettuce\b/]
  * replacer", "egg substitute", and "flax egg" are named egg-free
  * substitutes the same way.
  */
+const VEGAN = /\bvegan\b/.source;
 const LABELED_FREE_OF: Record<Allergen, RegExp> = {
-  milk: /\b(?:dairy|milk)[\s-]?free\b|\bnon-?dairy\b|\bvegan\b|\bcream\s+of\s+tartar\b|\bcream\s+soda\b/,
-  eggs: /\begg[\s-]?free\b|\bvegan\b|\begg\s+(?:replacer|substitute)\b|\bflax\s+egg\b/,
-  fish: /\bfish[\s-]?free\b|\bvegan\b/,
-  shellfish: /\bshellfish[\s-]?free\b|\bvegan\b/,
+  milk: new RegExp(`\\b(?:dairy|milk)[\\s-]?free\\b|\\bnon-?dairy\\b|${VEGAN}|\\bcream\\s+of\\s+tartar\\b|\\bcream\\s+soda\\b`),
+  eggs: new RegExp(`\\begg[\\s-]?free\\b|${VEGAN}|\\begg\\s+(?:replacer|substitute)\\b|\\bflax\\s+egg\\b`),
+  fish: new RegExp(`\\bfish[\\s-]?free\\b|${VEGAN}`),
+  shellfish: new RegExp(`\\bshellfish[\\s-]?free\\b|${VEGAN}`),
   "tree-nuts": /\b(?:tree[\s-]?)?nut[\s-]?free\b/,
   peanuts: /\bpeanut[\s-]?free\b/,
   wheat: /\b(?:gluten|wheat)[\s-]?free\b/,

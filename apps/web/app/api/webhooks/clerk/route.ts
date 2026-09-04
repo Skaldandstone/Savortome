@@ -1,13 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { verifyWebhook } from "@clerk/nextjs/webhooks";
 import Stripe from "stripe";
-import {
-  db,
-  deleteUserByClerkId,
-  stripeSubscriptionForClerkId,
-  upsertUserFromClerk,
-} from "@seconds/db";
-import { deleteRecipePhoto } from "@/lib/r2";
+import { db, deleteUserById, findUserForDeletion, upsertUserFromClerk } from "@seconds/db";
+import { deleteRecipePhotos } from "@/lib/r2";
 import { stripe, stripeConfigured } from "@/lib/stripe";
 
 /**
@@ -70,7 +65,8 @@ export async function POST(request: NextRequest) {
 
       case "user.deleted": {
         const { id } = event.data as { id?: string };
-        if (id) {
+        const user = id ? await findUserForDeletion(database, id) : null;
+        if (user) {
           // Cancel billing *before* the row (and the subscription id with
           // it) disappears — deleting the account must never be the thing
           // that leaves someone's subscription running with no account left
@@ -78,18 +74,15 @@ export async function POST(request: NextRequest) {
           // failure here should 500 the whole webhook so Clerk retries,
           // rather than deleting the account and quietly losing the one
           // piece of information needed to stop the charges.
-          if (stripeConfigured()) {
-            const subscriptionId = await stripeSubscriptionForClerkId(database, id);
-            if (subscriptionId) await cancelSubscription(subscriptionId);
+          if (stripeConfigured() && user.stripeSubscriptionId) {
+            await cancelSubscription(user.stripeSubscriptionId);
           }
 
           // Recipes, shelves, and ratings all cascade from the user row —
           // but that cascade is Postgres-only, so the account's R2 photo
           // objects need cleaning up here rather than relying on it.
-          const { photos } = await deleteUserByClerkId(database, id);
-          await Promise.all(
-            photos.map((photo) => deleteRecipePhoto(photo.key).catch(() => undefined)),
-          );
+          const { photos } = await deleteUserById(database, user.id);
+          await deleteRecipePhotos(photos);
         }
         break;
       }

@@ -121,6 +121,26 @@ describe("parsePaprikaExport", () => {
     assert.equal(ingredients[2]!.canonicalItem, "tomato");
   });
 
+  it("recognizes a group header even when it contains a digit", () => {
+    // A digit exclusion here would treat "For the 2 sauces:" as an
+    // ingredient line instead of a heading, garbling it through
+    // parseIngredientLine and losing the group for everything under it —
+    // the same convention the recipe editor uses (editor.ts's
+    // isGroupHeading) has no such exclusion.
+    const zip = buildZip([
+      gzipRecipeEntry("abc123.paprikarecipe", {
+        ...chili,
+        ingredients: "For the 2 sauces:\n1 cup mayonnaise\n2 tbsp hot sauce",
+      }),
+    ]);
+    const { items } = parsePaprikaExport(zip);
+    const { ingredients } = items[0]!.recipe;
+
+    assert.equal(ingredients.length, 2);
+    assert.equal(ingredients[0]!.group, "For the 2 sauces");
+    assert.equal(ingredients[1]!.group, "For the 2 sauces");
+  });
+
   it("splits directions into steps on blank lines", () => {
     const zip = buildZip([gzipRecipeEntry("abc123.paprikarecipe", chili)]);
     const { items } = parsePaprikaExport(zip);
