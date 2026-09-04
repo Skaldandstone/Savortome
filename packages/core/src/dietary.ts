@@ -113,17 +113,28 @@ const BUTTER_NOT_DAIRY_PHRASES = [/\bbutter\s*beans?\b/, /\bbutter\s*lettuce\b/]
 /**
  * The ingredient's own name saying it's free of an allergen is the strongest
  * signal available that a keyword match for that exact allergen is wrong,
- * not a real hit — "gluten-free bread" and "dairy-free cream cheese" are
- * named specifically because they *don't* contain what they'd otherwise be
- * flagged for. "Cream of tartar" and "cream soda" aren't dairy at all
- * despite the name, which "vegan"/"non-dairy" alone wouldn't catch, so
- * those get their own exact phrases. Scoped to the two allergens this was
- * actually observed to misfire on; extend it if another one turns up the
- * same way.
+ * not a real hit — "gluten-free bread", "dairy-free cream cheese",
+ * "peanut-free trail mix", and "soy-free tamari" are named specifically
+ * because they *don't* contain what they'd otherwise be flagged for.
+ * "Vegan" carries the same "otherwise-free" signal for the four allergens
+ * that only exist because an animal was involved (milk, eggs, fish,
+ * shellfish) — it says nothing about wheat, soy, peanuts, tree nuts, or
+ * sesame, so it's scoped to just those four. "Cream of tartar" and "cream
+ * soda" aren't dairy at all despite the name, which "vegan"/"non-dairy"
+ * alone wouldn't catch, so those get their own exact phrases; "egg
+ * replacer", "egg substitute", and "flax egg" are named egg-free
+ * substitutes the same way.
  */
-const LABELED_FREE_OF: Partial<Record<Allergen, RegExp>> = {
+const LABELED_FREE_OF: Record<Allergen, RegExp> = {
   milk: /\b(?:dairy|milk)[\s-]?free\b|\bnon-?dairy\b|\bvegan\b|\bcream\s+of\s+tartar\b|\bcream\s+soda\b/,
+  eggs: /\begg[\s-]?free\b|\bvegan\b|\begg\s+(?:replacer|substitute)\b|\bflax\s+egg\b/,
+  fish: /\bfish[\s-]?free\b|\bvegan\b/,
+  shellfish: /\bshellfish[\s-]?free\b|\bvegan\b/,
+  "tree-nuts": /\b(?:tree[\s-]?)?nut[\s-]?free\b/,
+  peanuts: /\bpeanut[\s-]?free\b/,
   wheat: /\b(?:gluten|wheat)[\s-]?free\b/,
+  soy: /\bsoy[\s-]?free\b/,
+  sesame: /\bsesame[\s-]?free\b/,
 };
 
 /** Which of a viewer's flagged allergens might be in one ingredient's name. */
@@ -131,7 +142,7 @@ export function allergensIn(canonicalItem: string): Allergen[] {
   const text = canonicalItem.toLowerCase();
   const found = ALLERGENS.filter((allergen) => {
     if (!ALLERGEN_KEYWORDS[allergen].some((word) => matchesWord(text, word))) return false;
-    if (LABELED_FREE_OF[allergen]?.test(text)) return false;
+    if (LABELED_FREE_OF[allergen].test(text)) return false;
     const modifiers = NON_DAIRY_MODIFIERS[allergen];
     return !modifiers?.some((word) => matchesWord(text, word));
   });
@@ -141,7 +152,7 @@ export function allergensIn(canonicalItem: string): Allergen[] {
     !found.includes("milk") &&
     !NON_DAIRY_BUTTERS.some((word) => matchesWord(text, word)) &&
     !BUTTER_NOT_DAIRY_PHRASES.some((phrase) => phrase.test(text)) &&
-    !LABELED_FREE_OF.milk!.test(text)
+    !LABELED_FREE_OF.milk.test(text)
   ) {
     found.push("milk");
   }

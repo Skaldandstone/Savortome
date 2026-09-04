@@ -43,11 +43,35 @@ describe("allergensIn", () => {
     assert.deepEqual(allergensIn("dairy-free cream cheese"), []);
     assert.deepEqual(allergensIn("non-dairy whipped cream"), []);
     assert.deepEqual(allergensIn("vegan cream cheese"), []);
+    assert.deepEqual(allergensIn("peanut-free trail mix"), []);
+    assert.deepEqual(allergensIn("soy-free tamari"), []);
+    assert.deepEqual(allergensIn("sesame-free everything seasoning"), []);
+    assert.deepEqual(allergensIn("fish-free worcestershire sauce"), []);
+    assert.deepEqual(allergensIn("shellfish-free seafood seasoning"), []);
+    assert.deepEqual(allergensIn("nut-free pesto"), []);
+  });
+
+  it("doesn't flag egg-free substitutes as eggs", () => {
+    assert.deepEqual(allergensIn("egg replacer"), []);
+    assert.deepEqual(allergensIn("egg substitute"), []);
+    assert.deepEqual(allergensIn("flax egg"), []);
+    assert.deepEqual(allergensIn("vegan egg"), []);
   });
 
   it("doesn't flag cream of tartar or cream soda as dairy — neither one contains any", () => {
     assert.deepEqual(allergensIn("cream of tartar"), []);
     assert.deepEqual(allergensIn("cream soda"), []);
+  });
+
+  it("treats 'vegan' as free-of for the four animal-derived allergens, but not for wheat, soy, peanuts, tree nuts, or sesame", () => {
+    assert.deepEqual(allergensIn("vegan cream cheese"), []);
+    assert.deepEqual(allergensIn("vegan egg"), []);
+    assert.deepEqual(allergensIn("vegan fish sauce"), []);
+    assert.deepEqual(allergensIn("vegan worcestershire sauce"), []);
+    // "vegan" says nothing about these — a vegan diet can still include wheat,
+    // soy, peanuts, tree nuts, and sesame.
+    assert.deepEqual(allergensIn("vegan wheat bread"), ["wheat"]);
+    assert.deepEqual(allergensIn("vegan soy sauce"), ["soy"]);
   });
 
   it("a 'free' or 'vegan' label doesn't blind it to a real allergen match elsewhere in the same ingredient", () => {
