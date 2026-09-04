@@ -159,6 +159,7 @@ export async function grantCredits(
   database: Database,
   userId: string,
   credits: number,
+  now: Date = new Date(),
 ): Promise<CreditBalance> {
   if (credits <= 0) throw new Error("A credit grant has to be positive.");
 
@@ -167,7 +168,7 @@ export async function grantCredits(
     .set({ creditsPurchased: sql`${schema.users.creditsPurchased} + ${credits}` })
     .where(eq(schema.users.id, userId));
 
-  return creditsFor(database, userId);
+  return creditsFor(database, userId, now);
 }
 
 /** Move someone between plans. Spent credits stay spent. */
@@ -175,9 +176,10 @@ export async function setTier(
   database: Database,
   userId: string,
   tier: Tier,
+  now: Date = new Date(),
 ): Promise<CreditBalance> {
   await database.update(schema.users).set({ tier }).where(eq(schema.users.id, userId));
-  return creditsFor(database, userId);
+  return creditsFor(database, userId, now);
 }
 
 /** Recent spends, for a "where did my credits go" list. */
