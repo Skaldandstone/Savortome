@@ -47,8 +47,13 @@ export function unitFamily(unit: string | null): UnitFamily {
 export function canCombine(a: string | null, b: string | null): boolean {
   const [fa, fb] = [unitFamily(a), unitFamily(b)];
   if (fa !== fb) return false;
-  // Discrete units only combine with themselves.
-  if (fa === "count") return (a ?? "") === (b ?? "");
+  // Discrete units only combine with themselves — case-insensitively, same
+  // as volume and weight already are via the lowercased table lookups in
+  // toBase/fromBase. Without this, "clove" and "Clove" (a real difference
+  // in casing an LLM extraction can produce, since nothing normalizes a
+  // model's own `unit` output the way the deterministic parser's
+  // normalizeUnit does) would count as unrelated units.
+  if (fa === "count") return (a ?? "").toLowerCase() === (b ?? "").toLowerCase();
   return true;
 }
 

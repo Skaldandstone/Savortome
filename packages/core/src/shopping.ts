@@ -60,9 +60,10 @@ interface Bucket {
 function bucketKey(canonicalItem: string, unit: string | null): string {
   const family = unitFamily(unit);
   // Volume and weight merge across their whole family; counts only with
-  // themselves, so the exact unit is part of the key.
+  // themselves, so the exact unit is part of the key — lowercased so
+  // "Clove" and "clove" land in the same bucket, matching canCombine.
   return family === "count"
-    ? `${canonicalItem}::count::${unit ?? ""}`
+    ? `${canonicalItem}::count::${(unit ?? "").toLowerCase()}`
     : `${canonicalItem}::${family}`;
 }
 
