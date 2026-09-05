@@ -58,6 +58,24 @@ describe("aisleFor", () => {
     assert.equal(aisleFor("berry", "frozen mixed berries"), "frozen");
   });
 
+  it("tells a fresh vegetable from a pantry word that happens to share its name", () => {
+    // "pepper" alone has to mean the spice (or "black pepper" and "pepper
+    // flakes" would land in produce), and "bean" alone has to mean canned or
+    // dried (or "black bean" and "kidney bean" would too) — but a qualifier
+    // that only ever means the fresh vegetable should win over that default.
+    assert.equal(aisleFor("bell pepper"), "produce");
+    assert.equal(aisleFor("red bell pepper"), "produce");
+    assert.equal(aisleFor("green bean"), "produce");
+    assert.equal(aisleFor("string bean"), "produce");
+    assert.equal(aisleFor("runner bean"), "produce");
+    // The qualifier has to actually be there — bare "pepper" and "bean" keep
+    // defaulting to pantry.
+    assert.equal(aisleFor("black pepper"), "pantry");
+    assert.equal(aisleFor("pepper"), "pantry");
+    assert.equal(aisleFor("kidney bean"), "pantry");
+    assert.equal(aisleFor("bean"), "pantry");
+  });
+
   it("knows the dry goods that aren't flour or rice", () => {
     for (const item of ["cornmeal", "polenta", "couscous", "quinoa", "granola", "turmeric"]) {
       assert.equal(aisleFor(item), "pantry", `${item} belongs in the pantry`);

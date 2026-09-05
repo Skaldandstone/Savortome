@@ -93,6 +93,22 @@ const AISLE_WORDS: [Aisle, string[]][] = [
 ];
 
 /**
+ * A handful of compounds where the qualifying word changes the aisle a bare
+ * keyword below would otherwise pick, checked before that list rather than
+ * added to it — "pepper" alone means the pantry spice in the list below (it
+ * has to, or "black pepper" and "pepper flakes" would end up in produce),
+ * but "bell pepper" is never anything but the fresh vegetable; "bean" alone
+ * means a canned or dried one, but "green bean" is never anything but the
+ * fresh one.
+ */
+const COMPOUND_OVERRIDES: [Aisle, string, string][] = [
+  ["produce", "bell", "pepper"],
+  ["produce", "green", "bean"],
+  ["produce", "string", "bean"],
+  ["produce", "runner", "bean"],
+];
+
+/**
  * Which aisle an ingredient belongs in.
  *
  * Falls back to "other" rather than guessing. An unknown item at the end of
@@ -113,6 +129,10 @@ export function aisleFor(canonicalItem: string, displayName = ""): Aisle {
       .filter(Boolean),
   );
   if (words.size === 0) return "other";
+
+  for (const [aisle, a, b] of COMPOUND_OVERRIDES) {
+    if (words.has(a) && words.has(b)) return aisle;
+  }
 
   for (const [aisle, keywords] of AISLE_WORDS) {
     if (keywords.some((word) => words.has(word))) return aisle;
