@@ -101,8 +101,15 @@ export function timerLabel(text: string): string {
   return words.length > 6 ? `${short}…` : short;
 }
 
+// The range separator and second number used to be independently optional
+// ("\s*(?:-|–|to)?\s*(\d+)?\s*"), which let three adjacent \s* groups each
+// match zero or more of the same whitespace run - a classic catastrophic
+// backtracking shape (confirmed by CodeQL: it hangs on step text with a long
+// run of digits or tabs and no unit word to let the match succeed). Requiring
+// the separator and second number as a single unit closes that ambiguity;
+// only one \s* run is now reachable per position.
 const TIMER_RE =
-  /\b(?:for\s+)?(?:about\s+|around\s+)?(\d+(?:\.\d+)?)\s*(?:-|–|to)?\s*(\d+)?\s*(second|sec|minute|min|hour|hr)s?\b/i;
+  /\b(?:for\s+)?(?:about\s+|around\s+)?(\d+(?:\.\d+)?)(?:\s*(?:-|–|to)\s*(\d+))?\s*(second|sec|minute|min|hour|hr)s?\b/i;
 
 /**
  * Pull a hands-off duration out of step prose so the app can offer a timer.
