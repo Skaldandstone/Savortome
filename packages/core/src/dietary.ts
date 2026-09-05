@@ -61,7 +61,7 @@ export const ALLERGEN_DISCLAIMER =
  * the worse failure for something safety-adjacent.
  */
 const ALLERGEN_KEYWORDS: Record<Allergen, string[]> = {
-  milk: ["milk", "cheese", "cream", "yogurt", "yoghurt", "ghee", "whey", "casein", "buttermilk"],
+  milk: ["milk", "cheese", "cream", "yogurt", "yoghurt", "ghee", "whey", "casein", "buttermilk", "butter"],
   eggs: ["egg"],
   fish: ["salmon", "tuna", "cod", "anchovy", "anchovies", "sardine", "halibut", "trout", "fish sauce", "fish"],
   shellfish: [
@@ -87,78 +87,53 @@ function matchesWord(text: string, word: string): boolean {
   return new RegExp(`\\b${escaped}\\b`).test(text);
 }
 
-/**
- * Words whose allergen meaning a plant-based modifier cancels out. "Butter"
- * alone would flag peanut butter, cocoa butter, shea butter, and apple
- * butter as dairy; "milk" alone would flag coconut, almond, oat, and soy
- * milk the same way. Both are worse than missing the real thing, since a
- * wrong warning is exactly what teaches someone to stop reading the
- * disclaimer — and the nut-based versions are already caught by their own
- * allergen regardless.
- */
-const NON_DAIRY_MODIFIERS: Partial<Record<Allergen, string[]>> = {
-  milk: ["coconut", "almond", "cashew", "oat", "soy", "rice", "hemp", "pea"],
-  wheat: ["buckwheat", "almond", "coconut", "rice", "oat", "chickpea", "corn", "cassava", "tapioca"],
-};
-const NON_DAIRY_BUTTERS = ["peanut", "almond", "cashew", "cocoa", "shea", "apple", "sunflower", "seed"];
+const VEGAN = /\bvegan\b/;
 
 /**
- * The reverse shape of `NON_DAIRY_BUTTERS`: there the modifier comes before
- * "butter" ("peanut butter"); here "butter" comes first and modifies a food
- * that has nothing to do with dairy — a butter bean is a lima bean, and
- * butter lettuce is a lettuce variety.
+ * A keyword match for an allergen is wrong, not a real hit, when the
+ * ingredient's own name also contains one of these — a plant-based modifier
+ * before the keyword ("coconut milk", "almond butter"), a food that only
+ * sounds like the allergen ("butter bean", "cream of tartar"), or the name
+ * saying outright that it's free of the very thing it would otherwise be
+ * flagged for ("gluten-free bread", "vegan cream cheese"). One list per
+ * allergen — the next false-positive pattern is one more regex here, not a
+ * new kind of mechanism.
+ *
+ * "Vegan" only goes on the four allergens that exist because an animal was
+ * involved (milk, eggs, fish, shellfish); it says nothing about wheat, soy,
+ * peanuts, tree nuts, or sesame; a vegan diet can still include all of those.
  */
-const BUTTER_NOT_DAIRY_PHRASES = [/\bbutter\s*beans?\b/, /\bbutter\s*lettuce\b/];
-
-/**
- * The ingredient's own name saying it's free of an allergen is the strongest
- * signal available that a keyword match for that exact allergen is wrong,
- * not a real hit — "gluten-free bread", "dairy-free cream cheese",
- * "peanut-free trail mix", and "soy-free tamari" are named specifically
- * because they *don't* contain what they'd otherwise be flagged for.
- * "Vegan" carries the same "otherwise-free" signal for the four allergens
- * that only exist because an animal was involved (milk, eggs, fish,
- * shellfish) — it says nothing about wheat, soy, peanuts, tree nuts, or
- * sesame, so it's scoped to just those four. "Cream of tartar" and "cream
- * soda" aren't dairy at all despite the name, which "vegan"/"non-dairy"
- * alone wouldn't catch, so those get their own exact phrases; "egg
- * replacer", "egg substitute", and "flax egg" are named egg-free
- * substitutes the same way.
- */
-const VEGAN = /\bvegan\b/.source;
-const LABELED_FREE_OF: Record<Allergen, RegExp> = {
-  milk: new RegExp(`\\b(?:dairy|milk)[\\s-]?free\\b|\\bnon-?dairy\\b|${VEGAN}|\\bcream\\s+of\\s+tartar\\b|\\bcream\\s+soda\\b`),
-  eggs: new RegExp(`\\begg[\\s-]?free\\b|${VEGAN}|\\begg\\s+(?:replacer|substitute)\\b|\\bflax\\s+egg\\b`),
-  fish: new RegExp(`\\bfish[\\s-]?free\\b|${VEGAN}`),
-  shellfish: new RegExp(`\\bshellfish[\\s-]?free\\b|${VEGAN}`),
-  "tree-nuts": /\b(?:tree[\s-]?)?nut[\s-]?free\b/,
-  peanuts: /\bpeanut[\s-]?free\b/,
-  wheat: /\b(?:gluten|wheat)[\s-]?free\b/,
-  soy: /\bsoy[\s-]?free\b/,
-  sesame: /\bsesame[\s-]?free\b/,
+const EXCLUSIONS: Record<Allergen, RegExp[]> = {
+  milk: [
+    /\b(?:coconut|almond|cashew|oat|soy|rice|hemp|pea|peanut|cocoa|shea|apple|sunflower|seed)\b/,
+    /\bbutter\s*beans?\b/,
+    /\bbutter\s*lettuce\b/,
+    /\b(?:dairy|milk)[\s-]?free\b/,
+    /\bnon-?dairy\b/,
+    VEGAN,
+    /\bcream\s+of\s+tartar\b/,
+    /\bcream\s+soda\b/,
+  ],
+  eggs: [VEGAN, /\begg[\s-]?free\b/, /\begg\s+(?:replacer|substitute)\b/, /\bflax\s+egg\b/],
+  fish: [VEGAN, /\bfish[\s-]?free\b/],
+  shellfish: [VEGAN, /\bshellfish[\s-]?free\b/],
+  "tree-nuts": [/\b(?:tree[\s-]?)?nut[\s-]?free\b/],
+  peanuts: [/\bpeanut[\s-]?free\b/],
+  wheat: [
+    /\b(?:buckwheat|almond|coconut|rice|oat|chickpea|corn|cassava|tapioca)\b/,
+    /\b(?:gluten|wheat)[\s-]?free\b/,
+  ],
+  soy: [/\bsoy[\s-]?free\b/],
+  sesame: [/\bsesame[\s-]?free\b/],
 };
 
 /** Which of a viewer's flagged allergens might be in one ingredient's name. */
 export function allergensIn(canonicalItem: string): Allergen[] {
   const text = canonicalItem.toLowerCase();
-  const found = ALLERGENS.filter((allergen) => {
+  return ALLERGENS.filter((allergen) => {
     if (!ALLERGEN_KEYWORDS[allergen].some((word) => matchesWord(text, word))) return false;
-    if (LABELED_FREE_OF[allergen].test(text)) return false;
-    const modifiers = NON_DAIRY_MODIFIERS[allergen];
-    return !modifiers?.some((word) => matchesWord(text, word));
+    return !EXCLUSIONS[allergen].some((exclusion) => exclusion.test(text));
   });
-
-  if (
-    matchesWord(text, "butter") &&
-    !found.includes("milk") &&
-    !NON_DAIRY_BUTTERS.some((word) => matchesWord(text, word)) &&
-    !BUTTER_NOT_DAIRY_PHRASES.some((phrase) => phrase.test(text)) &&
-    !LABELED_FREE_OF.milk.test(text)
-  ) {
-    found.push("milk");
-  }
-
-  return found;
 }
 
 /** One ingredient that might trip up one of the viewer's flagged allergens. */
