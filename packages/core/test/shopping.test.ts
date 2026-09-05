@@ -3,7 +3,6 @@ import { describe, it } from "node:test";
 import { buildShoppingList, formatListAsText } from "../src/shopping.js";
 import { CART_PROVIDERS_BY_ID, availableProviders, buildHandoff } from "../src/carts.js";
 import { createInstacartList, toInstacartLineItems } from "../src/carts-instacart.js";
-import { canCombine, convert, tidyQuantity, unitFamily } from "../src/units-convert.js";
 import type { Ingredient } from "../src/recipe.js";
 import type { PantryEntry } from "../src/pantry.js";
 
@@ -40,56 +39,9 @@ const pantryEntry = (
 const lineFor = (lines: ReturnType<typeof buildShoppingList>, item: string) =>
   lines.find((l) => l.canonicalItem === item);
 
-describe("unit families", () => {
-  it("groups units that genuinely relate", () => {
-    assert.equal(unitFamily("cup"), "volume");
-    assert.equal(unitFamily("tbsp"), "volume");
-    assert.equal(unitFamily("g"), "weight");
-    assert.equal(unitFamily("lb"), "weight");
-    assert.equal(unitFamily(null), "count");
-    assert.equal(unitFamily("clove"), "count");
-  });
-
-  it("refuses to mix volume and weight", () => {
-    // Doing so would mean guessing the ingredient's density.
-    assert.equal(canCombine("cup", "g"), false);
-    assert.equal(convert(1, "cup", "g"), null);
-  });
-
-  it("only combines a discrete unit with itself", () => {
-    assert.equal(canCombine("clove", "clove"), true);
-    assert.equal(canCombine("clove", "head"), false);
-    assert.equal(canCombine(null, null), true);
-  });
-});
-
-describe("convert", () => {
-  const close = (actual: number | null, expected: number) =>
-    assert.ok(actual !== null && Math.abs(actual - expected) < 0.01, `got ${actual}`);
-
-  it("converts within volume", () => {
-    close(convert(1, "cup", "tbsp"), 16);
-    close(convert(3, "tsp", "tbsp"), 1);
-    close(convert(1000, "ml", "l"), 1);
-  });
-
-  it("converts within weight", () => {
-    close(convert(1, "lb", "oz"), 16);
-    close(convert(1000, "g", "kg"), 1);
-  });
-});
-
-describe("tidyQuantity", () => {
-  it("keeps small amounts on measurable eighths", () => {
-    assert.equal(tidyQuantity(1.1), 1.125);
-    assert.equal(tidyQuantity(0.33), 0.375);
-  });
-
-  it("gets coarser as numbers get bigger", () => {
-    assert.equal(tidyQuantity(12.3), 12.5);
-    assert.equal(tidyQuantity(230.4), 230);
-  });
-});
+// Unit-family/conversion/rounding behavior lives in units-convert.test.ts now
+// — dedicated coverage there, including case-insensitivity, rather than a
+// partial re-test of the same functions here.
 
 describe("buildShoppingList", () => {
   it("merges the same ingredient across recipes", () => {
@@ -132,6 +84,23 @@ describe("buildShoppingList", () => {
     const butter = lines.filter((l) => l.canonicalItem === "butter");
     assert.equal(butter.length, 2, "volume and weight must not be guessed into one line");
     assert.deepEqual(butter.map((l) => l.unit).sort(), ["cup", "g"]);
+  });
+
+  it("merges the same discrete unit even when a model extraction cased it differently", () => {
+    // Nothing runs a model-extracted unit through normalizeUnit the way the
+    // deterministic parser does, so two recipes can genuinely disagree on
+    // "clove" vs "Clove" for what is the same real unit.
+    const lines = buildShoppingList(
+      new Map([
+        ["a", [ing("garlic", 2, "Clove")]],
+        ["b", [ing("garlic", 3, "clove")]],
+      ]),
+      { skipStaples: false },
+    );
+
+    const garlic = lines.filter((l) => l.canonicalItem === "garlic");
+    assert.equal(garlic.length, 1, "same unit, different case, must still be one line");
+    assert.equal(garlic[0]!.quantity, 5);
   });
 
   it("shops for the top of a range", () => {
