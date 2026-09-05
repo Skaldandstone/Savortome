@@ -12,6 +12,7 @@ import {
   restoreSession,
   serializeSession,
   SESSION_MAX_AGE_MS,
+  timerFromStep,
   timerLabel,
   timerState,
   timestampUrl,
@@ -221,5 +222,34 @@ describe("sessions", () => {
   it("has nothing to offer when nothing had happened yet", () => {
     // Restoring "you are on step 1 and have done nothing" is not a restore.
     assert.equal(restoreSession(serializeSession("r1", 0, new Set(), [], T0), "r1", 5, T0), null);
+  });
+});
+
+describe("timerFromStep", () => {
+  it("reads a single duration", () => {
+    assert.equal(timerFromStep("Simmer for 20 minutes."), 1200);
+    assert.equal(timerFromStep("Rest 1 hour."), 3600);
+    assert.equal(timerFromStep("Sear for about 90 seconds."), 90);
+  });
+
+  it("averages a range, both dash and word forms", () => {
+    assert.equal(timerFromStep("Bake for 20-30 minutes."), 25 * 60);
+    assert.equal(timerFromStep("Bake for 20 to 30 minutes."), 25 * 60);
+    assert.equal(timerFromStep("Bake for 20 – 30 minutes."), 25 * 60);
+  });
+
+  it("returns null with no duration in the text", () => {
+    assert.equal(timerFromStep("Season generously with salt."), null);
+  });
+
+  it("does not hang on adversarial input (ReDoS regression)", () => {
+    // Previously, the range separator and second number were each
+    // independently optional, so three adjacent \s* runs could all match
+    // the same whitespace/digit run in exponentially many ways once the
+    // string ran out without a unit word to let the match succeed.
+    const adversarial = "9".repeat(50) + "\t".repeat(50);
+    const start = performance.now();
+    assert.equal(timerFromStep(adversarial), null);
+    assert.ok(performance.now() - start < 100, "should resolve near-instantly, not backtrack exponentially");
   });
 });
