@@ -1,15 +1,18 @@
 import { randomUUID } from "node:crypto";
 import { extractRecipe, type ExtractOptions } from "./extract.js";
 import { computeNutrition, type ComputeNutritionOptions } from "./nutrition-usda.js";
-import type { ExtractionMethod, Recipe, RecipeNutrition } from "./recipe.js";
+import type { ExtractionMethod, Recipe, RecipeNutrition, SourceKind } from "./recipe.js";
 import {
-  ResolveError,
+  EmptyExtractionError,
   methodForTextKind,
   resolveSource,
   textSource,
   type ResolveOptions,
   type SourceDocument,
 } from "./sources/index.js";
+
+/** The social sources where the caption-substantive check can hide a real transcript behind it — YouTube always tries a transcript regardless, so retrying it would just repeat the same failed attempt. */
+const RETRIABLE_CAPTION_KINDS = new Set<SourceKind>(["tiktok", "instagram", "facebook"]);
 
 export interface IngestOptions extends ResolveOptions, ExtractOptions {
   /**
@@ -135,7 +138,7 @@ export async function ingestDocument(
   // anything generic this could invent.
   if (extracted.ingredients.length === 0 && extracted.steps.length === 0) {
     const why = extracted.extractionNotes.find((note) => note.trim())?.trim();
-    throw new ResolveError(
+    throw new EmptyExtractionError(
       why
         ? `No recipe could be read from that page. ${truncate(why, 300)}`
         : "No recipe could be read from that page.",
@@ -188,7 +191,33 @@ export function willCallModel(
 /** Paste a link from anywhere, get a recipe card. The one function the app is built around. */
 export async function ingestUrl(url: string, opts: IngestOptions = {}): Promise<IngestResult> {
   const doc = await resolveSource(url, opts);
-  return ingestDocument(doc, opts);
+  try {
+    return await ingestDocument(doc, opts);
+  } catch (err) {
+    // The caption looked plausible enough to spend a model call on and still
+    // came back empty. The video's own audio is the one thing left to try —
+    // worth the second call only when there's a real chance it changes
+    // anything: a social caption (not already a transcript, and not
+    // YouTube, which already tries a transcript unconditionally so retrying
+    // it would just repeat the exact same failed attempt).
+    if (
+      err instanceof EmptyExtractionError &&
+      RETRIABLE_CAPTION_KINDS.has(doc.kind) &&
+      doc.textKind === "caption" &&
+      opts.allowTranscription !== false
+    ) {
+      const retryDoc = await resolveSource(url, { ...opts, forceTranscript: true });
+      if (retryDoc.textKind === "transcript") {
+        retryDoc.trace = [
+          ...doc.trace,
+          "extraction: the caption looked like a recipe but came back empty — retrying from the video's own audio",
+          ...retryDoc.trace,
+        ];
+        return ingestDocument(retryDoc, opts);
+      }
+    }
+    throw err;
+  }
 }
 
 /** Same pipeline for text the user typed or pasted (screenshot OCR, a family recipe, a DM). */

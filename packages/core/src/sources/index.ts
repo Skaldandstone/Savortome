@@ -36,9 +36,28 @@ export {
 } from "./transcribe.js";
 export { coalesceCues, cuesToTranscript, fetchYoutube } from "./youtube.js";
 
-/** A caption is only worth extracting from if it's long enough to plausibly hold a recipe. */
-const captionIsSubstantive = (c: string | null): c is string =>
-  !!c && c.replace(/\s+/g, " ").trim().length >= 120;
+/**
+ * Whether a caption looks like it actually contains a recipe — not just
+ * whether it's long enough to. A caption clears any length threshold with
+ * nothing but a title and a wall of hashtags; a real ingredient list or
+ * numbered steps is what actually predicts an extraction has something to
+ * work with. Biased toward false negatives on purpose: a caption wrongly
+ * judged "not a recipe" just means a transcript gets tried too, which costs
+ * a little time; a caption wrongly judged substantive skips straight to a
+ * model call that was always going to come back empty.
+ */
+const RECIPE_UNIT_PATTERN =
+  /\b\d+(?:[.,]\d+)?\s*(?:cups?|tbsp|tablespoons?|tsp|teaspoons?|oz|ounces?|g|grams?|kg|ml|l|liters?|litres?|lbs?|pounds?|cloves?|slices?|pinch(?:es)?|dash(?:es)?|cans?|packets?|sticks?)\b/gi;
+const STEP_PATTERN = /(?:^|\n)\s*(?:\d+[.):]|step\s+\d+\b)/im;
+const RECIPE_LABEL_PATTERN = /\b(?:ingredients?|directions?|instructions?)\s*:/i;
+
+export function looksLikeRecipe(c: string | null): c is string {
+  if (!c) return false;
+  const t = c.trim();
+  if (!t) return false;
+  const unitMatches = t.match(RECIPE_UNIT_PATTERN)?.length ?? 0;
+  return unitMatches >= 2 || STEP_PATTERN.test(t) || RECIPE_LABEL_PATTERN.test(t);
+}
 
 async function resolveVideo(
   url: string,
@@ -98,11 +117,12 @@ async function resolveVideo(
   // The caption track is the prize, and yt-dlp can usually fetch the one
   // YouTube won't hand a server directly. Free and quick, so it goes ahead of
   // ASR — but it isn't worth the wait for a post whose caption is already the
-  // whole recipe.
+  // whole recipe. forceTranscript overrides that: set only by ingestUrl's own
+  // retry, after a caption that looked plausible enough to try came back empty.
   const wantsTranscript =
     !transcript &&
     opts.allowTranscription !== false &&
-    (kind === "youtube" || !captionIsSubstantive(caption));
+    (kind === "youtube" || opts.forceTranscript || !looksLikeRecipe(caption));
 
   if (wantsTranscript && (await ytDlpAvailable())) {
     const subs = await subtitlesViaYtDlp(url);
@@ -116,7 +136,11 @@ async function resolveVideo(
   }
 
   // Still nothing spoken and no usable post text — download the audio and run ASR.
-  if (!transcript && !captionIsSubstantive(caption) && opts.allowTranscription !== false) {
+  if (
+    !transcript &&
+    (opts.forceTranscript || !looksLikeRecipe(caption)) &&
+    opts.allowTranscription !== false
+  ) {
     const asr = asrConfigFromEnv();
     if (!asr) {
       trace.push("asr: skipped (no DEEPGRAM_API_KEY or GROQ_API_KEY)");
@@ -133,7 +157,7 @@ async function resolveVideo(
     }
   }
 
-  if (!transcript && !captionIsSubstantive(caption)) {
+  if (!transcript && !looksLikeRecipe(caption)) {
     throw new ResolveError(
       `Could not get spoken text or a usable caption from this ${kind} link. ` +
         `Install yt-dlp to read caption tracks, add DEEPGRAM_API_KEY (or GROQ_API_KEY) ` +
@@ -145,7 +169,7 @@ async function resolveVideo(
   // Captions frequently carry exact amounts the narration glosses over ("a splash of oil"),
   // so when we have both we hand the model both and let it reconcile them.
   const text = transcript
-    ? captionIsSubstantive(caption)
+    ? looksLikeRecipe(caption)
       ? `${transcript}\n\n--- POST CAPTION / DESCRIPTION ---\n${caption}`
       : transcript
     : (caption as string);
