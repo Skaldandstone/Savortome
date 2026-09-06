@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { looksLikeRecipe } from "../src/sources/index.js";
+import { looksLikeRecipe, resolveSource } from "../src/sources/index.js";
+import { ResolveError } from "../src/sources/types.js";
 
 describe("looksLikeRecipe", () => {
   it("rejects a caption that's just a title and hashtags", () => {
@@ -44,5 +45,21 @@ describe("looksLikeRecipe", () => {
 
   it("rejects ordinary prose with numbers in it that aren't measurements", () => {
     assert.equal(looksLikeRecipe("my grandma turned 90 and made this for the 3rd time this year"), false);
+  });
+});
+
+describe("resolveSource", () => {
+  it("wraps a dead link's fetch failure as a ResolveError instead of an unhandled generic Error", async () => {
+    // A 404, a deleted post, a site that's down — none of that is a bug in
+    // this app, so it must surface as the same 4xx-mapped failure every
+    // other resolution problem does, not fall through to a generic 500.
+    await assert.rejects(
+      () => resolveSource("https://example.com/definitely-not-a-real-page-9f3a7c"),
+      (err: unknown) => {
+        assert.ok(err instanceof ResolveError, `expected a ResolveError, got ${err}`);
+        assert.match((err as Error).message, /Couldn't reach that link/);
+        return true;
+      },
+    );
   });
 });

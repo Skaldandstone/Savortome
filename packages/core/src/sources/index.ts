@@ -13,7 +13,7 @@ import {
   ytDlpAvailable,
 } from "./transcribe.js";
 import { ResolveError, type ResolveOptions, type SourceDocument } from "./types.js";
-import { assertPublicHttpUrl } from "./url-guard.js";
+import { assertPublicHttpUrl, UnsafeUrlError } from "./url-guard.js";
 import { cuesToTranscript, fetchYoutube } from "./youtube.js";
 
 export * from "./types.js";
@@ -254,9 +254,25 @@ export async function resolveSource(
   await assertPublicHttpUrl(url);
   const kind = detectSourceKind(url);
   trace.push(`detected source: ${kind}`);
-  return kind === "web"
-    ? resolveWeb(url, opts, trace)
-    : resolveVideo(url, kind, opts, trace);
+  try {
+    return await (kind === "web"
+      ? resolveWeb(url, opts, trace)
+      : resolveVideo(url, kind, opts, trace));
+  } catch (err) {
+    // fetchText/fetchJson throw a plain Error for a non-2xx response or a
+    // network failure — a dead link, a deleted post, a site that's down.
+    // None of that is a bug in this app, so it deserves the same 4xx
+    // treatment every other resolution failure gets (a clear message,
+    // "couldn't read this" rather than "something went wrong on our end"),
+    // not the generic 500 an unwrapped Error falls through to. Every
+    // resolver's own deliberate failures already throw ResolveError or
+    // UnsafeUrlError directly, so those pass through unchanged here.
+    if (err instanceof ResolveError || err instanceof UnsafeUrlError) throw err;
+    throw new ResolveError(
+      `Couldn't reach that link: ${err instanceof Error ? err.message : "unknown error"}.`,
+      trace,
+    );
+  }
 }
 
 /** Wrap pasted text so it can go through the same extractor as a scraped page. */
