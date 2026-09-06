@@ -38,9 +38,19 @@ export interface TranscribeConfig {
   maxDurationSeconds?: number;
 }
 
+/**
+ * Long streams are expensive to run through ASR and are rarely recipes — a
+ * podcast, a full movie, a livestream VOD. 20 minutes covers any real recipe
+ * video with room to spare. Overridable since "rarely" isn't "never".
+ */
+const DEFAULT_MAX_TRANSCRIBE_SECONDS = 20 * 60;
+
 export function asrConfigFromEnv(env: NodeJS.ProcessEnv = process.env): TranscribeConfig | null {
-  if (env.DEEPGRAM_API_KEY) return { provider: "deepgram", apiKey: env.DEEPGRAM_API_KEY };
-  if (env.GROQ_API_KEY) return { provider: "groq", apiKey: env.GROQ_API_KEY };
+  const maxDurationSeconds = env.MAX_TRANSCRIBE_SECONDS
+    ? Number(env.MAX_TRANSCRIBE_SECONDS)
+    : DEFAULT_MAX_TRANSCRIBE_SECONDS;
+  if (env.DEEPGRAM_API_KEY) return { provider: "deepgram", apiKey: env.DEEPGRAM_API_KEY, maxDurationSeconds };
+  if (env.GROQ_API_KEY) return { provider: "groq", apiKey: env.GROQ_API_KEY, maxDurationSeconds };
   return null;
 }
 
@@ -174,6 +184,26 @@ export async function subtitlesViaYtDlp(url: string): Promise<TranscriptCue[]> {
   }
 }
 
+/**
+ * The video's length, in seconds, or null when yt-dlp can't say (an
+ * unsupported site, a transient failure) — that's not reason enough to
+ * refuse a transcript outright, so the caller treats null as "no cap
+ * applies" rather than as a hard stop.
+ */
+async function videoDurationSeconds(url: string): Promise<number | null> {
+  try {
+    const raw = await run(
+      ytDlpBin(),
+      ["--skip-download", "--print", "duration", "--no-warnings", "--no-playlist", url],
+      30_000,
+    );
+    const n = Number(raw.trim());
+    return Number.isFinite(n) && n > 0 ? n : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Download the audio track only — far smaller and faster than the full video. */
 async function downloadAudio(url: string): Promise<{ path: string; cleanup: () => Promise<void> }> {
   const dir = await mkdtemp(join(tmpdir(), "seconds-"));
@@ -243,6 +273,18 @@ export async function transcribeUrl(
   url: string,
   config: TranscribeConfig,
 ): Promise<TranscriptCue[]> {
+  if (config.maxDurationSeconds) {
+    const duration = await videoDurationSeconds(url);
+    // null means yt-dlp couldn't say — not a reason to refuse, since the
+    // point of the cap is to skip streams we positively know are too long.
+    if (duration !== null && duration > config.maxDurationSeconds) {
+      throw new Error(
+        `This video is ${Math.round(duration / 60)} minutes long, past the ` +
+          `${Math.round(config.maxDurationSeconds / 60)}-minute cap on what gets transcribed.`,
+      );
+    }
+  }
+
   const { path, cleanup } = await downloadAudio(url);
   try {
     const audio = await readFile(path);
