@@ -148,11 +148,23 @@ async function resolveVideo(
       trace.push("asr: skipped (yt-dlp not on PATH)");
     } else {
       trace.push(`asr: transcribing with ${asr.provider}`);
-      const asrCues = await transcribeUrl(url, asr);
-      if (asrCues.length) {
-        cues = asrCues;
-        transcript = cuesToTranscript(asrCues);
-        trace.push(`asr: ${asrCues.length} segments`);
+      // Every other fallback in this function degrades gracefully on
+      // failure (subtitlesViaYtDlp and metadataViaYtDlp already catch their
+      // own errors) — this one didn't, so a transient Deepgram/Groq error,
+      // an age-restricted or deleted video, or a stream past the length cap
+      // would crash the whole import instead of falling back to whatever
+      // caption is already in hand.
+      try {
+        const asrCues = await transcribeUrl(url, asr);
+        if (asrCues.length) {
+          cues = asrCues;
+          transcript = cuesToTranscript(asrCues);
+          trace.push(`asr: ${asrCues.length} segments`);
+        } else {
+          trace.push("asr: no speech recognized");
+        }
+      } catch (err) {
+        trace.push(`asr: failed (${err instanceof Error ? err.message : "unknown error"})`);
       }
     }
   }
