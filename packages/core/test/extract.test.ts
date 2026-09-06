@@ -4,6 +4,7 @@ import { after, before, describe, it } from "node:test";
 import Anthropic from "@anthropic-ai/sdk";
 import { extractRecipe } from "../src/extract.js";
 import { ingestDocument, ingestText } from "../src/ingest.js";
+import { EmptyExtractionError } from "../src/sources/types.js";
 import type { ExtractedRecipe } from "../src/recipe.js";
 import type { SourceDocument } from "../src/sources/types.js";
 
@@ -284,6 +285,21 @@ describe("ingest", () => {
           prestructured: { ...modelRecipe, ingredients: [], steps: [], extractionNotes: [] },
         }),
       /No recipe could be read from that page\.$/,
+    );
+  });
+
+  it("throws EmptyExtractionError specifically for an empty result, not the general ResolveError", async () => {
+    // ingestUrl's own retry (caption looked plausible, extraction came back
+    // empty, try a transcript instead) keys off this exact subclass — it
+    // must not fire for every failure, only this one.
+    const doc = { ...transcriptDoc(), kind: "web" as const, textKind: "article" as const };
+    await assert.rejects(
+      () =>
+        ingestDocument({
+          ...doc,
+          prestructured: { ...modelRecipe, ingredients: [], steps: [], extractionNotes: [] },
+        }),
+      (err: unknown) => err instanceof EmptyExtractionError,
     );
   });
 

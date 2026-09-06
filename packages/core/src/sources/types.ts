@@ -55,6 +55,14 @@ export interface TranscriptCue {
 export interface ResolveOptions {
   /** Allow paid/slow paths: downloading media and running ASR. Default true. */
   allowTranscription?: boolean;
+  /**
+   * Skip the "does the caption already look like a recipe" check and go
+   * straight for a transcript. Set by ingestUrl's own retry when a caption
+   * that looked plausible enough to try turned out empty — at that point the
+   * question isn't "is this worth the wait" anymore, it's "is there anything
+   * else to try at all."
+   */
+  forceTranscript?: boolean;
   signal?: AbortSignal;
 }
 
@@ -67,6 +75,16 @@ export class ResolveError extends Error {
     this.name = "ResolveError";
   }
 }
+
+/**
+ * ingestDocument ran to completion — reading structured data or calling the
+ * model, whichever this document's own prestructured/textKind called for —
+ * and got zero ingredients and zero steps back. Distinct from every other
+ * ResolveError, which means resolution itself never got that far.
+ * ingestUrl catches this one specifically to decide whether a transcript is
+ * worth trying next; every other failure mode has nothing left to fall back to.
+ */
+export class EmptyExtractionError extends ResolveError {}
 
 export const methodForTextKind = (
   k: SourceDocument["textKind"],
