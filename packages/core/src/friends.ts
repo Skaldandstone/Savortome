@@ -57,11 +57,25 @@ export const MAX_HANDLE = 40;
  * all three should find the same person.
  */
 export function normalizeHandle(raw: string): string {
-  const handle = raw
-    .trim()
-    .replace(/^.*\/@?/, "") // a pasted profile URL
-    .replace(/^@/, "")
-    .toLowerCase();
+  let candidate = raw.trim();
+
+  if (candidate.includes("/")) {
+    // A pasted profile URL — with or without a scheme, since
+    // "secondbreakfast.app/@sam" is just as common a paste as the full
+    // "https://..." version. Real URL parsing rather than a slash-splitting
+    // regex, so a trailing slash or a "?ref=..." tracking param a browser's
+    // own address bar or share sheet adds doesn't get treated as part of
+    // the handle, or leave the whole thing empty.
+    try {
+      const url = new URL(/^[a-z][a-z0-9+.-]*:\/\//i.test(candidate) ? candidate : `https://${candidate}`);
+      const segments = url.pathname.split("/").filter(Boolean);
+      candidate = segments.at(-1) ?? "";
+    } catch {
+      candidate = "";
+    }
+  }
+
+  const handle = candidate.replace(/^@/, "").toLowerCase();
 
   if (handle.length < MIN_HANDLE) {
     throw new FriendshipError("That's too short to be a handle.");

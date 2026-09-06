@@ -20,6 +20,19 @@ describe("normalizeHandle", () => {
     assert.equal(normalizeHandle("@sam-c2"), "sam-c2");
   });
 
+  it("strips a trailing slash and a tracking query string a browser's own address bar or share sheet adds", () => {
+    // A naive slash-splitting regex used to strip these wrong: a trailing
+    // slash left the handle empty, and a query string like "?ref=share"
+    // stayed attached and failed the format check.
+    for (const input of [
+      "https://secondbreakfast.app/@sam/",
+      "https://secondbreakfast.app/@sam?ref=share",
+      "https://secondbreakfast.app/@sam#profile",
+    ]) {
+      assert.equal(normalizeHandle(input), "sam", `"${input}" should resolve to sam`);
+    }
+  });
+
   it("rejects anything that isn't a handle", () => {
     for (const input of ["", "a", "sam!", "sam c", "-sam", "a".repeat(41)]) {
       assert.throws(() => normalizeHandle(input), FriendshipError, `"${input}" should be rejected`);
