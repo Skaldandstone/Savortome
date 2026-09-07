@@ -3,10 +3,15 @@
 > **Current target, 7 September 2026:** use only AWS account `051722405355`,
 > profile `skaldandstone-admin`, region `us-east-2`. The active source contract is
 > documented in [account-admission-migration.md](account-admission-migration.md).
-> Commands and resource identifiers below that name `734702670689` are retained
-> as historical proposal evidence and must not be executed. The repository
-> templates and checks now fail closed for the current account, where rollback,
-> build provenance, secrets, prefix list, database and service remain absent.
+> Commands and resource identifiers below that name `734702670689`, or that pass
+> `--profile skaldandstone-dev`, are retained as historical proposal evidence and
+> must not be executed. Account `734702670689` was closed on 7 September 2026 and
+> the `skaldandstone-dev` profile was removed with it, so those commands cannot
+> run and are not made runnable by substituting the current profile: the VPC,
+> subnet, prefix list, certificate and stack names they reference did not move.
+> The repository templates and checks now fail closed for the current account,
+> where rollback, build provenance, secrets, prefix list, database and service
+> remain absent.
 
 This package separates the ephemeral PostgreSQL database from the reviewed web
 runtime. Both templates default to a gate that creates nothing. No deployment
@@ -35,7 +40,9 @@ application, a proxied DNS record, and Cloudflare credentials with DNS and
 Access write permission. Stripe checkout, tax, email, invitations, and beta
 cohort access remain disabled during infrastructure bootstrap.
 
-The inert AWS prerequisites now exist in development account `734702670689`:
+The inert AWS prerequisites were created in development account `734702670689`,
+which is now closed; the resources below no longer exist and are recorded only
+as evidence of what the proposal provisioned:
 
 - customer-managed prefix list `pl-0766b29f8525ef6e0`, version 1, contains the
   15 IPv4 ranges published at `https://www.cloudflare.com/ips-v4` on 31 August;
