@@ -28,20 +28,20 @@ Read-only inspection in `051722405355` established:
 
 - ECR repository `secondbreakfast-web` exists and is immutable.
 - Candidate digest `sha256:bfb6f728aac3f545db1616e8ea50e232234bdd6337b0198cdb64fcd302cbb5ff` is present as a byte-identical migration. Its config digest is `sha256:1336c885918997d652f9fa49dc8b6cd6187743a78f351fb0cc65a96168ddb452`, and the account-local ECR BASIC scan completed with zero findings. This is not enhanced Inspector coverage.
-- ACM certificate `arn:aws:acm:us-east-2:051722405355:certificate/d93bcaed-e77a-4a56-b872-a6e6bf2f639e` covers `beta.secondbreakfast.skaldandstone.com` and is pending validation.
+- ACM certificate `arn:aws:acm:us-east-2:051722405355:certificate/d93bcaed-e77a-4a56-b872-a6e6bf2f639e` is issued for the single host `beta.secondbreakfast.skaldandstone.com`.
 - Shared ECS cluster `skaldandstone-production` exists.
 - No Second Breakfast ECS service, CloudFormation stack, CodeBuild project, source bucket, runtime secret, database secret, or reviewed Cloudflare prefix list exists.
 - The reviewed privacy-v3 rollback digest is not present in this account.
 
 The migrated candidate does not need a rebuild merely to reproduce its bytes. The release verifier requires same-account immutable source, build, configuration, and scan evidence, so the safest release path is a new sealed-source build in `051722405355`. A cross-account migration attestation would require an explicit verifier design and separate review. The rollback image must be rebuilt or migrated, independently verified, and scanned before any service can be prepared.
 
-The CloudFormation proposal now accepts only account `051722405355`, the existing shared cluster, the pending account-local certificate, the exact migrated candidate digest, and a new-account rollback digest. Clerk and database secret ARNs have no defaults. The activation gate, desired count zero, beta-off default, Cloudflare-only ingress, nonpublic database, expiry controller, privacy-v3 image checks, and disabled Stripe settings remain mandatory.
+The CloudFormation proposal now accepts only account `051722405355`, the existing shared cluster, the issued account-local certificate, the exact migrated candidate digest, and a new-account rollback digest. Clerk and database secret ARNs have no defaults. The activation gate, desired count zero, beta-off default, Cloudflare-only ingress, nonpublic database, expiry controller, privacy-v3 image checks, and disabled Stripe settings remain mandatory.
 
 ## Remaining release work
 
 1. Seal the current reviewed source and recreate versioned S3 plus CodeBuild provenance in `051722405355`.
 2. Produce and scan a privacy-v3 rollback image in the same account.
-3. Validate the ACM certificate and provision a reviewed Cloudflare IPv4 prefix list.
+3. Provision a reviewed Cloudflare IPv4 prefix list. The single-host ACM certificate is issued.
 4. Provision runtime Clerk and database secrets through the approved secret workflow. Do not expose secret values in operator output or committed evidence.
 5. Validate the inert CloudFormation change set, expiry controller, and database lifecycle before creating a desired-count-zero service.
 6. Exercise owner-approved and denied Clerk users, revocation, account switching, expired sessions, failed writes, service-worker update/logout privacy, and rollback on the private HTTPS endpoint.
