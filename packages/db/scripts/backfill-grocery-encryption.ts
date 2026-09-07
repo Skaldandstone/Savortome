@@ -20,6 +20,7 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { and, eq } from "drizzle-orm";
 import * as schema from "../src/schema.js";
 import { encryptSecret, isEncrypted } from "../src/crypto.js";
+import { tokenAad } from "../src/queries/grocery.js";
 
 const dryRun = process.argv.includes("--dry-run");
 
@@ -35,7 +36,7 @@ const db = drizzle(new pg.Pool({ connectionString: url, ssl: { rejectUnauthorize
 
 // Reading a token column proves the key is usable before we touch a single row;
 // better to fail here than halfway through a table.
-if (!dryRun) encryptSecret("preflight");
+if (!dryRun) encryptSecret("preflight", "preflight");
 
 const rows = await db
   .select({
@@ -68,8 +69,14 @@ for (const row of rows) {
   await db
     .update(schema.groceryConnections)
     .set({
-      accessToken: encryptSecret(row.accessToken),
-      refreshToken: row.refreshToken === null ? null : encryptSecret(row.refreshToken),
+      accessToken: encryptSecret(
+        row.accessToken,
+        tokenAad(row.userId, row.provider, "accessToken"),
+      ),
+      refreshToken:
+        row.refreshToken === null
+          ? null
+          : encryptSecret(row.refreshToken, tokenAad(row.userId, row.provider, "refreshToken")),
       // Leave updatedAt alone: this is a storage-format migration, not a change
       // to the connection itself.
     })

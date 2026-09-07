@@ -15,6 +15,11 @@ import { createCipheriv, createDecipheriv, randomBytes, scryptSync } from "node:
  * decryption pass plaintext through untouched during a rollout (old rows still
  * read) and lets the backfill tell "already done" from "still in the clear" so
  * it can be re-run safely.
+ *
+ * The row's identity is bound in as additional authenticated data (AAD), so a
+ * ciphertext copied from one row into another (a botched migration, an admin
+ * tool bug) fails to decrypt instead of silently handing back someone else's
+ * still-valid token.
  */
 
 const PREFIX = "enc:v1:";
@@ -85,15 +90,19 @@ export function isEncrypted(value: string): boolean {
 }
 
 /**
- * Encrypt a secret for storage. Already-encrypted input is returned unchanged,
- * so callers and the backfill never double-wrap.
+ * Encrypt a secret for storage. `aad` should identify the row and column this
+ * value belongs to (e.g. `${userId}:${provider}:accessToken`) — it's bound
+ * into the authentication tag so the ciphertext only decrypts back out under
+ * that same identity. Already-encrypted input is returned unchanged, so
+ * callers and the backfill never double-wrap.
  */
-export function encryptSecret(plaintext: string): string {
+export function encryptSecret(plaintext: string, aad: string): string {
   if (isEncrypted(plaintext)) return plaintext;
 
   const key = resolveKey();
   const iv = randomBytes(IV_BYTES);
   const cipher = createCipheriv("aes-256-gcm", key, iv);
+  cipher.setAAD(Buffer.from(aad, "utf8"));
   const ciphertext = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
   const tag = cipher.getAuthTag();
 
@@ -101,12 +110,13 @@ export function encryptSecret(plaintext: string): string {
 }
 
 /**
- * Decrypt a stored secret. A value without our tag is assumed to be legacy
- * plaintext and returned as-is, so reads keep working before the backfill has
- * run. A tagged value that fails authentication throws — a wrong key or a
- * tampered row should be loud, not silently wrong.
+ * Decrypt a stored secret. `aad` must be the same row/column identity passed
+ * to `encryptSecret` — a mismatch (the ciphertext came from a different row)
+ * fails authentication just like a wrong key would. A value without our tag
+ * is assumed to be legacy plaintext and returned as-is, so reads keep working
+ * before the backfill has run.
  */
-export function decryptSecret(stored: string): string {
+export function decryptSecret(stored: string, aad: string): string {
   if (!isEncrypted(stored)) return stored;
 
   const key = resolveKey();
@@ -116,13 +126,14 @@ export function decryptSecret(stored: string): string {
   const ciphertext = blob.subarray(IV_BYTES + TAG_BYTES);
 
   const decipher = createDecipheriv("aes-256-gcm", key, iv);
+  decipher.setAAD(Buffer.from(aad, "utf8"));
   decipher.setAuthTag(tag);
   try {
     return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString("utf8");
   } catch {
     throw new Error(
-      `Failed to decrypt a grocery token. The value is either corrupt or was ` +
-        `encrypted with a different ${KEY_ENV}.`,
+      `Failed to decrypt a grocery token. The value is either corrupt, was ` +
+        `encrypted with a different ${KEY_ENV}, or belongs to a different row.`,
     );
   }
 }
@@ -131,7 +142,7 @@ export function decryptSecret(stored: string): string {
  * Nullable convenience wrappers — the refresh token column is optional, and
  * threading `null` through every call site is noise.
  */
-export const encryptNullable = (v: string | null): string | null =>
-  v === null ? null : encryptSecret(v);
-export const decryptNullable = (v: string | null): string | null =>
-  v === null ? null : decryptSecret(v);
+export const encryptNullable = (v: string | null, aad: string): string | null =>
+  v === null ? null : encryptSecret(v, aad);
+export const decryptNullable = (v: string | null, aad: string): string | null =>
+  v === null ? null : decryptSecret(v, aad);

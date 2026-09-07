@@ -15,6 +15,19 @@ import { decryptSecret, decryptNullable, encryptSecret, encryptNullable } from "
 
 export type GroceryProvider = "kroger";
 
+/**
+ * The AAD bound into a token's ciphertext: this row's identity plus which
+ * column it is, so a ciphertext can't be swapped between rows or between the
+ * access/refresh columns of the same row and still decrypt.
+ */
+export function tokenAad(
+  userId: string,
+  provider: string,
+  column: "accessToken" | "refreshToken",
+) {
+  return `grocery_connections:${userId}:${provider}:${column}`;
+}
+
 export async function getConnection(
   database: Database,
   userId: string,
@@ -31,8 +44,8 @@ export async function getConnection(
   // Tokens are stored encrypted; decrypt on the way out so callers never see
   // the ciphertext. Legacy plaintext rows (pre-backfill) pass through unchanged.
   return {
-    accessToken: decryptSecret(row.accessToken),
-    refreshToken: decryptNullable(row.refreshToken),
+    accessToken: decryptSecret(row.accessToken, tokenAad(userId, provider, "accessToken")),
+    refreshToken: decryptNullable(row.refreshToken, tokenAad(userId, provider, "refreshToken")),
     expiresAt: row.expiresAt.toISOString(),
     locationId: row.locationId,
     locationName: row.locationName,
@@ -49,8 +62,8 @@ export async function saveConnection(
   // Encrypt before the token ever reaches the database. Anyone with read access
   // to this table — or a backup of it — sees ciphertext, not a working token.
   const values = {
-    accessToken: encryptSecret(token.accessToken),
-    refreshToken: encryptNullable(token.refreshToken),
+    accessToken: encryptSecret(token.accessToken, tokenAad(userId, provider, "accessToken")),
+    refreshToken: encryptNullable(token.refreshToken, tokenAad(userId, provider, "refreshToken")),
     expiresAt: new Date(token.expiresAt),
     updatedAt: new Date(),
   };
