@@ -55,7 +55,8 @@ function RunOne([string]$Purpose,[string]$TaskDefinition) {
   } while($task.lastStatus -cne 'STOPPED' -and [DateTimeOffset]::UtcNow -lt $deadline)
   if($task.lastStatus -cne 'STOPPED'){throw "$Purpose task did not stop within the bounded timeout."}
   $containers=@($task.containers)
-  $primary=@($containers|Where-Object name -eq $Purpose)
+  $primaryName=if($Purpose -ceq 'migration'){'migrate'}else{$Purpose}
+  $primary=@($containers|Where-Object name -eq $primaryName)
   $init=@($containers|Where-Object name -eq 'volume-init')
   if($containers.Count -ne 2 -or $primary.Count -ne 1 -or $init.Count -ne 1 -or @($containers|Where-Object exitCode -ne 0).Count -gt 0){throw "$Purpose task failed. Inspect the bounded CloudWatch stream before retrying."}
   return [ordered]@{Purpose=$Purpose;TaskArn=$taskArn;ExitCode=[int]$primary[0].exitCode;VolumeInitExitCode=[int]$init[0].exitCode;StoppedReason=[string]$task.stoppedReason}
