@@ -49,11 +49,11 @@ Parameters:
     Description: Dedicated nonpublic Second Breakfast PostgreSQL security group.
   ClerkSecretArn:
     Type: String
-    AllowedPattern: '^arn:aws:secretsmanager:us-east-2:051722405355:secret:secondbreakfast/clerk-[A-Za-z0-9]+$'
+    AllowedPattern: '^arn:aws:secretsmanager:us-east-2:051722405355:secret:dev/secondbreakfast/clerk-[A-Za-z0-9]+$'
     Description: Required runtime Clerk secret in the consolidated account. No default is safe.
   DatabaseSecretArn:
     Type: String
-    AllowedPattern: '^arn:aws:secretsmanager:us-east-2:051722405355:secret:secondbreakfast/database-[A-Za-z0-9]+$'
+    AllowedPattern: '^arn:aws:secretsmanager:us-east-2:051722405355:secret:dev/secondbreakfast/database/[0-9]{10}-[A-Za-z0-9]+$'
   BetaClerkUserIds:
     Type: String
     NoEcho: true
@@ -63,7 +63,7 @@ Parameters:
   CandidateImage:
     Type: String
     Default: 051722405355.dkr.ecr.us-east-2.amazonaws.com/secondbreakfast-web@sha256:bfb6f728aac3f545db1616e8ea50e232234bdd6337b0198cdb64fcd302cbb5ff
-    AllowedPattern: '^051722405355\.dkr\.ecr\.us-east-2\.amazonaws\.com/secondbreakfast-web@sha256:bfb6f728aac3f545db1616e8ea50e232234bdd6337b0198cdb64fcd302cbb5ff$'
+    AllowedPattern: '^051722405355\.dkr\.ecr\.us-east-2\.amazonaws\.com/secondbreakfast-web@sha256:[a-f0-9]{64}$'
   RollbackImage:
     Type: String
     AllowedPattern: '^051722405355\.dkr\.ecr\.us-east-2\.amazonaws\.com/secondbreakfast-web@sha256:[a-f0-9]{64}$'
