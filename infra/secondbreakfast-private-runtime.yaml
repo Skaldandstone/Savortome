@@ -88,7 +88,7 @@ Rules:
       - Assert:
           Fn::Or:
             - Fn::Equals: [{Ref: ActivationGate}, REVIEWED_EPHEMERAL_PRIVATE_HTTPS]
-            - Fn::Equals: [{Ref: DesiredCount}, 0]
+            - Fn::Equals: [{Ref: DesiredCount}, '0']
         AssertDescription: DesiredCount must remain zero until the explicit review gate changes.
 Conditions:
   CreateReviewedInfrastructure: !Equals [!Ref ActivationGate, REVIEWED_EPHEMERAL_PRIVATE_HTTPS]
