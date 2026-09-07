@@ -18,6 +18,8 @@ import { FinishPanel } from "./FinishPanel";
 import { TimerTray } from "./TimerTray";
 import { useCookSession } from "./useCookSession";
 import { useTimers } from "./useTimers";
+import { PaperPanel, woodlandEnabled } from '@/modules/woodland/Artwork';
+import { useReducedMotion } from '@/ui/ThemeProvider';
 
 /**
  * The recipe, one step at a time, for someone whose hands are busy.
@@ -44,6 +46,7 @@ export function CookScreen({ recipe, recipeId }: { recipe: Recipe; recipeId: str
   const scroller = useRef<ScrollView>(null);
   const router = useRouter();
   const c = usePalette();
+  const reducedMotion = useReducedMotion();
 
   // A phone propped against the sugar tin locks itself every thirty seconds,
   // and unlocking it with batter on your hands is the moment this stops being
@@ -114,8 +117,8 @@ export function CookScreen({ recipe, recipeId }: { recipe: Recipe; recipeId: str
 
   // A new step starts at the top, however far down the last one was read.
   useEffect(() => {
-    scroller.current?.scrollTo({ y: 0, animated: true });
-  }, [index]);
+    scroller.current?.scrollTo({ y: 0, animated: !reducedMotion });
+  }, [index, reducedMotion]);
 
   if (!step) {
     return (
@@ -206,7 +209,8 @@ export function CookScreen({ recipe, recipeId }: { recipe: Recipe; recipeId: str
           />
         </View>
 
-        <View style={[styles.stage, { backgroundColor: c.surface, borderColor: c.border }]}>
+        <PaperPanel style={woodlandEnabled ? undefined : [styles.stage,{backgroundColor:c.surface,borderColor:c.border}]}>
+        {(c) => <>
           <Text style={[styles.counter, { color: c.textMuted }]}>
             STEP {step.n} OF {steps.length}
           </Text>
@@ -267,13 +271,14 @@ export function CookScreen({ recipe, recipeId }: { recipe: Recipe; recipeId: str
               />
             ) : null}
           </View>
-        </View>
+        </>}
+        </PaperPanel>
 
         <View style={styles.controls}>
           <Button label="← Back" variant="ghost" disabled={index === 0} onPress={() => go(-1)} />
           <View style={styles.primary}>
             <Button
-              label={index === steps.length - 1 ? "Finish" : "Done — next →"}
+              label={index === steps.length - 1 ? "Finish" : "Done, next →"}
               onPress={completeAndAdvance}
             />
           </View>
@@ -308,6 +313,8 @@ const styles = StyleSheet.create({
   empty: { flex: 1, padding: space.lg, gap: space.lg },
   toggle: {
     alignSelf: "flex-end",
+    minHeight: 44,
+    justifyContent: "center",
     paddingVertical: 7,
     paddingHorizontal: space.md,
     borderWidth: 1,
@@ -317,7 +324,6 @@ const styles = StyleSheet.create({
     padding: space.md + 2,
     borderWidth: 1,
     borderRadius: radius.md,
-    maxHeight: 280,
   },
   resumed: {
     flexDirection: "row",

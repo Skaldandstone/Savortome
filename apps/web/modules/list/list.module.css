@@ -38,6 +38,9 @@
 
 .name { flex: 1; min-width: 0; }
 
+:global([data-woodland='true']) .itemLabel { flex-wrap:wrap; min-height:44px; }
+:global([data-woodland='true']) .amount { flex:0 1 auto; }
+
 .note { color: var(--text-muted); font-size: var(--step-2); }
 
 .remove {
@@ -98,7 +101,7 @@
   padding: 10px 18px;
   font-size: var(--step-3);
   font-weight: 600;
-  color: #fff;
+  color: var(--on-accent, #fff);
   background: var(--accent);
   border-radius: var(--radius-sm);
 }
@@ -145,3 +148,12 @@
   padding-bottom: 5px;
   border-bottom: 1px solid var(--border);
 }
+
+:global([data-woodland='true']) .empty { font-size:.9375rem; line-height:1.65; }
+:global([data-woodland='true']) .aisleLabel,:global([data-woodland='true']) .cartHeading { font:1.25rem Georgia,serif; color:var(--accent); text-transform:none; letter-spacing:0; padding:10px 0; }
+:global([data-woodland='true']) .item { padding:10px 0; gap:12px; border-bottom-style:solid; }
+:global([data-woodland='true']) .itemLabel { align-items:center; line-height:1.5; }
+:global([data-woodland='true']) .itemLabel input { width:20px; height:20px; flex:none; }
+:global([data-woodland='true']) :is(.cartGroup,.kroger) { border-radius:4px; }
+:global([data-woodland='true']) .connect { display:inline-flex; align-items:center; min-height:44px; background:var(--action-surface); color:var(--action-text); border:1px solid var(--border); font:1rem Georgia,serif; }
+:global([data-woodland='true']) .krogerActions { flex-wrap:wrap; }

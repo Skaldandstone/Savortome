@@ -154,7 +154,7 @@ export function PlanScreen() {
 
           {day.slots.map(({ slot, meals: inSlot }) => (
             <View key={slot} style={styles.slot}>
-              <Text style={[styles.slotLabel, { color: c.textMuted }]}>
+              <Text accessibilityRole="header" style={[styles.slotLabel, { color: c.textMuted }]}>
                 {MEAL_SLOT_LABEL[slot].toUpperCase()}
               </Text>
 
@@ -165,13 +165,15 @@ export function PlanScreen() {
                 >
                   <Pressable
                     style={styles.mealTitle}
+                    accessibilityRole="button"
                     onPress={() => router.push(`/recipe/${meal.recipeId}`)}
                   >
                     <Text style={{ color: c.text, fontSize: typeScale.small }}>{meal.title}</Text>
                   </Pressable>
                   <Pressable
+                    accessibilityRole="button"
                     accessibilityLabel={`Remove ${meal.title} from ${dayLabel(day.date)}`}
-                    hitSlop={8}
+                    style={styles.remove}
                     disabled={busy}
                     onPress={() => void run(() => api.planRemove(meal.recipeId, day.date, slot, week))}
                   >
@@ -200,7 +202,7 @@ export function PlanScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setAdding(null)}
       >
-        <View style={[styles.sheet, { backgroundColor: c.bg, paddingTop: insets.top + space.lg }]}>
+        <View accessibilityViewIsModal style={[styles.sheet, { backgroundColor: c.bg, paddingTop: insets.top + space.lg }]}>
           <View style={styles.sheetHead}>
             <Text style={{ color: c.text, fontWeight: "700", fontSize: typeScale.title }}>
               {adding ? `${MEAL_SLOT_LABEL[adding.slot]}, ${dayLabel(adding.date)}` : ""}
@@ -220,6 +222,7 @@ export function PlanScreen() {
             {shown.map((recipe) => (
               <Pressable
                 key={recipe.id}
+                accessibilityRole="button"
                 style={[styles.pick, { backgroundColor: c.surface, borderColor: c.border }]}
                 onPress={() => {
                   const at = adding;
@@ -266,9 +269,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: space.sm + 2,
     borderRadius: radius.sm,
   },
-  mealTitle: { flex: 1 },
+  mealTitle: { flex: 1, minHeight: 44, justifyContent: "center" },
+  remove: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   sheet: { flex: 1, padding: space.lg, gap: space.md },
   sheetHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: space.sm },
   pickList: { gap: space.sm, paddingBottom: space.xxl },
-  pick: { padding: space.md, borderWidth: 1, borderRadius: radius.sm, gap: 2 },
+  pick: { minHeight: 44, padding: space.md, borderWidth: 1, borderRadius: radius.sm, gap: 2 },
 });

@@ -41,6 +41,7 @@ export function DiscoverRow({ card }: { card: DiscoverCard }) {
         <Image
           source={{ uri: card.imageUrl }}
           style={styles.thumb}
+          accessible={false}
           accessibilityIgnoresInvertColors
         />
       ) : (
@@ -123,6 +124,7 @@ export function DiscoverScreen() {
             value={query}
             onChangeText={setQuery}
             placeholder="kimchi, one-pan, something Korean…"
+            accessibilityLabel="Search shared recipes"
             autoCapitalize="none"
             style={styles.searchInput}
             onSubmitEditing={() => void load(query, activeTags)}
@@ -169,7 +171,7 @@ export function DiscoverScreen() {
 
       <View style={styles.results}>
         {loading ? (
-          <Text style={[styles.empty, { color: c.textMuted }]}>Looking…</Text>
+          <Text accessibilityLiveRegion="polite" style={[styles.empty, { color: c.textMuted }]}>Looking…</Text>
         ) : data.recipes.length === 0 ? (
           <Text style={[styles.empty, { color: c.textMuted }]}>
             {data.query || activeTags.length > 0
@@ -189,7 +191,7 @@ const styles = StyleSheet.create({
   searchRow: { flexDirection: "row", alignItems: "center", gap: space.sm },
   searchInput: { flex: 1 },
   tags: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: space.md },
-  tag: { borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: 11, paddingVertical: 4 },
+  tag: { borderWidth: 1, borderRadius: radius.pill, minHeight: 44, paddingHorizontal: 11, paddingVertical: 4, justifyContent: "center" },
   results: { marginTop: space.lg, gap: space.sm },
   card: {
     flexDirection: "row",

@@ -1,0 +1,22 @@
+   ▲ Next.js 15.5.23
+   - Local:        http://127.0.0.1:3103
+   - Network:      http://127.0.0.1:3103
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 3.1s
+ ○ Compiling /middleware ...
+ ✓ Compiled /middleware in 967ms (211 modules)
+ ○ Compiling /care ...
+ ✓ Compiled /care in 10s (2106 modules)
+ GET /care 200 in 12031ms
+ GET /care?source=wispling&intent=eat_now&effort=open&time=two&return_to=wispling%3A%2F%2Fcare-return&unknown=discard 200 in 200ms
+ GET /care?return_to=https%3A%2F%2Fevil.example&diagnosis=private 200 in 163ms
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 2.3s (2047 modules)
+ GET /care-offline.html 404 in 3127ms
+ GET /_next/image?url=https%3A%2F%2Fexample.com%2Fimage.png&w=64&q=75 404 in 134ms
+ GET /care?return_to=https%3A%2F%2Fevil.example&diagnosis=private 200 in 327ms
+ GET /care?source=wispling&intent=eat_now&effort=open&time=two&return_to=wispling%3A%2F%2Fcare-return 200 in 137ms
+ GET /care 200 in 109ms
+[?25h

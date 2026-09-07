@@ -1,40 +1,51 @@
 # Second Breakfast web app (apps/web) for ECS Fargate.
 # Built by CodeBuild from the repo root: docker build -f Dockerfile.web .
-FROM node:22-slim AS base
+FROM node:22-bookworm-slim AS build
 RUN corepack enable
 WORKDIR /app
 
-# Next.js inlines NEXT_PUBLIC_* at build time, so the Clerk publishable key
-# has to arrive as a build arg, not a task-definition env var.
+# Next.js inlines NEXT_PUBLIC_* during this stage.
 ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ARG NEXT_PUBLIC_ENABLE_SW=false
+ENV NEXT_PUBLIC_ENABLE_SW=$NEXT_PUBLIC_ENABLE_SW
 
 COPY . .
-# --filter @seconds/web... skips apps/mobile's expo dependency tree entirely.
+# --filter @seconds/web... skips apps/mobile's Expo dependency tree.
 RUN pnpm install --frozen-lockfile --filter @seconds/web... \
     && pnpm --filter @seconds/web build
 
-# Video imports shell out to yt-dlp (caption fetch) and ffmpeg (audio
-# extraction for ASR). Both are optional at runtime -- the importer degrades
-# to caption/description extraction without them -- but cheap to include.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ffmpeg ca-certificates curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && curl -fsSL -o /usr/local/bin/yt-dlp https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux \
-    && chmod a+rx /usr/local/bin/yt-dlp
+# Fetch the public RDS CA bundle without adding curl or package-manager layers.
+# The runtime receives this exact public certificate file from the build stage.
+RUN node -e "fetch('https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem').then(r=>{if(!r.ok)throw Error('RDS CA '+r.status);return r.arrayBuffer()}).then(b=>require('node:fs').writeFileSync('/tmp/rds-global-bundle.pem',Buffer.from(b)))"
 
-# Amazon RDS certificate bundle, so `sslmode=require` against RDS verifies
-# cleanly instead of failing on an unknown CA.
-RUN curl -fsSL -o /etc/ssl/rds-global-bundle.pem https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem
+# The private beta runtime has no shell, package manager, ffmpeg or yt-dlp.
+# Video helpers are optional in core and fail closed to the existing import
+# guidance; text, article and published-caption paths remain native application
+# code. Reintroduce media binaries only from reviewed, pinned runtime artifacts.
+FROM gcr.io/distroless/nodejs22-debian12:nonroot AS runtime
+WORKDIR /app
+
+ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+ARG NEXT_PUBLIC_ENABLE_SW=false
+ENV NEXT_PUBLIC_ENABLE_SW=$NEXT_PUBLIC_ENABLE_SW
+ARG SB_RELEASE_COMMIT=unknown
+LABEL org.opencontainers.image.revision=$SB_RELEASE_COMMIT
+LABEL com.secondbreakfast.public-cache-version="3"
+LABEL com.secondbreakfast.runtime="distroless-nodejs22-nonroot"
+
+COPY --from=build --chown=nonroot:nonroot /app /app
+COPY --from=build --chown=nonroot:nonroot /tmp/rds-global-bundle.pem /etc/ssl/rds-global-bundle.pem
 
 ENV NODE_ENV=production \
     PORT=3000 \
-    NODE_EXTRA_CA_CERTS=/etc/ssl/rds-global-bundle.pem \
-    YT_DLP_PATH=/usr/local/bin/yt-dlp \
-    FFMPEG_PATH=/usr/bin/ffmpeg
+    NODE_EXTRA_CA_CERTS=/etc/ssl/rds-global-bundle.pem
 EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+  CMD ["/nodejs/bin/node", "-e", "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
 
-CMD ["pnpm", "--filter", "@seconds/web", "start"]
+# Distroless Node supplies /nodejs/bin/node as the entrypoint. Call Next's
+# JavaScript entry directly so the runtime does not require corepack or a shell.
+CMD ["apps/web/node_modules/next/dist/bin/next", "start", "apps/web"]

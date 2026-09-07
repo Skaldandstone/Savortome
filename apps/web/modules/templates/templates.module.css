@@ -39,3 +39,12 @@
 .itemTitle:hover { color: var(--accent); }
 
 .empty { margin-top: 16px; color: var(--text-muted); }
+
+:global([data-woodland='true']) .list { grid-template-columns:repeat(auto-fit,minmax(min(100%,320px),1fr)); gap:20px; }
+:global([data-woodland='true']) .card { padding:24px; border-radius:4px; }
+:global([data-woodland='true']) .head { flex-wrap:wrap; align-items:center; border-bottom:1px solid var(--border); padding-bottom:14px; }
+:global([data-woodland='true']) .name { font:1.4rem Georgia,serif; color:var(--accent); }
+:global([data-woodland='true']) .items { gap:12px; margin-top:18px; }
+:global([data-woodland='true']) .item { flex-wrap:wrap; line-height:1.6; }
+:global([data-woodland='true']) .role { text-transform:none; letter-spacing:0; }
+:global([data-text-size='200']) .list { grid-template-columns:1fr; }

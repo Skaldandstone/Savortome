@@ -3,8 +3,10 @@ import { describe, it } from "node:test";
 import {
   HANDLED_EVENTS,
   PLAN_PRICES,
+  billingAvailability,
   formatCents,
   fulfilmentFor,
+  fulfillableCheckoutProduct,
   isHandledEvent,
   isPayableTier,
   planPriceFor,
@@ -14,6 +16,68 @@ import {
   tierForSubscriptionStatus,
 } from "../src/billing.js";
 import { CREDIT_PACKS, TIER_ALLOWANCE } from "../src/credits.js";
+
+describe("plans availability", () => {
+  const ready = {
+    checkoutEnabled: true, signedIn: true, databaseReady: true,
+    stripeReady: true, webhookReady: true,
+    pricedProducts: products().map((product) => product.id),
+    hasCustomer: true, portalConfigured: true,
+  };
+  it("disables all purchases with an up-front free-beta explanation", () => {
+    const availability = billingAvailability({ ...ready, checkoutEnabled: false });
+    assert.deepEqual(availability.checkoutProducts, []);
+    assert.match(availability.checkoutNotice!, /private beta is free/);
+    // Existing subscribers must still be able to manage/cancel their billing.
+    assert.equal(availability.portal, true);
+  });
+  it("disables purchases when credentials, delivery, or database are unavailable", () => {
+    for (const missing of ["stripeReady", "webhookReady", "databaseReady"] as const) {
+      const availability = billingAvailability({ ...ready, [missing]: false });
+      assert.deepEqual(availability.checkoutProducts, []);
+      assert.match(availability.checkoutNotice!, /not available/);
+    }
+  });
+  it("requires a signed-in viewer without advertising another customer's portal", () => {
+    const availability = billingAvailability({ ...ready, signedIn: false });
+    assert.deepEqual(availability.checkoutProducts, []);
+    assert.equal(availability.portal, false);
+    assert.match(availability.checkoutNotice!, /Sign in/);
+  });
+  it("enables only products with configured prices", () => {
+    const availability = billingAvailability({ ...ready, pricedProducts: ["pack-25"] });
+    assert.deepEqual(availability.checkoutProducts, ["pack-25"]);
+    assert.match(availability.checkoutNotice!, /Some paid options/);
+  });
+  it("requires the viewer's customer, portal configuration, key and database", () => {
+    for (const missing of ["hasCustomer", "portalConfigured", "stripeReady", "databaseReady"] as const) {
+      assert.equal(billingAvailability({ ...ready, [missing]: false }).portal, false);
+    }
+    assert.deepEqual(billingAvailability(ready), {
+      checkoutProducts: products().map((product) => product.id),
+      checkoutNotice: null, portal: true,
+    });
+  });
+});
+
+describe("delayed Checkout fulfilment", () => {
+  const metadata = { app: "secondbreakfast", userId: "buyer", productId: "pack-25" };
+  it("waits for payment after form completion, then grants the purchased pack", () => {
+    assert.equal(fulfillableCheckoutProduct({ metadata, payment_status: "unpaid" }), undefined);
+    const product = fulfillableCheckoutProduct({ metadata, payment_status: "paid" });
+    assert.equal(fulfilmentFor(product!).grantCredits, 25);
+    assert.equal(isHandledEvent("checkout.session.async_payment_succeeded"), true);
+    assert.equal(isHandledEvent("checkout.session.async_payment_failed"), true);
+  });
+  it("accepts a Stripe-approved zero-cost checkout", () => {
+    assert.equal(fulfillableCheckoutProduct({ metadata, payment_status: "no_payment_required" })?.id, "pack-25");
+  });
+  it("rejects other apps, missing state, or an invented product", () => {
+    assert.equal(fulfillableCheckoutProduct({ metadata }), undefined);
+    assert.equal(fulfillableCheckoutProduct({ metadata: { ...metadata, app: "another-app" }, payment_status: "paid" }), undefined);
+    assert.equal(fulfillableCheckoutProduct({ metadata: { ...metadata, productId: "pack-billion" }, payment_status: "paid" }), undefined);
+  });
+});
 
 describe("products", () => {
   it("offers every credit pack and every paid plan", () => {

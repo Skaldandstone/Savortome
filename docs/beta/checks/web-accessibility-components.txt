@@ -1,0 +1,26 @@
+✔ journal page headings remain server-gated and contain a native h1 when allowed (27.7117ms)
+✔ recipe headings default to legacy h2 and accept the server-selected page h1 (10.489ms)
+✔ navigation includes saved meals and marks its containing disclosure active (10.482ms)
+✔ Escape closes either native disclosure and requests focus on its summary only (18.7686ms)
+✔ every initial care choice keeps explicit ingredients and steps in its expanded content (14.3018ms)
+✔ care controls expose native names, grouped restrictions, live results, and fixed return copy (24.7991ms)
+✔ secondary planning, pairing, and shelf controls retain explicit accessible names (27.2431ms)
+✔ each cooking timer action names its timer and step without a per-second live region (12.6856ms)
+✔ failed dietary-profile loading never exposes an empty editable form; retry restores actual saved choices (14.0383ms)
+✔ cook finish scroll respects reduced motion without recording a cooking event in the test (16.7594ms)
+✔ an empty saved profile is editable, while a stale retry callback cannot replace later edits (17.5037ms)
+✔ late profile responses are ignored after cleanup and newer successful requests (16.213ms)
+✔ profile choices cannot change during a pending save; failure preserves choices and reopens editing (12.3579ms)
+✔ profile save results after unmount do not update state or show confirmation (17.5316ms)
+✔ a confirmed profile save reopens choices and a new edit clears visible saved status (14.4292ms)
+✔ guest shopping feedback and safe sign-in are colocated with the selected care choice, with no API write (11.124ms)
+✔ offline shopping feedback never reports saved or starts a write (11.6342ms)
+✔ new shelf confirms only a resolved write; failed writes retain the entered name (20.106ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 641.5271

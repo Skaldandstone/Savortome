@@ -16,6 +16,8 @@ function StepMeta({ step, source }: { step: Step; source: Recipe["source"] }) {
     <View style={styles.meta}>
       {link ? (
         <Text
+          accessibilityRole="link"
+          accessibilityLabel={`Open source at ${mmss(step.sourceTimestamp as number)}`}
           style={[styles.jump, { backgroundColor: c.accentSoft, color: c.accent }]}
           onPress={() => Linking.openURL(link)}
         >
@@ -48,10 +50,10 @@ export function StepList({ steps, source }: { steps: Step[]; source: Recipe["sou
 
 const styles = StyleSheet.create({
   step: { flexDirection: "row", gap: space.md, paddingVertical: space.sm },
-  number: { fontWeight: "700", fontSize: typeScale.body, width: 18 },
-  stepBody: { flex: 1 },
+  number: { fontWeight: "700", fontSize: typeScale.body, minWidth: 22 },
+  stepBody: { flex: 1, minWidth:100 },
   text: { fontSize: typeScale.body, lineHeight: 22 },
   meta: { flexDirection: "row", gap: space.sm + 2, marginTop: 6, alignItems: "center" },
-  jump: { fontSize: typeScale.micro, paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.pill, overflow: "hidden" },
+  jump: { fontSize: typeScale.micro, minHeight: 44, paddingHorizontal: 8, paddingVertical: 12, borderRadius: radius.pill, overflow: "hidden" },
   timer: { fontSize: typeScale.micro },
 });

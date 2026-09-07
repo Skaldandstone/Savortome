@@ -1,0 +1,12 @@
+✔ guest care never calls the shopping API (0.7922ms)
+✔ saved is reported only after an acknowledged authenticated write (0.7234ms)
+✔ session expiry and network failure keep a choice retryable without reporting saved (0.3247ms)
+✔ switching accounts suppresses both late success and late failure (0.2411ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 211.0231

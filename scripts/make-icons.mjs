@@ -38,17 +38,40 @@ function crc32(buf) {
 function png(size, draw) {
   // One filter byte per row, then RGBA. Filter 0 (none) keeps this readable;
   // the deflate pass afterwards is where the size actually comes from.
+  // Four samples per axis. A 32px favicon drawn with hard edges is a staircase;
+  // the mark is all circles, so this is the difference between usable and not.
+  const SS = 4;
   const raw = Buffer.alloc(size * (size * 4 + 1));
+
   for (let y = 0; y < size; y++) {
     const rowStart = y * (size * 4 + 1);
     raw[rowStart] = 0;
+
     for (let x = 0; x < size; x++) {
-      const [r, g, b, a] = draw(x, y, size);
+      // Accumulate premultiplied: averaging straight RGBA pulls edge pixels
+      // toward black wherever alpha is zero, which shows as a dark fringe.
+      let pr = 0;
+      let pg = 0;
+      let pb = 0;
+      let pa = 0;
+
+      for (let sy = 0; sy < SS; sy++) {
+        for (let sx = 0; sx < SS; sx++) {
+          const [r, g, b, a] = draw(x + (sx + 0.5) / SS, y + (sy + 0.5) / SS, size);
+          const f = a / 255;
+          pr += r * f;
+          pg += g * f;
+          pb += b * f;
+          pa += f;
+        }
+      }
+
       const o = rowStart + 1 + x * 4;
-      raw[o] = r;
-      raw[o + 1] = g;
-      raw[o + 2] = b;
-      raw[o + 3] = a;
+      if (pa === 0) continue; // already zeroed, and dividing by it would not end well
+      raw[o] = Math.round(pr / pa);
+      raw[o + 1] = Math.round(pg / pa);
+      raw[o + 2] = Math.round(pb / pa);
+      raw[o + 3] = Math.round((pa / (SS * SS)) * 255);
     }
   }
 
@@ -77,36 +100,70 @@ function png(size, draw) {
 
 // --- the mark ----------------------------------------------------------------
 
-// Straight from apps/web/ui/tokens.css, so the icon and the app can't disagree.
-const ACCENT = [180, 69, 31];
-const YOLK = [244, 179, 76];
-const WHITE = [255, 248, 240];
+/**
+ * Two eggs in a cast-iron skillet, handle toward the cook — you put a pan down
+ * with the handle near you, not pointing away.
+ *
+ * Drawn on the same 100-unit grid as the master artwork, so every number below
+ * matches the spec rather than approximating it. The whites overlap on purpose:
+ * two eggs cracked into one pan run together, and the merge is what makes it
+ * read as a face as well as a breakfast.
+ */
+const IRON = [74, 66, 58]; // #4A423A — warm charcoal; a true grey goes cold next to the yolk
+const WHITE = [251, 247, 239]; // #FBF7EF
+const YOLK = [232, 154, 12]; // #E89A0C
 const CLEAR = [0, 0, 0, 0];
 
+const PAN = { x: 40, y: 46, r: 32 };
+const EGGS = [
+  { x: 30, y: 40 },
+  { x: 52, y: 40 },
+];
+const WHITE_R = 14;
+const YOLK_R = 9;
+const HANDLE = { x1: 61.3, y1: 60.9, x2: 85.9, y2: 78.1, w: 14 };
+
+const within = (px, py, cx, cy, r) => Math.hypot(px - cx, py - cy) < r;
+
+/** The handle is a capsule: everything within half its width of the segment. */
+function distToSegment(px, py, { x1, y1, x2, y2 }) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+
 /**
- * A fried egg: a warm disc with a lighter centre, slightly above middle so it
- * doesn't look like it's sliding out of the frame.
- *
- * `scale` shrinks the mark for the adaptive foreground; `background` is false
- * there, because Android paints its own layer underneath.
+ * `scale` shrinks the mark about the middle, for the Android adaptive
+ * foreground. `ground` is the tile colour, or null to leave it transparent.
  */
-const egg =
-  ({ scale = 1, background = true } = {}) =>
+const skillet =
+  ({ scale = 1, ground = null } = {}) =>
   (x, y, size) => {
-    const cx = size / 2;
-    const cy = size * 0.48;
-    const d = Math.hypot(x - cx, y - cy);
-    if (d < size * 0.16 * scale) return [...YOLK, 255];
-    if (d < size * 0.3 * scale) return [...WHITE, 255];
-    return background ? [...ACCENT, 255] : CLEAR;
+    const px = 50 + ((x / size) * 100 - 50) / scale;
+    const py = 50 + ((y / size) * 100 - 50) / scale;
+
+    // Innermost first — painter's order, reversed. The handle is tested last so
+    // its root disappears under the rim and the iron reads as one silhouette.
+    for (const e of EGGS) if (within(px, py, e.x, e.y, YOLK_R)) return [...YOLK, 255];
+    for (const e of EGGS) if (within(px, py, e.x, e.y, WHITE_R)) return [...WHITE, 255];
+    if (within(px, py, PAN.x, PAN.y, PAN.r)) return [...IRON, 255];
+    if (distToSegment(px, py, HANDLE) < HANDLE.w / 2) return [...IRON, 255];
+    return ground ? [...ground, 255] : CLEAR;
   };
 
-// A flat square for the Android notification icon's tint source, which Android
-// renders as a silhouette — only the alpha channel survives, so colour here is
-// irrelevant and shape is everything.
-const eggSilhouette = (x, y, size) => {
-  const d = Math.hypot(x - size / 2, y - size * 0.48);
-  return d < size * 0.32 ? [255, 255, 255, 255] : CLEAR;
+/**
+ * Android renders a notification icon as a flat silhouette: it keeps the alpha
+ * and throws the colour away. So the eggs become holes — the only way to keep
+ * the face when you are allowed exactly one value.
+ */
+const skilletSilhouette = (x, y, size) => {
+  const px = 50 + ((x / size) * 100 - 50) / 0.9;
+  const py = 50 + ((y / size) * 100 - 50) / 0.9;
+  for (const e of EGGS) if (within(px, py, e.x, e.y, WHITE_R)) return CLEAR;
+  if (within(px, py, PAN.x, PAN.y, PAN.r)) return [255, 255, 255, 255];
+  if (distToSegment(px, py, HANDLE) < HANDLE.w / 2) return [255, 255, 255, 255];
+  return CLEAR;
 };
 
 const write = (path, buffer) => {
@@ -115,33 +172,35 @@ const write = (path, buffer) => {
   console.log(`${path}  ${buffer.length.toLocaleString()} bytes`);
 };
 
-// --- web: the installable PWA ------------------------------------------------
+// --- web ---------------------------------------------------------------------
 
-write("apps/web/public/icons/icon-192.png", png(192, egg()));
-write("apps/web/public/icons/icon-512.png", png(512, egg()));
+// Next serves these two by file convention, so no <link> tags are needed.
+write("apps/web/app/icon.png", png(32, skillet({ ground: YOLK })));
+write("apps/web/app/apple-icon.png", png(180, skillet({ ground: YOLK })));
+
+// The installable PWA.
+write("apps/web/public/icons/icon-192.png", png(192, skillet({ ground: YOLK })));
+write("apps/web/public/icons/icon-512.png", png(512, skillet({ ground: YOLK })));
+
+// A maskable icon is cropped to whatever shape the platform likes, so the mark
+// is drawn well inside the safe area rather than filling the frame.
+write(
+  "apps/web/public/icons/icon-maskable-512.png",
+  png(512, skillet({ scale: 0.72, ground: YOLK })),
+);
 
 // --- mobile ------------------------------------------------------------------
 
-// Both stores want 1024. iOS crops nothing, so the mark fills the frame.
-write("apps/mobile/assets/icon.png", png(1024, egg()));
+// iOS crops nothing and forbids transparency, so the mark fills a solid tile.
+write("apps/mobile/assets/icon.png", png(1024, skillet({ ground: YOLK })));
 
 // Android masks the foreground and crops past the middle 66%, so the mark is
-// drawn smaller and the ground is left to the background colour in app.json.
-write("apps/mobile/assets/adaptive-icon.png", png(1024, egg({ scale: 0.62, background: false })));
+// drawn smaller on transparency; app.json supplies the ground underneath.
+write("apps/mobile/assets/adaptive-icon.png", png(1024, skillet({ scale: 0.62 })));
 
-// Rendered as a white silhouette in the status bar; only alpha matters.
-write("apps/mobile/assets/notification-icon.png", png(96, eggSilhouette));
+// Status bar. Only the alpha survives.
+write("apps/mobile/assets/notification-icon.png", png(96, skilletSilhouette));
 
-// The splash is the mark on the app's paper ground rather than the accent, so
-// launching doesn't flash a full screen of orange.
-write(
-  "apps/mobile/assets/splash-icon.png",
-  png(512, (x, y, size) => {
-    const c = size / 2;
-    const d = Math.hypot(x - c, y - size * 0.48);
-    if (d < size * 0.16) return [...YOLK, 255];
-    if (d < size * 0.3) return [...WHITE, 255];
-    if (d < size * 0.33) return [...ACCENT, 255];
-    return CLEAR;
-  }),
-);
+// The splash sits on the app's own background colour, so the mark is drawn on
+// transparency rather than carrying a tile of its own into a full-screen flash.
+write("apps/mobile/assets/splash-icon.png", png(512, skillet({ scale: 0.8 })));

@@ -147,7 +147,8 @@ function IngredientRow({
         <View style={styles.rowMeta}>
           {showCanonical ? (
             <Text style={[styles.canonical, { color: c.textMuted }]}>
-              Matches <Text style={styles.canonicalName}>{canonical}</Text> in your pantry
+              Ingredient name for pantry matching:{" "}
+              <Text style={styles.canonicalName}>{canonical}</Text>
             </Text>
           ) : (
             <View style={styles.canonicalSpacer} />
@@ -199,6 +200,8 @@ const styles = StyleSheet.create({
   optional: { flexDirection: "row", alignItems: "center", gap: space.xs },
   addRow: {
     alignSelf: "flex-start",
+    minHeight: 44,
+    justifyContent: "center",
     paddingVertical: 7,
     paddingHorizontal: space.md,
     borderWidth: 1,

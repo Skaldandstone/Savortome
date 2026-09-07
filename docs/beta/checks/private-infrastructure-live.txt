@@ -1,0 +1,36 @@
+{
+    "CheckedAt":  "2026-09-01T04:05:38.2077829+00:00",
+    "Account":  "734702670689",
+    "Region":  "us-east-2",
+    "PrefixList":  {
+                       "Id":  "pl-0766b29f8525ef6e0",
+                       "State":  "create-complete",
+                       "Version":  1,
+                       "Entries":  15
+                   },
+    "Certificate":  {
+                        "Arn":  "arn:aws:acm:us-east-2:734702670689:certificate/f746b9e6-b4f2-48f2-b5ee-36112c7c39db",
+                        "Domain":  "beta.secondbreakfast.skaldandstone.com",
+                        "Status":  "PENDING_VALIDATION"
+                    },
+    "ServiceCount":  0,
+    "Stacks":  [
+                   {
+                       "Name":  "skaldandstone-development-secondbreakfast-expiry",
+                       "Status":  "ABSENT"
+                   },
+                   {
+                       "Name":  "skaldandstone-development-secondbreakfast-database",
+                       "Status":  "ABSENT"
+                   },
+                   {
+                       "Name":  "skaldandstone-development-secondbreakfast-runtime",
+                       "Status":  "ABSENT"
+                   }
+               ],
+    "DnsRecordsPresent":  {
+                              "beta.secondbreakfast.skaldandstone.com":  false,
+                              "origin.secondbreakfast.skaldandstone.com":  false
+                          },
+    "PublicRuntimeExists":  false
+}

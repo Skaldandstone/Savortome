@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { KitchenWelcome } from '@/modules/woodland/KitchenWelcome';
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Callout, Field, Panel, PanelHeader, radius, space, type as typeScale, usePalette } from "@/ui";
@@ -27,6 +28,7 @@ export function CookScreen() {
       contentContainerStyle={[styles.content, { paddingTop: insets.top + space.lg }]}
       keyboardShouldPersistTaps="handled"
     >
+      <KitchenWelcome />
       <Panel>
         <PanelHeader
           title="What can I make?"
@@ -40,6 +42,7 @@ export function CookScreen() {
             placeholder={
               pantry.items.length > 0 ? "Leave blank to use your pantry" : "chicken, rice, an onion"
             }
+            accessibilityLabel="Ingredients or meal description"
             autoCapitalize="none"
             editable={!searching}
             onSubmitEditing={() => void search(query)}
@@ -60,6 +63,9 @@ export function CookScreen() {
             <Pressable
               key={example}
               disabled={searching}
+              accessibilityRole="button"
+              accessibilityLabel={`Search for ${example}`}
+              accessibilityState={{ disabled: searching }}
               onPress={() => {
                 setQuery(example);
                 void search(example);
@@ -120,7 +126,7 @@ const styles = StyleSheet.create({
   input: { flex: 1 },
   actions: { marginTop: space.md, alignSelf: "flex-start" },
   examples: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: space.md },
-  example: { borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: 11, paddingVertical: 4 },
+  example: { borderWidth: 1, borderRadius: radius.pill, minHeight: 44, paddingHorizontal: 11, paddingVertical: 4, justifyContent: "center" },
   pantryToggle: { marginTop: space.md, alignSelf: "flex-start" },
   pantryPanel: { marginTop: space.md, padding: space.md + 2, borderRadius: radius.sm },
   results: { marginTop: space.lg },

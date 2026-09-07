@@ -1,0 +1,27 @@
+let databases = Resources.*[ Type == 'AWS::RDS::DBInstance' ]
+let security_groups = Resources.*[ Type == 'AWS::EC2::SecurityGroup' ]
+let parameters = Resources.*[ Type == 'AWS::RDS::DBParameterGroup' ]
+
+rule database_defaults_fail_closed {
+    Parameters.ActivationGate.Default == 'NOT_APPROVED'
+}
+
+rule database_is_private_encrypted_and_snapshot_preserved {
+    %databases.Properties.PubliclyAccessible == false
+    %databases.Properties.StorageEncrypted == true
+    %databases.Properties.ManageMasterUserPassword == true
+    %databases.Properties.MultiAZ == false
+    %databases.Properties.DeletionProtection == false
+    %databases.Properties.BackupRetentionPeriod == 1
+    %databases.DeletionPolicy == 'Snapshot'
+    %databases.UpdateReplacePolicy == 'Snapshot'
+}
+
+rule database_network_has_no_cidr_access {
+    %security_groups.Properties.SecurityGroupIngress empty
+    %security_groups.Properties.SecurityGroupEgress empty
+}
+
+rule database_forces_tls {
+    %parameters.Properties.Parameters."rds.force_ssl" == '1'
+}

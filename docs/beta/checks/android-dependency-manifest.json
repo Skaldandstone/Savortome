@@ -1,0 +1,14 @@
+[
+  {
+    "Path": "C:\\Users\\James\\Documents\\GitHub\\SecondBreakfast\\pnpm-lock.yaml",
+    "Hash": "90D8B177B1242842F2C8797C4FAD9257DFEC28A00A0216E0AA398F929391C6C3"
+  },
+  {
+    "Path": "C:\\Users\\James\\Documents\\GitHub\\SecondBreakfast\\apps\\mobile\\package.json",
+    "Hash": "07044DA01FB0E57F472C438DA713C266A63AC3179AB130343245A8B7C1FD6E34"
+  },
+  {
+    "Path": "C:\\Users\\James\\Documents\\GitHub\\SecondBreakfast\\apps\\mobile\\node_modules\\expo\\bundledNativeModules.json",
+    "Hash": "FD3014A9846C599EDC75E0005E7928C42E5045D626E8A7DD1557057CF7A56730"
+  }
+]

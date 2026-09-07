@@ -44,6 +44,7 @@ export function CookPanel() {
         >
           <FieldRow>
             <TextField
+              aria-label="Ingredients or recipe preferences"
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}

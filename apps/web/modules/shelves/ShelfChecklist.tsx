@@ -56,6 +56,7 @@ export function ShelfChecklist({
         >
           <TextField
             type="text"
+            aria-label="New shelf name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Shelf name"

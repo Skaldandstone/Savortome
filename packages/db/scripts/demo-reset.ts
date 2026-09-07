@@ -1,3 +1,4 @@
+import { connectionOptions } from "../src/connection.js";
 /**
  * Puts an account back to a clean demo state.
  *
@@ -22,7 +23,7 @@ import { creditsFor } from "../src/queries/credits.js";
 const url =
   process.env.DATABASE_URL ??
   /DATABASE_URL=(.+)/.exec(readFileSync("../../apps/web/.env.local", "utf8"))![1]!.trim();
-const db = drizzle(new pg.Pool({ connectionString: url, ssl: { rejectUnauthorized: false } }), { schema });
+const db = drizzle(new pg.Pool(connectionOptions(url)), { schema });
 
 const wanted = process.argv[2];
 

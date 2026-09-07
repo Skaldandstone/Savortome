@@ -1,0 +1,468 @@
+▶ Stripe routes enforce current product/customer ownership with atomic SQL
+  ✖ missing or altered signatures do not claim events (162.2148ms)
+  ✖ signed wrong environment and unsupported events cannot grant (22.4955ms)
+  ✖ another product in the shared account never unlocks this app (31.3273ms)
+  ✖ old subscription cancellation cannot downgrade its replacement (25.3027ms)
+  ✖ current Price sets tier even when metadata names the old tier (41.6369ms)
+  ✖ late active snapshot reads current cancellation; duplicate delivery is inert (38.7673ms)
+  ✖ unpaid identity remains pinned and payment recovery restores its plan (36.1861ms)
+  ✖ unknown and cross-product Prices fail closed without guessed Plus (32.3573ms)
+  ✖ customer metadata cannot move an entitlement to a different account (28.6947ms)
+  ✖ subscription/customer mismatch rolls back and does not dump upstream errors (43.2594ms)
+  ✖ paid pack grants once across event IDs and preserves the subscription (39.1298ms)
+  ✖ pending payment does not grant; later paid event does (34.8256ms)
+  ✖ mismatched actual Checkout Price cannot grant from metadata (41.6836ms)
+  ✖ fulfilled old Checkout cannot relink a later subscription (44.0314ms)
+  ✖ post-grant SQL failure rolls back receipt and purchase; retry succeeds (44.9856ms)
+  ✖ checkout is disabled by default and requires an authenticated owner (32.1916ms)
+  ✖ null, unknown and non-string product IDs return 400 without SDK writes (25.6128ms)
+  ✖ checkout ignores client price and uses validated server Price and metadata (26.7354ms)
+  ✖ existing active subscription prevents another recurring Checkout (45.7056ms)
+  ✖ an open matching plan Checkout is reused instead of duplicated (67.8608ms)
+  ✖ wrong-product catalog or mispriced plan is rejected before purchase (39.9129ms)
+  ✖ portal rejects deleted, foreign or wrong-environment customer links (33.9001ms)
+  ✖ portal uses only authenticated customer and works when new Checkout is off (57.2249ms)
+  ✖ origin, prototype names and ambiguous Price configuration fail closed (34.2494ms)
+✖ Stripe routes enforce current product/customer ownership with atomic SQL (7320.4271ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 0
+ℹ fail 25
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7326.869
+
+✖ failing tests:
+
+test at scripts\check-stripe-lifecycle.mjs:116:13
+✖ missing or altered signatures do not claim events (162.2148ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:123:13
+✖ signed wrong environment and unsupported events cannot grant (22.4955ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:127:13
+✖ another product in the shared account never unlocks this app (31.3273ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:131:13
+✖ old subscription cancellation cannot downgrade its replacement (25.3027ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:136:13
+✖ current Price sets tier even when metadata names the old tier (41.6369ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:140:13
+✖ late active snapshot reads current cancellation; duplicate delivery is inert (38.7673ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:146:13
+✖ unpaid identity remains pinned and payment recovery restores its plan (36.1861ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:152:13
+✖ unknown and cross-product Prices fail closed without guessed Plus (32.3573ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:158:13
+✖ customer metadata cannot move an entitlement to a different account (28.6947ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:163:13
+✖ subscription/customer mismatch rolls back and does not dump upstream errors (43.2594ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:169:13
+✖ paid pack grants once across event IDs and preserves the subscription (39.1298ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:176:13
+✖ pending payment does not grant; later paid event does (34.8256ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:182:13
+✖ mismatched actual Checkout Price cannot grant from metadata (41.6836ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:186:13
+✖ fulfilled old Checkout cannot relink a later subscription (44.0314ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:192:13
+✖ post-grant SQL failure rolls back receipt and purchase; retry succeeds (44.9856ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:199:13
+✖ checkout is disabled by default and requires an authenticated owner (32.1916ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:204:13
+✖ null, unknown and non-string product IDs return 400 without SDK writes (25.6128ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:208:13
+✖ checkout ignores client price and uses validated server Price and metadata (26.7354ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:215:13
+✖ existing active subscription prevents another recurring Checkout (45.7056ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:219:13
+✖ an open matching plan Checkout is reused instead of duplicated (67.8608ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:224:13
+✖ wrong-product catalog or mispriced plan is rejected before purchase (39.9129ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:228:13
+✖ portal rejects deleted, foreign or wrong-environment customer links (33.9001ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:234:13
+✖ portal uses only authenticated customer and works when new Checkout is off (57.2249ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)
+
+test at scripts\check-stripe-lifecycle.mjs:238:13
+✖ origin, prototype names and ambiguous Price configuration fail closed (34.2494ms)
+  evalmachine.<anonymous>:14230
+        encoder = new TextEncoder();
+        ^
+  
+  ReferenceError: TextEncoder is not defined
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/lib/middleware.mjs (evalmachine.<anonymous>:14230:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at node_modules/.pnpm/@anthropic-ai+sdk@0.120.0_zod@4.4.3/node_modules/@anthropic-ai/sdk/index.mjs (evalmachine.<anonymous>:14240:7)
+      at __init (evalmachine.<anonymous>:15:58)
+      at evalmachine.<anonymous>:59509:3
+      at evalmachine.<anonymous>:74402:3
+      at Script.runInContext (node:vm:149:12)
+      at Script.runInNewContext (node:vm:154:17)
+      at runInNewContext (node:vm:310:38)
+      at fixture (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-stripe-lifecycle.mjs:106:7)

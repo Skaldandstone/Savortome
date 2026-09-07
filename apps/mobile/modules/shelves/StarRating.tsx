@@ -26,7 +26,7 @@ export function StarRating({
           accessibilityRole="radio"
           accessibilityState={{ checked: stars === value, disabled: !!disabled }}
           accessibilityLabel={`${value} ${value === 1 ? "star" : "stars"}`}
-          hitSlop={6}
+          style={styles.control}
         >
           <Text style={[styles.star, { color: value <= stars ? c.accent : c.border }]}>★</Text>
         </Pressable>
@@ -37,5 +37,6 @@ export function StarRating({
 
 const styles = StyleSheet.create({
   row: { flexDirection: "row", gap: 2 },
+  control: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   star: { fontSize: 24, lineHeight: 28 },
 });

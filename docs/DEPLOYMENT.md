@@ -4,9 +4,9 @@ The admin portal has its own runbook: [ADMIN_DEPLOY.md](ADMIN_DEPLOY.md).
 
 ## Deploying
 
-Never deployed, but the production build has been run and exercised end to end
-locally - with and without Clerk - so the following is measured rather than
-assumed.
+The public AWS-hosted site responded HTTP 200 on 30 August 2026. The current deployed revision and rollback task definition could not be read because the AWS session expired. Do not infer either from an HTTP response.
+
+The woodland private beta is not deployed. Its current evidence and release gates are recorded in [beta/README.md](beta/README.md). The statements below about earlier Clerk checks are historical; invited/non-invited and expired-session checks must be repeated for this candidate.
 
 **Clerk is mandatory in production.** The single local development account is
 refused when `NODE_ENV=production`, deliberately: a shared implicit account on
@@ -39,6 +39,14 @@ there a YouTube import will silently degrade to description extraction at
 around 0.2 confidence, and Instagram will fail outright. `YT_DLP_PATH` and
 `FFMPEG_PATH` exist so you can point at wherever your host puts them.
 
+The private-beta container deliberately omits both media binaries and uses a
+nonroot distroless Node runtime after the first reviewed image scan found
+critical and high findings in the optional Debian media stack. Article, pasted
+text and directly published caption paths remain available. Video paths that
+need `yt-dlp` or audio extraction return the existing explicit import guidance.
+Do not add the binaries back with an unpinned package-manager install. Restore
+them only from reviewed artifacts after their container scan is acceptable.
+
 **Imports are slow by web standards.** The Jacques PÃ©pin video took 52 seconds
 end to end - fetch, subtitles, one model call. `maxDuration` on the import
 route is 300s, which exceeds the function timeout on several platforms' cheaper
@@ -56,8 +64,20 @@ deployed web origin - the two apps share one server.
 
 ## Deploying to AWS
 
-The live app (secondbreakfast.skaldandstone.com) runs on ECS in AWS account
-574921529762. `scripts/deploy-aws.ps1` ships whatever is on origin/main:
+> **Not currently deployable (2026-09-07).** The AWS consolidation retired
+> account `574921529762` and the `secondbreakfast-toolkit` profile. Second
+> Breakfast's build and runtime infrastructure was not recreated in the
+> surviving account `051722405355` - only an unused `secondbreakfast-web` ECR
+> repository exists there. `scripts/deploy-aws.ps1` is repointed at
+> `--profile skaldandstone-admin` / `051722405355` and now preflights for the
+> missing resources, so it stops with a clear message instead of half-deploying.
+> Provision the source bucket, CodeBuild project, ECS cluster and service before
+> using it.
+
+The live app (secondbreakfast.skaldandstone.com) previously ran on ECS in AWS
+account `574921529762`, now retired; the intended home is `051722405355`
+(`us-east-2`, profile `skaldandstone-admin`).
+`scripts/deploy-aws.ps1` ships whatever is on origin/main:
 it zips the branch, uploads to the CodeBuild source bucket, builds the
 Docker image, and rolls the ECS service. Schema changes additionally need
 the one-off `secondbreakfast-migrate` ECS task after the deploy.

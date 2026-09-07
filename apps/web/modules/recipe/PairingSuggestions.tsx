@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   NUTRITION_DISCLAIMER,
@@ -52,6 +52,7 @@ export function PairingSuggestions({
   const [mealName, setMealName] = useState("");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "failed">("idle");
   const [saveError, setSaveError] = useState<string | null>(null);
+  const headingId = useId();
 
   useEffect(() => {
     if (!recipeId) return;
@@ -102,8 +103,8 @@ export function PairingSuggestions({
   if (slots.length === 0) return null;
 
   return (
-    <section className={styles.pairings} data-print="hide">
-      <h3 className={styles.heading}>Pairs well with</h3>
+    <section className={styles.pairings} data-print="hide" aria-labelledby={headingId}>
+      <h3 id={headingId} className={styles.heading}>Pairs well with</h3>
       <div className={styles.slots}>
         {slots.map((slot) => (
           <div key={slot} className={styles.slot}>
@@ -114,6 +115,7 @@ export function PairingSuggestions({
                   <label className={styles.pick}>
                     <input
                       type="checkbox"
+                      aria-label={`Include ${candidate.title} as ${SLOT_LABEL[slot].toLowerCase()} in this meal`}
                       checked={selected[slot] === candidate.id}
                       onChange={() =>
                         setSelected((prev) => ({
@@ -175,11 +177,12 @@ export function PairingSuggestions({
         </div>
       ) : null}
 
-      <div className={styles.saveMeal}>
+      <div className={styles.saveMeal} aria-busy={saveState === "saving"}>
         {saveState !== "saved" ? (
           <input
             type="text"
             className={styles.saveMealName}
+            aria-label="Meal name"
             placeholder="Name this meal (e.g. Taco Night)"
             value={mealName}
             onChange={(e) => setMealName(e.target.value)}
@@ -210,11 +213,11 @@ export function PairingSuggestions({
           {saveState === "saving" ? "Saving…" : saveState === "saved" ? "Saved ✓" : "Save this meal"}
         </button>
         {saveState === "saved" ? (
-          <span className={styles.saveMealNote}>
+          <span className={styles.saveMealNote} role="status">
             See it, name it, or share it from <a href="/templates">your meals</a>.
           </span>
         ) : saveError ? (
-          <span className={styles.saveMealNote}>{saveError}</span>
+          <span className={styles.saveMealNote} role="alert">{saveError}</span>
         ) : null}
       </div>
     </section>

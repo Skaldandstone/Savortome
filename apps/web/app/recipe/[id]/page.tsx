@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { canUseBeta } from '@/lib/beta';
 import { RecipeCard, toRecipe } from "@/modules/recipe";
 import { ShareControl } from "@/modules/sharing";
 import { loadRecipe } from "@/lib/library";
@@ -19,8 +20,9 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
   if (!row) notFound();
 
   return (
-    <main>
+    <main className="woodland-workspace" data-kitchen-page="recipe">
       <RecipeCard
+        headingLevel={await canUseBeta() ? 1 : 2}
         recipe={toRecipe(row)}
         shelvedId={row.id}
         verifiedAt={row.verifiedAt?.toISOString() ?? null}

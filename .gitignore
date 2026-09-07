@@ -25,3 +25,7 @@ apps/web/next-env.d.ts
 
 # Personal Claude Code overrides for this project
 .claude/settings.local.json
+
+# Python-generated caches
+__pycache__/
+*.py[cod]

@@ -1,0 +1,16 @@
+--- live USDA reachability (result may be usda or estimated depending on quota) ---
+    (source was: usda)
+PASS  the live pipeline returns exactly one row, whichever source answered
+PASS  ...with no thrown error reaching this far
+
+--- persistence ---
+PASS  a hand-typed recipe exists
+PASS  ...and starts with no nutrition
+PASS  nutrition round-trips through Postgres with the same values
+PASS  ...specifically the per-serving figure, not just presence
+
+--- editing ---
+PASS  the edit succeeded
+PASS  editing clears the stale nutrition rather than leaving a wrong number that still looks current
+
+All good.

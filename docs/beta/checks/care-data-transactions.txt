@@ -1,0 +1,11 @@
+PASS manual creation rolls back the recipe and ingredient index after an injected indexing failure
+PASS edit rollback preserves the entire original row, timestamps and ingredient index
+PASS new import rolls back its row and index
+PASS failed source-URL upsert preserves the previous import and index
+PASS successful source-URL upsert keeps the same recipe ID without duplicating it
+PASS same source URL stays account-scoped and another user cannot read, edit, delete or alter nutrition
+PASS nested successful writes and empty-index deletion obey the caller transaction rollback
+PASS a failed inner savepoint can be caught without poisoning the outer transaction
+PASS failed recanonicalization restores all owner rows and indexes and leaves the other account untouched
+PASS successful recanonicalization updates the matching owner row and index only
+PASS 10 transaction/account-isolation scenarios

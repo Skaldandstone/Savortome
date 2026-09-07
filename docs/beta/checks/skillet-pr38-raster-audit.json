@@ -1,0 +1,85 @@
+{
+  "prCommit": "aa5d2da4a2f9d34d26b8308566b1f2be06f34c18",
+  "files": [
+    {
+      "path": "apps/web/app/icon.png",
+      "width": 32,
+      "height": 32,
+      "sha256": "030a67a36c5bda828c124405a9dbcbf1402ba5848985a3061d608e439a85f493",
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "path": "apps/web/app/apple-icon.png",
+      "width": 180,
+      "height": 180,
+      "sha256": "c46eeae3f2596bfc9a7b3c151172ac0ff6d6f675b99caf9275ca7ec064cdb556",
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "path": "apps/web/public/icons/icon-192.png",
+      "width": 192,
+      "height": 192,
+      "sha256": "37cc483af5b955f9ab85f21594729e612e5618bceceff15f0b5d1ec23f6e6096",
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "path": "apps/web/public/icons/icon-512.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "fe17e31a678e4449a4552acbc3c0570940d6536eb62ce82c80acf51a9b250b60",
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "path": "apps/web/public/icons/icon-maskable-512.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "3d7b173c394528869e8a6132a05737a7b2cf9f638bc20d8f00a703ffed5e71cd",
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "path": "apps/mobile/assets/icon.png",
+      "width": 1024,
+      "height": 1024,
+      "sha256": "92992a1322314d9d9b39c5f1ccd79c5f858c07498a06aae33e03180eae7ab9ab",
+      "alphaMin": 255,
+      "alphaMax": 255
+    },
+    {
+      "path": "apps/mobile/assets/adaptive-icon.png",
+      "width": 1024,
+      "height": 1024,
+      "sha256": "1d7d5710bc3e38e232edb22ef215374a965721daa90862689727c92727e1ec9f",
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "path": "apps/mobile/assets/notification-icon.png",
+      "width": 96,
+      "height": 96,
+      "sha256": "399c6f8d0be2a9b085120251c1e2daa38acb93f8f5e651fa6fb0762da95c0e1d",
+      "alphaMin": 0,
+      "alphaMax": 255
+    },
+    {
+      "path": "apps/mobile/assets/splash-icon.png",
+      "width": 512,
+      "height": 512,
+      "sha256": "ad1c11b39dd823e3d164a4eb24df9d60256022055acf7650baf9c4049c7beca4",
+      "alphaMin": 0,
+      "alphaMax": 255
+    }
+  ],
+  "appleFullyOpaque": true,
+  "maskableInkBounds": {
+    "left": 101,
+    "top": 123,
+    "right": 414,
+    "bottom": 385
+  },
+  "maskableWithinMiddle66Percent": true
+}

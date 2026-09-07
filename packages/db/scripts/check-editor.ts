@@ -1,3 +1,4 @@
+import { connectionOptions } from "../src/connection.js";
 /**
  * Checks writing and correcting recipes against a real database.
  *
@@ -22,7 +23,7 @@ import { createRecipe, deleteRecipe, getRecipe, updateRecipe } from "../src/quer
 const url =
   process.env.DATABASE_URL ??
   /DATABASE_URL=(.+)/.exec(readFileSync("../../apps/web/.env.local", "utf8"))![1]!.trim();
-const db = drizzle(new pg.Pool({ connectionString: url, ssl: { rejectUnauthorized: false } }), { schema });
+const db = drizzle(new pg.Pool(connectionOptions(url)), { schema });
 
 let failures = 0;
 const expect = (label: string, actual: unknown, expected: unknown) => {
@@ -222,7 +223,11 @@ expect(
   (await getRecipe(db, cook, importedId))!.title,
   "Kimchi jjigae",
 );
-expect("you can't delete someone else's recipe", await deleteRecipe(db, other, importedId), false);
+expect(
+  "you can't delete someone else's recipe",
+  Boolean(await deleteRecipe(db, other, importedId)),
+  false,
+);
 expect(
   "editing a recipe that doesn't exist is a no-op, not an error",
   await updateRecipe(db, cook, "00000000-0000-0000-0000-000000000000", draft()),
@@ -230,10 +235,10 @@ expect(
 );
 
 // --- deleting ---------------------------------------------------------------
-expect("you can delete your own", await deleteRecipe(db, cook, importedId), true);
+expect("you can delete your own", Boolean(await deleteRecipe(db, cook, importedId)), true);
 expect("...it's gone", await getRecipe(db, cook, importedId), undefined);
 expect("...and it took its search index with it", await indexed(importedId), []);
-expect("deleting it twice is harmless", await deleteRecipe(db, cook, importedId), false);
+expect("deleting it twice is harmless", Boolean(await deleteRecipe(db, cook, importedId)), false);
 
 // --- cleanup ----------------------------------------------------------------
 await db.delete(schema.recipes).where(inArray(schema.recipes.ownerId, [cook, other]));

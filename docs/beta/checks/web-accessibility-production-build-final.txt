@@ -1,0 +1,103 @@
+   ▲ Next.js 15.5.23
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 11.2s
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/35) ...
+   Generating static pages (8/35) 
+   Generating static pages (17/35) 
+   Generating static pages (26/35) 
+ ✓ Generating static pages (35/35)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                 Size  First Load JS
+┌ ƒ /                                    5.74 kB         159 kB
+├ ƒ /_not-found                            997 B         103 kB
+├ ƒ /api/admin/imports/failures            261 B         103 kB
+├ ƒ /api/admin/reviews                     261 B         103 kB
+├ ƒ /api/admin/reviews/hide                261 B         103 kB
+├ ƒ /api/admin/users                       261 B         103 kB
+├ ƒ /api/admin/users/[id]                  261 B         103 kB
+├ ƒ /api/admin/users/[id]/billing          261 B         103 kB
+├ ƒ /api/admin/users/[id]/credits          261 B         103 kB
+├ ƒ /api/admin/users/[id]/imports          261 B         103 kB
+├ ƒ /api/admin/users/[id]/refund           261 B         103 kB
+├ ƒ /api/admin/users/[id]/status           261 B         103 kB
+├ ƒ /api/admin/users/[id]/tier             261 B         103 kB
+├ ƒ /api/billing/checkout                  261 B         103 kB
+├ ƒ /api/billing/portal                    261 B         103 kB
+├ ƒ /api/billing/webhook                   261 B         103 kB
+├ ƒ /api/credits                           261 B         103 kB
+├ ƒ /api/discover                          261 B         103 kB
+├ ƒ /api/export                            227 B         154 kB
+├ ƒ /api/feed                              261 B         103 kB
+├ ƒ /api/friends                           261 B         103 kB
+├ ƒ /api/friends/[id]                      261 B         103 kB
+├ ƒ /api/friends/[id]/allergens            261 B         103 kB
+├ ƒ /api/grocery/kroger                    261 B         103 kB
+├ ƒ /api/grocery/kroger/callback           261 B         103 kB
+├ ƒ /api/grocery/kroger/connect            261 B         103 kB
+├ ƒ /api/import                            261 B         103 kB
+├ ƒ /api/list                              261 B         103 kB
+├ ƒ /api/list/cart                         261 B         103 kB
+├ ƒ /api/list/items/[id]                   261 B         103 kB
+├ ƒ /api/pantry                            261 B         103 kB
+├ ƒ /api/pantry/reindex                    261 B         103 kB
+├ ƒ /api/pantry/search                     261 B         103 kB
+├ ƒ /api/plan                              261 B         103 kB
+├ ƒ /api/plan/suggestions                  261 B         103 kB
+├ ƒ /api/plan/suggestions/[id]             261 B         103 kB
+├ ƒ /api/profile/dietary                   261 B         103 kB
+├ ƒ /api/recipes                           261 B         103 kB
+├ ƒ /api/recipes/[id]                      261 B         103 kB
+├ ƒ /api/recipes/[id]/nutrition            261 B         103 kB
+├ ƒ /api/recipes/[id]/pairings             261 B         103 kB
+├ ƒ /api/recipes/[id]/rating               261 B         103 kB
+├ ƒ /api/recipes/[id]/save                 261 B         103 kB
+├ ƒ /api/recipes/[id]/share                261 B         103 kB
+├ ƒ /api/recipes/[id]/shelf                261 B         103 kB
+├ ƒ /api/recipes/[id]/similar              261 B         103 kB
+├ ƒ /api/shared-templates/[id]             261 B         103 kB
+├ ƒ /api/shared/[id]                       261 B         103 kB
+├ ƒ /api/shelves                           261 B         103 kB
+├ ƒ /api/shelves/[id]                      261 B         103 kB
+├ ƒ /api/templates                         261 B         103 kB
+├ ƒ /api/templates/[id]                    261 B         103 kB
+├ ƒ /api/templates/[id]/save               261 B         103 kB
+├ ƒ /api/templates/[id]/share              261 B         103 kB
+├ ƒ /api/webhooks/clerk                    261 B         103 kB
+├ ○ /apple-icon.png                          0 B            0 B
+├ ƒ /care                                5.28 kB         178 kB
+├ ƒ /cook                                   5 kB         146 kB
+├ ƒ /discover                            2.53 kB         139 kB
+├ ƒ /friends                             3.02 kB         140 kB
+├ ○ /icon.png                                0 B            0 B
+├ ƒ /list                                  200 B         138 kB
+├ ○ /manifest.webmanifest                  261 B         103 kB
+├ ƒ /offline                               462 B         106 kB
+├ ƒ /plan                                  957 B         141 kB
+├ ƒ /plans                               2.69 kB         136 kB
+├ ƒ /profile                             2.57 kB         136 kB
+├ ƒ /r/[id]                              2.94 kB         156 kB
+├ ƒ /recipe/[id]                         1.45 kB         155 kB
+├ ƒ /recipe/[id]/cook                     4.7 kB         158 kB
+├ ƒ /recipe/[id]/edit                      176 B         141 kB
+├ ƒ /recipe/new                            205 B         141 kB
+├ ƒ /sign-in/[[...sign-in]]                389 B         150 kB
+├ ƒ /sign-up/[[...sign-up]]                380 B         146 kB
+├ ƒ /t/[id]                              2.78 kB         140 kB
+└ ƒ /templates                            2.8 kB         140 kB
++ First Load JS shared by all             102 kB
+  ├ chunks/2354-c84faaac74e5192f.js      46.2 kB
+  ├ chunks/2bdf986d-f41160a848b1a36d.js  54.2 kB
+  └ other shared chunks (total)          2.05 kB
+
+
+ƒ Middleware                             90.9 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+

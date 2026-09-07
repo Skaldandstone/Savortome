@@ -1,0 +1,49 @@
+ninja: Entering directory `C:\Users\James\Documents\GitHub\SecondBreakfast\node_modules\.pnpm\react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa\node_modules\react-native-worklets\android\.cxx\RelWithDebInfo\1q6o2q2z\arm64-v8a'
+[0/2] Re-checking globbed directories...
+[1/2] Re-running CMake...
+ninja explain: output C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/VerifyGlobs.cmake_force of phony edge with no inputs doesn't exist
+ninja explain: C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/VerifyGlobs.cmake_force is dirty
+ninja explain: C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/cmake.verify_globs is dirty
+ninja explain: output ../prefab/arm64-v8a/prefab/lib/aarch64-linux-android/cmake/ReactAndroid/ReactAndroidConfig.cmake of phony edge with no inputs doesn't exist
+ninja explain: ../../../../CMakeLists.txt is dirty
+ninja explain: ../prefab/arm64-v8a/prefab/lib/aarch64-linux-android/cmake/ReactAndroid/ReactAndroidConfig.cmake is dirty
+ninja explain: ../prefab/arm64-v8a/prefab/lib/aarch64-linux-android/cmake/ReactAndroid/ReactAndroidConfigVersion.cmake is dirty
+ninja explain: ../prefab/arm64-v8a/prefab/lib/aarch64-linux-android/cmake/fbjni/fbjniConfig.cmake is dirty
+ninja explain: ../prefab/arm64-v8a/prefab/lib/aarch64-linux-android/cmake/fbjni/fbjniConfigVersion.cmake is dirty
+ninja explain: ../prefab/arm64-v8a/prefab/lib/aarch64-linux-android/cmake/hermes-engine/hermes-engineConfig.cmake is dirty
+ninja explain: ../prefab/arm64-v8a/prefab/lib/aarch64-linux-android/cmake/hermes-engine/hermes-engineConfigVersion.cmake is dirty
+ninja explain: C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/VerifyGlobs.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCInformation.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCXXInformation.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeCommonLanguageInclude.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeGenericSystem.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeInitializeConfigs.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeLanguageInformation.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeSystemSpecificInformation.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/CMakeSystemSpecificInitialize.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/CMakeCommonCompilerMacros.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-C.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang-CXX.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/Clang.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Compiler/GNU.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang-C.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang-CXX.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Clang.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android-Initialize.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Android.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/Linux.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/cmake/3.22.1/share/cmake-3.22/Modules/Platform/UnixPaths.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/ndk/27.1.12297006/build/cmake/abis.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/ndk/27.1.12297006/build/cmake/android-legacy.toolchain.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/ndk/27.1.12297006/build/cmake/android.toolchain.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/ndk/27.1.12297006/build/cmake/flags.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/ndk/27.1.12297006/build/cmake/hooks/pre/Android-Clang.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/ndk/27.1.12297006/build/cmake/hooks/pre/Android-Initialize.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/ndk/27.1.12297006/build/cmake/hooks/pre/Android.cmake is dirty
+ninja explain: C:/Users/James/AppData/Local/Android/Sdk/ndk/27.1.12297006/build/cmake/platforms.cmake is dirty
+ninja explain: C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native@0.86.2_@babel+_6f4160e840f5b0adb016d6ba050fc938/node_modules/react-native/ReactAndroid/cmake-utils/folly-flags.cmake is dirty
+ninja explain: C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native@0.86.2_@babel+_6f4160e840f5b0adb016d6ba050fc938/node_modules/react-native/ReactCommon/cmake-utils/react-native-flags.cmake is dirty
+ninja explain: CMakeCache.txt is dirty
+ninja explain: CMakeFiles/3.22.1-g37088a8-dirty/CMakeCCompiler.cmake is dirty
+ninja explain: CMakeFiles/3.22.1-g37088a8-dirty/CMakeCXXCompiler.cmake is dirty
+ninja explain: CMakeFiles/3.22.1-g37088a8-dirty/CMakeSystem.cmake is dirty

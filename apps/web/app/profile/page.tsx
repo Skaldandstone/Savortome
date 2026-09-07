@@ -1,3 +1,4 @@
+import { KitchenPageHeading } from '@/modules/woodland/KitchenPageHeading';
 import { redirect } from "next/navigation";
 import { DietaryProfileForm } from "@/modules/profile";
 import { Callout } from "@/ui";
@@ -9,7 +10,8 @@ export const dynamic = "force-dynamic";
 export default async function ProfilePage() {
   if (!databaseConfigured()) {
     return (
-      <main>
+      <main className="woodland-workspace" data-kitchen-page="profile">
+      <KitchenPageHeading title="Your dietary choices" description="Keep your preferences close when choosing what to cook." icon="sprig" />
         <Callout tone="warn" title="Nowhere to keep a profile">
           Set DATABASE_URL in .env.local to save preferences.
         </Callout>
@@ -22,7 +24,8 @@ export default async function ProfilePage() {
   }
 
   return (
-    <main>
+    <main className="woodland-workspace" data-kitchen-page="profile">
+      <KitchenPageHeading title="Your dietary choices" description="Keep your preferences close when choosing what to cook." icon="sprig" />
       <DietaryProfileForm />
     </main>
   );

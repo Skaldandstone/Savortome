@@ -1,0 +1,24 @@
+{
+  "path": "C:\\Users\\James\\Documents\\GitHub\\SecondBreakfast\\apps\\mobile\\.expo-export\\guest-preview\\second-breakfast-x86_64-woodland-emulator-v2.apk",
+  "sha256": "d40d8cffe3bcc2e05636ad3a822ab249211c5bf66d85b4197fdc52b9628da380",
+  "bytes": 56753588,
+  "abis": "x86_64",
+  "allowBackupFalse": true,
+  "storagePermissions": false,
+  "overlayPermission": false,
+  "secondsScheme": true,
+  "permissions": [
+    "android.permission.ACCESS_NETWORK_STATE",
+    "android.permission.BIND_JOB_SERVICE",
+    "android.permission.DUMP",
+    "android.permission.INTERNET",
+    "android.permission.POST_NOTIFICATIONS",
+    "android.permission.READ_APP_BADGE",
+    "android.permission.RECEIVE_BOOT_COMPLETED",
+    "android.permission.REORDER_TASKS",
+    "android.permission.USE_BIOMETRIC",
+    "android.permission.USE_FINGERPRINT",
+    "android.permission.VIBRATE",
+    "android.permission.WAKE_LOCK"
+  ]
+}

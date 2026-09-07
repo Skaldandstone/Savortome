@@ -10,6 +10,8 @@ import {
 import { librarySortOr } from "@seconds/core/format";
 import { loadLibrary } from "@/lib/library";
 import styles from "./layout.module.css";
+import { canUseBeta } from '@/lib/beta';
+import { WoodlandLibrary } from '@/modules/library/WoodlandLibrary';
 
 export const dynamic = "force-dynamic";
 
@@ -58,6 +60,7 @@ export default async function Home({
   searchParams: Promise<{ shelf?: string; q?: string; sort?: string }>;
 }) {
   const { shelf, q, sort } = await searchParams;
+  if (await canUseBeta()) return <WoodlandLibrary shelfId={shelf} query={q ?? ''} sort={sort ?? ''} />;
 
   return (
     <main>

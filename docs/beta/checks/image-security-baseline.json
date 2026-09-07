@@ -1,0 +1,53 @@
+{
+  "recordedAt": "2026-08-31T09:51:20.803Z",
+  "previousBuildId": "8SppsANVHSszqZHJ20R5P",
+  "previousImages": {
+    "deviceSizes": [
+      640,
+      750,
+      828,
+      1080,
+      1200,
+      1920,
+      2048,
+      3840
+    ],
+    "imageSizes": [
+      16,
+      32,
+      48,
+      64,
+      96,
+      128,
+      256,
+      384
+    ],
+    "path": "/_next/image",
+    "loader": "default",
+    "loaderFile": "",
+    "domains": [],
+    "disableStaticImages": false,
+    "minimumCacheTTL": 60,
+    "formats": [
+      "image/webp"
+    ],
+    "maximumResponseBody": 50000000,
+    "dangerouslyAllowSVG": false,
+    "contentSecurityPolicy": "script-src 'none'; frame-src 'none'; sandbox;",
+    "contentDispositionType": "attachment",
+    "remotePatterns": [
+      {
+        "protocol": "https",
+        "hostname": "**"
+      }
+    ],
+    "unoptimized": false
+  },
+  "sourceCount": 330,
+  "sourceDrift": [
+    "apps/web/next.config.ts"
+  ],
+  "artifactCount": 476,
+  "artifactDrift": [],
+  "parserSha256": "f824c02fbd558131c8d433c04c245fa3a50f6120024d78485c9b69005e2e654e"
+}

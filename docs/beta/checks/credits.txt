@@ -1,0 +1,34 @@
+PASS  a new account starts on the free tier
+PASS  ...with the whole free allowance
+PASS  schema.org costs nothing
+PASS  a hand-typed recipe costs nothing
+PASS  ...and neither wrote a ledger row
+PASS  a free method is always allowed, even at zero
+PASS  an AI import takes one credit
+PASS  ...from the monthly allowance first
+PASS  the allowance runs out
+PASS  ...and says so
+PASS  ...and blocks the next AI import
+PASS  ...but still allows a free one
+PASS  a top-up restores the ability to import
+PASS  ...and lands in the purchased pool
+PASS  ...leaving the monthly allowance still empty
+PASS  ...so the next import draws from purchases
+PASS  spending now draws down purchases
+PASS  a new month restores the allowance
+PASS  ...and purchased credits survive it
+PASS  ...so the total is both pools
+PASS  ...and last month's spends stay in last month
+PASS  upgrading grants the bigger allowance immediately
+PASS  ...minus only what the allowance itself paid for
+PASS  a downgrade can't produce a negative balance
+PASS  ...it just reads as none left
+PASS  one account's spending never touches another's
+PASS  every charged import is on the ledger
+PASS  ...naming the recipe it paid for
+PASS  ...and no free extraction is
+PASS  deleting a recipe does not refund the model call
+PASS  ...and the ledger row survives, just without its recipe
+PASS  ...with its recipe reference nulled rather than the row cascaded away
+
+All good. Current month is 2026-08.

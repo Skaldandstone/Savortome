@@ -1,0 +1,52 @@
+{
+  "encoder": "sharp 0.34.5; webp 1.6.0",
+  "lossless": true,
+  "records": [
+    {
+      "source": "apps/web/public/woodland/kitchen-scene.png",
+      "target": "apps/web/public/woodland/kitchen-scene.webp",
+      "sourceBytes": 2673084,
+      "targetBytes": 1854426,
+      "width": 1536,
+      "height": 1024,
+      "pixelsEqual": true,
+      "sourceSha256": "a2c499cdc5409f0ce4ae77cb480b35336b9f0a37c02e4d9c82954c023ccca097",
+      "targetSha256": "7c27f1c204647d690c0126d637453e179e945640f9f51dbac4c61d638768fb5b"
+    },
+    {
+      "source": "apps/web/public/woodland/food-atlas.png",
+      "target": "apps/web/public/woodland/food-atlas.webp",
+      "sourceBytes": 2704853,
+      "targetBytes": 1956010,
+      "width": 1254,
+      "height": 1254,
+      "pixelsEqual": true,
+      "sourceSha256": "8754fd719c4ab90b6079090461edc69ab2a790958848d9e26ad73751581c1823",
+      "targetSha256": "cb96b0f9d3262f4f593c3b8db2051336758c04eaedcef0f50a049ef1b1d7697c"
+    },
+    {
+      "source": "apps/web/public/woodland/parchment.png",
+      "target": "apps/web/public/woodland/parchment.webp",
+      "sourceBytes": 2333199,
+      "targetBytes": 1721724,
+      "width": 1254,
+      "height": 1254,
+      "pixelsEqual": true,
+      "sourceSha256": "49a9ca43100581dbf3266ba8c04b4a3f3f6a6b1666d9673f0c4cae8d75da30bd",
+      "targetSha256": "5546ede20f7a470a059496332108661ef19b98ce1bc40aba69684afe8c9ee837"
+    },
+    {
+      "source": "apps/web/public/woodland/timber.png",
+      "target": "apps/web/public/woodland/timber.webp",
+      "sourceBytes": 2344565,
+      "targetBytes": 1721258,
+      "width": 1254,
+      "height": 1254,
+      "pixelsEqual": true,
+      "sourceSha256": "44af2527e3a6d5bbedb50a6ffe630320da065b7b19b222be6b341e8d5975e5e1",
+      "targetSha256": "b58046618f7c5597cfd04697c356c4a9eff03a5b4848bae2417da45eff9c88a6"
+    }
+  ],
+  "sourceBytes": 10055701,
+  "targetBytes": 7253418
+}

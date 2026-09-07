@@ -15,7 +15,7 @@ export function PanelHeader({ title, hint }: { title: string; hint?: string }) {
   const c = usePalette();
   return (
     <View style={styles.header}>
-      <Text style={[styles.title, { color: c.text }]}>{title}</Text>
+      <Text accessibilityRole="header" style={[styles.title, { color: c.text }]}>{title}</Text>
       {hint ? <Text style={[styles.hint, { color: c.textMuted }]}>{hint}</Text> : null}
     </View>
   );

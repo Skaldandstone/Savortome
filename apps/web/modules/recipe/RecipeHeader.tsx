@@ -1,14 +1,15 @@
 import type { Recipe } from "@seconds/core/format";
 import styles from "./RecipeHeader.module.css";
 
-export function RecipeHeader({ recipe }: { recipe: Recipe }) {
+export function RecipeHeader({ recipe, headingLevel = 2 }: { recipe: Recipe; headingLevel?: 1 | 2 }) {
   const { source } = recipe;
+  const Heading = headingLevel === 1 ? 'h1' : 'h2';
   // Many blogs set author and site name to the same string; print it once.
   const siteLabel = source.siteName === source.author ? null : (source.siteName ?? source.kind);
 
   return (
     <header>
-      <h2 className={styles.title}>{recipe.title}</h2>
+      <Heading className={styles.title}>{recipe.title}</Heading>
       {recipe.description ? <p className={styles.lede}>{recipe.description}</p> : null}
       <p className={styles.attribution}>
         {source.author ? <>By {source.author}</> : null}

@@ -1,0 +1,48 @@
+let services = Resources.*[ Type == 'AWS::ECS::Service' ]
+let tasks = Resources.*[ Type == 'AWS::ECS::TaskDefinition' ]
+let listeners = Resources.*[ Type == 'AWS::ElasticLoadBalancingV2::Listener' ]
+let databases = Resources.*[ Type == 'AWS::RDS::DBInstance' ]
+let secrets = Resources.*[ Type == 'AWS::SecretsManager::Secret' ]
+
+rule proposal_defaults_fail_closed {
+    Parameters.ActivationGate.Default == 'NOT_APPROVED'
+    Parameters.DesiredCount.Default == 0
+    Parameters.BetaEnabled.Default == 'false'
+    Parameters.BetaClerkUserIds.Default == ''
+}
+
+rule runtime_shape_is_bounded {
+    Resources.Service.Properties.ServiceName == 'skaldandstone-development-foundation-secondbreakfast-web'
+    %services.Properties.DesiredCount == { 'Ref': 'DesiredCount' }
+    %services.Properties.EnableExecuteCommand == false
+    %tasks.Properties.Cpu == '512'
+    %tasks.Properties.Memory == '1024'
+    %tasks.Properties.RequiresCompatibilities.* == 'FARGATE'
+}
+
+rule containers_are_nonroot_readonly_and_billing_disabled {
+    %tasks.Properties.ContainerDefinitions.*.ReadonlyRootFilesystem == true
+    %tasks.Properties.ContainerDefinitions.*.Secrets.*.Name IN ['CLERK_SECRET_KEY', 'DATABASE_URL', 'ADMIN_DATABASE_URL', 'SB_DB_PASSWORD']
+    Resources.CandidateTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'STRIPE_CHECKOUT_ENABLED' ].Value == 'false'
+    Resources.CandidateTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'STRIPE_LIVEMODE' ].Value == 'false'
+    Resources.CandidateTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'SB_BETA_ENABLED' ].Value == { 'Ref': 'BetaEnabled' }
+    Resources.RollbackTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'STRIPE_CHECKOUT_ENABLED' ].Value == 'false'
+    Resources.RollbackTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'STRIPE_LIVEMODE' ].Value == 'false'
+    Resources.RollbackTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'SB_BETA_ENABLED' ].Value == { 'Ref': 'BetaEnabled' }
+}
+
+rule bootstrap_commands_are_exact {
+    Resources.ProvisionTaskDefinition.Properties.ContainerDefinitions.*.Command == ['node_modules/tsx/dist/cli.mjs', 'scripts/provision-rds.ts']
+    Resources.MigrationTaskDefinition.Properties.ContainerDefinitions.*.Command == ['node_modules/tsx/dist/cli.mjs', 'src/migrate.ts']
+}
+
+rule https_is_required {
+    %listeners.Properties.Protocol == 'HTTPS'
+    %listeners.Properties.Port == 443
+    Resources.AlbIngressFromCloudflare.Properties.SourcePrefixListId exists
+}
+
+rule proposal_does_not_create_data_or_secret_records {
+    %databases empty
+    %secrets empty
+}

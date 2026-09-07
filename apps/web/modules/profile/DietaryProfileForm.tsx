@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ALLERGENS,
   ALLERGEN_LABEL,
@@ -29,21 +29,43 @@ function toggle<T>(list: T[], value: T): T[] {
 export function DietaryProfileForm() {
   const [profile, setProfile] = useState<DietaryProfile>(EMPTY);
   const [saved, setSaved] = useState<DietaryProfile>(EMPTY);
-  const [loaded, setLoaded] = useState(false);
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'failed'>('loading');
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const mounted = useRef(false);
+  const loadVersion = useRef(0);
+  const hasLoaded = useRef(false);
+  const saveInFlight = useRef(false);
+  const savedNoticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
-    void api
-      .dietaryProfile()
-      .then((data) => {
-        setProfile(data);
-        setSaved(data);
-        setLoaded(true);
-      })
-      .catch(() => setLoaded(true));
+  const loadProfile = useCallback(async () => {
+    // Retry is available only before editing. A late initial request must not
+    // overwrite a newer response, an unmounted form, or someone's edits.
+    if (!mounted.current || hasLoaded.current) return;
+    const version = ++loadVersion.current;
+    setLoadState('loading');
+    setError(null);
+    try {
+      const data = await api.dietaryProfile();
+      if (!mounted.current || version !== loadVersion.current || hasLoaded.current) return;
+      hasLoaded.current = true;
+      setProfile(data);
+      setSaved(data);
+      setLoadState('ready');
+    } catch {
+      if (mounted.current && version === loadVersion.current && !hasLoaded.current) setLoadState('failed');
+    }
   }, []);
+  useEffect(() => {
+    mounted.current = true;
+    void loadProfile();
+    return () => {
+      mounted.current = false;
+      loadVersion.current++;
+      if (savedNoticeTimer.current !== null) clearTimeout(savedNoticeTimer.current);
+    };
+  }, [loadProfile]);
 
   const dirty = JSON.stringify(profile) !== JSON.stringify(saved);
 
@@ -58,22 +80,36 @@ export function DietaryProfileForm() {
   }, [dirty]);
 
   const save = async () => {
+    if (!mounted.current || loadState !== 'ready' || saveInFlight.current || !dirty) return;
+    saveInFlight.current = true;
+    const version = loadVersion.current;
+    const stillCurrent = () => mounted.current && version === loadVersion.current;
     setSaving(true);
+    setJustSaved(false);
     setError(null);
     try {
       const result = await api.setDietaryProfile(profile);
+      if (!stillCurrent()) return;
       setProfile(result);
       setSaved(result);
       setJustSaved(true);
-      setTimeout(() => setJustSaved(false), 2000);
+      if (savedNoticeTimer.current !== null) clearTimeout(savedNoticeTimer.current);
+      savedNoticeTimer.current = setTimeout(() => { if (stillCurrent()) setJustSaved(false); }, 2000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save that.");
+      if (stillCurrent()) setError(err instanceof Error ? err.message : "Couldn't save that.");
     } finally {
-      setSaving(false);
+      saveInFlight.current = false;
+      if (stillCurrent()) setSaving(false);
     }
   };
 
-  if (!loaded) return null;
+  if (loadState !== 'ready') return <Panel>
+    <PanelHeader title="Dietary profile" hint="Your saved preferences and allergens." />
+    {loadState === 'loading' ? <p className={styles.loadNote} role="status">Loading your saved choices...</p> : <>
+      <Callout tone="error" role="alert">Your saved dietary profile could not be loaded. Your saved choices have not been changed. Try again before editing them.</Callout>
+      <div className={styles.saveRow}><Button type="button" onClick={() => void loadProfile()}>Try again</Button></div>
+    </>}
+  </Panel>;
 
   return (
     <Panel>
@@ -89,8 +125,9 @@ export function DietaryProfileForm() {
             key={tag}
             type="button"
             variant="toggle"
+            disabled={saving}
             aria-pressed={profile.dietaryTags.includes(tag)}
-            onClick={() => setProfile((p) => ({ ...p, dietaryTags: toggle(p.dietaryTags, tag) }))}
+            onClick={() => { if (!saveInFlight.current) setProfile((p) => ({ ...p, dietaryTags: toggle(p.dietaryTags, tag) })); }}
           >
             {DIETARY_TAG_LABEL[tag]}
           </Button>
@@ -104,8 +141,9 @@ export function DietaryProfileForm() {
             key={allergen}
             type="button"
             variant="toggle"
+            disabled={saving}
             aria-pressed={profile.allergens.includes(allergen)}
-            onClick={() => setProfile((p) => ({ ...p, allergens: toggle(p.allergens, allergen) }))}
+            onClick={() => { if (!saveInFlight.current) setProfile((p) => ({ ...p, allergens: toggle(p.allergens, allergen) })); }}
           >
             {ALLERGEN_LABEL[allergen]}
           </Button>
@@ -116,7 +154,7 @@ export function DietaryProfileForm() {
         <Button type="button" disabled={!dirty || saving} onClick={() => void save()}>
           {saving ? "Saving…" : "Save"}
         </Button>
-        {justSaved ? <span className={styles.savedNote}>Saved ✓</span> : null}
+        {justSaved && !dirty && !saving ? <span className={styles.savedNote} role="status">Saved ✓</span> : null}
       </div>
 
       {error ? (

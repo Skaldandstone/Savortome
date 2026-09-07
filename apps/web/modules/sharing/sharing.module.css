@@ -56,3 +56,8 @@
 .saveCount { color: var(--text-muted); }
 
 .signInPrompt { margin-top: 24px; }
+
+:global([data-woodland='true']) .share { border:1px solid var(--border); padding:20px; }
+:global([data-woodland='true']) .label { font:1.1rem Georgia,serif; color:var(--accent); text-transform:none; letter-spacing:0; }
+:global([data-woodland='true']) .link { white-space:normal; overflow-wrap:anywhere; overflow:visible; line-height:1.6; padding:12px; }
+:global([data-woodland='true']) .sharedBy { flex-wrap:wrap; line-height:1.6; }

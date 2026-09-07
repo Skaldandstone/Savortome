@@ -1,0 +1,16 @@
+✔ source config disables optimizer while retaining metadata/static import support (1.1593ms)
+✔ installed production handler rejects all image queries before validation/cache (8.7503ms)
+✔ installed development handler rejects all image queries before validation/cache (3.7567ms)
+✔ baseline wildcard control reaches optimizer boundary without any fetch (2.7878ms)
+✔ removed wildcard independently rejects remote hosts if optimizer were enabled (0.9502ms)
+✔ plain public image paths do not enter the optimizer handler (2.6034ms)
+✔ installed metadata sizing preserves the actual skillet icon dimensions (0.9877ms)
+✔ new web image-loader imports require this exposure review to be revisited (193.9294ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 901.6439

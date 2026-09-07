@@ -1,3 +1,4 @@
+import { KitchenPageHeading } from '@/modules/woodland/KitchenPageHeading';
 import { redirect } from "next/navigation";
 import { emptyDraft } from "@seconds/core/format";
 import { RecipeEditor } from "@/modules/editor";
@@ -10,7 +11,8 @@ export const dynamic = "force-dynamic";
 export default async function NewRecipePage() {
   if (!databaseConfigured()) {
     return (
-      <main>
+      <main className="woodland-workspace" data-kitchen-page="recipe/new">
+      <KitchenPageHeading title="A new page in your journal" description="Write down a recipe in your own words." icon="book" />
         <Callout tone="warn" title="Nowhere to save it">
           Set DATABASE_URL in .env.local to write recipes.
         </Callout>
@@ -23,7 +25,8 @@ export default async function NewRecipePage() {
   }
 
   return (
-    <main>
+    <main className="woodland-workspace" data-kitchen-page="recipe/new">
+      <KitchenPageHeading title="A new page in your journal" description="Write down a recipe in your own words." icon="book" />
       <RecipeEditor initial={emptyDraft()} />
     </main>
   );

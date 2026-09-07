@@ -1,0 +1,138 @@
+{
+  "checkedAt": "2026-09-01T03:44:15.247Z",
+  "mode": "test-read-only",
+  "expectedAccountConfigured": true,
+  "accountMatches": true,
+  "products": [
+    {
+      "id": "prod_VAvOuvMVFqVqmp",
+      "name": "Second Breakfast 100 import credits",
+      "active": true,
+      "app": "secondbreakfast"
+    },
+    {
+      "id": "prod_VAvOTkxEC7ZXhu",
+      "name": "Second Breakfast 25 import credits",
+      "active": true,
+      "app": "secondbreakfast"
+    },
+    {
+      "id": "prod_VAvNuhHOjwOoCT",
+      "name": "Second Breakfast Pro",
+      "active": true,
+      "app": "secondbreakfast"
+    },
+    {
+      "id": "prod_VAvNW1tyrNZJzC",
+      "name": "Second Breakfast Plus",
+      "active": true,
+      "app": "secondbreakfast"
+    }
+  ],
+  "prices": [
+    {
+      "id": "price_1UAZXgPo4uRuCWxjnJNbIleN",
+      "productId": "prod_VAvOuvMVFqVqmp",
+      "productName": "Second Breakfast 100 import credits",
+      "app": "secondbreakfast",
+      "active": true,
+      "livemode": false,
+      "currency": "usd",
+      "unitAmount": 1099,
+      "type": "one_time",
+      "recurring": null
+    },
+    {
+      "id": "price_1UAZXRPo4uRuCWxjzU7dKfAV",
+      "productId": "prod_VAvOTkxEC7ZXhu",
+      "productName": "Second Breakfast 25 import credits",
+      "app": "secondbreakfast",
+      "active": true,
+      "livemode": false,
+      "currency": "usd",
+      "unitAmount": 299,
+      "type": "one_time",
+      "recurring": null
+    },
+    {
+      "id": "price_1UAZXCPo4uRuCWxjFZT8kZ4Z",
+      "productId": "prod_VAvNuhHOjwOoCT",
+      "productName": "Second Breakfast Pro",
+      "app": "secondbreakfast",
+      "active": true,
+      "livemode": false,
+      "currency": "usd",
+      "unitAmount": 4999,
+      "type": "recurring",
+      "recurring": {
+        "interval": "year",
+        "intervalCount": 1,
+        "usageType": "licensed"
+      }
+    },
+    {
+      "id": "price_1UAZWfPo4uRuCWxjCD07xDUa",
+      "productId": "prod_VAvNW1tyrNZJzC",
+      "productName": "Second Breakfast Plus",
+      "app": "secondbreakfast",
+      "active": true,
+      "livemode": false,
+      "currency": "usd",
+      "unitAmount": 2999,
+      "type": "recurring",
+      "recurring": {
+        "interval": "year",
+        "intervalCount": 1,
+        "usageType": "licensed"
+      }
+    }
+  ],
+  "portalConfigurations": [
+    {
+      "id": "bpc_1UAZygPo4uRuCWxjnhE0Opjg",
+      "active": true,
+      "livemode": false,
+      "customerUpdate": false,
+      "paymentMethodUpdate": true,
+      "subscriptionCancel": true,
+      "subscriptionUpdate": false,
+      "invoiceHistory": true
+    },
+    {
+      "id": "bpc_1UAZxkPo4uRuCWxjYiC1KVit",
+      "active": true,
+      "livemode": false,
+      "customerUpdate": false,
+      "paymentMethodUpdate": true,
+      "subscriptionCancel": true,
+      "subscriptionUpdate": false,
+      "invoiceHistory": false
+    },
+    {
+      "id": "bpc_1UAZwxPo4uRuCWxjmi2YEfWf",
+      "active": true,
+      "livemode": false,
+      "customerUpdate": false,
+      "paymentMethodUpdate": true,
+      "subscriptionCancel": true,
+      "subscriptionUpdate": false,
+      "invoiceHistory": false
+    },
+    {
+      "id": "bpc_1UAZuwPo4uRuCWxjhHqUOhyN",
+      "active": true,
+      "livemode": false,
+      "customerUpdate": false,
+      "paymentMethodUpdate": true,
+      "subscriptionCancel": true,
+      "subscriptionUpdate": false,
+      "invoiceHistory": true
+    }
+  ],
+  "webhookEndpoints": [],
+  "blockers": [
+    "No enabled test webhook endpoint"
+  ],
+  "errors": [],
+  "catalogMatches": true
+}

@@ -1,0 +1,102 @@
+✔ source config disables optimizer while retaining metadata/static import support (1.1415ms)
+✖ installed production handler rejects all image queries before validation/cache (1.9812ms)
+✖ installed development handler rejects all image queries before validation/cache (0.7668ms)
+✖ baseline wildcard control reaches optimizer boundary without any fetch (2.6342ms)
+✖ removed wildcard independently rejects remote hosts if optimizer were enabled (1.0075ms)
+✔ plain public image paths do not enter the optimizer handler (2.7072ms)
+✔ installed metadata sizing preserves the actual skillet icon dimensions (1.4942ms)
+✖ new web image-loader imports require this exposure review to be revisited (3.5995ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 3
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 642.7205
+
+✖ failing tests:
+
+test at scripts\check-next-image-boundary.mjs:68:3
+✖ installed production handler rejects all image queries before validation/cache (1.9812ms)
+  TypeError: Cannot read properties of undefined (reading 'isrFlushToDisk')
+      at new ImageOptimizerCache (C:\Users\James\Documents\GitHub\SecondBreakfast\node_modules\.pnpm\next@15.5.23_@babel+core@7._6868a40ab74d86e70e22b92cf130a8da\node_modules\next\dist\server\image-optimizer.js:667:85)
+      at new Cache (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:38:3)
+      at evalmachine.<anonymous>:16:45
+      at Object.run (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:58:72)
+      at TestContext.<anonymous> (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:77:28)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+
+test at scripts\check-next-image-boundary.mjs:68:3
+✖ installed development handler rejects all image queries before validation/cache (0.7668ms)
+  TypeError: Cannot read properties of undefined (reading 'isrFlushToDisk')
+      at new ImageOptimizerCache (C:\Users\James\Documents\GitHub\SecondBreakfast\node_modules\.pnpm\next@15.5.23_@babel+core@7._6868a40ab74d86e70e22b92cf130a8da\node_modules\next\dist\server\image-optimizer.js:667:85)
+      at new Cache (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:38:3)
+      at evalmachine.<anonymous>:16:45
+      at Object.run (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:58:72)
+      at TestContext.<anonymous> (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:77:28)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+
+test at scripts\check-next-image-boundary.mjs:87:1
+✖ baseline wildcard control reaches optimizer boundary without any fetch (2.6342ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /OPTIMIZER_BOUNDARY/. Input:
+  
+  "TypeError: Cannot read properties of undefined (reading 'isrFlushToDisk')"
+  
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:89:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: TypeError: Cannot read properties of undefined (reading 'isrFlushToDisk')
+        at new ImageOptimizerCache (C:\Users\James\Documents\GitHub\SecondBreakfast\node_modules\.pnpm\next@15.5.23_@babel+core@7._6868a40ab74d86e70e22b92cf130a8da\node_modules\next\dist\server\image-optimizer.js:667:85)
+        at new Cache (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:38:3)
+        at evalmachine.<anonymous>:16:45
+        at Object.run (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:58:72)
+        at TestContext.<anonymous> (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:89:26)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1382:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+        at Test.postRun (node:internal/test_runner/test:1522:19)
+        at Test.run (node:internal/test_runner/test:1447:12),
+    expected: /OPTIMIZER_BOUNDARY/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts\check-next-image-boundary.mjs:94:1
+✖ removed wildcard independently rejects remote hosts if optimizer were enabled (1.0075ms)
+  TypeError: Cannot read properties of undefined (reading 'isrFlushToDisk')
+      at new ImageOptimizerCache (C:\Users\James\Documents\GitHub\SecondBreakfast\node_modules\.pnpm\next@15.5.23_@babel+core@7._6868a40ab74d86e70e22b92cf130a8da\node_modules\next\dist\server\image-optimizer.js:667:85)
+      at new Cache (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:38:3)
+      at evalmachine.<anonymous>:16:45
+      at Object.run (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:58:72)
+      at TestContext.<anonymous> (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:96:11)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+      at Test.postRun (node:internal/test_runner/test:1522:19)
+      at Test.run (node:internal/test_runner/test:1447:12)
+
+test at scripts\check-next-image-boundary.mjs:114:1
+✖ new web image-loader imports require this exposure review to be revisited (3.5995ms)
+  TypeError: Cannot read properties of undefined (reading 'kind')
+      at Object.isImportDeclaration (C:\Users\James\Documents\GitHub\SecondBreakfast\node_modules\.pnpm\typescript@5.9.3\node_modules\typescript\lib\typescript.js:31061:15)
+      at check (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:125:31)
+      at scan (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:134:9)
+      at scan (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:119:32)
+      at scan (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:119:32)
+      at scan (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:119:32)
+      at scan (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:119:32)
+      at TestContext.<anonymous> (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:138:54)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1382:25)

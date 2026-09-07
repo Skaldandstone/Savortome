@@ -1,0 +1,11 @@
+{
+  "manifestSha256": "28491f46acea729f83403bad7b4b0325a2b6fd4be4f90b34964de5269e6236ab",
+  "manifestMatchesReport": true,
+  "archiveSha256": "e8a9cf13f1e4c43ad59324b6692aae4331faab73c569b24ffa1e479f362e6e8c",
+  "archiveMatchesReport": true,
+  "fileEntries": 590,
+  "expectedFileEntries": 590,
+  "mismatchedFiles": 0,
+  "backslashEntries": 0,
+  "snapshotCommit": "87e04ab9e9029a1b86893e8ef4a788de3e77949d"
+}

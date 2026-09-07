@@ -9,10 +9,11 @@ import { RecipeShare } from "./RecipeShare";
 import { RecipeHeader, RecipeHero } from "./RecipeHeader";
 import { StepList } from "./StepList";
 import { useServings } from "./useServings";
+import { PaperPanel } from '@/modules/woodland/Artwork';
 
 function SectionTitle({ children }: { children: string }) {
   const c = usePalette();
-  return <Text style={[styles.sectionTitle, { color: c.textMuted }]}>{children.toUpperCase()}</Text>;
+  return <Text accessibilityRole="header" style={[styles.sectionTitle, { color: c.textMuted }]}>{children.toUpperCase()}</Text>;
 }
 
 /** Composes the recipe modules into the card the whole app is built to produce. */
@@ -38,16 +39,19 @@ export function RecipeCard({
         <RecipeFacts recipe={recipe} />
         <TagList tags={recipe.tags} />
 
-        <View style={styles.ingredientsHeading}>
+        <PaperPanel><View style={styles.ingredientsHeading}>
           <SectionTitle>Ingredients</SectionTitle>
           {canScale && servings !== null ? (
             <ServingScaler servings={servings} onIncrement={increment} onDecrement={decrement} />
           ) : null}
         </View>
         <IngredientList ingredients={ingredients} />
+        </PaperPanel>
 
+        <PaperPanel>
         <SectionTitle>Method</SectionTitle>
         <StepList steps={recipe.steps} source={recipe.source} />
+        </PaperPanel>
 
         {recipe.equipment.length > 0 ? (
           <>
@@ -76,6 +80,6 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     fontWeight: "600",
   },
-  ingredientsHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  ingredientsHeading: { flexDirection: "row", flexWrap:'wrap', gap:10, alignItems: "center", justifyContent: "space-between" },
   equipment: { fontSize: typeScale.body },
 });

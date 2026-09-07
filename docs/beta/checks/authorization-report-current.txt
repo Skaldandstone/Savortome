@@ -1,0 +1,17 @@
+✔ disabled server gate ignores invited identity and frontend flags without reading auth (50.4703ms)
+✔ signed-out redirect contains only validated handoff fields (13.1903ms)
+✔ non-invited user cannot forge access or redirect through query fields (19.0277ms)
+✔ invited user receives only validated care props; arbitrary return rejected (17.0492ms)
+✔ missing Clerk configuration cannot enable local preview in production (16.9947ms)
+✔ local development preview remains usable without an account (16.9506ms)
+✔ unavailable/expired auth fails closed and never renders care (33.8418ms)
+✔ CodeBuild report writer emits actual inspected digest/revision/config without key values (5.52ms)
+✔ CodeBuild report writer refuses substituted image metadata (5.4623ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 839.1894

@@ -83,15 +83,19 @@ function AddNutrition({ recipeId }: { recipeId: string }) {
   };
 
   return (
-    <div className={styles.offer} data-print="hide">
+    <div className={styles.offer} data-print="hide" aria-busy={state === "busy"}>
       <button type="button" className={styles.addButton} disabled={state === "busy"} onClick={() => void add()}>
         {state === "busy" ? "Estimating…" : "Add nutrition"}
       </button>
-      <span className={styles.offerNote}>
-        {state === "error"
-          ? "Couldn't add nutrition just now — try again in a moment."
-          : "A kitchen-scale estimate from the ingredient list, labelled as such."}
-      </span>
+      {state === "error" ? (
+        <span className={styles.offerNote} role="alert">
+          Couldn't add nutrition just now — try again in a moment.
+        </span>
+      ) : (
+        <span className={styles.offerNote}>
+          A kitchen-scale estimate from the ingredient list, labelled as such.
+        </span>
+      )}
     </div>
   );
 }

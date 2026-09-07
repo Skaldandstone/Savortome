@@ -16,6 +16,9 @@
 
 .note { color: var(--text-muted); }
 
+:global([data-woodland='true']) .scaler { flex-wrap:wrap; }
+@media(max-width:560px) { :global([data-text-size='200']) .item { flex-wrap:wrap; } :global([data-text-size='200']) .amount { flex-basis:100%; } }
+
 .groupHeading {
   display: block;
   font-weight: 700;

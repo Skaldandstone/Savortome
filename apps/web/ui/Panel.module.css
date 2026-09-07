@@ -9,3 +9,10 @@
 .header { margin-bottom: 16px; }
 .title { margin: 0 0 4px; font-size: var(--step-4); }
 .hint { margin: 0; color: var(--text-muted); font-size: var(--step-2); }
+
+:global([data-woodland='true']) .panel { border-radius:5px; padding:26px; background:var(--surface); box-shadow:inset 0 0 0 4px var(--surface),inset 0 0 0 5px #b28f5136; }
+:global([data-woodland='true']) .header { padding-bottom:18px; margin-bottom:20px; border-bottom:1px solid var(--border); }
+:global([data-woodland='true']) .title { font:1.5rem Georgia,serif; color:var(--accent); }
+:global([data-woodland='true']) .hint { line-height:1.65; margin-top:8px; }
+:global([data-decoration='reduced']) .panel { background-image:none; box-shadow:none; }
+@media(max-width:640px) { :global([data-woodland='true']) .panel { padding:20px 16px; } }
