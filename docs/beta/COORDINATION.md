@@ -70,7 +70,7 @@ The newer task **Add preference-based dining search** moved its proposal and roo
 ## Repositories and safety
 
 - Canonical Second Breakfast: `C:\Users\James\Documents\GitHub\SecondBreakfast`, branch `codex/whimsical-private-beta`, base `dcb6f71`. All current beta changes are uncommitted. Do not reset, switch branches, stash everything, or commit another task's files.
-- The app project directory `C:\Users\James\Documents\ChatGPT\Second Breakfast` is an empty project shell with an unborn master branch. Do not build a duplicate app there.
+- The saved app project must resolve to the canonical checkout at `C:\Users\James\Documents\GitHub\SecondBreakfast`. Do not build a duplicate app under the former `ChatGPT` path.
 - Wispling handoff only: `C:\Users\James\Documents\GitHub\.worktrees\wispling-second-breakfast`, branch `codex/second-breakfast-handoff`, base `e9bf7f3`. Canonical Wispling contains unrelated ongoing work. Do not edit it.
 - A concurrent studio copyright task added `apps/web/ui/LegalFooter.tsx`, `apps/mobile/app/legal.tsx`, footer references in web layout, and a legal link in the protected mobile tab layout. Preserve this work and exclude it from beta-only commits unless its owner has committed it first.
 - Integration and final commits belong to the parent task. Each child owns only its lane below, keeps changes reviewable, reports exact files and validation, and coordinates shared-file needs through the parent. No live rollout, invitations, purchases, charges, or public launch from child tasks.
