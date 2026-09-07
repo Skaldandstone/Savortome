@@ -12,7 +12,7 @@ rule proposal_defaults_fail_closed {
 }
 
 rule runtime_shape_is_bounded {
-    Resources.Service.Properties.ServiceName == 'skaldandstone-development-foundation-secondbreakfast-web'
+    Resources.Service.Properties.ServiceName == 'secondbreakfast-web'
     %services.Properties.DesiredCount == { 'Ref': 'DesiredCount' }
     %services.Properties.EnableExecuteCommand == false
     %tasks.Properties.Cpu == '512'

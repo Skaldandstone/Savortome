@@ -25,7 +25,7 @@ $region = "us-east-2"
 $accountId = "051722405355"
 $bucket = "secondbreakfast-build-source-051722405355"
 $project = "secondbreakfast-web-build"
-$cluster = "secondbreakfast-cluster"
+$cluster = "skaldandstone-production"
 $service = "secondbreakfast-web"
 
 $callerAccount = aws sts get-caller-identity --profile $profile_ --query Account --output text

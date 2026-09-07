@@ -4,14 +4,14 @@ $ErrorActionPreference='Stop'
 $release=Join-Path $PSScriptRoot 'beta-release.ps1'
 $testRoot=Join-Path $env:LOCALAPPDATA ('SecondBreakfastBeta\release-tests\'+[guid]::NewGuid().ToString())
 New-Item -ItemType Directory -Path $testRoot -Force|Out-Null
-$image='734702670689.dkr.ecr.us-east-2.amazonaws.com/skaldandstone-development-foundation/secondbreakfast-web@sha256:'+('a'*64)
+$image='051722405355.dkr.ecr.us-east-2.amazonaws.com/secondbreakfast-web@sha256:'+('a'*64)
 $commit='d'*40
-$oldImage='734702670689.dkr.ecr.us-east-2.amazonaws.com/skaldandstone-development-foundation/secondbreakfast-web@sha256:'+('b'*64)
-$buildId='skaldandstone-development-foundation-secondbreakfast-web:00000000-0000-0000-0000-000000000000'
+$oldImage='051722405355.dkr.ecr.us-east-2.amazonaws.com/secondbreakfast-web@sha256:'+('b'*64)
+$buildId='secondbreakfast-web-build:00000000-0000-0000-0000-000000000000'
 $spec='version: 0.2 # synthetic reviewed commands'
 $specSha=[BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash([Text.Encoding]::UTF8.GetBytes($spec))).Replace('-','').ToLowerInvariant()
 $manifestSha='c'*64
-$oldArn='arn:aws:ecs:us-east-2:734702670689:task-definition/secondbreakfast-web:10'
+$oldArn='arn:aws:ecs:us-east-2:051722405355:task-definition/secondbreakfast-web:10'
 $assertions=0
 function Check([bool]$Condition,[string]$Message){if(-not $Condition){throw "FAIL $Message"};$script:assertions++;Write-Output "PASS $Message"}
 function Throws([scriptblock]$Action,[string]$Pattern,[string]$Message){
@@ -20,14 +20,14 @@ function Throws([scriptblock]$Action,[string]$Pattern,[string]$Message){
 }
 function Reset {
   $global:BetaReleaseMock=@{
-    account='734702670689';calls=[Collections.Generic.List[object]]::new();counter=10;failUpdate=$false;dockerCalls=0;
+    account='051722405355';calls=[Collections.Generic.List[object]]::new();counter=10;failUpdate=$false;dockerCalls=0;
     service=[pscustomobject]@{taskDefinition=$oldArn;desiredCount=1;runningCount=1;pendingCount=0;deploymentController=@{type='ECS'};deployments=@(@{rolloutState='COMPLETED'});deploymentConfiguration=@{maximumPercent=200;minimumHealthyPercent=100;deploymentCircuitBreaker=@{enable=$false;rollback=$false}};networkConfiguration=@{awsvpcConfiguration=@{subnets=@('subnet-existing');securityGroups=@('sg-existing');assignPublicIp='DISABLED'}};loadBalancers=@(@{targetGroupArn='existing-target';containerName='web';containerPort=3000});launchType='FARGATE';platformVersion='1.4.0';schedulingStrategy='REPLICA';enableExecuteCommand=$false};
-    task=[pscustomobject]@{family='secondbreakfast-web';taskRoleArn='existing-task-role';executionRoleArn='existing-execution-role';networkMode='awsvpc';requiresCompatibilities=@('FARGATE');cpu='512';memory='1024';runtimePlatform=@{cpuArchitecture='X86_64';operatingSystemFamily='LINUX'};volumes=@();taskDefinitionArn=$oldArn;status='ACTIVE';revision=10;registeredAt='synthetic';containerDefinitions=@([pscustomobject]@{name='web';image='734702670689.dkr.ecr.us-east-2.amazonaws.com/skaldandstone-development-foundation/secondbreakfast-web:latest';portMappings=@(@{containerPort=3000});environment=@(@{name='NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY';value='pk_test_synthetic'},@{name='NODE_EXTRA_CA_CERTS';value='/etc/ssl/rds-global-bundle.pem'},@{name='KEEP_EXISTING';value='unchanged'});secrets=@(@{name='CLERK_SECRET_KEY';valueFrom='arn:existing-clerk-secret'},@{name='DATABASE_URL';valueFrom='arn:existing-db-secret'});logConfiguration=@{logDriver='awslogs';options=@{'awslogs-group'='existing-log-group'}}})};
+    task=[pscustomobject]@{family='secondbreakfast-web';taskRoleArn='existing-task-role';executionRoleArn='existing-execution-role';networkMode='awsvpc';requiresCompatibilities=@('FARGATE');cpu='512';memory='1024';runtimePlatform=@{cpuArchitecture='X86_64';operatingSystemFamily='LINUX'};volumes=@();taskDefinitionArn=$oldArn;status='ACTIVE';revision=10;registeredAt='synthetic';containerDefinitions=@([pscustomobject]@{name='web';image='051722405355.dkr.ecr.us-east-2.amazonaws.com/secondbreakfast-web:latest';portMappings=@(@{containerPort=3000});environment=@(@{name='NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY';value='pk_test_synthetic'},@{name='NODE_EXTRA_CA_CERTS';value='/etc/ssl/rds-global-bundle.pem'},@{name='KEEP_EXISTING';value='unchanged'});secrets=@(@{name='CLERK_SECRET_KEY';valueFrom='arn:existing-clerk-secret'},@{name='DATABASE_URL';valueFrom='arn:existing-db-secret'});logConfiguration=@{logDriver='awslogs';options=@{'awslogs-group'='existing-log-group'}}})};
     tags=@(@{key='Product';value='SecondBreakfast'});
     running=@([pscustomobject]@{taskDefinitionArn=$oldArn;lastStatus='RUNNING';containers=@(@{name='web';imageDigest='sha256:'+('b'*64)})});
     docker=[pscustomobject]@{RepoDigests=@($image);Config=@{Labels=@{'org.opencontainers.image.revision'=$commit;'com.secondbreakfast.public-cache-version'='3'};Env=@('NEXT_PUBLIC_ENABLE_SW=true','NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_synthetic')}};
     rollbackDocker=[pscustomobject]@{RepoDigests=@($oldImage);Config=@{Labels=@{'org.opencontainers.image.revision'=$commit;'com.secondbreakfast.public-cache-version'='3'};Env=@('NEXT_PUBLIC_ENABLE_SW=true','NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_synthetic')}};
-    build=[pscustomobject]@{id=$buildId;arn="arn:aws:codebuild:us-east-2:734702670689:build/$buildId";projectName='skaldandstone-development-foundation-secondbreakfast-web';buildStatus='SUCCEEDED';sourceVersion=$commit;resolvedSourceVersion=$commit;source=@{type='GITHUB';buildspec=$spec};artifacts=@{sha256sum=''}};
+    build=[pscustomobject]@{id=$buildId;arn="arn:aws:codebuild:us-east-2:051722405355:build/$buildId";projectName='secondbreakfast-web-build';buildStatus='SUCCEEDED';sourceVersion=$commit;resolvedSourceVersion=$commit;source=@{type='GITHUB';buildspec=$spec};artifacts=@{sha256sum=''}};
     head=@{VersionId='pinned-object-version';ChecksumSHA256=[Convert]::ToBase64String([byte[]](1..32))}
   }
 }
@@ -45,12 +45,12 @@ function global:aws {
       $build=if($s.buildRecords -and $s.buildRecords.ContainsKey($id)){$s.buildRecords[$id]}else{$s.build}
       @{builds=@($build);buildsNotFound=@()}|ConvertTo-Json -Depth 100
     }
-    'codebuild batch-get-projects' { @{projects=@(@{name='skaldandstone-development-foundation-secondbreakfast-web';artifacts=@{type='NO_ARTIFACTS'}});projectsNotFound=@()}|ConvertTo-Json -Depth 20 }
+    'codebuild batch-get-projects' { @{projects=@(@{name='secondbreakfast-web-build';artifacts=@{type='NO_ARTIFACTS'}});projectsNotFound=@()}|ConvertTo-Json -Depth 20 }
     's3api head-object' { $s.head|ConvertTo-Json }
     'ecr batch-get-image' { $s.manifest|ConvertTo-Json -Depth 100 }
     'ecr describe-image-scan-findings' { $s.scan|ConvertTo-Json -Depth 100 }
     'ecs register-task-definition' {
-      $s.counter++;@{taskDefinition=@{taskDefinitionArn="arn:aws:ecs:us-east-2:734702670689:task-definition/secondbreakfast-web:$($s.counter)"}}|ConvertTo-Json
+      $s.counter++;@{taskDefinition=@{taskDefinitionArn="arn:aws:ecs:us-east-2:051722405355:task-definition/secondbreakfast-web:$($s.counter)"}}|ConvertTo-Json
     }
     'ecs update-service' {
       if($s.failUpdate){$global:LASTEXITCODE=1;return}
@@ -92,7 +92,7 @@ function EcrConfig([hashtable]$Changes=@{}) {
 function ConfigureEcrEvidence([string]$ConfigPath) {
   $configDigest='sha256:'+((Get-FileHash -LiteralPath $ConfigPath -Algorithm SHA256).Hash.ToLowerInvariant())
   $global:BetaReleaseMock.build.source.type='S3'
-  $global:BetaReleaseMock.build.source.location='skald-dev-734702670689-artifacts/sources/secondbreakfast/reviewed.zip'
+  $global:BetaReleaseMock.build.source.location='secondbreakfast-build-source-051722405355/sources/secondbreakfast/reviewed.zip'
   $global:BetaReleaseMock.build.sourceVersion='pinned-object-version'
   $global:BetaReleaseMock.build.artifacts=@{type='NO_ARTIFACTS'}
   $global:BetaReleaseMock.manifest=@{images=@(@{imageId=@{imageDigest='sha256:'+('a'*64)};imageManifest=(@{schemaVersion=2;config=@{digest=$configDigest}}|ConvertTo-Json -Compress)});failures=@()}
@@ -109,11 +109,13 @@ Throws {Prepare (Fresh)} 'Wrong AWS account' 'wrong AWS identity fails before mu
 Check ((Mutations).Count -eq 0) 'wrong account made no mutation'
 Reset;$verifyConfig=(Fresh)+'.json';@{image=$oldImage}|ConvertTo-Json|Set-Content -LiteralPath $verifyConfig
 $verified=& $release -Mode VerifyImages -Image $image -ReviewedCommit $commit -RollbackReviewedCommit $commit -RollbackVerificationConfig $verifyConfig 6>$null|ConvertFrom-Json
-Check ($verified.Account -ceq '734702670689' -and $global:BetaReleaseMock.dockerCalls -eq 2 -and @($global:BetaReleaseMock.calls|Where-Object {$_[0] -eq 'ecs'}).Count -eq 0) 'standalone image verification is read-only and does not require an ECS service'
+Check ($verified.Account -ceq '051722405355' -and $global:BetaReleaseMock.dockerCalls -eq 2 -and @($global:BetaReleaseMock.calls|Where-Object {$_[0] -eq 'ecs'}).Count -eq 0) 'standalone image verification is read-only and does not require an ECS service'
 Reset;Throws {& $release -Mode Prepare -Image ($image -replace '@sha256:.*',':latest') -ReviewedCommit $commit -ClerkUserIds user_A -ReleaseDirectory (Fresh)} 'digest' 'mutable tag rejected'
-Reset;Throws {Prepare (Fresh) @()} 'Clerk user IDs' 'empty enrollment rejected'
-Reset;Throws {Prepare (Fresh) @('user_A, user_B')} 'Clerk user IDs' 'unparsed enrollment string rejected'
-Reset;Throws {Prepare (Fresh) @('USER_A')} 'Clerk user IDs' 'case-sensitive Clerk prefix enforced'
+Reset;$metadataOnly=Fresh;& $release -Mode Prepare -Image $image -ReviewedCommit $commit -RollbackReviewedCommit $commit -ReleaseDirectory $metadataOnly 6>$null
+$metadataTask=Get-Content (Join-Path $metadataOnly 'candidate-task.json') -Raw|ConvertFrom-Json
+Check (($metadataTask.containerDefinitions[0].environment|Where-Object name -eq 'SB_BETA_CLERK_USER_IDS').value -ceq '') 'owner-approved Clerk metadata does not require a static cohort'
+Reset;Throws {Prepare (Fresh) @('user_A, user_B')} 'recovery allowlist' 'unparsed recovery allowlist rejected'
+Reset;Throws {Prepare (Fresh) @('USER_A')} 'recovery allowlist' 'case-sensitive Clerk prefix enforced'
 Reset;$global:BetaReleaseMock.service.desiredCount=0;Throws {Prepare (Fresh)} 'asleep' 'scale-down window is preserved'
 Reset;$global:BetaReleaseMock.service.pendingCount=1;Throws {Prepare (Fresh)} 'not stable' 'unstable service rejected'
 Reset;$global:BetaReleaseMock.running[0].taskDefinitionArn='different-revision';Throws {Prepare (Fresh)} 'do not all match' 'mixed running revisions rejected'
@@ -188,7 +190,7 @@ Reset;$zip=ReportZip @{image='wrong-digest'};Throws {RemotePrepare $zip} 'Report
 Reset;$zip=ReportZip @{serviceWorkerBuilt=$false};Throws {RemotePrepare $zip} 'SW/Clerk' 'report missing SW build rejected'
 Reset;$zip=ReportZip @{publicCacheVersion=1};Throws {RemotePrepare $zip} 'privacy cache policy' 'old cache policy report rejected'
 Reset;$zip=ReportZip @{clerkPublishableKeySha256=''};Throws {RemotePrepare $zip} 'SW/Clerk' 'report missing Clerk build rejected'
-Reset;$global:BetaReleaseMock.build.source.type='S3';$global:BetaReleaseMock.build.source.location='skald-dev-734702670689-artifacts/sources/secondbreakfast/reviewed.zip';$global:BetaReleaseMock.build.sourceVersion='pinned-object-version';$zip=ReportZip
+Reset;$global:BetaReleaseMock.build.source.type='S3';$global:BetaReleaseMock.build.source.location='secondbreakfast-build-source-051722405355/sources/secondbreakfast/reviewed.zip';$global:BetaReleaseMock.build.sourceVersion='pinned-object-version';$zip=ReportZip
 $sourceSha=([BitConverter]::ToString([byte[]](1..32))).Replace('-','').ToLowerInvariant()
 RemotePrepare $zip $sourceSha
 Check (@($global:BetaReleaseMock.calls|Where-Object {$_[0] -eq 's3api' -and $_ -contains '--version-id' -and $_ -contains '--expected-bucket-owner'}).Count -eq 1) 'S3 source checked by exact version and checksum in existing account'
@@ -198,10 +200,10 @@ $global:BetaReleaseMock.build.sourceVersion='null';Throws {RemotePrepare $zip $s
 
 Reset;$candidateZip=ReportZip
 $candidateBuild=$global:BetaReleaseMock.build|ConvertTo-Json -Depth 100|ConvertFrom-Json
-$rollbackBuildId='skaldandstone-development-foundation-secondbreakfast-web:11111111-1111-1111-1111-111111111111'
+$rollbackBuildId='secondbreakfast-web-build:11111111-1111-1111-1111-111111111111'
 $rollbackZip=ReportZip @{image=$oldImage;codeBuildId=$rollbackBuildId}
 $rollbackBuild=$global:BetaReleaseMock.build|ConvertTo-Json -Depth 100|ConvertFrom-Json
-$rollbackBuild.id=$rollbackBuildId;$rollbackBuild.arn="arn:aws:codebuild:us-east-2:734702670689:build/$rollbackBuildId"
+$rollbackBuild.id=$rollbackBuildId;$rollbackBuild.arn="arn:aws:codebuild:us-east-2:051722405355:build/$rollbackBuildId"
 $global:BetaReleaseMock.buildRecords=@{$buildId=$candidateBuild;$rollbackBuildId=$rollbackBuild}
 $config=(Fresh)+'.json';@{codeBuildId=$rollbackBuildId;buildArtifactZip=$rollbackZip;reviewedBuildspecSha256=$specSha}|ConvertTo-Json|Set-Content -LiteralPath $config
 & $release -Mode Prepare -Image $image -ReviewedCommit $commit -RollbackReviewedCommit $commit -RollbackVerificationConfig $config -ClerkUserIds user_A -CodeBuildId $buildId -BuildArtifactZip $candidateZip -ReviewedBuildspecSha256 $specSha -ReleaseDirectory (Fresh) 6>$null

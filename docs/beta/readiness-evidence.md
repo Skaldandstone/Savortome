@@ -1,5 +1,14 @@
 # Privacy and release readiness evidence
 
+> **Current account and admission correction, 7 September 2026:** AWS account
+> `051722405355` is the only target for new work. Studio invite requests require
+> James's approval, recorded as product-scoped Clerk metadata and enforced by the
+> app server. No email-domain rule is allowed. The candidate image exists and has
+> a zero-finding BASIC scan in the current account; rollback, same-account build
+> provenance, runtime, secrets and network controls remain open. See
+> [account-admission-migration.md](account-admission-migration.md). Older account
+> numbers below are historical evidence, not current instructions.
+
 Latest reviewed checkpoint: [final-integration-checkpoint.md](final-integration-checkpoint.md).
 It records the immutable privacy-v3 source package, current development account,
 hardened x86_64 and arm64 Android artifacts, active-alpha Wispling patch, final

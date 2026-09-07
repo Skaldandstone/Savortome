@@ -64,14 +64,16 @@ deployed web origin - the two apps share one server.
 
 ## Deploying to AWS
 
-> **Not currently deployable (2026-09-07).** The AWS consolidation retired
-> account `574921529762` and the `secondbreakfast-toolkit` profile. Second
-> Breakfast's build and runtime infrastructure was not recreated in the
-> surviving account `051722405355` - only an unused `secondbreakfast-web` ECR
-> repository exists there. `scripts/deploy-aws.ps1` is repointed at
+> **Not currently deployable (2026-09-07).** AWS account `051722405355` is the
+> sole current target; accounts `734702670689` and `574921529762` are retired
+> for new work. The reviewed candidate image is present in the immutable
+> `secondbreakfast-web` ECR repository and has a zero-finding BASIC scan. The
+> rollback image, source bucket, CodeBuild project, runtime secrets, Cloudflare
+> prefix list, database and ECS service are missing. `scripts/deploy-aws.ps1` is repointed at
 > `--profile skaldandstone-admin` / `051722405355` and now preflights for the
 > missing resources, so it stops with a clear message instead of half-deploying.
-> Provision the source bucket, CodeBuild project, ECS cluster and service before
+> The shared `skaldandstone-production` cluster already exists. Provision the
+> source bucket, CodeBuild project and reviewed private runtime before
 > using it.
 
 The live app (secondbreakfast.skaldandstone.com) previously ran on ECS in AWS

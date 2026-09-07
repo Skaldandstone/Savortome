@@ -5,7 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 // Execute the actual CLI body with filesystem/process boundaries replaced.
 const source=readFileSync(new URL('./write-beta-image-report.mjs',import.meta.url),'utf8').replace(/^import .*;\r?\n/gm,'');
-const image='574921529762.dkr.ecr.us-east-2.amazonaws.com/secondbreakfast-web@sha256:'+'a'.repeat(64);
+const image='051722405355.dkr.ecr.us-east-2.amazonaws.com/secondbreakfast-web@sha256:'+'a'.repeat(64);
 const commit='d'.repeat(40);
 function run(change={}){
   let output;const built={RepoDigests:[image],Config:{Labels:{'org.opencontainers.image.revision':commit,'com.secondbreakfast.public-cache-version':'3'},Env:['NEXT_PUBLIC_ENABLE_SW=true','NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_synthetic']},...change};

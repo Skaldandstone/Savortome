@@ -1,9 +1,14 @@
 # Private beta release runbook
 
-Status: candidate and rollback images are independently verified; runtime release
-is blocked on the reviewed service and HTTPS foundation. These instructions use
-development account `734702670689`, profile `skaldandstone-dev`, region
-`us-east-2`. Account `574921529762` is historical and must not receive this beta.
+Status: no runtime release is approved. The sole current target is account
+`051722405355`, profile `skaldandstone-admin`, region `us-east-2`. Accounts
+`734702670689` and `574921529762` are historical and must not receive new work.
+The candidate image is present and scanned in the current account, but the
+privacy-v3 rollback image, same-account build provenance, runtime, secrets and
+network boundary are missing. Follow the current
+[account and admission migration](account-admission-migration.md). Older account
+identifiers later in this document describe preserved historical evidence and
+must not be executed.
 Do not use `scripts/deploy-aws.ps1` unchanged: it archives `origin/main`, builds
 from a mutable S3 key and force-redeploys without the cohort, source, digest,
 privacy rollback or drift checks required here.
@@ -25,7 +30,8 @@ unpatched; trusted build inputs and future dependency remediation remain require
 | Setting | Required behavior |
 | --- | --- |
 | `SB_BETA_ENABLED` | Server runtime, exact `true` enables checking the cohort. Unset/false keeps the previous experience |
-| `SB_BETA_CLERK_USER_IDS` | Server runtime, comma-separated exact Clerk user IDs. Empty denies hosted care |
+| Clerk `studio_access.second-breakfast.approved` | Primary server-read admission record created only by Studio owner approval |
+| `SB_BETA_CLERK_USER_IDS` | Optional comma-separated exact Clerk IDs for recovery. Empty is valid because metadata approval is primary |
 | `SB_BETA_LOCAL_PREVIEW` | Local development only; release script forces false. Cannot grant production access |
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Must be present in the image at build time for hosted sign-in. Runtime injection alone cannot repair a missing inlined key |
 | `CLERK_SECRET_KEY` | Runtime secret reference from the existing configuration; never Docker build context/ARG or committed packet text |
@@ -106,7 +112,7 @@ stored outside Git under
 
 ## Cohort enrollment and removal
 
-Collect each consenting tester's exact Clerk ID from the correct existing Clerk instance privately. Do not use email text, display names, a browser-supplied ID, or another Clerk instance's ID. No invitation is sent by the release script. Review the complete cohort list, including removals, before applying it.
+Prospective testers use the Studio Second Breakfast request form. James approves or denies each request in the owner queue. Approval writes the exact product-scoped Clerk metadata used by the app gate. Do not grant access by email domain, email text, display name, browser state, or another Clerk instance. The release script sends no invitation. Use `SB_BETA_CLERK_USER_IDS` only as a deliberately reviewed recovery override.
 
 Use a new local release directory per change. In PowerShell, set `$reviewedCommit`, `$rollbackCommit`, `$imageDigest`, `$cohort` and `$packet` to the reviewed real values. `$cohort` is an array such as `@('user_EXAMPLE1','user_EXAMPLE2')`; examples are not enrolled identities. Store real packets outside Git with restricted local access because task environment entries and cohort IDs may be sensitive.
 

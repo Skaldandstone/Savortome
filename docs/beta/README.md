@@ -11,15 +11,17 @@ The web concept rebuild passed its [integration checks](web-concept-integration.
 - [Readiness evidence and blockers](readiness-evidence.md).
 - [Image parser exposure, scoped mitigation and remaining build risk](image-parser-security.md).
 - [Release, enrollment, revocation and rollback runbook](release-runbook.md).
+- [Current account and owner-approved admission migration](account-admission-migration.md).
 - [Tester installation and feedback guide](tester-guide.md).
 - [Care/data verification](care-data-evidence.md), [web evidence](web-evidence.md), [Android evidence](android-evidence.md), [Wispling handoff evidence](handoff-evidence.md), and [Stripe integration](stripe-integration-evidence.md).
 - [Design package](../../design/) and [style guide](../../STYLE_GUIDE.md). Artwork and browser captures are review material, not proof of Android interaction.
 
-The hosted redesign and `/care` require a server-approved Clerk user ID and are disabled by default. Guest care belongs to development previews and private Android builds. All matching is deterministic and local. The generic offline document has no saved profile, pantry, account, prior choice or shopping write; it offers temporary choices and explains those limits.
+The hosted redesign and `/care` require owner approval recorded in server-read Clerk metadata and are disabled by default. An exact Clerk user-ID list remains a recovery override, not the enrollment workflow. Guest care belongs to development previews and private Android builds. All matching is deterministic and local. The generic offline document has no saved profile, pantry, account, prior choice or shopping write; it offers temporary choices and explains those limits.
 
 No invitations, purchases, real charges, runtime deployment or live billing were
-performed. Read-only AWS verification now proves the exact candidate and a
-distinct privacy-v3 rollback image in development account `734702670689`.
+performed. Read-only AWS verification proves the exact candidate was migrated
+and scanned in the sole current account `051722405355`. The distinct privacy-v3
+rollback image and same-account build provenance are still missing there.
 Physical-device, private HTTPS runtime, live invited-account, cohort signing,
 usability and safety checks remain explicit gates. Public food-support release
 is outside this pass.

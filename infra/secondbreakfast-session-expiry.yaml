@@ -62,15 +62,15 @@ Resources:
               - Sid: ExactRuntimeStack
                 Effect: Allow
                 Action: [cloudformation:DescribeStacks, cloudformation:DeleteStack]
-                Resource: arn:aws:cloudformation:us-east-2:734702670689:stack/skaldandstone-development-secondbreakfast-runtime/*
+                Resource: arn:aws:cloudformation:us-east-2:051722405355:stack/skaldandstone-development-secondbreakfast-runtime/*
               - Sid: ExactDatabaseStack
                 Effect: Allow
                 Action: [cloudformation:DescribeStacks, cloudformation:DeleteStack]
-                Resource: arn:aws:cloudformation:us-east-2:734702670689:stack/skaldandstone-development-secondbreakfast-database/*
+                Resource: arn:aws:cloudformation:us-east-2:051722405355:stack/skaldandstone-development-secondbreakfast-database/*
               - Sid: OwnSchedule
                 Effect: Allow
                 Action: events:DisableRule
-                Resource: !Sub arn:${AWS::Partition}:events:us-east-2:734702670689:rule/secondbreakfast-expiry-${SessionId}
+                Resource: !Sub arn:${AWS::Partition}:events:us-east-2:051722405355:rule/secondbreakfast-expiry-${SessionId}
               - Sid: OwnLogs
                 Effect: Allow
                 Action: [logs:CreateLogStream, logs:PutLogEvents]
@@ -92,7 +92,7 @@ Resources:
           SESSION_ID: !Ref SessionId
           CREATED_AT_EPOCH: !Ref CreatedAtEpoch
           EXPIRES_AT_EPOCH: !Ref ExpiresAtEpoch
-          EXPECTED_ACCOUNT: '734702670689'
+          EXPECTED_ACCOUNT: '051722405355'
           EXPECTED_REGION: us-east-2
           RULE_NAME: !Sub secondbreakfast-expiry-${SessionId}
       Code:
@@ -131,7 +131,7 @@ Resources:
                   raise RuntimeError("Session identifier is outside the Second Breakfast boundary")
               if not re.fullmatch(r"\d{12}", str(config["account"])):
                   raise RuntimeError("Expected account is invalid")
-              if config["account"] != "734702670689" or config["region"] != "us-east-2":
+              if config["account"] != "051722405355" or config["region"] != "us-east-2":
                   raise RuntimeError("Expected account or region is outside the reviewed boundary")
               if expires <= created or expires - created > MAX_SESSION_SECONDS:
                   raise RuntimeError("Expiry must be after creation and within two hours")

@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, writeFileSync } from 'node:fs';
 const image = process.argv[2];
 const commit = process.env.SB_RELEASE_COMMIT;
-if (!/^574921529762\.dkr\.ecr\.us-east-2\.amazonaws\.com\/[a-z0-9/_-]+@sha256:[a-f0-9]{64}$/.test(image ?? '')) throw Error('Expected immutable existing ECR image.');
+if (!/^051722405355\.dkr\.ecr\.us-east-2\.amazonaws\.com\/[a-z0-9/_-]+@sha256:[a-f0-9]{64}$/.test(image ?? '')) throw Error('Expected immutable existing ECR image.');
 if (!/^[a-f0-9]{40}$/.test(commit ?? '') || !/^secondbreakfast-web-build:[a-f0-9-]{36}$/.test(process.env.CODEBUILD_BUILD_ID ?? '') || process.env.CODEBUILD_BUILD_SUCCEEDING !== '1') throw Error('Expected reviewed commit and successful trusted CodeBuild context.');
 const [built, ...extra] = JSON.parse(execFileSync('docker', ['image', 'inspect', image], { encoding: 'utf8' }));
 const keys = built?.Config?.Env?.filter(value => /^NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_(test|live)_.+/.test(value)) ?? [];

@@ -2,12 +2,12 @@
 param(
   [ValidateSet('Inspect','Run')][string]$Mode='Inspect',
   [string]$RuntimeStackName='skaldandstone-development-secondbreakfast-runtime',
-  [string[]]$Subnets=@('subnet-06041fe2602a0ad47','subnet-04abce656ea3cc00a'),
+  [string[]]$Subnets=@(),
   [int]$TimeoutSeconds=900
 )
 $ErrorActionPreference='Stop'
-$profile_='skaldandstone-dev';$region_='us-east-2';$account_='734702670689'
-$cluster_='skaldandstone-development-foundation-cluster'
+$profile_='skaldandstone-admin';$region_='us-east-2';$account_='051722405355'
+$cluster_='skaldandstone-production'
 function AwsJson([string[]]$Arguments) {
   $raw=& aws @Arguments --profile $profile_ --region $region_ --output json --no-cli-pager
   if($LASTEXITCODE -ne 0){throw "AWS command failed: $($Arguments[0..1] -join ' ')."}
@@ -20,6 +20,7 @@ function OutputValue($Stack,[string]$Name) {
 }
 $identity=AwsJson @('sts','get-caller-identity')
 if([string]$identity.Account -cne $account_){throw 'Wrong AWS account. Refusing database bootstrap.'}
+if($Subnets.Count -lt 2 -or @($Subnets|Where-Object {$_ -cnotmatch '^subnet-[0-9a-f]+$'}).Count -gt 0){throw 'Supply at least two reviewed subnet IDs from account 051722405355.'}
 $response=AwsJson @('cloudformation','describe-stacks','--stack-name',$RuntimeStackName)
 if($response.Stacks.Count -ne 1 -or $response.Stacks[0].StackStatus -cnotin @('CREATE_COMPLETE','UPDATE_COMPLETE')){throw 'Runtime stack is unavailable or unstable.'}
 $stack=$response.Stacks[0]

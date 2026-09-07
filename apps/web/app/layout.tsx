@@ -33,6 +33,7 @@ function Masthead({ children }: { children: ReactNode }) {
         <Link href="/discover">Discover</Link>
         <Link href="/profile">Dietary profile</Link>
         <Link href="/plans">Plans</Link>
+        <a href="https://skaldandstone.com/secondbreakfast/#request-access">Request beta access</a>
       </nav>
       {children}
     </header>

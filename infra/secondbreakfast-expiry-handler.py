@@ -32,7 +32,7 @@ def _config(environment: dict[str, str]) -> dict[str, object]:
         raise RuntimeError("Session identifier is outside the Second Breakfast boundary")
     if not re.fullmatch(r"\d{12}", str(config["account"])):
         raise RuntimeError("Expected account is invalid")
-    if config["account"] != "734702670689" or config["region"] != "us-east-2":
+    if config["account"] != "051722405355" or config["region"] != "us-east-2":
         raise RuntimeError("Expected account or region is outside the reviewed boundary")
     if expires <= created or expires - created > MAX_SESSION_SECONDS:
         raise RuntimeError("Expiry must be after creation and within two hours")

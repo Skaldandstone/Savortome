@@ -18,13 +18,13 @@ param(
   [string]$ReleaseDirectory=(Join-Path $env:LOCALAPPDATA 'SecondBreakfastBeta\release')
 )
 $ErrorActionPreference='Stop'
-$profile_='skaldandstone-dev'; $region_='us-east-2'; $account_='734702670689'
-$cluster_='skaldandstone-development-foundation-cluster'
-$service_='skaldandstone-development-foundation-secondbreakfast-web'
-$codeBuildProject_='skaldandstone-development-foundation-secondbreakfast-web'
-$sourceBucket_='skald-dev-734702670689-artifacts'
+$profile_='skaldandstone-admin'; $region_='us-east-2'; $account_='051722405355'
+$cluster_='skaldandstone-production'
+$service_='secondbreakfast-web'
+$codeBuildProject_='secondbreakfast-web-build'
+$sourceBucket_='secondbreakfast-build-source-051722405355'
 $sourcePrefix_='sources/secondbreakfast/'
-$repository_='skaldandstone-development-foundation/secondbreakfast-web'
+$repository_='secondbreakfast-web'
 $registry_="${account_}.dkr.ecr.${region_}.amazonaws.com/$repository_"
 function AwsJson([string[]]$Arguments) {
   $raw=& aws @Arguments --profile $profile_ --region $region_ --output json --no-cli-pager
@@ -176,7 +176,7 @@ if($Mode -eq 'Prepare') {
   if($DisableBeta -and $Image){throw 'Kill switch cannot replace the current image. Omit Image.'}
   if(Test-Path -LiteralPath $recordPath){throw 'Use a fresh release directory so the previous rollback record is preserved.'}
   AssertStable $service
-  if(-not $DisableBeta -and ($ClerkUserIds.Count -eq 0 -or @($ClerkUserIds | Where-Object {$_ -cnotmatch '^user_[A-Za-z0-9]+$'}).Count -gt 0)){throw 'Supply exact Clerk user IDs for the reviewed cohort.'}
+  if(@($ClerkUserIds | Where-Object {$_ -cnotmatch '^user_[A-Za-z0-9]+$'}).Count -gt 0){throw 'Any recovery allowlist entries must be exact Clerk user IDs.'}
   if(-not $DisableBeta -and ($ReviewedCommit -cnotmatch '^[a-f0-9]{40}$')){throw 'A full reviewed commit is required.'}
   if($Image -and $Image -cnotmatch ('^'+[regex]::Escape($registry_)+'@sha256:[a-f0-9]{64}$')){throw 'Image must use a digest in the selected AWS account, region, and repository.'}
   if(-not $DisableBeta -and -not $Image){throw 'A reviewed immutable image is required.'}

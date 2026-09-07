@@ -20,7 +20,7 @@ class ExpiryTests(unittest.TestCase):
             "SESSION_ID": "sb-0123456789abcdef0123456789abcdef",
             "CREATED_AT_EPOCH": "1000",
             "EXPIRES_AT_EPOCH": "8200",
-            "EXPECTED_ACCOUNT": "734702670689",
+            "EXPECTED_ACCOUNT": "051722405355",
             "EXPECTED_REGION": "us-east-2",
             "RULE_NAME": "secondbreakfast-expiry-sb-0123456789abcdef0123456789abcdef",
         }
@@ -28,7 +28,7 @@ class ExpiryTests(unittest.TestCase):
 
     def stack(self, name="skaldandstone-development-secondbreakfast-runtime"):
         return {
-            "StackId": f"arn:aws:cloudformation:us-east-2:734702670689:stack/{name}/uuid",
+            "StackId": f"arn:aws:cloudformation:us-east-2:051722405355:stack/{name}/uuid",
             "StackStatus": "CREATE_COMPLETE",
             "Tags": [
                 {"Key": "SkaldAndStone:ManagedBy", "Value": "secondbreakfast-session-expiry-v1"},
@@ -53,7 +53,7 @@ class ExpiryTests(unittest.TestCase):
 
     def test_rejects_wrong_identity_and_tags(self):
         wrong = self.stack()
-        wrong["StackId"] = wrong["StackId"].replace("734702670689", "000000000000")
+        wrong["StackId"] = wrong["StackId"].replace("051722405355", "000000000000")
         with self.assertRaises(RuntimeError):
             expiry._evaluate_stack(wrong, expiry.STACK_NAMES["runtime"], self.config)
         wrong = self.stack()

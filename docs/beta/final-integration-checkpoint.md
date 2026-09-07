@@ -1,5 +1,11 @@
 # Final private-beta integration checkpoint
 
+> **Superseding target note, 7 September 2026:** new AWS work belongs only in
+> account `051722405355` through `skaldandstone-admin`. Studio requests plus
+> James's product-specific approval are the beta admission workflow. See
+> [account-admission-migration.md](account-admission-migration.md). Older account
+> and static-cohort evidence below remains historical.
+
 Recorded 31 August 2026 after the completed woodland UI and accessibility
 continuation.
 

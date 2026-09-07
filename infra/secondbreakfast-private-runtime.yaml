@@ -5,7 +5,7 @@ Description: >-
 
 Metadata:
   ReviewStatus: NOT_DEPLOY_APPROVED
-  Account: '734702670689'
+  Account: '051722405355'
   Region: us-east-2
   AWSToolsMetrics:
     AWSAgentToolkit: aws-cloudformation@2
@@ -14,6 +14,7 @@ Metadata:
     must:
       - create nothing unless the activation gate is supplied
       - keep billing and beta access disabled by default
+      - admit beta users only after owner approval recorded in Clerk metadata
       - accept origin traffic only from the reviewed Cloudflare prefix list
       - use exact Secrets Manager JSON keys and immutable ECR digests
     ref:
@@ -28,8 +29,8 @@ Parameters:
     AllowedValues: [NOT_APPROVED, REVIEWED_EPHEMERAL_PRIVATE_HTTPS]
   ExistingClusterArn:
     Type: String
-    Default: arn:aws:ecs:us-east-2:734702670689:cluster/skaldandstone-development-foundation-cluster
-    AllowedPattern: '^arn:aws:ecs:us-east-2:734702670689:cluster/skaldandstone-development-foundation-cluster$'
+    Default: arn:aws:ecs:us-east-2:051722405355:cluster/skaldandstone-production
+    AllowedPattern: '^arn:aws:ecs:us-east-2:051722405355:cluster/skaldandstone-production$'
   VpcId:
     Type: AWS::EC2::VPC::Id
   PublicSubnetIds:
@@ -40,32 +41,33 @@ Parameters:
     Description: Current reviewed Cloudflare IPv4 origin ranges. Prevents direct ALB bypass.
   ApplicationCertificateArn:
     Type: String
-    AllowedPattern: '^arn:aws:acm:us-east-2:734702670689:certificate/[0-9a-f-]+$'
+    Default: arn:aws:acm:us-east-2:051722405355:certificate/d93bcaed-e77a-4a56-b872-a6e6bf2f639e
+    AllowedPattern: '^arn:aws:acm:us-east-2:051722405355:certificate/d93bcaed-e77a-4a56-b872-a6e6bf2f639e$'
     Description: Must cover beta.secondbreakfast.skaldandstone.com.
   DatabaseSecurityGroupId:
     Type: AWS::EC2::SecurityGroup::Id
     Description: Dedicated nonpublic Second Breakfast PostgreSQL security group.
   ClerkSecretArn:
     Type: String
-    Default: arn:aws:secretsmanager:us-east-2:734702670689:secret:dev/secondbreakfast/clerk-zTeYRa
-    AllowedPattern: '^arn:aws:secretsmanager:us-east-2:734702670689:secret:dev/secondbreakfast/clerk-[A-Za-z0-9]+$'
+    AllowedPattern: '^arn:aws:secretsmanager:us-east-2:051722405355:secret:secondbreakfast/clerk-[A-Za-z0-9]+$'
+    Description: Required runtime Clerk secret in the consolidated account. No default is safe.
   DatabaseSecretArn:
     Type: String
-    AllowedPattern: '^arn:aws:secretsmanager:us-east-2:734702670689:secret:dev/secondbreakfast/database/[0-9]{10}-[A-Za-z0-9]+$'
+    AllowedPattern: '^arn:aws:secretsmanager:us-east-2:051722405355:secret:secondbreakfast/database-[A-Za-z0-9]+$'
   BetaClerkUserIds:
     Type: String
     NoEcho: true
     Default: ''
     AllowedPattern: '^(|user_[A-Za-z0-9]+(,user_[A-Za-z0-9]+)*)$'
-    Description: Comma-separated invited Clerk IDs. Empty keeps the beta unavailable.
+    Description: Optional exact-ID recovery allowlist. Owner-approved Studio metadata is the primary admission path.
   CandidateImage:
     Type: String
-    Default: 734702670689.dkr.ecr.us-east-2.amazonaws.com/skaldandstone-development-foundation/secondbreakfast-web@sha256:bfb6f728aac3f545db1616e8ea50e232234bdd6337b0198cdb64fcd302cbb5ff
-    AllowedPattern: '^734702670689\.dkr\.ecr\.us-east-2\.amazonaws\.com/skaldandstone-development-foundation/secondbreakfast-web@sha256:bfb6f728aac3f545db1616e8ea50e232234bdd6337b0198cdb64fcd302cbb5ff$'
+    Default: 051722405355.dkr.ecr.us-east-2.amazonaws.com/secondbreakfast-web@sha256:bfb6f728aac3f545db1616e8ea50e232234bdd6337b0198cdb64fcd302cbb5ff
+    AllowedPattern: '^051722405355\.dkr\.ecr\.us-east-2\.amazonaws\.com/secondbreakfast-web@sha256:bfb6f728aac3f545db1616e8ea50e232234bdd6337b0198cdb64fcd302cbb5ff$'
   RollbackImage:
     Type: String
-    Default: 734702670689.dkr.ecr.us-east-2.amazonaws.com/skaldandstone-development-foundation/secondbreakfast-web@sha256:79d7d53cbf332b288d075e9981edf09a49837a1db06f5276842506e4423a55e7
-    AllowedPattern: '^734702670689\.dkr\.ecr\.us-east-2\.amazonaws\.com/skaldandstone-development-foundation/secondbreakfast-web@sha256:79d7d53cbf332b288d075e9981edf09a49837a1db06f5276842506e4423a55e7$'
+    AllowedPattern: '^051722405355\.dkr\.ecr\.us-east-2\.amazonaws\.com/secondbreakfast-web@sha256:[a-f0-9]{64}$'
+    Description: Required independently reviewed privacy-v3 rollback digest. No image is currently approved in this account.
   DesiredCount:
     Type: Number
     Default: 0
@@ -88,14 +90,6 @@ Rules:
             - Fn::Equals: [Ref: ActivationGate, REVIEWED_EPHEMERAL_PRIVATE_HTTPS]
             - Fn::Equals: [Ref: DesiredCount, 0]
         AssertDescription: DesiredCount must remain zero until the explicit review gate changes.
-  BetaNeedsInvitedUsers:
-    Assertions:
-      - Assert:
-          Fn::Or:
-            - Fn::Equals: [Ref: BetaEnabled, 'false']
-            - Fn::Not: [Fn::Equals: [Ref: BetaClerkUserIds, '']]
-        AssertDescription: Enabling the beta requires at least one explicit Clerk user ID.
-
 Conditions:
   CreateReviewedInfrastructure: !Equals [!Ref ActivationGate, REVIEWED_EPHEMERAL_PRIVATE_HTTPS]
 
@@ -426,7 +420,7 @@ Resources:
     Condition: CreateReviewedInfrastructure
     DependsOn: HttpsListener
     Properties:
-      ServiceName: skaldandstone-development-foundation-secondbreakfast-web
+      ServiceName: secondbreakfast-web
       Cluster: !Ref ExistingClusterArn
       TaskDefinition: !Ref RollbackTaskDefinition
       DesiredCount: !Ref DesiredCount

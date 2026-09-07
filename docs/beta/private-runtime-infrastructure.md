@@ -1,5 +1,13 @@
 # Private runtime infrastructure
 
+> **Current target, 7 September 2026:** use only AWS account `051722405355`,
+> profile `skaldandstone-admin`, region `us-east-2`. The active source contract is
+> documented in [account-admission-migration.md](account-admission-migration.md).
+> Commands and resource identifiers below that name `734702670689` are retained
+> as historical proposal evidence and must not be executed. The repository
+> templates and checks now fail closed for the current account, where rollback,
+> build provenance, secrets, prefix list, database and service remain absent.
+
 This package separates the ephemeral PostgreSQL database from the reviewed web
 runtime. Both templates default to a gate that creates nothing. No deployment
 is authorized by a template file alone.
