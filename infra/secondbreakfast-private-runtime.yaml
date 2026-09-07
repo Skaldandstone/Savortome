@@ -425,8 +425,7 @@ Resources:
       TaskDefinition: !Ref RollbackTaskDefinition
       DesiredCount: !Ref DesiredCount
       EnableExecuteCommand: false
-      CapacityProviderStrategy:
-        - {CapacityProvider: FARGATE, Weight: 1}
+      LaunchType: FARGATE
       DeploymentConfiguration:
         MinimumHealthyPercent: 100
         MaximumPercent: 200

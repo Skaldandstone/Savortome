@@ -43,7 +43,7 @@ if($Subnets.Count -lt 2 -or @($Subnets|Where-Object {$_ -cnotmatch '^subnet-[0-9
 if($Mode -eq 'Inspect'){$inventory|ConvertTo-Json -Depth 5;return}
 function RunOne([string]$Purpose,[string]$TaskDefinition) {
   $configuration="awsvpcConfiguration={subnets=[$($Subnets -join ',')],securityGroups=[$($inventory.TaskSecurityGroupId)],assignPublicIp=ENABLED}"
-  $started=AwsJson @('ecs','run-task','--cluster',$cluster_,'--capacity-provider-strategy','capacityProvider=FARGATE,weight=1','--task-definition',$TaskDefinition,'--network-configuration',$configuration,'--count','1','--started-by',('sb-bootstrap-'+$inventory.SessionId))
+  $started=AwsJson @('ecs','run-task','--cluster',$cluster_,'--launch-type','FARGATE','--task-definition',$TaskDefinition,'--network-configuration',$configuration,'--count','1','--started-by',('sb-bootstrap-'+$inventory.SessionId))
   if($started.failures.Count -or $started.tasks.Count -ne 1){throw "$Purpose task did not start."}
   $taskArn=[string]$started.tasks[0].taskArn
   $deadline=[DateTimeOffset]::UtcNow.AddSeconds($TimeoutSeconds)
