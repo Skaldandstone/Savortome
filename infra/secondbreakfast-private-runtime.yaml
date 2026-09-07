@@ -274,10 +274,30 @@ Resources:
       ExecutionRoleArn: !GetAtt ExecutionRole.Arn
       TaskRoleArn: !GetAtt TaskRole.Arn
       ContainerDefinitions:
+        - Name: volume-init
+          Image: !Ref CandidateImage
+          Essential: false
+          User: '0'
+          ReadonlyRootFilesystem: true
+          Command:
+            - -e
+            - "const fs=require('node:fs');for(const p of ['/tmp','/app/apps/web/.next/cache'])fs.chmodSync(p,0o777)"
+          MountPoints:
+            - {SourceVolume: temporary-files, ContainerPath: /tmp, ReadOnly: false}
+            - {SourceVolume: next-cache, ContainerPath: /app/apps/web/.next/cache, ReadOnly: false}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref WebLogGroup
+              awslogs-region: us-east-2
+              awslogs-stream-prefix: volume-init
         - Name: web
           Image: !Ref CandidateImage
           Essential: true
+          User: '65532'
           ReadonlyRootFilesystem: true
+          DependsOn:
+            - {ContainerName: volume-init, Condition: SUCCESS}
           PortMappings:
             - {ContainerPort: 3000, Protocol: tcp}
           Environment:
@@ -320,10 +340,30 @@ Resources:
       ExecutionRoleArn: !GetAtt ExecutionRole.Arn
       TaskRoleArn: !GetAtt TaskRole.Arn
       ContainerDefinitions:
+        - Name: volume-init
+          Image: !Ref RollbackImage
+          Essential: false
+          User: '0'
+          ReadonlyRootFilesystem: true
+          Command:
+            - -e
+            - "const fs=require('node:fs');for(const p of ['/tmp','/app/apps/web/.next/cache'])fs.chmodSync(p,0o777)"
+          MountPoints:
+            - {SourceVolume: temporary-files, ContainerPath: /tmp, ReadOnly: false}
+            - {SourceVolume: next-cache, ContainerPath: /app/apps/web/.next/cache, ReadOnly: false}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref WebLogGroup
+              awslogs-region: us-east-2
+              awslogs-stream-prefix: volume-init
         - Name: web
           Image: !Ref RollbackImage
           Essential: true
+          User: '65532'
           ReadonlyRootFilesystem: true
+          DependsOn:
+            - {ContainerName: volume-init, Condition: SUCCESS}
           PortMappings:
             - {ContainerPort: 3000, Protocol: tcp}
           Environment:
@@ -365,10 +405,29 @@ Resources:
       ExecutionRoleArn: !GetAtt ExecutionRole.Arn
       TaskRoleArn: !GetAtt TaskRole.Arn
       ContainerDefinitions:
+        - Name: volume-init
+          Image: !Ref CandidateImage
+          Essential: false
+          User: '0'
+          ReadonlyRootFilesystem: true
+          Command:
+            - -e
+            - "require('node:fs').chmodSync('/tmp',0o777)"
+          MountPoints:
+            - {SourceVolume: temporary-files, ContainerPath: /tmp, ReadOnly: false}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref WebLogGroup
+              awslogs-region: us-east-2
+              awslogs-stream-prefix: volume-init
         - Name: provision
           Image: !Ref CandidateImage
           Essential: true
+          User: '65532'
           ReadonlyRootFilesystem: true
+          DependsOn:
+            - {ContainerName: volume-init, Condition: SUCCESS}
           WorkingDirectory: /app/packages/db
           Command: [node_modules/tsx/dist/cli.mjs, scripts/provision-rds.ts]
           Secrets:
@@ -398,10 +457,29 @@ Resources:
       ExecutionRoleArn: !GetAtt ExecutionRole.Arn
       TaskRoleArn: !GetAtt TaskRole.Arn
       ContainerDefinitions:
+        - Name: volume-init
+          Image: !Ref CandidateImage
+          Essential: false
+          User: '0'
+          ReadonlyRootFilesystem: true
+          Command:
+            - -e
+            - "require('node:fs').chmodSync('/tmp',0o777)"
+          MountPoints:
+            - {SourceVolume: temporary-files, ContainerPath: /tmp, ReadOnly: false}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref WebLogGroup
+              awslogs-region: us-east-2
+              awslogs-stream-prefix: volume-init
         - Name: migrate
           Image: !Ref CandidateImage
           Essential: true
+          User: '65532'
           ReadonlyRootFilesystem: true
+          DependsOn:
+            - {ContainerName: volume-init, Condition: SUCCESS}
           WorkingDirectory: /app/packages/db
           Command: [node_modules/tsx/dist/cli.mjs, src/migrate.ts]
           Secrets:
