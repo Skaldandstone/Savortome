@@ -207,7 +207,7 @@ if($Mode -eq 'Prepare') {
   if($Image){$web[0].image=$Image}
   $names=@($web[0].environment.name)+@($web[0].secrets.name)
   if(@($web[0].secrets | Where-Object {$_.name -in @('SB_BETA_ENABLED','SB_BETA_CLERK_USER_IDS','SB_BETA_LOCAL_PREVIEW')}).Count -gt 0){throw 'Beta flags also exist in secrets. Resolve duplicate definitions before release.'}
-  if(-not $DisableBeta -and ('CLERK_SECRET_KEY' -notin $names -or 'NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY' -notin $names)){throw 'Clerk configuration is missing. Also verify the publishable key in the image build.'}
+  if(-not $DisableBeta -and 'CLERK_SECRET_KEY' -notin $names){throw 'Clerk server configuration is missing. The image verifier separately proves the build-time publishable key.'}
   $environment=@($web[0].environment | Where-Object {$_.name -notin @('SB_BETA_ENABLED','SB_BETA_CLERK_USER_IDS','SB_BETA_LOCAL_PREVIEW','SB_RELEASE_COMMIT')})
   $environment+=@{name='SB_BETA_ENABLED';value= $(if($DisableBeta){'false'}else{'true'})}
   $environment+=@{name='SB_BETA_CLERK_USER_IDS';value= $(if($DisableBeta){''}else{($ClerkUserIds | Sort-Object -Unique) -join ','})}
