@@ -12,6 +12,7 @@ The web concept rebuild passed its [integration checks](web-concept-integration.
 - [Image parser exposure, scoped mitigation and remaining build risk](image-parser-security.md).
 - [Release, enrollment, revocation and rollback runbook](release-runbook.md).
 - [Current account and owner-approved admission migration](account-admission-migration.md).
+- [Consolidated tasks, worktrees, branches and remaining work](consolidation-inventory.md).
 - [Tester installation and feedback guide](tester-guide.md).
 - [Care/data verification](care-data-evidence.md), [web evidence](web-evidence.md), [Android evidence](android-evidence.md), [Wispling handoff evidence](handoff-evidence.md), and [Stripe integration](stripe-integration-evidence.md).
 - [Design package](../../design/) and [style guide](../../STYLE_GUIDE.md). Artwork and browser captures are review material, not proof of Android interaction.
