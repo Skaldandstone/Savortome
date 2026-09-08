@@ -50,6 +50,31 @@ The generic offline care shell stays independent of accounts and does not inheri
 
 Source compilation cannot establish visual fidelity. The new revision still needs permitted browser inspection at narrow/wide widths, both themes, keyboard, enlarged text and reduced decoration. The existing explicit browser URL-policy block must not be bypassed. Do not describe the earlier Android APK or earlier browser screenshots as this new web revision.
 
+## Focused cook steps
+
+Cook mode presents one large parchment step deck at a time. The current step is
+the main surface, not one card in a dense list. Each deck keeps this reading
+order: step position, visual action cue, amounts to measure now, the instruction,
+optional technique help, safety guidance, and timer or source-video actions.
+
+On touch screens, a deliberate horizontal swipe left completes the current step
+and advances; a swipe right returns to the previous step. Back, Done, Skip,
+keyboard arrows, and screen-reader increment/decrement actions remain equivalent
+controls. Vertical movement must continue to scroll. Reduced motion disables the
+visual-sequence animation and other nonessential transitions.
+
+Amounts come from the scaled recipe ingredients. When a step says half, a third,
+or another supported fraction, the step card calculates that portion. A later
+"remaining" amount is calculated only when all earlier allocations are known.
+If a divided recipe never states the share for a step, show the recipe total and
+the missing-detail warning. Never invent a division.
+
+Recognized complex techniques appear as link-styled, keyboard-operable help
+buttons. Their tooltip contains a short three-part visual sequence and a plain
+language definition from the bundled offline glossary. Keep those diagrams
+decorative and repeat their meaning in text. Do not generate technique media or
+contact a model while someone is cooking.
+
 ## Existing public baseline
 
 The private Android build now uses byte-identical WebP derivatives of the web

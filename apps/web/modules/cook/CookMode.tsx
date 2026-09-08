@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
 import Link from "next/link";
 import {
   clampStep,
   cookProgress,
-  formatAmount,
+  actionCueForStep,
   formatDuration,
-  ingredientsByStep,
+  ingredientAmountsByStep,
+  stepSwipeDelta,
+  techniquesForStep,
   timestampUrl,
   type Recipe,
 } from "@seconds/core/format";
@@ -34,6 +36,7 @@ export function CookMode({ recipe, recipeId }: { recipe: Recipe; recipeId: strin
   const [done, setDone] = useState<ReadonlySet<number>>(() => new Set());
   const [showIngredients, setShowIngredients] = useState(false);
   const [showResumed, setShowResumed] = useState(false);
+  const [openTechnique, setOpenTechnique] = useState<string | null>(null);
   /**
    * Whether the saved session has been dealt with — restored, or found absent.
    *
@@ -42,6 +45,7 @@ export function CookMode({ recipe, recipeId }: { recipe: Recipe; recipeId: strin
    * quietly let the second mount save before it had restored.
    */
   const [settled, setSettled] = useState(false);
+  const swipeOrigin = useRef<{ x: number; y: number } | null>(null);
   const timers = useTimers([], recipe.title);
   const servings = useServings(recipe);
   const steps = recipe.steps;
@@ -70,8 +74,8 @@ export function CookMode({ recipe, recipeId }: { recipe: Recipe; recipeId: strin
 
   // Scaled ingredients, so the amount beside a step matches the one the cook
   // set at the top. Recomputed only when that scaling changes, not per step.
-  const stepIngredients = useMemo(
-    () => ingredientsByStep(steps, servings.ingredients),
+  const stepAmounts = useMemo(
+    () => ingredientAmountsByStep(steps, servings.ingredients),
     [steps, servings.ingredients],
   );
 
@@ -86,6 +90,8 @@ export function CookMode({ recipe, recipeId }: { recipe: Recipe; recipeId: strin
 
 
   const go = (delta: number) => setIndex((i) => clampStep(i + delta, steps.length));
+
+  useEffect(() => { setOpenTechnique(null); }, [index]);
 
   /** Throw the restored session away and begin the recipe again. */
   const startOver = () => {
@@ -136,7 +142,10 @@ export function CookMode({ recipe, recipeId }: { recipe: Recipe; recipeId: strin
     );
   }
 
-  const forThisStep = stepIngredients.get(step.n) ?? [];
+  const amountsForThisStep = stepAmounts.get(step.n) ?? [];
+  const forThisStep = amountsForThisStep.map(({ ingredient }) => ingredient);
+  const actionCue = actionCueForStep(step.text);
+  const techniques = techniquesForStep(step.text);
   const timer = timers.timerFor(step.n);
   const videoLink = step.sourceTimestamp !== null
     ? timestampUrl(recipe.source, step.sourceTimestamp)
@@ -203,54 +212,133 @@ export function CookMode({ recipe, recipeId }: { recipe: Recipe; recipeId: strin
         <div className={styles.progressFill} style={{ width: `${progress.fraction * 100}%` }} />
       </div>
 
-      <section className={styles.stage} aria-label="Current cooking step">
-        <p className={styles.counter}>
-          Step {step.n} of {steps.length}
-        </p>
-        <p className={styles.text} data-done={done.has(step.n)}>
-          {step.text}
-        </p>
+      <section
+        className={styles.stage}
+        aria-label={`Step ${step.n} of ${steps.length}: ${actionCue.label}`}
+        aria-describedby="cook-swipe-hint"
+        tabIndex={0}
+        onPointerDown={(event: ReactPointerEvent<HTMLElement>) => {
+          if (event.pointerType === "mouse") return;
+          swipeOrigin.current = { x: event.clientX, y: event.clientY };
+        }}
+        onPointerUp={(event: ReactPointerEvent<HTMLElement>) => {
+          const start = swipeOrigin.current;
+          swipeOrigin.current = null;
+          if (!start) return;
+          const delta = stepSwipeDelta(start, { x: event.clientX, y: event.clientY });
+          if (delta === 1) completeAndAdvance();
+          else if (delta === -1) go(-1);
+        }}
+        onPointerCancel={() => { swipeOrigin.current = null; }}
+      >
+        <div className={styles.stageTop}>
+          <p className={styles.counter}>Step {step.n} of {steps.length}</p>
+          <p className={styles.stepPosition}>{progress.done} completed</p>
+        </div>
 
-        {forThisStep.length > 0 ? (
-          <ul className={styles.stepAmounts} aria-label="Amounts for this step">
-            {forThisStep.map((ingredient) => (
-              <li key={ingredient.raw + ingredient.canonicalItem} className={styles.stepAmount}>
-                <span className={styles.stepQuantity}>{formatAmount(ingredient)}</span>{" "}
-                {ingredient.item || ingredient.canonicalItem}
-              </li>
-            ))}
-          </ul>
-        ) : null}
+        <div className={styles.stepLayout}>
+          <div className={styles.actionCue} aria-hidden="true">
+            <span className={styles.actionSymbol}>{actionCue.symbol}</span>
+            <span className={styles.actionLabel}>{actionCue.label}</span>
+          </div>
 
-        {/* Scoped to just this step's own ingredients, not the whole recipe's
-            — the same warning shown on the recipe page, but only when it's
-            actually about to matter. */}
-        <AllergenWarning ingredients={forThisStep} />
+          <div className={styles.stepBody} aria-live="polite">
+            {amountsForThisStep.length > 0 ? (
+              <div className={styles.amountBlock}>
+                <p className={styles.amountHeading}>Measure for this step</p>
+                <ul className={styles.stepAmounts} aria-label="Amounts for this step">
+                  {amountsForThisStep.map(({ ingredient, amount, context, exact }, amountIndex) => (
+                    <li
+                      key={`${ingredient.raw}-${ingredient.canonicalItem}-${amountIndex}`}
+                      className={styles.stepAmount}
+                      data-exact={exact}
+                    >
+                      <span className={styles.stepQuantity}>{amount}</span>{" "}
+                      <span>{ingredient.item || ingredient.canonicalItem}</span>
+                      {context ? <span className={styles.amountContext}>{context}</span> : null}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
 
-        <div className={styles.stepExtras}>
-          {step.timerSeconds ? (
-            timer ? (
-              // The tray above is doing the shouting; this just says which
-              // state the timer for *this* step is in.
-              <span className={styles.timerRunning} data-state={timers.stateOf(timer)}>
-                {timers.stateOf(timer) === "ringing"
-                  ? "Timer finished"
-                  : timers.stateOf(timer) === "paused"
-                    ? `Timer paused — ${formatDuration(timers.remaining(timer))}`
-                    : `Timer running — ${formatDuration(Math.max(timers.remaining(timer), 0))}`}
-              </span>
-            ) : (
-              <Button type="button" variant="ghost" onClick={() => timers.start(step)}>
-                ⏱ Start {formatDuration(step.timerSeconds)}
-              </Button>
-            )
-          ) : null}
+            <div className={styles.instructionBlock}>
+              <p className={styles.instructionLabel}>What to do</p>
+              <p className={styles.text} data-done={done.has(step.n)}>{step.text}</p>
+            </div>
 
-          {videoLink ? (
-            <a className={styles.watch} href={videoLink} target="_blank" rel="noreferrer noopener">
-              ▶ Watch this bit
-            </a>
-          ) : null}
+            {techniques.length > 0 ? (
+              <div className={styles.techniques} aria-label="Cooking technique help">
+                <p className={styles.techniqueHeading}>How to do it</p>
+                <div className={styles.techniqueLinks}>
+                  {techniques.map((technique) => {
+                    const expanded = openTechnique === technique.id;
+                    const tipId = `technique-${technique.id}-tip`;
+                    return (
+                      <span key={technique.id} className={styles.technique}>
+                        <button
+                          type="button"
+                          className={styles.techniqueLink}
+                          aria-expanded={expanded}
+                          aria-controls={tipId}
+                          aria-describedby={expanded ? tipId : undefined}
+                          onClick={() => setOpenTechnique(expanded ? null : technique.id)}
+                          onKeyDown={(event) => {
+                            if (event.key === "Escape") {
+                              setOpenTechnique(null);
+                              event.preventDefault();
+                            }
+                          }}
+                        >
+                          What does {technique.label.toLowerCase()} mean?
+                        </button>
+                        {expanded ? (
+                          <span id={tipId} className={styles.techniqueTip} role="tooltip">
+                            <span className={styles.techniqueVisual} aria-hidden="true">
+                              {technique.visualSteps.map((visualStep, visualIndex) => (
+                                <span key={visualStep} className={styles.techniqueFrame} style={{ "--frame": visualIndex } as CSSProperties}>
+                                  <span className={styles.frameNumber}>{visualIndex + 1}</span>
+                                  <span>{visualStep}</span>
+                                </span>
+                              ))}
+                            </span>
+                            <span>{technique.meaning}</span>
+                          </span>
+                        ) : null}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
+            {/* Scoped to just this step's own ingredients, not the whole recipe. */}
+            <AllergenWarning ingredients={forThisStep} />
+
+            <div className={styles.stepExtras}>
+              {step.timerSeconds ? (
+                timer ? (
+                  <span className={styles.timerRunning} data-state={timers.stateOf(timer)}>
+                    {timers.stateOf(timer) === "ringing"
+                      ? "Timer finished"
+                      : timers.stateOf(timer) === "paused"
+                        ? `Timer paused: ${formatDuration(timers.remaining(timer))}`
+                        : `Timer running: ${formatDuration(Math.max(timers.remaining(timer), 0))}`}
+                  </span>
+                ) : (
+                  <Button type="button" variant="ghost" onClick={() => timers.start(step)}>
+                    Start {formatDuration(step.timerSeconds)} timer
+                  </Button>
+                )
+              ) : null}
+
+              {videoLink ? (
+                <a className={styles.watch} href={videoLink} target="_blank" rel="noreferrer noopener">
+                  Watch this part
+                </a>
+              ) : null}
+            </div>
+          </div>
         </div>
       </section>
 
@@ -275,6 +363,10 @@ export function CookMode({ recipe, recipeId }: { recipe: Recipe; recipeId: strin
           </button>
         ) : null}
       </nav>
+
+      <p id="cook-swipe-hint" className={styles.swipeHint}>
+        Swipe left to complete this step and continue. Swipe right to go back. Buttons and arrow keys work too.
+      </p>
 
       {progress.finished ? <FinishPanel recipeId={recipeId} /> : null}
     </div>

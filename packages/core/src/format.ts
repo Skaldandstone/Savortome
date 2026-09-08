@@ -24,6 +24,7 @@ export * from "./sharing.js";
 export * from "./template.js";
 export * from "./editor.js";
 export * from "./cook.js";
+export * from "./cook-guidance.js";
 export * from "./friends.js";
 export * from "./api-client.js";
 export * from "./pantry.js";

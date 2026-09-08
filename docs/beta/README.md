@@ -8,6 +8,7 @@ The web concept rebuild passed its [integration checks](web-concept-integration.
 - [Integrated implementation, final checks and remaining gates](INTEGRATION.md).
 - [Final private-beta source, Android and handoff checkpoint](final-integration-checkpoint.md).
 - [Completed web UI integration and new build checkpoint](web-ui-integration.md).
+- [Focused recipe cook-step experience](cook-step-experience.md).
 - [Readiness evidence and blockers](readiness-evidence.md).
 - [Image parser exposure, scoped mitigation and remaining build risk](image-parser-security.md).
 - [Release, enrollment, revocation and rollback runbook](release-runbook.md).

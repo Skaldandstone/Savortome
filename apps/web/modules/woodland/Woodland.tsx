@@ -29,6 +29,9 @@ export function DecorationControl() {
 }
 export function WoodlandNavigation() {
   const pathname = usePathname();
+  // Cooking is a focused, full-screen task. The fixed mobile dock otherwise
+  // covers the large step card and competes with its Back/Done controls.
+  if (/^\/recipe\/[^/]+\/cook\/?$/.test(pathname)) return null;
   const links: [string, string, KitchenIconName][] = [['/', 'Library', 'book'], ['/cook', 'Cook', 'pot'], ['/care', 'Feed me gently', 'sprig'], ['/plan', 'Plan', 'plan'], ['/profile', 'Profile', 'person']];
   const more = [['/list', 'Shopping list'], ['/templates', 'Saved meals'], ['/friends', 'Friends'], ['/discover', 'Discover'], ['/plans', 'Plans & account']] as const;
   return <nav className="woodland-nav" aria-label="Main navigation" data-print="hide">

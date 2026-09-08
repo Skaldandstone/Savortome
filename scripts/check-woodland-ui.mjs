@@ -18,6 +18,13 @@ const stubs = {
   '@/lib/client': `export const api=new Proxy({}, {get:(_,name)=>async(...args)=>{state.calls.push({name,args});if((state.defer&&name==='dietaryProfile')||(state.deferSave&&name==='setDietaryProfile'))return new Promise((resolve,reject)=>state.pending.push({resolve,reject}));if(state.fail)throw Error('Fixture write failed');return state.response??{};}});`,
   '@/ui': 'export function Button(){};export function Callout(){};export function Panel(){};export function PanelHeader(){};export function TextArea(){};export function TextField(){};',
   '@/modules/shelves': 'export function StarRating(){};',
+  '@/modules/recipe': `export function IngredientList(){};export function ServingScaler(){};export const useServings=recipe=>({servings:recipe.servings,canScale:false,increment(){},decrement(){},ingredients:recipe.ingredients});`,
+  '@/modules/profile': 'export function AllergenWarning(){};',
+  './useCookSession': 'export const useCookSession=()=>({restored:null,checked:true,save(){},clear(){}});',
+  './useTimers': 'export const useTimers=()=>({timers:[],restore(){},dismiss(){},timerFor(){return null;},stateOf(){return "paused";},remaining(){return 0;},start(){},pause(){},resume(){},reset(){}});',
+  './useWakeLock': 'export const useWakeLock=()=>{};',
+  './TimerTray': 'export function TimerTray(){};',
+  './FinishPanel': 'export function FinishPanel(){};',
 };
 const result = await build({
   absWorkingDir: root, stdin: { resolveDir: root, contents: `
@@ -27,6 +34,7 @@ const result = await build({
     export {NewShelf} from './apps/web/modules/library/NewShelf.tsx';
     export {DietaryProfileForm} from './apps/web/modules/profile/DietaryProfileForm.tsx';
     export {FinishPanel} from './apps/web/modules/cook/FinishPanel.tsx';
+    export {CookMode} from './apps/web/modules/cook/CookMode.tsx';
     export {RecipeHeader} from './apps/web/modules/recipe/RecipeHeader.tsx';
     export {SuggestMeal} from './apps/web/modules/plan/SuggestMeal.tsx';
     export {PairingSuggestions} from './apps/web/modules/recipe/PairingSuggestions.tsx';
@@ -93,6 +101,11 @@ test('navigation includes saved meals and marks its containing disclosure active
   const tree = f.render(f.app.WoodlandNavigation);
   assert.ok(nodes(tree).some(n => n.props?.href === '/templates' && text(n) === 'Saved meals' && n.props['aria-current'] === 'page'));
   assert.ok(nodes(tree).some(n => n.type === 'summary' && n.props['data-active'] === true));
+});
+
+test('focused recipe cooking removes the fixed app dock', () => {
+  const f = fixture({ pathname: '/recipe/recipe-1/cook' });
+  assert.equal(f.render(f.app.WoodlandNavigation), null);
 });
 
 test('Escape closes either native disclosure and requests focus on its summary only', () => {
@@ -203,6 +216,46 @@ test('each cooking timer action names its timer and step without a per-second li
     'Clear Simmer gently timer from step 2',
   ]);
   assert.equal(all.some(node => node.props?.['aria-live']), false);
+});
+
+test('cook step deck puts exact amounts before the instruction and exposes technique help and swipe', () => {
+  const f = fixture();
+  const recipe = {
+    id: 'recipe-1', title: 'Braising fixture', description: null, servings: 4,
+    servingsNote: null, prepMinutes: null, cookMinutes: null, totalMinutes: null,
+    ingredients: [
+      { raw: '1 cup stock', quantity: 1, quantityMax: null, unit: 'cup', item: 'stock', canonicalItem: 'stock', notes: null, optional: false, group: null },
+      { raw: '2 cups carrots, divided', quantity: 2, quantityMax: null, unit: 'cup', item: 'carrots', canonicalItem: 'carrot', notes: 'divided', optional: false, group: null },
+    ],
+    steps: [
+      { n: 1, text: 'Braise the carrots in half the stock.', timerSeconds: null, sourceTimestamp: null },
+      { n: 2, text: 'Add the remaining stock.', timerSeconds: null, sourceTimestamp: null },
+    ],
+    equipment: [], tags: [], cuisine: null, course: null, difficulty: null,
+    confidence: 1, extractionNotes: [], ingredientNutritionGuesses: [], imageUrl: null,
+    photos: [], nutrition: null, source: { kind: 'manual', url: null, author: null, siteName: null, extractionMethod: 'manual' },
+  };
+  const render = () => f.render(f.app.CookMode, { recipe, recipeId: recipe.id });
+  const first = render();
+  const stage = nodes(first).find(n => n.type === 'section' && n.props['aria-label']?.startsWith('Step 1 of 2'));
+  assert.ok(stage);
+  const all = nodes(stage);
+  const amountAt = all.findIndex(n => n.type === 'ul' && n.props['aria-label'] === 'Amounts for this step');
+  const instructionAt = all.findIndex(n => n.type === 'p' && text(n) === recipe.steps[0].text);
+  assert.ok(amountAt >= 0 && amountAt < instructionAt);
+  assert.match(text(all[amountAt]), /½ cup\s+stock/);
+  const technique = all.find(n => n.type === 'button' && /What does\s+braise\s+mean\?/.test(text(n)));
+  assert.ok(technique, text(stage));
+  assert.equal(technique.props['aria-expanded'], false);
+  technique.props.onClick();
+  const expanded = nodes(render()).find(n => n.type === 'button' && /What does\s+braise\s+mean\?/.test(text(n)));
+  assert.equal(expanded.props['aria-expanded'], true);
+  assert.ok(nodes(render()).some(n => n.props?.role === 'tooltip' && text(n).includes('cook it slowly')));
+
+  const currentStage = nodes(render()).find(n => n.type === 'section' && n.props['aria-label']?.startsWith('Step 1 of 2'));
+  currentStage.props.onPointerDown({ pointerType: 'touch', clientX: 220, clientY: 100 });
+  currentStage.props.onPointerUp({ clientX: 100, clientY: 104 });
+  assert.ok(nodes(render()).some(n => n.props?.['aria-label']?.startsWith('Step 2 of 2')));
 });
 
 test('failed dietary-profile loading never exposes an empty editable form; retry restores actual saved choices', async () => {
