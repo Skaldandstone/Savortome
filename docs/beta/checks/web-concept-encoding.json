@@ -1,52 +1,68 @@
 {
   "encoder": "sharp 0.34.5; webp 1.6.0",
-  "lossless": true,
+  "lossless": false,
+  "quality": 82,
+  "dimensionsPreserved": true,
+  "visuallyReviewed": false,
   "records": [
     {
       "source": "apps/web/public/woodland/kitchen-scene.png",
       "target": "apps/web/public/woodland/kitchen-scene.webp",
       "sourceBytes": 2673084,
-      "targetBytes": 1854426,
+      "targetBytes": 234878,
+      "reductionPercent": 91.2,
       "width": 1536,
       "height": 1024,
-      "pixelsEqual": true,
+      "channels": 4,
+      "meanAbsoluteChannelError": 2.079,
+      "rootMeanSquareChannelError": 3.329,
       "sourceSha256": "a2c499cdc5409f0ce4ae77cb480b35336b9f0a37c02e4d9c82954c023ccca097",
-      "targetSha256": "7c27f1c204647d690c0126d637453e179e945640f9f51dbac4c61d638768fb5b"
+      "targetSha256": "53ca1cc404f028508164665b3053759567b0f9111de6af29fe7e9f900d9efde4"
     },
     {
       "source": "apps/web/public/woodland/food-atlas.png",
       "target": "apps/web/public/woodland/food-atlas.webp",
       "sourceBytes": 2704853,
-      "targetBytes": 1956010,
+      "targetBytes": 236690,
+      "reductionPercent": 91.2,
       "width": 1254,
       "height": 1254,
-      "pixelsEqual": true,
+      "channels": 4,
+      "meanAbsoluteChannelError": 2.12,
+      "rootMeanSquareChannelError": 3.32,
       "sourceSha256": "8754fd719c4ab90b6079090461edc69ab2a790958848d9e26ad73751581c1823",
-      "targetSha256": "cb96b0f9d3262f4f593c3b8db2051336758c04eaedcef0f50a049ef1b1d7697c"
+      "targetSha256": "11d6a5c4c43b3916fe77b2a0d0310ea3eaec898ef7870990eef87d06cb7f2042"
     },
     {
       "source": "apps/web/public/woodland/parchment.png",
       "target": "apps/web/public/woodland/parchment.webp",
       "sourceBytes": 2333199,
-      "targetBytes": 1721724,
+      "targetBytes": 105172,
+      "reductionPercent": 95.5,
       "width": 1254,
       "height": 1254,
-      "pixelsEqual": true,
+      "channels": 4,
+      "meanAbsoluteChannelError": 1.935,
+      "rootMeanSquareChannelError": 2.859,
       "sourceSha256": "49a9ca43100581dbf3266ba8c04b4a3f3f6a6b1666d9673f0c4cae8d75da30bd",
-      "targetSha256": "5546ede20f7a470a059496332108661ef19b98ce1bc40aba69684afe8c9ee837"
+      "targetSha256": "0d590c427b03f914619e2b1235917dcf6c340980026f3a26048617276bd5241f"
     },
     {
       "source": "apps/web/public/woodland/timber.png",
       "target": "apps/web/public/woodland/timber.webp",
       "sourceBytes": 2344565,
-      "targetBytes": 1721258,
+      "targetBytes": 148488,
+      "reductionPercent": 93.7,
       "width": 1254,
       "height": 1254,
-      "pixelsEqual": true,
+      "channels": 4,
+      "meanAbsoluteChannelError": 1.793,
+      "rootMeanSquareChannelError": 2.669,
       "sourceSha256": "44af2527e3a6d5bbedb50a6ffe630320da065b7b19b222be6b341e8d5975e5e1",
-      "targetSha256": "b58046618f7c5597cfd04697c356c4a9eff03a5b4848bae2417da45eff9c88a6"
+      "targetSha256": "977a76dad6120c5107b593e602fa896e252da43f69a10e68a8c6839b7e53593f"
     }
   ],
   "sourceBytes": 10055701,
-  "targetBytes": 7253418
+  "targetBytes": 725228,
+  "reductionPercent": 92.8
 }

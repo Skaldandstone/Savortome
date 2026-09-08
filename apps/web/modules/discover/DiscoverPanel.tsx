@@ -63,9 +63,16 @@ export function DiscoverPanel() {
         ) : null}
       </Panel>
 
-      <section className={styles.results}>
+      <section
+        className={styles.results}
+        aria-label="Shared recipe results"
+        aria-busy={loading}
+        aria-live="polite"
+      >
         {loading ? (
-          <p className={styles.empty}>Looking…</p>
+          <p className={styles.empty} role="status">
+            Looking for shared recipes…
+          </p>
         ) : data.recipes.length === 0 ? (
           <p className={styles.empty}>
             {data.query || activeTags.length > 0

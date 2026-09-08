@@ -22,7 +22,7 @@ The web app now uses the board's kitchen composition, dark timber, thin worn-bra
 
 Headings, recipe-card names and navigation use Georgia. Ingredients, forms, timers and supporting copy retain a readable system sans. Sizes use rem units. Display options retains system/light/dark, 100/125/150/200 percent text, and reduced decoration. Explicit saved light/system preferences still win over the new dark default.
 
-Production art is separate from every label/control: `kitchen-scene.png`, `food-atlas.png`, `parchment.png`, and `timber.png` in `apps/web/public/woodland`, with lossless WebP derivatives shared by web and Android. The four-by-four food atlas maps directly to catalogue IDs; it does not classify recipes or establish ingredients or safety. Library cards use actual recipe photos or a neutral journal illustration when no photo exists. Scene, food, and texture assets were generated with the built-in imagegen tool; prompts and file evidence are in `docs/beta/web-concept-rebuild.md`. The earlier hearth and kettle/journal assets remain preserved. The optional Wispling visitor remains comparison art only. No new character is introduced, and PR #38's skillet mark remains intact.
+Production art is separate from every label/control: `kitchen-scene.png`, `food-atlas.png`, `parchment.png`, and `timber.png` in `apps/web/public/woodland`. Preserve these full-resolution PNG masters. Web delivery uses quality-82 WebP derivatives with the same dimensions; the reproducible encoder records decoded-image error and file reduction in `docs/beta/checks/web-concept-encoding.json`. Android retains its previously verified packaged copies until a coordinated native rebuild. The four-by-four food atlas maps directly to catalogue IDs; it does not classify recipes or establish ingredients or safety. Library cards use actual recipe photos or a neutral journal illustration when no photo exists. Scene, food, and texture assets were generated with the built-in imagegen tool; prompts and file evidence are in `docs/beta/web-concept-rebuild.md`. The earlier hearth and kettle/journal assets remain preserved. The optional Wispling visitor remains comparison art only. No new character is introduced, and PR #38's skillet mark remains intact.
 
 Frames are native CSS, iconography is native SVG, and all controls are HTML. Never crop a control, title, recipe or card from the concept image. Counts and shelves must come from actual data. The library import link expands the real import form; new shelf uses the existing authenticated API. Do not fabricate the board's recipe examples or counts.
 
@@ -77,8 +77,10 @@ contact a model while someone is cooking.
 
 ## Existing public baseline
 
-The private Android build now uses byte-identical WebP derivatives of the web
-scene, food atlas and textures. Its library has actual recipe-image rows, neutral
+The private Android build retains the reviewed woodland scene, food atlas and
+textures from its native build checkpoint. Web delivery derivatives may be
+optimized independently; do not claim byte equality between current web files
+and an earlier APK without rebuilding and rechecking that APK. Its library has actual recipe-image rows, neutral
 journal fallbacks, shelf counts and a wider two-column arrangement. Care uses
 native expandable cards with every ingredient/step available for all three slots.
 Recipe and cook instructions use parchment panels with scoped dark ink; reduced

@@ -51,10 +51,52 @@ migration journal; no production schema or migration file changed.
 - `pnpm --filter @seconds/web build`: passed; all 39 static-generation steps and the dynamic recipe cook route completed.
 - `git diff --check`: passed; line-ending notices are repository normalization warnings.
 
+## Web completion continuation, 8 September 2026
+
+The four woodland WebP delivery files were re-encoded at quality 82 while the
+full-resolution PNG masters remained unchanged. Dimensions are preserved and
+the generator now records mean absolute and root mean square decoded-channel
+error instead of claiming pixel identity. The WebP total fell from 7,253,418
+bytes to 725,228 bytes. A manual original-resolution review of all four current
+files and a full-page running-library capture found no missing art, changed atlas
+layout, color shift or objectionable artifact at the sizes used by the UI. Local
+HTTP HEAD requests returned status 200, `image/webp`, and the exact generated
+byte lengths for every file. This is delivery-size evidence, not a constrained
+network, LCP or mobile-memory benchmark.
+
+Visible asynchronous states now expose consistent assistive semantics:
+friends, discovery, shopping and pantry loading text use polite status regions;
+discovery exposes a named busy live results region; pantry errors use an alert;
+and pantry results use a named polite region. The rendered-component harness
+executes these four real panel bodies behind synthetic API hooks.
+
+The browser review also caught the expanded cooking-technique guide overlaying
+the next-step action. The guide now participates in the parchment card's normal
+layout, expands to a readable 520-pixel maximum, and pushes the cooking controls
+down. The sample recipe's `fold` step was rechecked with all three visual frames,
+its text explanation, per-step amounts and divided-quantity warning visible.
+
+The same disposable local account was used to exercise the remaining mutable
+web workflows. Pantry items were added, used for a recipe search and cleared.
+The sample recipe populated the shopping list; an item was toggled and the list
+was cleared. A breakfast was placed on the weekly planner, copied to the
+shopping list, then both the week and list were cleared. A vegetarian dietary
+choice was saved and then restored to the original empty profile. A custom
+`Web completion QA` shelf was created through the UI and deleted through the
+same local API. The database was returned to one sample recipe, empty pantry,
+empty planner/list, empty dietary choices and the three built-in shelves.
+
+Final local checks at this continuation passed: 27 woodland, accessibility and
+legal tests; 4 care-state tests; 10 offline privacy/parity tests; 18 beta
+authorization/image-boundary tests; the web TypeScript check; and the production
+web build with all 39 static-generation steps. Build ID:
+`0BdRoV68RRei9c7VOeDWX`. The machine-readable checkpoint is
+`checks/web-completion-20260908-summary.json`.
+
 ## Remaining acceptance boundaries
 
 This is local desktop browser evidence. It does not establish a real Clerk
 session, account switching, hosted service-worker behavior, a narrow physical
-viewport, a screen-reader walkthrough, Android interaction, performance on the
-approximately 9.6 MiB source artwork set, or owner visual acceptance. Billing,
-grocery providers, invitations, and deployment remained disabled.
+viewport, a screen-reader walkthrough, Android interaction, constrained-network
+performance, or owner visual acceptance. Billing, grocery providers,
+invitations, and deployment remained disabled.

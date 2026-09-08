@@ -53,7 +53,11 @@ export function FriendsPanel() {
           </Callout>
         ) : null}
 
-        {loading ? <p className={styles.empty}>Loading…</p> : null}
+        {loading ? (
+          <p className={styles.empty} role="status">
+            Loading friends…
+          </p>
+        ) : null}
 
         {overview.incoming.length > 0 ? (
           <section className={styles.group}>

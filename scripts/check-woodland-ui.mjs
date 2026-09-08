@@ -16,7 +16,7 @@ const stubs = {
   '@clerk/nextjs': 'export const useAuth=()=>({userId:null});',
   '@/lib/beta': 'export const canUseBeta=async()=>state.allowed;',
   '@/lib/client': `export const api=new Proxy({}, {get:(_,name)=>async(...args)=>{state.calls.push({name,args});if((state.defer&&name==='dietaryProfile')||(state.deferSave&&name==='setDietaryProfile'))return new Promise((resolve,reject)=>state.pending.push({resolve,reject}));if(state.fail)throw Error('Fixture write failed');return state.response??{};}});`,
-  '@/ui': 'export function Button(){};export function Callout(){};export function Panel(){};export function PanelHeader(){};export function TextArea(){};export function TextField(){};',
+  '@/ui': 'export function Button(){};export function Callout(){};export function FieldRow(){};export function Panel(){};export function PanelHeader(){};export function TextArea(){};export function TextField(){};',
   '@/modules/shelves': 'export function StarRating(){};',
   '@/modules/recipe': `export function IngredientList(){};export function ServingScaler(){};export const useServings=recipe=>({servings:recipe.servings,canScale:false,increment(){},decrement(){},ingredients:recipe.ingredients});`,
   '@/modules/profile': 'export function AllergenWarning(){};',
@@ -25,6 +25,18 @@ const stubs = {
   './useWakeLock': 'export const useWakeLock=()=>{};',
   './TimerTray': 'export function TimerTray(){};',
   './FinishPanel': 'export function FinishPanel(){};',
+  './useFriends': 'export const useFriends=()=>state.friends??({overview:{incoming:[],friends:[],outgoing:[]},feed:[],loading:false,busy:false,error:null,add:async()=>{},update:async()=>{}});',
+  './FeedList': 'export function FeedList(){};',
+  './PersonRow': 'export function PersonRow(){};',
+  './useDiscover': 'export const useDiscover=()=>state.discover??({data:{tags:[],recipes:[],query:""},loading:false,error:null,query:"",activeTags:[],setQuery(){},search:async()=>{},toggleTag:async()=>{}});',
+  './DiscoverCards': 'export function DiscoverCards(){};',
+  './useShoppingList': 'export const useShoppingList=()=>state.shopping??({list:null,providers:{},loading:false,busy:false,error:null,handoff:null,toggle:async()=>{},remove:async()=>{},clear:async()=>{},sendToCart:async()=>{}});',
+  './CartButtons': 'export function CartButtons(){};',
+  './KrogerConnection': 'export function KrogerConnection(){};',
+  './ListItems': 'export function ListItems(){};',
+  './usePantry': 'export const usePantry=()=>state.pantry??({items:[],loading:false,error:null,add:async()=>{},remove:async()=>{},clear:async()=>{}}); export const usePantrySearch=()=>state.pantrySearch??({response:null,searching:false,error:null,search:async()=>{}});',
+  './MatchList': 'export function MatchList(){}; export function QueryReadback(){};',
+  './PantryList': 'export function PantryList(){};',
 };
 const result = await build({
   absWorkingDir: root, stdin: { resolveDir: root, contents: `
@@ -40,6 +52,10 @@ const result = await build({
     export {PairingSuggestions} from './apps/web/modules/recipe/PairingSuggestions.tsx';
     export {ShelfChecklist} from './apps/web/modules/shelves/ShelfChecklist.tsx';
     export {TimerTray} from './apps/web/modules/cook/TimerTray.tsx';
+    export {FriendsPanel} from './apps/web/modules/friends/FriendsPanel.tsx';
+    export {DiscoverPanel} from './apps/web/modules/discover/DiscoverPanel.tsx';
+    export {ListPanel} from './apps/web/modules/list/ListPanel.tsx';
+    export {CookPanel} from './apps/web/modules/pantry/CookPanel.tsx';
     export {CARE_FOODS} from './packages/core/src/care.ts';` },
   bundle: true, write: false, platform: 'node', format: 'iife', globalName: 'tested', jsx: 'automatic',
   define: { 'process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY': '""' },
@@ -437,4 +453,43 @@ test('new shelf confirms only a resolved write; failed writes retain the entered
       assert.equal(f.state.refreshes, 1);
     }
   }
+});
+
+test('asynchronous collection panels announce loading, results, and failures', () => {
+  const friends = fixture({ friends: {
+    overview: { incoming: [], friends: [], outgoing: [] }, feed: [], loading: true,
+    busy: false, error: null, add: async () => {}, update: async () => {},
+  } });
+  assert.ok(nodes(friends.render(friends.app.FriendsPanel)).some(
+    node => node.props?.role === 'status' && text(node) === 'Loading friends…',
+  ));
+
+  const discover = fixture({ discover: {
+    data: { tags: [], recipes: [], query: '' }, loading: true, error: null,
+    query: '', activeTags: [], setQuery() {}, search: async () => {}, toggleTag: async () => {},
+  } });
+  const discoverResults = nodes(discover.render(discover.app.DiscoverPanel)).find(
+    node => node.type === 'section' && node.props?.['aria-label'] === 'Shared recipe results',
+  );
+  assert.equal(discoverResults.props['aria-busy'], true);
+  assert.equal(discoverResults.props['aria-live'], 'polite');
+  assert.ok(nodes(discoverResults).some(node => node.props?.role === 'status'));
+
+  const shopping = fixture({ shopping: {
+    list: null, providers: {}, loading: true, busy: false, error: null, handoff: null,
+    toggle: async () => {}, remove: async () => {}, clear: async () => {}, sendToCart: async () => {},
+  } });
+  assert.ok(nodes(shopping.render(shopping.app.ListPanel)).some(
+    node => node.props?.role === 'status' && text(node) === 'Loading shopping list…',
+  ));
+
+  const pantry = fixture({ pantry: {
+    items: [], loading: true, error: 'Fixture pantry failure',
+    add: async () => {}, remove: async () => {}, clear: async () => {},
+  } });
+  const pantryTree = pantry.render(pantry.app.CookPanel);
+  nodes(pantryTree).find(node => text(node) === 'My pantry' && node.props?.onClick).props.onClick();
+  const openPantry = pantry.render(pantry.app.CookPanel);
+  assert.ok(nodes(openPantry).some(node => node.props?.role === 'status' && text(node) === 'Loading pantry…'));
+  assert.ok(nodes(openPantry).some(node => node.props?.role === 'alert' && text(node) === 'Fixture pantry failure'));
 });

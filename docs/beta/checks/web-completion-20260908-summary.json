@@ -1,0 +1,58 @@
+{
+  "recordedAt": "2026-09-08",
+  "scope": "local web completion checkpoint",
+  "build": {
+    "command": "pnpm --filter @seconds/web build",
+    "result": "passed",
+    "buildId": "0BdRoV68RRei9c7VOeDWX",
+    "staticGenerationSteps": 39
+  },
+  "checks": {
+    "woodlandAccessibilityLegalTests": 27,
+    "careStateTests": 4,
+    "offlinePrivacyParityTests": 10,
+    "authorizationAndImageBoundaryTests": 18,
+    "webTypecheck": "passed",
+    "diffCheck": "passed"
+  },
+  "artDelivery": {
+    "pngMasterBytes": 10055701,
+    "previousWebpBytes": 7253418,
+    "currentWebpBytes": 725228,
+    "reductionFromPngPercent": 92.8,
+    "dimensionsPreserved": true,
+    "manualSourceFileReview": "passed",
+    "networkBenchmark": false
+  },
+  "localBrowser": {
+    "origin": "http://127.0.0.1:3094",
+    "database": "disposable local PostgreSQL fixture",
+    "account": "synthetic local account",
+    "serviceWorkerRegistration": false,
+    "workflowsPassed": [
+      "pantry add, search, and clear",
+      "recipe to shopping list, item toggle, and clear",
+      "planner add, copy to list, and clear",
+      "dietary profile save and restore",
+      "custom shelf create and delete",
+      "focused cook amounts, step advance, and technique guide"
+    ],
+    "fixtureRestored": {
+      "recipes": 1,
+      "pantryItems": 0,
+      "shoppingItems": 0,
+      "plannedMeals": 0,
+      "dietaryTags": 0,
+      "allergens": 0,
+      "customShelves": 0
+    }
+  },
+  "notEstablished": [
+    "hosted Clerk sessions or account switching",
+    "hosted service-worker lifecycle",
+    "screen-reader or narrow physical-device acceptance",
+    "constrained-network performance",
+    "owner visual or usability acceptance",
+    "deployment or public availability"
+  ]
+}

@@ -22,7 +22,9 @@ export function ListPanel() {
         />
 
         {loading ? (
-          <p className={styles.empty}>Loading…</p>
+          <p className={styles.empty} role="status">
+            Loading shopping list…
+          </p>
         ) : (
           <>
             {list && list.itemCount > 0 ? (
