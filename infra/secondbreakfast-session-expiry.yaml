@@ -140,6 +140,9 @@ Resources:
                 Action:
                   - rds:DescribeDBInstances
                   - rds:DeleteDBInstance
+                  - rds:CreateDBSnapshot
+                  - rds:DescribeDBSnapshots
+                  - rds:AddTagsToResource
                   - rds:DescribeDBSubnetGroups
                   - rds:DeleteDBSubnetGroup
                   - rds:DescribeDBParameterGroups

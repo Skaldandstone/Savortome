@@ -137,6 +137,9 @@ class ExpiryTests(unittest.TestCase):
         self.assertIn("LogGroup: !Ref ExpiryLogGroup", template)
         self.assertIn("ecs:DeregisterTaskDefinition", template)
         self.assertIn("ec2:RevokeSecurityGroupIngress", template)
+        self.assertIn("rds:CreateDBSnapshot", template)
+        self.assertIn("rds:DescribeDBSnapshots", template)
+        self.assertIn("rds:AddTagsToResource", template)
         self.assertIn("rds:DeleteDBInstance", template)
         self.assertNotIn("AdministratorAccess", template)
 
