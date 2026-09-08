@@ -75,10 +75,99 @@ Resources:
                 Effect: Allow
                 Action: [logs:CreateLogStream, logs:PutLogEvents]
                 Resource: !Sub ${ExpiryLogGroup.Arn}:*
+              - Sid: PassExactStackDeletionRole
+                Effect: Allow
+                Action: iam:PassRole
+                Resource: !GetAtt StackDeletionRole.Arn
+                Condition:
+                  StringEquals:
+                    iam:PassedToService: cloudformation.amazonaws.com
+
+  StackDeletionRole:
+    Type: AWS::IAM::Role
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Lets the expiry controller retry exact tagged runtime and database stack deletion without inheriting operator credentials.
+        must:
+          - expose deletion and read operations only
+          - remain separate from application task and execution roles
+          - be passed only to CloudFormation by the exact expiry function
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: cloudformation.amazonaws.com}
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: delete-exact-secondbreakfast-session-resources
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: DeleteRuntimeRegionalResources
+                Effect: Allow
+                Action:
+                  - ecs:DescribeClusters
+                  - ecs:DescribeServices
+                  - ecs:UpdateService
+                  - ecs:DeleteService
+                  - ecs:DescribeTaskDefinition
+                  - ecs:DeregisterTaskDefinition
+                  - ecs:ListTagsForResource
+                  - elasticloadbalancing:DescribeLoadBalancers
+                  - elasticloadbalancing:DescribeListeners
+                  - elasticloadbalancing:DescribeTargetGroups
+                  - elasticloadbalancing:DescribeTargetHealth
+                  - elasticloadbalancing:DescribeTags
+                  - elasticloadbalancing:DeleteListener
+                  - elasticloadbalancing:DeleteLoadBalancer
+                  - elasticloadbalancing:DeleteTargetGroup
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeSecurityGroupRules
+                  - ec2:RevokeSecurityGroupIngress
+                  - ec2:RevokeSecurityGroupEgress
+                  - ec2:DeleteSecurityGroup
+                  - logs:DescribeLogGroups
+                  - logs:ListTagsForResource
+                  - logs:DeleteLogGroup
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    aws:RequestedRegion: us-east-2
+              - Sid: DeleteDatabaseRegionalResources
+                Effect: Allow
+                Action:
+                  - rds:DescribeDBInstances
+                  - rds:DeleteDBInstance
+                  - rds:DescribeDBSubnetGroups
+                  - rds:DeleteDBSubnetGroup
+                  - rds:DescribeDBParameterGroups
+                  - rds:DeleteDBParameterGroup
+                  - rds:ListTagsForResource
+                  - secretsmanager:DescribeSecret
+                  - secretsmanager:GetResourcePolicy
+                  - secretsmanager:ListSecretVersionIds
+                  - secretsmanager:DeleteSecret
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    aws:RequestedRegion: us-east-2
+              - Sid: DeleteRuntimeRoles
+                Effect: Allow
+                Action:
+                  - iam:GetRole
+                  - iam:ListRolePolicies
+                  - iam:GetRolePolicy
+                  - iam:DeleteRolePolicy
+                  - iam:ListAttachedRolePolicies
+                  - iam:DetachRolePolicy
+                  - iam:DeleteRole
+                Resource:
+                  - arn:aws:iam::051722405355:role/skaldandstone-development-secondbreakfast-*
 
   ExpiryFunction:
     Type: AWS::Lambda::Function
-    DependsOn: ExpiryLogGroup
     Properties:
       Architectures: [arm64]
       Runtime: python3.12
@@ -87,6 +176,9 @@ Resources:
       MemorySize: 128
       Timeout: 30
       ReservedConcurrentExecutions: 1
+      LoggingConfig:
+        LogFormat: Text
+        LogGroup: !Ref ExpiryLogGroup
       Environment:
         Variables:
           SESSION_ID: !Ref SessionId
@@ -95,6 +187,7 @@ Resources:
           EXPECTED_ACCOUNT: '051722405355'
           EXPECTED_REGION: us-east-2
           RULE_NAME: !Sub secondbreakfast-expiry-${SessionId}
+          STACK_ROLE_ARN: !GetAtt StackDeletionRole.Arn
       Code:
         ZipFile: |
           __EXPIRY_HANDLER__
@@ -127,3 +220,5 @@ Outputs:
     Value: !If [ControllerIsEnabled, ENABLED, DISABLED]
   MaximumSessionSeconds:
     Value: '7200'
+  StackDeletionRoleArn:
+    Value: !GetAtt StackDeletionRole.Arn

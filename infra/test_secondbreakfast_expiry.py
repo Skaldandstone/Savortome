@@ -23,6 +23,7 @@ class ExpiryTests(unittest.TestCase):
             "EXPECTED_ACCOUNT": "051722405355",
             "EXPECTED_REGION": "us-east-2",
             "RULE_NAME": "secondbreakfast-expiry-sb-0123456789abcdef0123456789abcdef",
+            "STACK_ROLE_ARN": "arn:aws:iam::051722405355:role/secondbreakfast-expiry-delete-test",
         }
         self.config = expiry._config(self.environment)
 
@@ -47,6 +48,11 @@ class ExpiryTests(unittest.TestCase):
         stack["StackStatus"] = "DELETE_IN_PROGRESS"
         self.assertEqual(expiry._evaluate_stack(stack, expiry.STACK_NAMES["runtime"], self.config), "deleting")
 
+    def test_accepts_failed_delete_for_bounded_retry(self):
+        stack = self.stack()
+        stack["StackStatus"] = "DELETE_FAILED"
+        self.assertEqual(expiry._evaluate_stack(stack, expiry.STACK_NAMES["runtime"], self.config), "retry-delete")
+
     def test_rejects_excessive_lifetime(self):
         with self.assertRaises(RuntimeError):
             expiry._config(dict(self.environment, EXPIRES_AT_EPOCH="8201"))
@@ -56,6 +62,8 @@ class ExpiryTests(unittest.TestCase):
         wrong["StackId"] = wrong["StackId"].replace("051722405355", "000000000000")
         with self.assertRaises(RuntimeError):
             expiry._evaluate_stack(wrong, expiry.STACK_NAMES["runtime"], self.config)
+        with self.assertRaises(RuntimeError):
+            expiry._config(dict(self.environment, STACK_ROLE_ARN="arn:aws:iam::000000000000:role/wrong"))
         wrong = self.stack()
         wrong["Tags"][1]["Value"] = "sb-ffffffffffffffffffffffffffffffff"
         with self.assertRaises(RuntimeError):
@@ -105,6 +113,8 @@ class ExpiryTests(unittest.TestCase):
         )
         self.assertEqual(result["state"], "delete-runtime")
         self.assertIn("secondbreakfast-runtime", cloudformation.deleted[0]["StackName"])
+        self.assertEqual(cloudformation.deleted[0]["RoleARN"], self.environment["STACK_ROLE_ARN"])
+        self.assertTrue(cloudformation.deleted[0]["ClientRequestToken"].endswith("-runtime-managed-v1"))
         self.assertEqual(events.disabled, [])
 
     def test_handler_deletes_database_after_runtime_is_absent(self):
@@ -112,7 +122,19 @@ class ExpiryTests(unittest.TestCase):
             result, cloudformation, events = self.run_handler(None, None)
         self.assertEqual(result["state"], "delete-database")
         self.assertIn("secondbreakfast-database", cloudformation.deleted[0]["StackName"])
+        self.assertEqual(cloudformation.deleted[0]["RoleARN"], self.environment["STACK_ROLE_ARN"])
         self.assertEqual(events.disabled, [])
+
+    def test_template_uses_dedicated_deletion_role_and_custom_log_group(self):
+        template = PATH.with_name("secondbreakfast-session-expiry.template.yaml").read_text(encoding="utf-8")
+        self.assertIn("StackDeletionRole:", template)
+        self.assertIn("iam:PassedToService: cloudformation.amazonaws.com", template)
+        self.assertIn("STACK_ROLE_ARN: !GetAtt StackDeletionRole.Arn", template)
+        self.assertIn("LogGroup: !Ref ExpiryLogGroup", template)
+        self.assertIn("ecs:DeregisterTaskDefinition", template)
+        self.assertIn("ec2:RevokeSecurityGroupIngress", template)
+        self.assertIn("rds:DeleteDBInstance", template)
+        self.assertNotIn("AdministratorAccess", template)
 
     def test_handler_disables_schedule_only_after_both_are_absent(self):
         with patch.object(expiry, "_describe", side_effect=[None, None]):

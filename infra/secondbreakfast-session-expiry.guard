@@ -8,6 +8,7 @@ rule lambda_is_bounded {
     Resources.ExpiryFunction.Properties.Timeout <= 30
     Resources.ExpiryFunction.Properties.MemorySize == 128
     Resources.ExpiryFunction.Properties.ReservedConcurrentExecutions == 1
+    Resources.ExpiryFunction.Properties.LoggingConfig.LogGroup == { 'Ref': 'ExpiryLogGroup' }
 }
 
 rule log_is_retained_and_bounded {
@@ -17,9 +18,12 @@ rule log_is_retained_and_bounded {
 }
 
 rule role_has_only_expected_scoped_statements {
-    Resources.ExpiryRole.Properties.Policies.*.PolicyDocument.Statement.*.Sid IN ['ExactRuntimeStack', 'ExactDatabaseStack', 'OwnSchedule', 'OwnLogs']
+    Resources.ExpiryRole.Properties.Policies.*.PolicyDocument.Statement.*.Sid IN ['ExactRuntimeStack', 'ExactDatabaseStack', 'OwnSchedule', 'OwnLogs', 'PassExactStackDeletionRole']
     Resources.ExpiryRole.Properties.Policies.*.PolicyDocument.Statement.*.Effect == 'Allow'
     Resources.ExpiryRole.Properties.Policies.*.PolicyDocument.Statement.*.Resource exists
+    Resources.StackDeletionRole.Properties.Policies.*.PolicyDocument.Statement.*.Sid IN ['DeleteRuntimeRegionalResources', 'DeleteDatabaseRegionalResources', 'DeleteRuntimeRoles']
+    Resources.StackDeletionRole.Properties.Policies.*.PolicyDocument.Statement.*.Effect == 'Allow'
+    Resources.StackDeletionRole.Properties.Policies.*.PolicyDocument.Statement.*.Resource exists
 }
 
 rule schedule_is_bounded {
