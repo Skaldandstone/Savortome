@@ -1,12 +1,14 @@
 # Consolidation inventory
 
-Reviewed 7 September 2026. This inventory closes duplicate task ownership without deleting branches, worktrees, recovery refs, or unique local changes.
+Reviewed 8 September 2026. This inventory closes duplicate task ownership without deleting branches, worktrees, recovery refs, or unique local changes.
 
 ## Active integration
 
 - Canonical checkout: `C:\Users\James\Documents\GitHub\SecondBreakfast`
-- Branch: `preservation/consolidation-20260907-private-beta`
-- Current pushed revision: `75ee727211acc3c4469d76ed97e826d6227d6985`
+- Preserved source branch: `preservation/consolidation-20260907-private-beta`
+- Preserved source revision: `1e61ed51ba5410974b60822a4e8dee69bdaf5fbc`
+- Reconciliation branch: `codex/integrate-private-beta-main-20260908`
+- Reconciled `origin/main`: `21608b6764a35ad58165b440f9e9fcf3b2aec48f`
 - Linear execution ticket: `SSE-144`
 - Codex integration task: `01a0546f-008c-7603-bacc-cf95b56a3323`
 
@@ -38,6 +40,33 @@ No local worktree or recovery branch was removed. Dirty worktrees were not norma
 ## Work still open
 
 1. Review PR #77 and run its grocery encryption regression against a disposable PostgreSQL fixture before any real provider token exists.
-2. Complete the private hosted beta work in `SSE-144`, starting with same-account build provenance and a privacy-v3 rollback image in AWS account `051722405355`.
+2. Complete the private hosted beta work in `SSE-144` in the selected development account `734702670689`. Reviewed candidate and rollback images exist with privacy-v3 labels and zero-finding ECR Basic scans; a private runtime, enhanced scan and hosted acceptance remain open.
 3. Complete private Clerk request/approval and session acceptance, service-worker privacy checks, signed physical-device accessibility/lifecycle checks, current Wispling handoff acceptance, and usability/safety review.
 4. Keep dining, expanded grocery rollout and live paid billing in future scope under `SSE-145` until the private beta gates pass.
+
+## Main reconciliation, 8 September 2026
+
+The reconciliation branch merges `origin/main` at `21608b6764a35ad58165b440f9e9fcf3b2aec48f` into the preserved beta revision `1e61ed51ba5410974b60822a4e8dee69bdaf5fbc`. The original preservation branch remains unchanged and pushed.
+
+Five textual conflicts were resolved without discarding either product intent:
+
+- Mobile app metadata keeps owner, EAS, backup and blocked-permission controls while using the current yolk notification and adaptive-icon accent.
+- Mobile buttons and callouts keep the woodland theme, 44-point targets and readable action colors while adding the current danger and error semantics.
+- The web manifest keeps the privacy-safe maskable icon split while using the current theme color.
+- Source URL classification retains the hostname-based lookalike protection from `main`.
+- The woodland asset check now pins the reviewed mobile assets and independently verifies the intentionally optimized web derivatives against their encoding manifest.
+
+The merge also carries `main`'s recipe-delete danger treatment and Kroger disconnect safety note. PR #77 and the `db/rds-support` worktree remain separate and untouched.
+
+Validation on the merged tree:
+
+- All four workspace TypeScript checks passed.
+- Core passed 639 tests in 135 suites.
+- The focused woodland, mobile accessibility, web UI and legal suite passed 34 tests.
+- Source classification and cook-mode regressions passed 38 tests.
+- Offline privacy and generated-worker parity passed 10 tests.
+- Server beta authorization and image-boundary checks passed 18 tests.
+- The production web build completed successfully and generated all 39 application pages.
+- `git diff --cached --check` passed.
+
+These checks establish source and build readiness for review. They do not establish hosted Clerk/account switching, physical-device, owner visual, live grocery, live Stripe, deployment or public-release acceptance.

@@ -17,10 +17,12 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     orientation: "portrait",
     background_color: "#fbf8f4",
-    theme_color: "#b4451f",
+    theme_color: "#E89A0C",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      // Its own file: a maskable icon is cropped to the platform shape, so the
+      // mark stays inside the safe area instead of losing the skillet handle.
       { src: "/icons/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };

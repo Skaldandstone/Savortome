@@ -73,10 +73,25 @@ test('kitchen entry stays reachable with illustrations off',()=>{
   const f=fixture({reduced:true});const tree=f.render('KitchenWelcome',{});assert.equal(nodes(tree).some(n=>n.type==='Image'),false);
   const care=nodes(tree).find(n=>n.type==='Pressable');assert.ok(textOf(care).includes('Feed me gently'));care.props.onPress();assert.deepEqual(f.state.navigation,['/care']);
 });
-test('mobile and web ship byte-identical production woodland art',async()=>{
-  for(const name of ['kitchen-scene','food-atlas','timber','parchment']){
-    const [web,mobile]=await Promise.all(['apps/web/public/woodland','apps/mobile/assets/woodland'].map(folder=>readFile(root+folder+'/'+name+'.webp')));
-    assert.equal(createHash('sha256').update(web).digest('hex'),createHash('sha256').update(mobile).digest('hex'));
+test('mobile keeps its reviewed art while web derivatives follow the current encoding report',async()=>{
+  const reviewedMobile={
+    'kitchen-scene':'7c27f1c204647d690c0126d637453e179e945640f9f51dbac4c61d638768fb5b',
+    'food-atlas':'cb96b0f9d3262f4f593c3b8db2051336758c04eaedcef0f50a049ef1b1d7697c',
+    'timber':'b58046618f7c5597cfd04697c356c4a9eff03a5b4848bae2417da45eff9c88a6',
+    'parchment':'5546ede20f7a470a059496332108661ef19b98ce1bc40aba69684afe8c9ee837',
+  };
+  const report=JSON.parse(await readFile(root+'docs/beta/checks/web-concept-encoding.json','utf8'));
+  assert.equal(report.quality,82);assert.equal(report.dimensionsPreserved,true);assert.equal(report.records.length,4);
+  for(const [name,mobileSha] of Object.entries(reviewedMobile)){
+    const [mobile,web,png]=await Promise.all([
+      readFile(root+'apps/mobile/assets/woodland/'+name+'.webp'),
+      readFile(root+'apps/web/public/woodland/'+name+'.webp'),
+      readFile(root+'apps/web/public/woodland/'+name+'.png'),
+    ]);
+    const record=report.records.find(entry=>entry.target.endsWith('/'+name+'.webp'));
+    assert.ok(record);assert.equal(createHash('sha256').update(mobile).digest('hex'),mobileSha);
+    assert.equal(createHash('sha256').update(web).digest('hex'),record.targetSha256);
+    assert.equal(createHash('sha256').update(png).digest('hex'),record.sourceSha256);
   }
 });
 const luminance=hex=>hex.slice(1).match(/../g).map(x=>parseInt(x,16)/255).map(x=>x<=0.04045?x/12.92:((x+0.055)/1.055)**2.4).reduce((n,x,i)=>n+x*[0.2126,0.7152,0.0722][i],0);

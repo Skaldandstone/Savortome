@@ -23,6 +23,17 @@
   font-size: var(--step-2);
 }
 
+.danger {
+  background: transparent;
+  color: var(--error);
+  border-color: var(--error);
+  font-weight: 500;
+  padding: 6px 12px;
+  font-size: var(--step-2);
+}
+
+.danger:focus-visible { outline-color: var(--error); }
+
 .toggle {
   background: transparent;
   color: var(--text-muted);

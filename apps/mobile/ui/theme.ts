@@ -9,14 +9,16 @@ export const light = {
   border: "#e6ddd1",
   text: "#241d17",
   textMuted: "#6f6459",
-  accent: "#b4451f",
+  accent: "#916008",
   onAccent: "#ffffff",
-  actionSurface: "#fdeee7",
-  actionText: "#572612",
-  accentSoft: "#fdeee7",
+  actionSurface: "#fbeeda",
+  actionText: "#5b3a00",
+  accentSoft: "#fbeeda",
   good: "#2f6b46",
   warn: "#8a6100",
   warnSoft: "#fdf3d9",
+  error: "#b3261e",
+  errorSoft: "#fdeceb",
 };
 
 export const dark: typeof light = {
@@ -26,14 +28,16 @@ export const dark: typeof light = {
   border: "#3a3129",
   text: "#f2ece4",
   textMuted: "#a89c8e",
-  accent: "#f08d5f",
+  accent: "#e89a0c",
   onAccent: "#201b16",
-  actionSurface: "#33221a",
+  actionSurface: "#33260f",
   actionText: "#f2ece4",
-  accentSoft: "#33221a",
+  accentSoft: "#33260f",
   good: "#7fc59b",
   warn: "#e2b768",
   warnSoft: "#322614",
+  error: "#f08d80",
+  errorSoft: "#33201c",
 };
 
 export type Palette = typeof light;

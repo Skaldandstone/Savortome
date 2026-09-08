@@ -146,7 +146,7 @@ export function RecipeEditor({
             {confirmingDelete ? (
               <>
                 <span className={styles.hint}>Delete this recipe for good?</span>
-                <Button type="button" variant="ghost" onClick={() => void remove()}>
+                <Button type="button" variant="danger" onClick={() => void remove()}>
                   Yes, delete it
                 </Button>
                 <Button type="button" variant="ghost" onClick={() => setConfirmingDelete(false)}>
@@ -154,7 +154,7 @@ export function RecipeEditor({
                 </Button>
               </>
             ) : (
-              <Button type="button" variant="ghost" onClick={() => setConfirmingDelete(true)}>
+              <Button type="button" variant="danger" onClick={() => setConfirmingDelete(true)}>
                 Delete
               </Button>
             )}

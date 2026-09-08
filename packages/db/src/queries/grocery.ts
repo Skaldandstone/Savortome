@@ -86,6 +86,14 @@ export async function setConnectionStore(
   return Boolean(updated);
 }
 
+/**
+ * Kroger's partner OAuth API — the only one documented at
+ * https://developer.kroger.com/api-products/api/authorization-endpoints-partner
+ * — exposes just `/authorize` and `/token`. No revocation endpoint exists, so
+ * disconnecting here can only delete the stored token, not invalidate it on
+ * Kroger's side; it's left to expire on its own (`expiresAt`, refreshed only
+ * while a connection is live). Re-check that page if Kroger ever adds one.
+ */
 export async function removeConnection(
   database: Database,
   userId: string,

@@ -17,7 +17,7 @@
         "expo-notifications",
         {
           "icon": "./assets/notification-icon.png",
-          "color": "#b4451f"
+          "color": "#E89A0C"
         }
       ]
     ],
@@ -34,7 +34,7 @@
       "allowBackup": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFB84D"
+        "backgroundColor": "#E89A0C"
       },
       "permissions": [
         "android.permission.POST_NOTIFICATIONS"
