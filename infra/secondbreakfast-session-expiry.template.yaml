@@ -165,6 +165,9 @@ Resources:
                   - iam:DeleteRole
                 Resource:
                   - arn:aws:iam::051722405355:role/skaldandstone-development-secondbreakfast-*
+                  # CloudFormation truncates the runtime stack prefix when it
+                  # generates the execution-role physical name.
+                  - arn:aws:iam::051722405355:role/skaldandstone-development-secondbreak-*
 
   ExpiryFunction:
     Type: AWS::Lambda::Function
