@@ -28,11 +28,11 @@ async function load(id: string) {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const shared = await load(id);
-  if (!shared) return { title: "Recipe not found · Second Breakfast" };
+  if (!shared) return { title: "Recipe not found · Savortome" };
 
   const { recipe, view } = shared;
   return {
-    title: `${recipe.title} · Second Breakfast`,
+    title: `${recipe.title} · Savortome`,
     description: recipe.description ?? `A recipe shared by ${view.sharedBy.displayName}.`,
     openGraph: {
       title: recipe.title,

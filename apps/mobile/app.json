@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Second Breakfast",
+    "name": "Savortome",
     "slug": "seconds",
     "owner": "skald-and-stone",
     "scheme": "seconds",
@@ -25,7 +25,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.secondbreakfast.app",
       "infoPlist": {
-        "CFBundleDisplayName": "2xBreakfast"
+        "CFBundleDisplayName": "Savortome"
       }
     },
     "android": {
@@ -34,7 +34,7 @@
       "allowBackup": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#E89A0C"
+        "backgroundColor": "#4A423A"
       },
       "permissions": [
         "android.permission.POST_NOTIFICATIONS"

@@ -8,13 +8,13 @@ export function LegalFooter() {
         <Link href="/privacy">Privacy</Link>
         <Link href="/terms">Terms</Link>
         <Link href="/accessibility">Accessibility</Link>
-        <a href="mailto:james@skaldandstone.com?subject=Second%20Breakfast%20support">
+        <a href="mailto:james@skaldandstone.com?subject=Savortome%20support">
           Contact
         </a>
       </nav>
       <details>
         <summary>About copyright</summary>
-        <p>This notice covers original Second Breakfast software and studio content. Imported recipes, source media, and user content belong to their respective owners. Existing software licenses remain unchanged.</p>
+        <p>This notice covers original Savortome™ software and studio content. Imported recipes, source media, and user content belong to their respective owners. Existing software licenses remain unchanged.</p>
       </details>
     </footer>
   );

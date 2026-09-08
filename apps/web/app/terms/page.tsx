@@ -3,17 +3,17 @@ import Link from "next/link";
 import styles from "../legal.module.css";
 
 export const metadata: Metadata = {
-  title: "Terms | Second Breakfast",
-  description: "Terms for using the Second Breakfast private beta.",
+  title: "Terms | Savortome",
+  description: "Terms for using the Savortome private beta.",
 };
 
 export default function TermsPage() {
   return (
     <main className={styles.page}>
-      <h1>Second Breakfast private-beta terms</h1>
+      <h1>Savortome™ private-beta terms</h1>
       <p className={styles.updated}>Last updated September 7, 2026</p>
       <p>
-        Second Breakfast is an invite-only beta operated by Skald and Stone LLC. By using it, you
+        Savortome is an invite-only beta operated by Skald and Stone LLC. By using it, you
         agree to these terms and the <Link href="/privacy">privacy notice</Link>.
       </p>
 
@@ -29,13 +29,13 @@ export default function TermsPage() {
         You retain your rights in content you create. Imported recipes, source media, and other
         third-party material remain subject to their owners&apos; rights and terms. You are responsible
         for using content and links you are permitted to use. You give us permission to process the
-        content only as needed to provide and secure Second Breakfast.
+        content only as needed to provide and secure Savortome.
       </p>
 
       <h2>Acceptable use</h2>
       <p>
         Do not misuse the service, attempt unauthorized access, interfere with other accounts,
-        evade access controls, upload malicious material, or use Second Breakfast to violate law or
+        evade access controls, upload malicious material, or use Savortome to violate law or
         another person&apos;s rights.
       </p>
 
@@ -55,19 +55,19 @@ export default function TermsPage() {
 
       <h2>Ownership and notices</h2>
       <p>
-        Second Breakfast remains the product name. Original Second Breakfast software and studio
+        Savortome™ is the product name. Original Savortome software and studio
         content are © 2026 Skald and Stone LLC. Existing licenses and third-party notices remain
         unchanged.
       </p>
 
       <h2>Questions</h2>
       <p>
-        Email <a href="mailto:james@skaldandstone.com?subject=Second%20Breakfast%20terms%20question">
+        Email <a href="mailto:james@skaldandstone.com?subject=Savortome%20terms%20question">
           james@skaldandstone.com
         </a> with questions about these terms.
       </p>
 
-      <p><Link href="/">Back to Second Breakfast</Link></p>
+      <p><Link href="/">Back to Savortome</Link></p>
     </main>
   );
 }

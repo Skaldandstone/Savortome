@@ -8,21 +8,19 @@ import type { MetadataRoute } from "next";
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Second Breakfast",
-    // iOS elides an icon label around twelve characters, so the same
-    // contraction the native app uses.
-    short_name: "2xBreakfast",
-    description: "Every recipe you find, turned into a card you can actually cook from.",
+    name: "Savortome",
+    short_name: "Savortome",
+    description: "Food is magic. Cooking shouldn’t require it.",
     start_url: "/",
     display: "standalone",
     orientation: "portrait",
     background_color: "#fbf8f4",
-    theme_color: "#E89A0C",
+    theme_color: "#4A423A",
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
       // Its own file: a maskable icon is cropped to the platform shape, so the
-      // mark stays inside the safe area instead of losing the skillet handle.
+      // mark stays inside the safe area instead of losing its page corners.
       { src: "/icons/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };

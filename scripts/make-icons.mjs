@@ -3,19 +3,16 @@
  *
  *   node scripts/make-icons.mjs
  *
- * The icons are generated rather than drawn so they can't drift from the app's
- * own colours, and so a change to the mark is one edit rather than six exports.
- * A full image pipeline would be more machinery than two circles earn, so this
- * writes the PNGs itself — the encoder below is the whole of it.
+ * Full-colour launcher icons are copied from the approved, versioned woodland
+ * raster exports. The notification and splash marks remain code-generated so
+ * their reduced platform treatments cannot drift from the app palette.
  *
- * Android's adaptive icon is the reason this isn't one file at several sizes.
- * A launcher masks the foreground layer to whatever shape it likes — circle,
- * squircle, teardrop — and crops anything outside the middle 66%. So the
- * adaptive foreground draws the mark smaller, on transparency, with the
- * background supplied as a flat colour underneath.
+ * Android masks its launcher artwork to circles, squircles, and other shapes,
+ * so the painted source keeps its tome and botanical frame inside the safe
+ * central region. The notification icon still needs a separate silhouette.
  */
 import { deflateSync } from "node:zlib";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 
 // --- a minimal PNG encoder ---------------------------------------------------
@@ -98,34 +95,36 @@ function png(size, draw) {
   ]);
 }
 
-// --- the mark ----------------------------------------------------------------
+// --- the Savortome mark ------------------------------------------------------
 
 /**
- * Two eggs in a cast-iron skillet, handle toward the cook — you put a pan down
- * with the handle near you, not pointing away.
+ * An open recipe tome holds a single hearth flame. It keeps the warm charcoal,
+ * parchment and ember palette from the original kitchen while replacing the
+ * breakfast-specific skillet with a mark that fits recipes of every kind.
  *
- * Drawn on the same 100-unit grid as the master artwork, so every number below
- * matches the spec rather than approximating it. The whites overlap on purpose:
- * two eggs cracked into one pan run together, and the merge is what makes it
- * read as a face as well as a breakfast.
+ * The geometry stays on a 100-unit grid so the same source can produce a tiny
+ * favicon, launcher icons, an Android adaptive layer and a notification glyph.
  */
-const IRON = [74, 66, 58]; // #4A423A — warm charcoal; a true grey goes cold next to the yolk
-const WHITE = [251, 247, 239]; // #FBF7EF
-const YOLK = [232, 154, 12]; // #E89A0C
+const IRON = [74, 66, 58]; // #4A423A
+const PARCHMENT = [251, 247, 239]; // #FBF7EF
+const EMBER = [232, 154, 12]; // #E89A0C
+const MOSS = [92, 98, 58]; // #5C623A
 const CLEAR = [0, 0, 0, 0];
 
-const PAN = { x: 40, y: 46, r: 32 };
-const EGGS = [
-  { x: 30, y: 40 },
-  { x: 52, y: 40 },
+const COVER_LEFT = [[11, 43], [45, 34], [50, 40], [50, 80], [16, 72]];
+const PAGE_LEFT = [[16, 40], [46, 36], [49, 42], [49, 74], [20, 67]];
+const mirror = (points) => points.map(([x, y]) => [100 - x, y]);
+const COVER_RIGHT = mirror(COVER_LEFT);
+const PAGE_RIGHT = mirror(PAGE_LEFT);
+const FLAME = [[50, 14], [60, 31], [58, 43], [50, 58], [42, 45], [40, 35], [47, 27]];
+const FLAME_CORE = [[50, 29], [55, 39], [50, 50], [46, 42]];
+const PAGE_LINES = [
+  { x1: 23, y1: 51, x2: 43, y2: 48 },
+  { x1: 24, y1: 58, x2: 43, y2: 56 },
+  { x1: 57, y1: 48, x2: 77, y2: 51 },
+  { x1: 57, y1: 56, x2: 76, y2: 58 },
 ];
-const WHITE_R = 14;
-const YOLK_R = 9;
-const HANDLE = { x1: 61.3, y1: 60.9, x2: 85.9, y2: 78.1, w: 14 };
 
-const within = (px, py, cx, cy, r) => Math.hypot(px - cx, py - cy) < r;
-
-/** The handle is a capsule: everything within half its width of the segment. */
 function distToSegment(px, py, { x1, y1, x2, y2 }) {
   const dx = x2 - x1;
   const dy = y2 - y1;
@@ -133,36 +132,48 @@ function distToSegment(px, py, { x1, y1, x2, y2 }) {
   return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
 }
 
+function inPolygon(px, py, points) {
+  let inside = false;
+  for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+    const [xi, yi] = points[i];
+    const [xj, yj] = points[j];
+    if ((yi > py) !== (yj > py) && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
 /**
  * `scale` shrinks the mark about the middle, for the Android adaptive
  * foreground. `ground` is the tile colour, or null to leave it transparent.
  */
-const skillet =
+const savortome =
   ({ scale = 1, ground = null } = {}) =>
   (x, y, size) => {
     const px = 50 + ((x / size) * 100 - 50) / scale;
     const py = 50 + ((y / size) * 100 - 50) / scale;
 
-    // Innermost first — painter's order, reversed. The handle is tested last so
-    // its root disappears under the rim and the iron reads as one silhouette.
-    for (const e of EGGS) if (within(px, py, e.x, e.y, YOLK_R)) return [...YOLK, 255];
-    for (const e of EGGS) if (within(px, py, e.x, e.y, WHITE_R)) return [...WHITE, 255];
-    if (within(px, py, PAN.x, PAN.y, PAN.r)) return [...IRON, 255];
-    if (distToSegment(px, py, HANDLE) < HANDLE.w / 2) return [...IRON, 255];
+    // Frontmost first because each pixel returns on the first matching shape.
+    if (inPolygon(px, py, FLAME_CORE)) return [...PARCHMENT, 255];
+    if (inPolygon(px, py, FLAME)) return [...EMBER, 255];
+    for (const line of PAGE_LINES) if (distToSegment(px, py, line) < 1.15) return [...IRON, 255];
+    if (inPolygon(px, py, PAGE_LEFT) || inPolygon(px, py, PAGE_RIGHT)) return [...PARCHMENT, 255];
+    if (inPolygon(px, py, COVER_LEFT) || inPolygon(px, py, COVER_RIGHT)) return [...MOSS, 255];
     return ground ? [...ground, 255] : CLEAR;
   };
 
 /**
  * Android renders a notification icon as a flat silhouette: it keeps the alpha
- * and throws the colour away. So the eggs become holes — the only way to keep
- * the face when you are allowed exactly one value.
+ * and throws the colour away. A filled book-and-flame silhouette survives that
+ * reduction more clearly than interior page details.
  */
-const skilletSilhouette = (x, y, size) => {
+const savortomeSilhouette = (x, y, size) => {
   const px = 50 + ((x / size) * 100 - 50) / 0.9;
   const py = 50 + ((y / size) * 100 - 50) / 0.9;
-  for (const e of EGGS) if (within(px, py, e.x, e.y, WHITE_R)) return CLEAR;
-  if (within(px, py, PAN.x, PAN.y, PAN.r)) return [255, 255, 255, 255];
-  if (distToSegment(px, py, HANDLE) < HANDLE.w / 2) return [255, 255, 255, 255];
+  if (
+    inPolygon(px, py, FLAME) ||
+    inPolygon(px, py, COVER_LEFT) ||
+    inPolygon(px, py, COVER_RIGHT)
+  ) return [255, 255, 255, 255];
   return CLEAR;
 };
 
@@ -172,35 +183,40 @@ const write = (path, buffer) => {
   console.log(`${path}  ${buffer.length.toLocaleString()} bytes`);
 };
 
+const copy = (source, destination) => {
+  mkdirSync(dirname(destination), { recursive: true });
+  copyFileSync(source, destination);
+  console.log(`${destination}  from ${source}`);
+};
+
+const RASTER = "design/savortome/icons";
+
 // --- web ---------------------------------------------------------------------
 
 // Next serves these two by file convention, so no <link> tags are needed.
-write("apps/web/app/icon.png", png(32, skillet({ ground: YOLK })));
-write("apps/web/app/apple-icon.png", png(180, skillet({ ground: YOLK })));
+copy(`${RASTER}/app-icon-32-v1.png`, "apps/web/app/icon.png");
+copy(`${RASTER}/app-icon-180-v1.png`, "apps/web/app/apple-icon.png");
 
 // The installable PWA.
-write("apps/web/public/icons/icon-192.png", png(192, skillet({ ground: YOLK })));
-write("apps/web/public/icons/icon-512.png", png(512, skillet({ ground: YOLK })));
+copy(`${RASTER}/app-icon-192-v1.png`, "apps/web/public/icons/icon-192.png");
+copy(`${RASTER}/app-icon-512-v1.png`, "apps/web/public/icons/icon-512.png");
 
 // A maskable icon is cropped to whatever shape the platform likes, so the mark
 // is drawn well inside the safe area rather than filling the frame.
-write(
-  "apps/web/public/icons/icon-maskable-512.png",
-  png(512, skillet({ scale: 0.72, ground: YOLK })),
-);
+copy(`${RASTER}/app-icon-512-v1.png`, "apps/web/public/icons/icon-maskable-512.png");
 
 // --- mobile ------------------------------------------------------------------
 
-// iOS crops nothing and forbids transparency, so the mark fills a solid tile.
-write("apps/mobile/assets/icon.png", png(1024, skillet({ ground: YOLK })));
+// iOS crops nothing and forbids transparency, so the artwork fills a solid tile.
+copy(`${RASTER}/app-icon-1024-v1.png`, "apps/mobile/assets/icon.png");
 
-// Android masks the foreground and crops past the middle 66%, so the mark is
-// drawn smaller on transparency; app.json supplies the ground underneath.
-write("apps/mobile/assets/adaptive-icon.png", png(1024, skillet({ scale: 0.62 })));
+// The painted subject stays inside Android's safe zone. The edge-to-edge
+// woodland ground lets platform masks crop it without exposing empty corners.
+copy(`${RASTER}/app-icon-1024-v1.png`, "apps/mobile/assets/adaptive-icon.png");
 
 // Status bar. Only the alpha survives.
-write("apps/mobile/assets/notification-icon.png", png(96, skilletSilhouette));
+write("apps/mobile/assets/notification-icon.png", png(96, savortomeSilhouette));
 
 // The splash sits on the app's own background colour, so the mark is drawn on
 // transparency rather than carrying a tile of its own into a full-screen flash.
-write("apps/mobile/assets/splash-icon.png", png(512, skillet({ scale: 0.8 })));
+write("apps/mobile/assets/splash-icon.png", png(512, savortome({ scale: 0.8 })));

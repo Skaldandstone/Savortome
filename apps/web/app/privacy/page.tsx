@@ -3,17 +3,17 @@ import Link from "next/link";
 import styles from "../legal.module.css";
 
 export const metadata: Metadata = {
-  title: "Privacy | Second Breakfast",
-  description: "How the Second Breakfast private beta handles account, recipe, and technical data.",
+  title: "Privacy | Savortome",
+  description: "How the Savortome private beta handles account, recipe, and technical data.",
 };
 
 export default function PrivacyPage() {
   return (
     <main className={styles.page}>
-      <h1>Second Breakfast privacy notice</h1>
+      <h1>Savortome™ privacy notice</h1>
       <p className={styles.updated}>Last updated September 7, 2026</p>
       <p>
-        This notice applies to the Second Breakfast website and private beta. It does not replace
+        This notice applies to the Savortome website and private beta. It does not replace
         the separate privacy notices for other Skald and Stone products.
       </p>
 
@@ -21,7 +21,7 @@ export default function PrivacyPage() {
       <ul>
         <li>Account identifiers and sign-in details supplied through Clerk.</li>
         <li>Recipes, pantry items, meal plans, shopping lists, dietary preferences, and other content you choose to save.</li>
-        <li>Source links and content you ask Second Breakfast to import.</li>
+        <li>Source links and content you ask Savortome to import.</li>
         <li>Operational records needed to secure, diagnose, and run the service.</li>
       </ul>
 
@@ -58,7 +58,7 @@ export default function PrivacyPage() {
         You control what recipes and personal preferences you add. Do not import content you are not
         permitted to use. To ask about access, correction, export, or deletion, email{
         " "
-      }<a href="mailto:james@skaldandstone.com?subject=Second%20Breakfast%20privacy%20request">
+      }<a href="mailto:james@skaldandstone.com?subject=Savortome%20privacy%20request">
         james@skaldandstone.com
       </a>.
       </p>
@@ -70,7 +70,7 @@ export default function PrivacyPage() {
         </p>
       </div>
 
-      <p><Link href="/">Back to Second Breakfast</Link></p>
+      <p><Link href="/">Back to Savortome</Link></p>
     </main>
   );
 }

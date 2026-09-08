@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
     const handoff =
       provider === "instacart"
-        ? await createInstacartList(lines, { title: list?.name ?? "Second Breakfast shopping list" })
+        ? await createInstacartList(lines, { title: list?.name ?? "Savortome shopping list" })
         : provider === "kroger"
           ? await sendListToKroger(lines, await liveConnection(database, userId), {
               ...krogerApi(),

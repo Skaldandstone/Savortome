@@ -13,17 +13,17 @@ import { DecorationControl, WoodlandNavigation } from '@/modules/woodland/Woodla
 import '../ui/woodland.css';
 
 export const metadata: Metadata = {
-  title: "Second Breakfast",
-  description: "Every recipe you find, turned into a card you can actually cook from.",
+  title: "Savortome™",
+  description: "Food is magic. Cooking shouldn’t require it.",
 };
 
 function Masthead({ children }: { children: ReactNode }) {
   return (
     <header className={styles.masthead} data-print="hide">
       <h1 className={styles.wordmark}>
-        <Link href="/">Second Breakfast</Link>
+        <Link href="/">Savortome™</Link>
       </h1>
-      <span className={styles.tagline}>recipes, from anywhere</span>
+      <span className={styles.tagline}>Food is magic. Cooking shouldn’t require it.</span>
       <nav className={styles.nav}>
         <Link href="/">Library</Link>
         <Link href="/plan">Plan</Link>
@@ -45,7 +45,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   if (beta) {
     const shell = <div className="woodland-shell">
       <a className="woodland-skip" href="#main-content">Skip to content</a>
-      <header className="woodland-masthead" data-print="hide"><Link href="/" className="woodland-brand"><img src="/icons/icon-192.png" alt="" /><span>Second Breakfast<small>your woodland kitchen</small></span></Link><DecorationControl />{clerkConfigured() ? <AccountMenu /> : <DevAccountBadge />}</header>
+      <header className="woodland-masthead" data-print="hide"><Link href="/" className="woodland-brand"><img src="/icons/icon-192.png" alt="" /><span>Savortome™<small>Food is magic. Cooking shouldn’t require it.</small></span></Link><DecorationControl />{clerkConfigured() ? <AccountMenu /> : <DevAccountBadge />}</header>
       <WoodlandNavigation />
       <OfflineBanner /><div id="main-content" tabIndex={-1}>{children}</div><LegalFooter />
     </div>;

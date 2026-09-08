@@ -44,7 +44,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="friends" options={{ title: "Friends" }} />
       <Tabs.Screen name="discover" options={{ title: "Discover" }} />
     </Tabs>
-    <Link href="/legal" style={{ color: c.text, textAlign: "center", padding: 12, minHeight: 44, fontSize: 14 }}>About Second Breakfast and legal</Link>
+    <Link href="/legal" style={{ color: c.text, textAlign: "center", padding: 12, minHeight: 44, fontSize: 14 }}>About Savortome and legal</Link>
     </SafeAreaView>
   );
 }
