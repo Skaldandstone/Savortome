@@ -1,9 +1,19 @@
+import Link from "next/link";
+
 export function LegalFooter() {
   return (
-    <footer data-print="hide" style={{ padding: "20px 24px", borderTop: "1px solid currentColor", fontSize: 14, lineHeight: 1.6 }}>
+    <footer className="legal-footer" data-print="hide">
       <p>© 2026 Skald and Stone LLC</p>
+      <nav aria-label="Legal and support">
+        <Link href="/privacy">Privacy</Link>
+        <Link href="/terms">Terms</Link>
+        <Link href="/accessibility">Accessibility</Link>
+        <a href="mailto:james@skaldandstone.com?subject=Second%20Breakfast%20support">
+          Contact
+        </a>
+      </nav>
       <details>
-        <summary style={{ cursor: "pointer", paddingBlock: 12 }}>About copyright</summary>
+        <summary>About copyright</summary>
         <p>This notice covers original Second Breakfast software and studio content. Imported recipes, source media, and user content belong to their respective owners. Existing software licenses remain unchanged.</p>
       </details>
     </footer>

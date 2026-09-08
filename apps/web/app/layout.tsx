@@ -58,11 +58,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <html lang="en">
         <body>
           <div className={styles.shell}>
+            <a className={styles.skipLink} href="#main-content">Skip to content</a>
             <Masthead>
               <DevAccountBadge />
             </Masthead>
             <OfflineBanner />
-            {children}
+            <div id="main-content" tabIndex={-1}>{children}</div>
             <LegalFooter />
           </div>
           <ServiceWorkerRegistration />
@@ -76,11 +77,12 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
       <body>
         <ClerkProvider>
           <div className={styles.shell}>
+            <a className={styles.skipLink} href="#main-content">Skip to content</a>
             <Masthead>
               <AccountMenu />
             </Masthead>
             <OfflineBanner />
-            {children}
+            <div id="main-content" tabIndex={-1}>{children}</div>
             <LegalFooter />
           </div>
           <ServiceWorkerRegistration />
