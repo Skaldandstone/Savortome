@@ -130,6 +130,10 @@ class ExpiryTests(unittest.TestCase):
         self.assertIn("StackDeletionRole:", template)
         self.assertIn("iam:PassedToService: cloudformation.amazonaws.com", template)
         self.assertIn("STACK_ROLE_ARN: !GetAtt StackDeletionRole.Arn", template)
+        self.assertIn(
+            "arn:aws:iam::051722405355:role/skaldandstone-development-secondbreak-*",
+            template,
+        )
         self.assertIn("LogGroup: !Ref ExpiryLogGroup", template)
         self.assertIn("ecs:DeregisterTaskDefinition", template)
         self.assertIn("ec2:RevokeSecurityGroupIngress", template)
