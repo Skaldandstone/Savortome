@@ -1,6 +1,7 @@
 import { billingAvailability, products, tierOr } from "@seconds/core";
 import { creditsFor, db } from "@seconds/db";
 import { PlanTable } from "@/modules/plans";
+import { KitchenPageHeading } from "@/modules/woodland/KitchenPageHeading";
 import { Panel, PanelHeader } from "@/ui";
 import { viewerId, databaseConfigured } from "@/lib/session";
 import { priceForProduct, stripeConfigured, webhookConfigured } from "@/lib/stripe";
@@ -42,7 +43,12 @@ export default async function PlansPage() {
   });
 
   return (
-    <main>
+    <main className="woodland-workspace" data-kitchen-page="plans">
+      <KitchenPageHeading
+        title="Plans for your kitchen"
+        description="See what is included, with paid imports kept clearly separate."
+        icon="book"
+      />
       <Panel>
         <PanelHeader
           title="Plans"
