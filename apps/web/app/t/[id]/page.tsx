@@ -21,10 +21,10 @@ async function load(id: string) {
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { id } = await params;
   const shared = await load(id);
-  if (!shared) return { title: "Meal not found · Second Breakfast" };
+  if (!shared) return { title: "Meal not found · Savortome" };
 
   return {
-    title: `${shared.name} · Second Breakfast`,
+    title: `${shared.name} · Savortome`,
     description: `A meal shared by ${shared.sharedBy.displayName}.`,
   };
 }

@@ -1,4 +1,4 @@
-# Second Breakfast Style Guide
+# Savortome™ Style Guide
 
 Status: concept-board web system extended across existing features, 31 August 2026. Visual acceptance and release remain gated pending permitted browser, device and invited-account review. The latest web continuation is documented in `docs/beta/web-ui-completion.md`; previously built Android artifacts are preserved.
 
@@ -22,7 +22,7 @@ The web app now uses the board's kitchen composition, dark timber, thin worn-bra
 
 Headings, recipe-card names and navigation use Georgia. Ingredients, forms, timers and supporting copy retain a readable system sans. Sizes use rem units. Display options retains system/light/dark, 100/125/150/200 percent text, and reduced decoration. Explicit saved light/system preferences still win over the new dark default.
 
-Production art is separate from every label/control: `kitchen-scene.png`, `food-atlas.png`, `parchment.png`, and `timber.png` in `apps/web/public/woodland`. Preserve these full-resolution PNG masters. Web delivery uses quality-82 WebP derivatives with the same dimensions; the reproducible encoder records decoded-image error and file reduction in `docs/beta/checks/web-concept-encoding.json`. Android retains its previously verified packaged copies until a coordinated native rebuild. The four-by-four food atlas maps directly to catalogue IDs; it does not classify recipes or establish ingredients or safety. Library cards use actual recipe photos or a neutral journal illustration when no photo exists. Scene, food, and texture assets were generated with the built-in imagegen tool; prompts and file evidence are in `docs/beta/web-concept-rebuild.md`. The earlier hearth and kettle/journal assets remain preserved. The optional Wispling visitor remains comparison art only. No new character is introduced, and PR #38's skillet mark remains intact.
+Production art is separate from every label/control: `kitchen-scene.png`, `food-atlas.png`, `parchment.png`, and `timber.png` in `apps/web/public/woodland`. Preserve these full-resolution PNG masters. Web delivery uses quality-82 WebP derivatives with the same dimensions; the reproducible encoder records decoded-image error and file reduction in `docs/beta/checks/web-concept-encoding.json`. Android retains its previously verified packaged copies until a coordinated native rebuild. The four-by-four food atlas maps directly to catalogue IDs; it does not classify recipes or establish ingredients or safety. Library cards use actual recipe photos or a neutral journal illustration when no photo exists. Scene, food, and texture assets were generated with the built-in imagegen tool; prompts and file evidence are in `docs/beta/web-concept-rebuild.md`. The earlier hearth and kettle/journal assets remain preserved. The optional Wispling visitor remains comparison art only. No new character is introduced. The Savortome rebrand replaces the breakfast-specific skillet mark with the reproducible open-tome and hearth-emblem source in `scripts/make-icons.mjs`.
 
 Frames are native CSS, iconography is native SVG, and all controls are HTML. Never crop a control, title, recipe or card from the concept image. Counts and shelves must come from actual data. The library import link expands the real import form; new shelf uses the existing authenticated API. Do not fabricate the board's recipe examples or counts.
 
@@ -92,12 +92,12 @@ The old hearth/kettle assets remain preserved but are no longer the default scen
 These are source changes, not evidence of emulator or physical-device acceptance.
 
 This guide describes the visual system already shipped in `apps/web/ui/tokens.css`. The active
-`Second Breakfast - UI Draft` Figma file is a working design reference; changes from that file
+The historical `Second Breakfast - UI Draft` Figma file remains a working design reference until it is renamed; changes from that file
 should update this guide and the tokens together rather than creating a parallel system.
 
 ## Brand idea
 
-Second Breakfast is the calm, capable friend beside the chopping board. It should feel domestic,
+Savortome is the calm, capable friend beside the chopping board. It should feel domestic,
 warm, and immediately useful: a recipe card propped near the kettle, not a content feed, restaurant
 menu, or glossy food-delivery app.
 

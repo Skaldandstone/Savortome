@@ -107,7 +107,7 @@ test('plain public image paths do not enter the optimizer handler', async () => 
   }
 });
 
-test('installed metadata sizing preserves the actual skillet icon dimensions', async () => {
+test('installed metadata sizing preserves the actual Savortome icon dimensions', async () => {
   assert.deepEqual(await optimizer.getImageSize(readFileSync(resolve(web, 'app/icon.png'))), { width: 32, height: 32 });
   assert.deepEqual(await optimizer.getImageSize(readFileSync(resolve(web, 'app/apple-icon.png'))), { width: 180, height: 180 });
 });

@@ -3,17 +3,17 @@ import Link from "next/link";
 import styles from "../legal.module.css";
 
 export const metadata: Metadata = {
-  title: "Accessibility | Second Breakfast",
-  description: "Second Breakfast accessibility goals, current verification, and feedback contact.",
+  title: "Accessibility | Savortome",
+  description: "Savortome accessibility goals, current verification, and feedback contact.",
 };
 
 export default function AccessibilityPage() {
   return (
     <main className={styles.page}>
-      <h1>Second Breakfast accessibility</h1>
+      <h1>Savortome™ accessibility</h1>
       <p className={styles.updated}>Last updated September 7, 2026</p>
       <p>
-        We are building Second Breakfast toward WCAG 2.2 Level AA for its web surfaces and platform
+        We are building Savortome toward WCAG 2.2 Level AA for its web surfaces and platform
         accessibility guidance for native releases. Accessibility is part of the definition of done
         for new features, not a one-time certification.
       </p>
@@ -28,14 +28,14 @@ export default function AccessibilityPage() {
 
       <h2>Ask for help or report a barrier</h2>
       <p>
-        Email <a href="mailto:james@skaldandstone.com?subject=Second%20Breakfast%20accessibility%20feedback">
+        Email <a href="mailto:james@skaldandstone.com?subject=Savortome%20accessibility%20feedback">
           james@skaldandstone.com
         </a>. If you are comfortable, include the page, what you were trying to do, and the browser,
         device, or assistive technology involved. We will review the report and work toward a
         practical fix or accessible alternative.
       </p>
 
-      <p><Link href="/">Back to Second Breakfast</Link></p>
+      <p><Link href="/">Back to Savortome</Link></p>
     </main>
   );
 }

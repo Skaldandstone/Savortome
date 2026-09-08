@@ -33,8 +33,8 @@ export function SignInScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: c.bg }]}>
-      <Text style={[styles.wordmark, { color: c.text }]}>Second Breakfast</Text>
-      <Text style={[styles.tagline, { color: c.textMuted }]}>recipes, from anywhere</Text>
+      <Text style={[styles.wordmark, { color: c.text }]}>Savortome™</Text>
+      <Text style={[styles.tagline, { color: c.textMuted }]}>Food is magic. Cooking shouldn’t require it.</Text>
       {process.env.EXPO_PUBLIC_WOODLAND_BETA === 'true' && <Link href="/care" style={{color:c.accent,paddingVertical:16}}>Feed me gently without signing in</Link>}
 
       <Panel style={styles.panel}>
@@ -60,7 +60,7 @@ export function SignInScreen() {
         {busy ? <ActivityIndicator accessibilityLabel="Signing in" style={styles.spinner} color={c.accent} /> : null}
         {error ? <Callout tone="error" title="Couldn't sign in">{error}</Callout> : null}
       </Panel>
-      <Link href="/legal" style={{ color: c.text, paddingVertical: 16, minHeight: 48 }}>About Second Breakfast and legal</Link>
+      <Link href="/legal" style={{ color: c.text, paddingVertical: 16, minHeight: 48 }}>About Savortome and legal</Link>
     </View>
   );
 }

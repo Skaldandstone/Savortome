@@ -135,7 +135,7 @@ export function LibraryScreen() {
     >
       <View style={styles.masthead}>
         {woodlandEnabled && <Image source={require('../../assets/icon.png')} accessible={false} style={{width:38,height:38,borderRadius:8}} />}
-        <Text style={[styles.wordmark, { color: woodlandEnabled ? c.accent : c.text, fontFamily:woodlandEnabled ? 'serif' : undefined, flexShrink:1 }]}>Second Breakfast</Text>
+        <Text style={[styles.wordmark, { color: woodlandEnabled ? c.accent : c.text, fontFamily:woodlandEnabled ? 'serif' : undefined, flexShrink:1 }]}>Savortome™</Text>
         <View style={styles.spacer} />
         <SignOutButton />
       </View>
