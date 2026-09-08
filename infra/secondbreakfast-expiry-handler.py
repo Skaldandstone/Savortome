@@ -15,6 +15,7 @@ STACK_NAMES = {
 }
 MAX_SESSION_SECONDS = 2 * 60 * 60
 STABLE_STATUSES = {"CREATE_COMPLETE", "UPDATE_COMPLETE"}
+RECOVERABLE_STATUSES = {"DELETE_FAILED"}
 
 
 def _config(environment: dict[str, str]) -> dict[str, object]:
@@ -27,6 +28,7 @@ def _config(environment: dict[str, str]) -> dict[str, object]:
         "account": environment["EXPECTED_ACCOUNT"],
         "region": environment["EXPECTED_REGION"],
         "rule_name": environment["RULE_NAME"],
+        "stack_role_arn": environment["STACK_ROLE_ARN"],
     }
     if not SESSION_RE.fullmatch(str(config["session_id"])):
         raise RuntimeError("Session identifier is outside the Second Breakfast boundary")
@@ -34,6 +36,9 @@ def _config(environment: dict[str, str]) -> dict[str, object]:
         raise RuntimeError("Expected account is invalid")
     if config["account"] != "051722405355" or config["region"] != "us-east-2":
         raise RuntimeError("Expected account or region is outside the reviewed boundary")
+    role_pattern = rf"^arn:aws:iam::{config['account']}:role/[A-Za-z0-9+=,.@_/-]+$"
+    if not re.fullmatch(role_pattern, str(config["stack_role_arn"])):
+        raise RuntimeError("Stack deletion role is outside the reviewed account")
     if expires <= created or expires - created > MAX_SESSION_SECONDS:
         raise RuntimeError("Expiry must be after creation and within two hours")
     return config
@@ -61,6 +66,8 @@ def _evaluate_stack(
     status = str(stack["StackStatus"])
     if status == "DELETE_IN_PROGRESS":
         return "deleting"
+    if status in RECOVERABLE_STATUSES:
+        return "retry-delete"
     if status not in STABLE_STATUSES:
         raise RuntimeError("Stack is not in a deletion-safe stable state")
     return "ready"
@@ -93,18 +100,20 @@ def handler(_event, _context):
 
     if int(time.time()) < int(config["expires"]):
         state = "wait"
-    elif states["runtime"] == "ready":
+    elif states["runtime"] in {"ready", "retry-delete"}:
         cloudformation.delete_stack(
             StackName=str(stacks["runtime"]["StackId"]),
-            ClientRequestToken=f"expiry-{config['session_id']}-runtime",
+            ClientRequestToken=f"expiry-{config['session_id']}-runtime-managed-v1",
+            RoleARN=str(config["stack_role_arn"]),
         )
         state = "delete-runtime"
     elif states["runtime"] == "deleting":
         state = "wait-runtime"
-    elif states["database"] == "ready":
+    elif states["database"] in {"ready", "retry-delete"}:
         cloudformation.delete_stack(
             StackName=str(stacks["database"]["StackId"]),
-            ClientRequestToken=f"expiry-{config['session_id']}-database",
+            ClientRequestToken=f"expiry-{config['session_id']}-database-managed-v1",
+            RoleARN=str(config["stack_role_arn"]),
         )
         state = "delete-database"
     elif states["database"] == "deleting":

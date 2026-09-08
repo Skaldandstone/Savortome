@@ -75,10 +75,99 @@ Resources:
                 Effect: Allow
                 Action: [logs:CreateLogStream, logs:PutLogEvents]
                 Resource: !Sub ${ExpiryLogGroup.Arn}:*
+              - Sid: PassExactStackDeletionRole
+                Effect: Allow
+                Action: iam:PassRole
+                Resource: !GetAtt StackDeletionRole.Arn
+                Condition:
+                  StringEquals:
+                    iam:PassedToService: cloudformation.amazonaws.com
+
+  StackDeletionRole:
+    Type: AWS::IAM::Role
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Lets the expiry controller retry exact tagged runtime and database stack deletion without inheriting operator credentials.
+        must:
+          - expose deletion and read operations only
+          - remain separate from application task and execution roles
+          - be passed only to CloudFormation by the exact expiry function
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: cloudformation.amazonaws.com}
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: delete-exact-secondbreakfast-session-resources
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: DeleteRuntimeRegionalResources
+                Effect: Allow
+                Action:
+                  - ecs:DescribeClusters
+                  - ecs:DescribeServices
+                  - ecs:UpdateService
+                  - ecs:DeleteService
+                  - ecs:DescribeTaskDefinition
+                  - ecs:DeregisterTaskDefinition
+                  - ecs:ListTagsForResource
+                  - elasticloadbalancing:DescribeLoadBalancers
+                  - elasticloadbalancing:DescribeListeners
+                  - elasticloadbalancing:DescribeTargetGroups
+                  - elasticloadbalancing:DescribeTargetHealth
+                  - elasticloadbalancing:DescribeTags
+                  - elasticloadbalancing:DeleteListener
+                  - elasticloadbalancing:DeleteLoadBalancer
+                  - elasticloadbalancing:DeleteTargetGroup
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeSecurityGroupRules
+                  - ec2:RevokeSecurityGroupIngress
+                  - ec2:RevokeSecurityGroupEgress
+                  - ec2:DeleteSecurityGroup
+                  - logs:DescribeLogGroups
+                  - logs:ListTagsForResource
+                  - logs:DeleteLogGroup
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    aws:RequestedRegion: us-east-2
+              - Sid: DeleteDatabaseRegionalResources
+                Effect: Allow
+                Action:
+                  - rds:DescribeDBInstances
+                  - rds:DeleteDBInstance
+                  - rds:DescribeDBSubnetGroups
+                  - rds:DeleteDBSubnetGroup
+                  - rds:DescribeDBParameterGroups
+                  - rds:DeleteDBParameterGroup
+                  - rds:ListTagsForResource
+                  - secretsmanager:DescribeSecret
+                  - secretsmanager:GetResourcePolicy
+                  - secretsmanager:ListSecretVersionIds
+                  - secretsmanager:DeleteSecret
+                Resource: '*'
+                Condition:
+                  StringEquals:
+                    aws:RequestedRegion: us-east-2
+              - Sid: DeleteRuntimeRoles
+                Effect: Allow
+                Action:
+                  - iam:GetRole
+                  - iam:ListRolePolicies
+                  - iam:GetRolePolicy
+                  - iam:DeleteRolePolicy
+                  - iam:ListAttachedRolePolicies
+                  - iam:DetachRolePolicy
+                  - iam:DeleteRole
+                Resource:
+                  - arn:aws:iam::051722405355:role/skaldandstone-development-secondbreakfast-*
 
   ExpiryFunction:
     Type: AWS::Lambda::Function
-    DependsOn: ExpiryLogGroup
     Properties:
       Architectures: [arm64]
       Runtime: python3.12
@@ -87,6 +176,9 @@ Resources:
       MemorySize: 128
       Timeout: 30
       ReservedConcurrentExecutions: 1
+      LoggingConfig:
+        LogFormat: Text
+        LogGroup: !Ref ExpiryLogGroup
       Environment:
         Variables:
           SESSION_ID: !Ref SessionId
@@ -95,6 +187,7 @@ Resources:
           EXPECTED_ACCOUNT: '051722405355'
           EXPECTED_REGION: us-east-2
           RULE_NAME: !Sub secondbreakfast-expiry-${SessionId}
+          STACK_ROLE_ARN: !GetAtt StackDeletionRole.Arn
       Code:
         ZipFile: |
           """Fail-closed expiry handler for one Second Breakfast validation session."""
@@ -114,6 +207,7 @@ Resources:
           }
           MAX_SESSION_SECONDS = 2 * 60 * 60
           STABLE_STATUSES = {"CREATE_COMPLETE", "UPDATE_COMPLETE"}
+          RECOVERABLE_STATUSES = {"DELETE_FAILED"}
           
           
           def _config(environment: dict[str, str]) -> dict[str, object]:
@@ -126,6 +220,7 @@ Resources:
                   "account": environment["EXPECTED_ACCOUNT"],
                   "region": environment["EXPECTED_REGION"],
                   "rule_name": environment["RULE_NAME"],
+                  "stack_role_arn": environment["STACK_ROLE_ARN"],
               }
               if not SESSION_RE.fullmatch(str(config["session_id"])):
                   raise RuntimeError("Session identifier is outside the Second Breakfast boundary")
@@ -133,6 +228,9 @@ Resources:
                   raise RuntimeError("Expected account is invalid")
               if config["account"] != "051722405355" or config["region"] != "us-east-2":
                   raise RuntimeError("Expected account or region is outside the reviewed boundary")
+              role_pattern = rf"^arn:aws:iam::{config['account']}:role/[A-Za-z0-9+=,.@_/-]+$"
+              if not re.fullmatch(role_pattern, str(config["stack_role_arn"])):
+                  raise RuntimeError("Stack deletion role is outside the reviewed account")
               if expires <= created or expires - created > MAX_SESSION_SECONDS:
                   raise RuntimeError("Expiry must be after creation and within two hours")
               return config
@@ -160,6 +258,8 @@ Resources:
               status = str(stack["StackStatus"])
               if status == "DELETE_IN_PROGRESS":
                   return "deleting"
+              if status in RECOVERABLE_STATUSES:
+                  return "retry-delete"
               if status not in STABLE_STATUSES:
                   raise RuntimeError("Stack is not in a deletion-safe stable state")
               return "ready"
@@ -192,18 +292,20 @@ Resources:
           
               if int(time.time()) < int(config["expires"]):
                   state = "wait"
-              elif states["runtime"] == "ready":
+              elif states["runtime"] in {"ready", "retry-delete"}:
                   cloudformation.delete_stack(
                       StackName=str(stacks["runtime"]["StackId"]),
-                      ClientRequestToken=f"expiry-{config['session_id']}-runtime",
+                      ClientRequestToken=f"expiry-{config['session_id']}-runtime-managed-v1",
+                      RoleARN=str(config["stack_role_arn"]),
                   )
                   state = "delete-runtime"
               elif states["runtime"] == "deleting":
                   state = "wait-runtime"
-              elif states["database"] == "ready":
+              elif states["database"] in {"ready", "retry-delete"}:
                   cloudformation.delete_stack(
                       StackName=str(stacks["database"]["StackId"]),
-                      ClientRequestToken=f"expiry-{config['session_id']}-database",
+                      ClientRequestToken=f"expiry-{config['session_id']}-database-managed-v1",
+                      RoleARN=str(config["stack_role_arn"]),
                   )
                   state = "delete-database"
               elif states["database"] == "deleting":
@@ -243,3 +345,5 @@ Outputs:
     Value: !If [ControllerIsEnabled, ENABLED, DISABLED]
   MaximumSessionSeconds:
     Value: '7200'
+  StackDeletionRoleArn:
+    Value: !GetAtt StackDeletionRole.Arn
