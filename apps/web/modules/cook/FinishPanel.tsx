@@ -42,7 +42,8 @@ export function FinishPanel({ recipeId }: { recipeId: string }) {
   }, [recipeId]);
 
   useEffect(() => {
-    panel.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    panel.current?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: "end" });
   }, []);
 
   const rate = async (value: number) => {

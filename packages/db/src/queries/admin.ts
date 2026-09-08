@@ -140,9 +140,10 @@ export async function adminPurchases(database: Database, userId: string, limit =
  * double-click or concurrent refund can't reach Stripe twice. Returns true if
  * this call claimed it; false if it was already claimed/refunded.
  *
- * The driver has no interactive transactions, so this deliberate claim-first
- * ordering is how the flow stays safe: claim, then refund at Stripe, then
- * finalize — or release the claim if Stripe fails.
+ * The external Stripe request cannot be rolled back by a database transaction.
+ * This flow claims first, then requests the refund, then finalizes the database
+ * updates in a transaction, or releases the claim if the Stripe request fails.
+ * Interrupted external requests still require reconciliation.
  */
 export async function claimRefund(database: Database, purchaseId: string): Promise<boolean> {
   const rows = await database

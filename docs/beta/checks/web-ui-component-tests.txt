@@ -1,0 +1,32 @@
+✔ source config disables optimizer while retaining metadata/static import support (1.7551ms)
+✔ installed production handler rejects all image queries before validation/cache (23.8369ms)
+✔ installed development handler rejects all image queries before validation/cache (26.1374ms)
+✔ baseline wildcard control reaches optimizer boundary without any fetch (9.9469ms)
+✔ removed wildcard independently rejects remote hosts if optimizer were enabled (6.8081ms)
+✔ plain public image paths do not enter the optimizer handler (15.0813ms)
+✔ installed metadata sizing preserves the actual skillet icon dimensions (6.8846ms)
+✔ new web image-loader imports require this exposure review to be revisited (1180.5785ms)
+✔ server-selected legacy home cannot opt into woodland through query flags (273.4855ms)
+✔ server-selected woodland home passes the real entries to the illustrated list (54.7835ms)
+✔ legacy library keeps its empty copy and missing-image placeholder without atlas art (29.8492ms)
+✔ illustrated library alone receives the journal fallback and arrow (284.1567ms)
+✔ journal page headings remain server-gated and contain a native h1 when allowed (95.5663ms)
+✔ recipe headings default to legacy h2 and accept the server-selected page h1 (21.1231ms)
+✔ navigation includes saved meals and marks its containing disclosure active (30.5415ms)
+✔ Escape closes either native disclosure and requests focus on its summary only (57.7688ms)
+✔ every initial care choice keeps explicit ingredients and steps in its expanded content (112.5857ms)
+✔ failed dietary-profile loading never exposes an empty editable form; retry restores actual saved choices (64.3932ms)
+✔ cook finish scroll respects reduced motion without recording a cooking event in the test (67.6842ms)
+✔ an empty saved profile is editable, while a stale retry callback cannot replace later edits (52.8158ms)
+✔ late profile responses are ignored after cleanup and newer successful requests (85.347ms)
+✔ guest shopping feedback and safe sign-in are colocated with the selected care choice, with no API write (29.0549ms)
+✔ offline shopping feedback never reports saved or starts a write (25.6257ms)
+✔ new shelf confirms only a resolved write; failed writes retain the entered name (48.1525ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8224.6435

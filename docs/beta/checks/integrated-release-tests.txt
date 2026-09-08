@@ -1,0 +1,57 @@
+PASS wrong AWS identity fails before mutation
+PASS wrong account made no mutation
+PASS mutable tag rejected
+PASS empty enrollment rejected
+PASS unparsed enrollment string rejected
+PASS case-sensitive Clerk prefix enforced
+PASS scale-down window is preserved
+PASS unstable service rejected
+PASS mixed running revisions rejected
+PASS missing rollback digest rejected
+PASS runtime commit cannot substitute for built revision
+PASS local image must match reviewed digest
+PASS missing worker build flag rejected
+PASS missing Clerk build key rejected
+PASS pre-beta rollback image blocks beta preparation
+PASS conflicting secret beta flag rejected
+PASS preparation is read-only against AWS
+PASS candidate pinned to reviewed digest
+PASS rollback pinned to verified running digest
+PASS read-only task-definition fields omitted
+PASS capacity and IAM roles preserved
+PASS tags and secret references preserved
+PASS unrelated environment and certificate trust preserved
+PASS cohort deduplicated and local preview disabled
+PASS previous rollback packet cannot be overwritten
+PASS network drift blocks deployment
+PASS drift rejection preceded registration
+PASS edited candidate packet rejected
+PASS task revision drift blocks deployment
+PASS rollback registered before candidate and rollout
+PASS deployment does not alter capacity or network
+PASS rolling configuration retained and circuit breaker enabled
+PASS rollback selects preserved pinned revision
+PASS rollback cannot displace a newer release
+PASS failed update is not reported as deployed
+PASS uncertain deployment cannot silently register a second candidate
+PASS kill switch cannot deploy an unreviewed replacement image
+PASS kill switch disables beta and clears cohort
+PASS kill switch keeps current image without a rebuild
+PASS kill-switch preparation has no AWS mutation
+PASS full rollback cannot use an unverified kill-switch prior revision
+PASS trusted remote candidate avoids local Docker and performs no mutation (rollback independently inspected)
+PASS failed CodeBuild rejected
+PASS untrusted CodeBuild project rejected
+PASS build command drift rejected
+PASS Git source revision drift rejected
+PASS tampered remote artifact rejected
+PASS digest substitution in report rejected
+PASS report missing SW build rejected
+PASS old cache policy report rejected
+PASS report missing Clerk build rejected
+PASS S3 source checked by exact version and checksum in existing account
+PASS S3 source version drift rejected
+PASS S3 source checksum mismatch rejected
+PASS unversioned S3 source refused
+PASS both candidate and rollback verified through CodeBuild without local Docker
+56 assertions passed. Strict mocked AWS/Docker execution only. Synthetic packet files: C:\Users\James\AppData\Local\SecondBreakfastBeta\release-tests\8ab30b9a-5cd3-4fd6-969f-8f37f59b76b9

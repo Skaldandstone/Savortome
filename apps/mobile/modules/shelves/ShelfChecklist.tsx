@@ -62,6 +62,7 @@ export function ShelfChecklist({
             value={name}
             onChangeText={setName}
             placeholder="Shelf name"
+            accessibilityLabel="New shelf name"
             autoFocus
             maxLength={60}
             onSubmitEditing={submit}
@@ -78,7 +79,7 @@ export function ShelfChecklist({
 
 const styles = StyleSheet.create({
   wrap: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: space.sm },
-  chip: { borderWidth: 1, borderRadius: radius.pill, paddingHorizontal: 12, paddingVertical: 5 },
+  chip: { borderWidth: 1, borderRadius: radius.pill, minHeight: 44, paddingHorizontal: 12, paddingVertical: 5, justifyContent: "center" },
   newShelf: { flexDirection: "row", alignItems: "center", gap: space.xs },
   newShelfInput: { minWidth: 150, paddingVertical: 6 },
 });

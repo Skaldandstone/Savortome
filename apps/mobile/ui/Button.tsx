@@ -25,7 +25,7 @@ export function Button({
     variant === "primary" ? c.accent : selected ? c.accentSoft : "transparent";
   const color =
     variant === "primary"
-      ? "#fff"
+      ? c.onAccent
       : variant === "danger"
         ? c.error
         : selected
@@ -59,9 +59,9 @@ export function Button({
 }
 
 const styles = StyleSheet.create({
-  base: { borderRadius: radius.sm, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  base: { borderRadius: radius.sm, borderWidth: 1, minHeight: 44, maxWidth: "100%", alignItems: "center", justifyContent: "center" },
   primary: { paddingVertical: 12, paddingHorizontal: 20 },
   compact: { paddingVertical: 6, paddingHorizontal: 12 },
-  label: { fontWeight: "600", fontSize: typeScale.body },
+  label: { textAlign: "center", fontWeight: "600", fontSize: typeScale.body },
   compactLabel: { fontSize: typeScale.small, fontWeight: "500" },
 });

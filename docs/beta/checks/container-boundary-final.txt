@@ -1,0 +1,12 @@
+✔ web runtime is nonroot distroless and starts Next without a shell or package manager (2.0614ms)
+✔ runtime preserves reviewed revision, public cache, worker and Clerk metadata (0.3185ms)
+✔ optional media binaries are absent and RDS trust is copied from the build stage (0.3106ms)
+✔ container health check uses the distroless Node binary (1.405ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 157.6031

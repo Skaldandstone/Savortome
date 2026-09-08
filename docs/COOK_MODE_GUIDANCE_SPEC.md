@@ -1,6 +1,9 @@
 # Cook mode guidance: what other apps do, and what we should build
 
-Spec, not a status report — nothing here is built yet unless marked "already have."
+Historical design note. The step-focused deck, per-step allergen nudge, divided
+amount handling, swipe navigation, and offline technique help are now implemented
+on web and Android. Runtime visual, screen-reader, and physical-device acceptance
+remain separate.
 Written after a quick competitive look (SideChef, Kitchen Stories, NYT Cooking) and
 an audit of what `CookMode.tsx` and the allergen/nutrition modules already do.
 
@@ -11,10 +14,16 @@ Step-by-step cook mode (`apps/web/modules/cook/CookMode.tsx`,
 
 - Tap-to-advance ("Done — next →"), Back, Skip, arrow-key navigation
 - Per-step ingredient amounts, scaled to the serving count set at the top
+- Divided-ingredient portions when the source states a fraction, with an explicit
+  warning instead of a guessed share when it does not
 - Per-step timers, started from the step that names them
 - Progress bar, screen-wake-lock while cooking
 - Session persistence — closing the tab and coming back resumes the exact step,
   ticked-off steps, and running timers
+- A large step deck with touch swipe, button, keyboard, and assistive-technology
+  navigation
+- Bundled plain-language help and a short visual sequence for recognized cooking
+  techniques such as blanching, braising, folding, and tempering
 
 Nutrition (`packages/core/src/nutrition.ts`, `NutritionFacts.tsx`) is also built:
 per-serving and per-ingredient figures from schema.org data, USDA FoodData
@@ -24,7 +33,7 @@ on the recipe detail page — **not** inside cook mode.
 Allergen flagging (`packages/core/src/dietary.ts`, `AllergenWarning.tsx`) is
 built too: a viewer's own flagged allergens are matched against a recipe's
 ingredients by keyword, shown as a warning on the recipe detail page — also
-**not** inside cook mode.
+and the matching warning is also repeated only on the cook step where it matters.
 
 ## What other apps do
 
@@ -47,7 +56,7 @@ Sources:
 - [Kitchen Stories app](https://pages.kitchenstories.com/en/app), [Kitchen Stories on Google Play](https://play.google.com/store/apps/details?id=com.ajnsnewmedia.kitchenstories&hl=en)
 - [NYT Cooking cook mode](https://bootstrapped.ventures/cook-mode/)
 
-## What to build: a per-step allergen nudge, not a nutrition readout
+## Implemented extension: a per-step allergen nudge, not a nutrition readout
 
 Full nutrition-in-cook-mode is off the table for the reason above — it isn't
 what competitors do, it isn't what a cook needs mid-step, and it would need new

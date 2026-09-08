@@ -1,0 +1,211 @@
+warning: in the working copy of '.env.example', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'Dockerfile.web', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'STYLE_GUIDE.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/app.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/app/_layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/client.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/modules/account/AuthGate.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/modules/account/SignInScreen.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/modules/cook/CookScreen.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/modules/library/LibraryScreen.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/modules/pantry/CookScreen.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/modules/recipe/IngredientList.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/modules/recipe/RecipeCard.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/modules/recipe/RecipeHeader.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/modules/recipe/StepList.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/ui/Button.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/ui/ThemeProvider.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/ui/theme.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/api/billing/checkout/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/api/billing/webhook/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/cook/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/discover/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/friends/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/list/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/plan/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/profile/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/recipe/[id]/cook/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/recipe/[id]/edit/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/recipe/[id]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/recipe/new/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/sign-in/[[...sign-in]]/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/templates/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/lib/stripe.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/cook/CookMode.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/cook/FinishPanel.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/cook/TimerTray.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/cook/cook.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/discover/DiscoverPanel.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/discover/discover.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/editor/IngredientRows.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/editor/editor.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/friends/FriendsPanel.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/friends/friends.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/import/CreditMeter.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/import/ImportForm.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/import/import.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/library/LibraryItem.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/library/LibraryList.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/library/library.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/list/list.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/pantry/CookPanel.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/pantry/PantryList.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/pantry/pantry.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/plan/AddMealDialog.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/plan/SuggestMeal.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/plan/plan.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/plans/plans.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/profile/DietaryProfileForm.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/profile/profile.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/recipe/IngredientList.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/recipe/NutritionFacts.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/recipe/NutritionFacts.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/recipe/PairingSuggestions.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/recipe/PairingSuggestions.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/recipe/RecipeCard.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/recipe/RecipeFacts.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/recipe/RecipeHeader.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/sharing/sharing.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/shelves/ShelfChecklist.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/shelves/shelves.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/templates/templates.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/next.config.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/public/sw.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/ui/Button.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/ui/Callout.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/ui/Field.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/ui/Field.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/ui/Panel.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/ADMIN_DEPLOY.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/DEPLOYMENT.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/WISPLING-INTEGRATION.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/core/src/format.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/db/package.json', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/db/scripts/check-nutrition.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/db/scripts/provision-rds.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/db/src/client.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/db/src/migrate.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/db/src/queries/admin.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/db/src/queries/billing.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/db/src/queries/recipes.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'pnpm-lock.yaml', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '.dockerignore', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/app/(protected)/(tabs)/_layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/app/(protected)/_layout.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/app/+native-intent.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/app/care.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/app/legal.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/lib/accountToken.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/modules/care/CareIdeaCard.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/modules/care/CareScreen.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/modules/care/nativeLink.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/modules/care/saveIdea.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/modules/woodland/Artwork.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/modules/woodland/KitchenIcon.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/modules/woodland/KitchenWelcome.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/scripts/build-android-review.ps1', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/scripts/windows-native.init.gradle', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/test/care-links.test.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/mobile/test/care-save.test.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/api/billing/portal/route.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/app/care/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/lib/beta.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/lib/stripe-fulfillment.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/lib/stripe-policy.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/care/CareScreen.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/care/care-state.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/care/care-state.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/care/care.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/care/offline.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/library/NewShelf.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/library/WoodlandLibrary.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/library/woodland-library.module.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/offline/worker.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/woodland/FoodIllustration.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/woodland/KitchenIcon.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/woodland/KitchenPageHeading.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/modules/woodland/Woodland.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/public/care-offline.js', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/ui/LegalFooter.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'apps/web/ui/woodland.css', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/STRIPE_SETUP.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/COORDINATION.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/INTEGRATION.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/PLAN.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/README.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/accessibility-continuation.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/android-evidence.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/care-data-evidence.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/final-integration-checkpoint.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/handoff-evidence.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/image-parser-security.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/offline-cache-update.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/offline-shell.txt', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/overnight-integration.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/readiness-evidence.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/release-runbook.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/stripe-integration-evidence.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/tester-guide.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/web-concept-integration.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/web-concept-rebuild.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/web-evidence.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/web-ui-completion.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/web-ui-integration.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'docs/beta/wispling-active-handoff.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/core/src/care.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/core/test/beta-database-guard.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/core/test/care.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/core/test/database-tls.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/core/test/offline-parity.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/core/test/offline-privacy.test.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/db/scripts/beta-database.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/db/scripts/beta-local-schema.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/db/scripts/check-beta-billing.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/db/scripts/check-beta-transactions.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'packages/db/src/connection.ts', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/beta-release.ps1', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/build-beta-source-snapshot.ps1', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/build-care-offline.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/care-offline-harness.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/check-android-review.ps1', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/check-beta-authorization.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/check-beta-image-report.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/check-beta-release.ps1', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/check-container-boundary.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/check-mobile-woodland.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/check-next-image-boundary.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/check-next-image-build.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/check-stripe-lifecycle.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/check-web-accessibility-source.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/check-web-ui-build.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/check-woodland-library.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/check-woodland-ui.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/encode-woodland-assets.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/probe-next-image-parser.mjs', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'scripts/write-beta-image-report.mjs', LF will be replaced by CRLF the next time Git touches it
+{
+    "application":  "secondbreakfast",
+    "parentHead":  "dcb6f7112d4b5dbc54ec9e4009be8b09e9aa30c9",
+    "snapshotCommit":  "69b72d197d7d20dd10ba293b73e16e792f0e5114",
+    "sourceTree":  "19ba97db86b977bc785622fa46d5bef076aef9e0",
+    "manifestSha256":  "f9db46eab22bbecbb1e2405640cd255e3d57c705af8601ba675f1bd3594fe693",
+    "archiveSha256":  "5e1689d307fc0b205fbfd2e6bf564fc639566a0e2515cd43c88a1a73bb2c35cb",
+    "fileCount":  591,
+    "archiveBytes":  35259818,
+    "archivePath":  "C:\\Users\\James\\Documents\\Codex\\2026-08-31\\i-n\\outputs\\secondbreakfast-release\\secondbreakfast-beta-source-f9db46eab22bbecbb1e2405640cd255e3d57c705af8601ba675f1bd3594fe693.zip",
+    "realIndexChanged":  false,
+    "realIndexSha256":  "423bbc4e9bd2148252d3ce5eb253167d242dc97abcc11e64e46caedb65a6a831",
+    "exclusions":  [
+                       ".aws-rebuild/**",
+                       "design/**",
+                       "docs/beta/checks/**",
+                       "docs/beta/*.png",
+                       "docs/beta/*.jpg",
+                       "docs/beta/*.jpeg",
+                       "docs/beta/*.patch"
+                   ]
+}

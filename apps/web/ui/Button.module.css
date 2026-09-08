@@ -12,7 +12,7 @@
 
 .button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-.primary { background: var(--accent); color: #fff; }
+.primary { background: var(--accent); color: var(--on-accent, #fff); }
 
 .ghost {
   background: transparent;
@@ -47,3 +47,6 @@
   color: var(--accent);
   border-color: var(--border);
 }
+
+:global([data-woodland='true']) .primary { background:var(--action-surface); color:var(--action-text); border-color:var(--border); font-family:Georgia,serif; font-weight:400; box-shadow:inset 0 0 0 3px var(--action-surface),inset 0 0 0 4px #b6935655; }
+:global([data-decoration='reduced']) .primary { box-shadow:none; }

@@ -1,0 +1,18 @@
+✔ generated offline catalogue matches current shared ranking across strict choices (113.3021ms)
+✔ generated worker contains the current audited worker source (14.2934ms)
+✔ service worker never intercepts APIs, authenticated fetches, auth pages or mutations (27.5176ms)
+✔ activation removes legacy private caches, preserving unrelated origin caches (3.0929ms)
+✔ precache omits credentials and validates the whole shell before storing (3.7023ms)
+✔ a private or redirected precache response fails installation without partial storage (3.1955ms)
+✔ offline document has no public HTML file and online requests never return the cached shell (1.0405ms)
+✔ static cache rejects account-shaped responses, redirects, failures, and cookie variation (5.7364ms)
+✔ valid public image is cached while query URLs and unknown static payloads are excluded (1.4186ms)
+✔ offline private-page navigation returns only the generic shell and stores no response (1.0046ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 436.8962

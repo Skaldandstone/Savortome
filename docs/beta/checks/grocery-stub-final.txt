@@ -1,0 +1,47 @@
+▶ credentials
+  ✔ needs all three or none (1.2674ms)
+  ✔ asks only for the cart scope, and carries the state through (1.4796ms)
+✔ credentials (15.2048ms)
+▶ needsRefresh
+  ✔ leaves a token with time on it alone (0.6702ms)
+  ✔ replaces one that's expired (0.2409ms)
+  ✔ replaces one about to expire, rather than racing it (0.255ms)
+  ✔ treats nonsense as expired (0.2469ms)
+✔ needsRefresh (1.9909ms)
+▶ bestProductMatch
+  ✔ prefers the plainest description that still contains the item (0.7315ms)
+  ✔ refuses anything that doesn't actually contain the item (0.2909ms)
+  ✔ matches whole words, not fragments (0.2205ms)
+  ✔ keeps a multi-word name together (0.2742ms)
+  ✔ ignores punctuation and case in either (0.1602ms)
+  ✔ keeps Kroger's own order when descriptions are equally plain (0.1808ms)
+  ✔ falls back to the display name when there's no canonical one (0.1473ms)
+  ✔ has nothing to match against an empty name or an empty search (0.1231ms)
+✔ bestProductMatch (2.8411ms)
+▶ toCartItems
+  ✔ asks for one of whatever the store sells (1.487ms)
+  ✔ collapses two lines that resolved to the same product (0.2102ms)
+  ✔ can be asked for delivery instead (0.1318ms)
+✔ toCartItems (2.0885ms)
+▶ talking to the API
+  ✔ asks for a client_credentials token with basic auth (96.6102ms)
+  ✔ trades a code for the shopper's own token, quoting the same redirect back (14.3537ms)
+  ✔ reads stores, and drops any without an id (15.5521ms)
+  ✔ searches products at a specific store (8.6971ms)
+  ✔ says so when the cart is rejected (8.782ms)
+  ✔ refuses to send an empty cart rather than calling with nothing (0.6104ms)
+✔ talking to the API (145.6672ms)
+▶ sending a whole list
+  ✔ adds what it matched and names what it didn't (48.4698ms)
+  ✔ says which store when nothing matches, instead of an empty cart (8.2956ms)
+  ✔ insists on a store first (0.6618ms)
+  ✔ has nothing to do with an empty list (0.3418ms)
+✔ sending a whole list (58.2837ms)
+ℹ tests 27
+ℹ suites 6
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2856.3558

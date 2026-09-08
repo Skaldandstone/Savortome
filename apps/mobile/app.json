@@ -2,6 +2,7 @@
   "expo": {
     "name": "Second Breakfast",
     "slug": "seconds",
+    "owner": "skald-and-stone",
     "scheme": "seconds",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -30,15 +31,22 @@
     "android": {
       "package": "com.secondbreakfast.app",
       "versionCode": 1,
+      "allowBackup": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#E89A0C"
       },
       "permissions": [
         "android.permission.POST_NOTIFICATIONS"
+      ],
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW"
       ]
     },
     "extra": {
+      "eas": { "projectId": "88e6ce04-9624-4c8e-8004-1c8147cf4265" },
       "apiBaseUrl": "http://localhost:3000"
     },
     "icon": "./assets/icon.png",

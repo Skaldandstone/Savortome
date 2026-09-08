@@ -1,0 +1,45 @@
+{
+  "recordedAt": "2026-08-31T09:49:32.942Z",
+  "nextVersion": "15.5.23",
+  "parserSha256": "f824c02fbd558131c8d433c04c245fa3a50f6120024d78485c9b69005e2e654e",
+  "limits": {
+    "oldGenerationMiB": 32,
+    "youngGenerationMiB": 8,
+    "stackMiB": 2,
+    "startupMs": 5000,
+    "parseMs": 2000
+  },
+  "note": "Heap limits are per isolate, not a total RSS cap. A malformed failure is residual risk, not a fix or endpoint exploit proof.",
+  "results": [
+    {
+      "name": "actual-skillet-png",
+      "bytes": 608,
+      "loaded": true,
+      "elapsedMs": 52,
+      "outcome": "returned",
+      "result": {
+        "height": 32,
+        "width": 32,
+        "type": "png"
+      }
+    },
+    {
+      "name": "zero-size-icns-chunk",
+      "bytes": 16,
+      "loaded": true,
+      "elapsedMs": 565,
+      "outcome": "worker-error",
+      "code": "ERR_WORKER_OUT_OF_MEMORY",
+      "error": "Worker terminated due to reaching memory limit: JS heap out of memory"
+    },
+    {
+      "name": "zero-size-jxl-partial-box",
+      "bytes": 36,
+      "loaded": true,
+      "elapsedMs": 202,
+      "outcome": "worker-error",
+      "code": "ERR_WORKER_OUT_OF_MEMORY",
+      "error": "Worker terminated due to reaching memory limit: JS heap out of memory"
+    }
+  ]
+}

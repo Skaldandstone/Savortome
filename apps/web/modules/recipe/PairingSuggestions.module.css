@@ -182,3 +182,12 @@
   font-size: var(--step-1);
   color: var(--text-muted);
 }
+
+:global([data-woodland='true']) :is(.heading,.mealTitle) { font:1.3rem Georgia,serif; color:var(--accent); text-transform:none; letter-spacing:0; }
+:global([data-woodland='true']) :is(.mealHeader,.guests,.item) { flex-wrap:wrap; }
+:global([data-woodland='true']) .slots { grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr)); }
+:global([data-woodland='true']) .card { padding:12px; }
+:global([data-woodland='true']) .noNutrition { font-size:.75rem; white-space:normal; }
+:global([data-woodland='true']) .saveMealName { min-width:0; }
+:global([data-woodland='true']) .meal { border:1px solid var(--border); }
+:global([data-text-size='200']) .slots { grid-template-columns:1fr; }

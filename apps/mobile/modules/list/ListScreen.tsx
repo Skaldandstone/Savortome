@@ -60,8 +60,9 @@ function Row({
       <Pressable
         disabled={disabled}
         onPress={() => onRemove(item.id)}
+        accessibilityRole="button"
         accessibilityLabel={`Remove ${item.displayName}`}
-        hitSlop={8}
+        style={styles.remove}
       >
         <Text style={{ color: c.textMuted, fontSize: typeScale.title }}>×</Text>
       </Pressable>
@@ -86,7 +87,7 @@ function CartSection({
     <View style={styles.cart}>
       {withApi.length > 0 ? (
         <Panel style={styles.cartGroup}>
-          <Text style={[styles.cartHeading, { color: c.textMuted }]}>FILL A CART</Text>
+          <Text accessibilityRole="header" style={[styles.cartHeading, { color: c.textMuted }]}>FILL A CART</Text>
           <View style={styles.cartButtons}>
             {withApi.map((p) => (
               <Button key={p.id} label={p.name} disabled={disabled} onPress={() => onSend(p.id)} />
@@ -96,7 +97,7 @@ function CartSection({
       ) : null}
 
       <Panel style={styles.cartGroup}>
-        <Text style={[styles.cartHeading, { color: c.textMuted }]}>TAKE THE LIST ELSEWHERE</Text>
+        <Text accessibilityRole="header" style={[styles.cartHeading, { color: c.textMuted }]}>TAKE THE LIST ELSEWHERE</Text>
         <View style={styles.cartButtons}>
           {handoffs.map((p) => (
             <Button
@@ -166,7 +167,7 @@ export function ListScreen() {
             {sections.map((section) => (
               <View key={section.aisle}>
                 {sections.length > 1 ? (
-                  <Text style={[styles.aisle, { color: c.textMuted }]}>
+                  <Text accessibilityRole="header" style={[styles.aisle, { color: c.textMuted }]}>
                     {section.label.toUpperCase()}
                   </Text>
                 ) : null}
@@ -231,7 +232,8 @@ const styles = StyleSheet.create({
     paddingVertical: space.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  rowMain: { flexDirection: "row", alignItems: "baseline", gap: space.sm, flex: 1 },
+  rowMain: { flexDirection: "row", alignItems: "baseline", gap: space.sm, flex: 1, minHeight: 44 },
+  remove: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   box: { fontSize: typeScale.title },
   amount: { width: 74, fontWeight: "600", fontSize: typeScale.small },
   name: { flex: 1, fontSize: typeScale.body },

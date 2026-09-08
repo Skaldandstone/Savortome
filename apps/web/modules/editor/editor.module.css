@@ -167,3 +167,21 @@
   .optional, .rowActions { padding-top: 0; }
   .danger { margin-left: 0; }
 }
+
+@media(max-width:640px) {
+  :global([data-woodland='true']) .row { flex-wrap:wrap; }
+  :global([data-woodland='true']) .rowMain { flex-basis:100%; }
+  :global([data-woodland='true']) .optional { min-height:44px; padding-top:0; }
+}
+
+:global([data-woodland='true']) .editor { gap:24px; }
+:global([data-woodland='true']) .fields { gap:20px; }
+:global([data-woodland='true']) .label { text-transform:none; letter-spacing:0; font-size:.9375rem; font-weight:500; color:var(--text); }
+:global([data-woodland='true']) :is(.lineInput,.stepInput,.select,.headingInput) { background:var(--surface-sunken); border-radius:3px; line-height:1.5; }
+:global([data-woodland='true']) .headingInput { text-transform:none; letter-spacing:0; font:1.1rem/1.5 Georgia,serif; }
+:global([data-woodland='true']) .row { gap:12px; }
+:global([data-woodland='true']) .rowAction { width:44px; height:44px; }
+:global([data-woodland='true']) .actions { padding:18px 0; border-top:1px solid var(--border); }
+:global([data-text-size='200']) .grid { grid-template-columns:1fr; }
+:global([data-text-size='200']) .row { flex-wrap:wrap; }
+:global([data-text-size='200']) .rowMain { flex-basis:100%; }

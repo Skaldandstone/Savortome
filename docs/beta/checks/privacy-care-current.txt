@@ -1,0 +1,32 @@
+✔ link parser removes private, unknown, duplicate and malformed values (2.9425ms)
+✔ malformed containers and inherited or unknown fields cannot become link parameters (0.8204ms)
+✔ all seven documented handoff fields round trip without any extra personal data (0.4076ms)
+✔ all combinations keep explicit effort and time ceilings and unique choices (12.4721ms)
+✔ each available candidate fills the next slot, including equal-time alternatives (3.0533ms)
+✔ pantry priority remains intact across all slots rather than forcing a slower second choice (1.8484ms)
+✔ pantry names use the existing canonicalizer and complete coverage precedes partial coverage (4.872ms)
+✔ pantry canonicalization never changes preparation requirements or relaxes restrictions (4.4486ms)
+✔ sensory, appetite and dietary filters apply to every suggestion slot (14.9834ms)
+✔ each known detected allergen conflict is excluded even with a favored pantry match (288.7368ms)
+✔ never broadens impossible requests or uncertain dietary certifications (0.4004ms)
+✔ allergens exclude conflicts including optional future shopping suggestions (2.2517ms)
+✔ pantry ranking is opt-in, deterministic, and does not override sensory preferences (4.0425ms)
+✔ beta is closed by default and a local-preview flag never opens production (0.4795ms)
+✔ generated offline catalogue matches current shared ranking across strict choices (139.2516ms)
+✔ generated worker contains the current audited worker source (4.5101ms)
+✔ service worker never intercepts APIs, authenticated fetches, auth pages or mutations (28.2914ms)
+✔ activation removes legacy private caches, preserving unrelated origin caches (2.7108ms)
+✔ precache omits credentials and validates the whole shell before storing (9.0896ms)
+✔ a private or redirected precache response fails installation without partial storage (4.2643ms)
+✔ offline document has no public HTML file and online requests never return the cached shell (2.2983ms)
+✔ static cache rejects account-shaped responses, redirects, failures, and cookie variation (7.9111ms)
+✔ valid public image is cached while query URLs and unknown static payloads are excluded (1.6605ms)
+✔ offline private-page navigation returns only the generic shell and stores no response (1.7149ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 778.9114

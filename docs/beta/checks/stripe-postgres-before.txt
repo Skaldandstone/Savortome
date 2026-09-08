@@ -1,0 +1,36 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+
+  {
++   credits_purchased: 25,
+-   credits_purchased: 0,
+    stripe_customer_id: null,
+    stripe_subscription_id: 'sub_beta_02529801-301d-46e3-a93d-4f434258ba4c'
+  }
+
+    at <anonymous> (C:\Users\James\Documents\GitHub\SecondBreakfast\packages\db\scripts\check-beta-billing.ts:52:10)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: {
+    credits_purchased: 25,
+    stripe_customer_id: null,
+    stripe_subscription_id: 'sub_beta_02529801-301d-46e3-a93d-4f434258ba4c'
+  },
+  expected: {
+    credits_purchased: 0,
+    stripe_customer_id: null,
+    stripe_subscription_id: 'sub_beta_02529801-301d-46e3-a93d-4f434258ba4c'
+  },
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0
+undefined
+C:\Users\James\Documents\GitHub\SecondBreakfast\packages\db:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: tsx scripts/check-beta-billing.ts

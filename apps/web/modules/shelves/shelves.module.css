@@ -70,3 +70,12 @@
 
 .badge[data-status="cooking"] { background: var(--warn-soft); color: var(--warn); }
 .badge[data-status="cooked"] { background: var(--accent-soft); color: var(--accent); }
+
+:global([data-woodland='true']) .controls { border:1px solid var(--border); padding:22px; }
+:global([data-woodland='true']) .label { font:1.1rem Georgia,serif; text-transform:none; letter-spacing:0; color:var(--accent); }
+:global([data-woodland='true']) .checkItem { min-height:44px; gap:10px; }
+:global([data-woodland='true']) .checkItem input { width:20px; height:20px; }
+:global([data-woodland='true']) .newShelf { flex-wrap:wrap; min-width:0; }
+:global([data-woodland='true']) .newShelf input { min-width:0; background:var(--surface); color:var(--text); border:1px solid var(--border); border-radius:3px; }
+:global([data-woodland='true']) .star { font-size:1.5rem; }
+:global([data-woodland='true']) .stars { flex-wrap:wrap; }

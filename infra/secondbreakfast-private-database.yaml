@@ -1,0 +1,183 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Ephemeral private PostgreSQL for Second Breakfast beta validation, with forced
+  TLS, managed credentials, encrypted storage, and snapshot-preserving deletion.
+
+Metadata:
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@2
+  com.aws.cloudformation.Context:
+    arch: nonpublic RDS PostgreSQL in two existing VPC subnets
+    must:
+      - create nothing unless the explicit activation gate is supplied
+      - never expose PostgreSQL to an internet CIDR
+      - retain a final snapshot when the ephemeral stack is deleted
+    ref:
+      - at: docs/beta/private-runtime-infrastructure.md
+        has: activation, migration, cleanup, and acceptance procedure
+        scope: repository
+
+Parameters:
+  ActivationGate:
+    Type: String
+    Default: NOT_APPROVED
+    AllowedValues: [NOT_APPROVED, REVIEWED_EPHEMERAL_DATABASE]
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  DatabaseSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+  ExpiresAtEpoch:
+    Type: String
+    AllowedPattern: '^[0-9]{10}$'
+    Description: Mandatory expiry recorded for the reviewed cleanup workflow.
+
+Conditions:
+  CreateReviewedDatabase: !Equals [!Ref ActivationGate, REVIEWED_EPHEMERAL_DATABASE]
+
+Resources:
+  DatabaseSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: CreateReviewedDatabase
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Dedicated database boundary; runtime stack adds SG-to-SG ingress.
+        must:
+          - no CIDR ingress
+          - port 5432 ingress only from reviewed application or migrator groups
+        mutable: review-required
+    Properties:
+      GroupDescription: Second Breakfast private PostgreSQL with no CIDR ingress
+      VpcId: !Ref VpcId
+      SecurityGroupIngress: []
+      SecurityGroupEgress: []
+      Tags:
+        - {Key: Application, Value: secondbreakfast}
+        - {Key: Environment, Value: development}
+        - {Key: SkaldAndStone-ExpiresAtEpoch, Value: !Ref ExpiresAtEpoch}
+
+  DatabaseSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Condition: CreateReviewedDatabase
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Two-AZ subnet placement required by RDS; database remains nonpublic.
+        must:
+          - use subnets from the selected VPC in at least two availability zones
+        mutable: change-with-constraints
+    Properties:
+      DBSubnetGroupDescription: Second Breakfast ephemeral private database
+      SubnetIds: !Ref DatabaseSubnetIds
+      Tags:
+        - {Key: Application, Value: secondbreakfast}
+        - {Key: Environment, Value: development}
+        - {Key: SkaldAndStone-ExpiresAtEpoch, Value: !Ref ExpiresAtEpoch}
+
+  DatabaseParameterGroup:
+    Type: AWS::RDS::DBParameterGroup
+    Condition: CreateReviewedDatabase
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Enforces TLS inside PostgreSQL in addition to client certificate checks.
+        must:
+          - rds.force_ssl remains enabled
+        mutable: must-never-change
+    Properties:
+      Description: Second Breakfast PostgreSQL 17 forced TLS
+      Family: postgres17
+      Parameters:
+        rds.force_ssl: '1'
+      Tags:
+        - {Key: Application, Value: secondbreakfast}
+        - {Key: Environment, Value: development}
+
+  RuntimeDatabaseSecret:
+    Type: AWS::SecretsManager::Secret
+    Condition: CreateReviewedDatabase
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Holds the generated runtime role credential and configured TLS URL.
+        must:
+          - runtime task injects only DATABASE_URL
+          - secret values never enter template parameters, logs, or evidence
+        mutable: review-required
+    Properties:
+      Name: !Sub dev/secondbreakfast/database/${ExpiresAtEpoch}
+      Description: Second Breakfast ephemeral runtime database credential
+      GenerateSecretString:
+        SecretStringTemplate: '{"username":"secondbreakfast"}'
+        GenerateStringKey: password
+        PasswordLength: 40
+        ExcludeCharacters: '"@/\\'
+      Tags:
+        - {Key: Application, Value: secondbreakfast}
+        - {Key: Environment, Value: development}
+        - {Key: SkaldAndStone-ExpiresAtEpoch, Value: !Ref ExpiresAtEpoch}
+
+  Database:
+    Type: AWS::RDS::DBInstance
+    Condition: CreateReviewedDatabase
+    DeletionPolicy: Snapshot
+    UpdateReplacePolicy: Snapshot
+    Metadata:
+      com.aws.cloudformation.Context:
+        why: Small standard PostgreSQL preserves tested transactions and pgvector portability.
+        must:
+          - PubliclyAccessible remains false
+          - StorageEncrypted remains true
+          - deletion and replacement preserve a snapshot
+          - master password remains RDS-managed
+        mutable: review-required
+        mutability:
+          AllocatedStorage: change-with-constraints
+    Properties:
+      Engine: postgres
+      EngineVersion: '17.10'
+      DBInstanceClass: db.t4g.micro
+      AllocatedStorage: '20'
+      StorageType: gp3
+      StorageEncrypted: true
+      MultiAZ: false
+      PubliclyAccessible: false
+      DBName: postgres
+      MasterUsername: sbadmin
+      ManageMasterUserPassword: true
+      Port: 5432
+      DBSubnetGroupName: !Ref DatabaseSubnetGroup
+      DBParameterGroupName: !Ref DatabaseParameterGroup
+      VPCSecurityGroups: [!GetAtt DatabaseSecurityGroup.GroupId]
+      BackupRetentionPeriod: 1
+      AutoMinorVersionUpgrade: true
+      CopyTagsToSnapshot: true
+      DeletionProtection: false
+      EnableIAMDatabaseAuthentication: false
+      EnablePerformanceInsights: false
+      Tags:
+        - {Key: Application, Value: secondbreakfast}
+        - {Key: Environment, Value: development}
+        - {Key: SkaldAndStone-ExpiresAtEpoch, Value: !Ref ExpiresAtEpoch}
+
+Outputs:
+  DatabaseIdentifier:
+    Condition: CreateReviewedDatabase
+    Description: RDS identifier for exact inventory and cleanup checks.
+    Value: !Ref Database
+  DatabaseEndpoint:
+    Condition: CreateReviewedDatabase
+    Description: Nonpublic PostgreSQL host used only to configure the secret.
+    Value: !GetAtt Database.Endpoint.Address
+  DatabasePort:
+    Condition: CreateReviewedDatabase
+    Description: PostgreSQL port.
+    Value: !GetAtt Database.Endpoint.Port
+  DatabaseSecurityGroupId:
+    Condition: CreateReviewedDatabase
+    Description: Dedicated group consumed by the runtime stack.
+    Value: !GetAtt DatabaseSecurityGroup.GroupId
+  MasterSecretArn:
+    Condition: CreateReviewedDatabase
+    Description: RDS-managed master credential for one-shot provisioning only.
+    Value: !GetAtt Database.MasterUserSecret.SecretArn
+  RuntimeDatabaseSecretArn:
+    Condition: CreateReviewedDatabase
+    Description: Runtime and one-shot migration secret; task injects selected JSON keys.
+    Value: !Ref RuntimeDatabaseSecret

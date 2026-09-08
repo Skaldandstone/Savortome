@@ -1,0 +1,87 @@
+{
+  "recordedAt": "2026-08-31T18:42:25.6594503-07:00",
+  "artifact": "C:\\Users\\James\\Documents\\GitHub\\SecondBreakfast\\apps\\mobile\\.expo-export\\guest-preview\\second-breakfast-arm64-woodland-guest-final.apk",
+  "bytes": 56308513,
+  "sha256": "df3f992c619476e680df4f6f88a7abd32db6ad055f4d2da65afa15f0d717f233",
+  "package": "com.secondbreakfast.app",
+  "versionName": "0.1.0",
+  "versionCode": 1,
+  "minSdk": 24,
+  "targetSdk": 36,
+  "configuration": "guest-preview",
+  "architecture": [
+    "arm64-v8a"
+  ],
+  "nativeLibraries": 23,
+  "packageIdentityVerified": true,
+  "allowBackupFalse": true,
+  "secondsScheme": true,
+  "readExternalStorageAbsent": true,
+  "writeExternalStorageAbsent": true,
+  "overlayAbsent": true,
+  "signatureV2": true,
+  "debugCertificate": true,
+  "certificateSha256": "fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c",
+  "bundleSha256": "2ec1b9aa1bdd3a793d9c999bc2d134379deeb9cc8677a2798afb8125576c7984",
+  "bundleBytes": 4239288,
+  "containsConfiguredClerkTestKey": false,
+  "markers": [
+    {
+      "marker": "Your woodland kitchen",
+      "present": true
+    },
+    {
+      "marker": "View details",
+      "present": true
+    },
+    {
+      "marker": "Sign in again before saving.",
+      "present": true
+    },
+    {
+      "marker": "We could not confirm the list update.",
+      "present": true
+    },
+    {
+      "marker": "Matches use ingredient names, not quantities or preparation.",
+      "present": true
+    },
+    {
+      "marker": "Feed me gently",
+      "present": true
+    }
+  ],
+  "assets": [
+    {
+      "path": "apps/mobile/assets/woodland/kitchen-scene.webp",
+      "sha256": "7c27f1c204647d690c0126d637453e179e945640f9f51dbac4c61d638768fb5b",
+      "packaged": true
+    },
+    {
+      "path": "apps/mobile/assets/woodland/food-atlas.webp",
+      "sha256": "cb96b0f9d3262f4f593c3b8db2051336758c04eaedcef0f50a049ef1b1d7697c",
+      "packaged": true
+    },
+    {
+      "path": "apps/mobile/assets/woodland/parchment.webp",
+      "sha256": "5546ede20f7a470a059496332108661ef19b98ce1bc40aba69684afe8c9ee837",
+      "packaged": true
+    },
+    {
+      "path": "apps/mobile/assets/woodland/timber.webp",
+      "sha256": "b58046618f7c5597cfd04697c356c4a9eff03a5b4848bae2417da45eff9c88a6",
+      "packaged": true
+    }
+  ],
+  "approvedSourceManifestSha256": "28491f46acea729f83403bad7b4b0325a2b6fd4be4f90b34964de5269e6236ab",
+  "approvedSnapshotCommit": "87e04ab9e9029a1b86893e8ef4a788de3e77949d",
+  "sourceFiles": 161,
+  "sourceLogicalMismatch": 0,
+  "sourceHashesManifestSha256": "89916abf7f55566337963d9df76e30c44a2348436c9ecce5b7776f1150043bee",
+  "dependencyFiles": 3,
+  "dependencyMismatch": 0,
+  "runtimeTested": false,
+  "physicalDeviceTested": false,
+  "visualAccepted": false,
+  "cohortSigned": false
+}

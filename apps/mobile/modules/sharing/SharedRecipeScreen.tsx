@@ -79,7 +79,7 @@ export function SharedRecipeScreen() {
           </Callout>
         ) : !recipe || !view ? (
           <View style={styles.loading}>
-            <ActivityIndicator color={c.accent} />
+            <ActivityIndicator accessibilityLabel="Loading shared recipe" color={c.accent} />
           </View>
         ) : (
           <>
@@ -88,6 +88,7 @@ export function SharedRecipeScreen() {
                 <Image
                   source={{ uri: view.sharedBy.avatarUrl }}
                   style={styles.avatar}
+                  accessible={false}
                   accessibilityIgnoresInvertColors
                 />
               ) : null}
@@ -117,7 +118,7 @@ export function SharedRecipeScreen() {
 
             {similar.length > 0 ? (
               <View style={styles.similar}>
-                <Text style={[styles.similarHeading, { color: c.textMuted }]}>MORE LIKE THIS</Text>
+                <Text accessibilityRole="header" style={[styles.similarHeading, { color: c.textMuted }]}>MORE LIKE THIS</Text>
                 {similar.map((card) => (
                   <DiscoverRow key={card.recipeId} card={card} />
                 ))}

@@ -113,7 +113,7 @@ export function CreditMeter({
               {pack.credits} credits · {formatPackPrice(pack)}
             </button>
           ))}
-          {problem ? <span className={styles.meterProblem}>{problem}</span> : null}
+          {problem ? <span className={styles.meterProblem} role="alert">{problem}</span> : null}
         </div>
       ) : null}
     </div>

@@ -1,0 +1,19 @@
+✔ every care catalogue ID maps to one authored food cell, never inferred recipe names (5.9826ms)
+✔ reduced decoration and non-beta builds do not mount food art or timber (4.9004ms)
+✔ food atlas is decorative and a failed asset removes its occupied frame (2.7165ms)
+✔ Future me expands all exact ingredients and steps and labels only its single shopping item (3.2956ms)
+✔ enlarged care text removes illustration and does not clamp labels or step text (2.6941ms)
+✔ paper applies readable ink while reduced decoration retains the selected palette (5.5887ms)
+✔ kitchen entry stays reachable with illustrations off (3.5697ms)
+✔ mobile and web ship byte-identical production woodland art (182.0876ms)
+✔ both themes meet body and primary-action text contrast before texture (35.834ms)
+✔ review build defaults to preserved arm64 and allows a distinct x86 emulator artifact (20.9944ms)
+✔ Android review source blocks storage and overlay permissions the beta does not use (2.7661ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5173.9544

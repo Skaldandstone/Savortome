@@ -1,0 +1,21 @@
+✔ disabled server gate ignores invited identity and frontend flags without reading auth (52.2184ms)
+✔ signed-out redirect contains only validated handoff fields (17.2223ms)
+✔ non-invited user cannot forge access or redirect through query fields (15.0682ms)
+✔ invited user receives only validated care props; arbitrary return rejected (17.2934ms)
+✔ missing Clerk configuration cannot enable local preview in production (13.0317ms)
+✔ local development preview remains usable without an account (15.6959ms)
+✔ unavailable/expired auth fails closed and never renders care (30.2871ms)
+✔ CodeBuild report writer emits actual inspected digest/revision/config without key values (4.1737ms)
+✔ CodeBuild report writer refuses substituted image metadata (3.7203ms)
+✔ server-selected legacy home cannot opt into woodland through query flags (55.2568ms)
+✔ server-selected woodland home passes the real entries to the illustrated list (29.6722ms)
+✔ legacy library keeps its empty copy and missing-image placeholder without atlas art (25.7606ms)
+✔ illustrated library alone receives the journal fallback and arrow (16.4019ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1629.4444

@@ -20,7 +20,7 @@ function MatchRow({ match }: { match: PantrySearchResult }) {
       style={[styles.match, { backgroundColor: c.surface, borderColor: c.border }]}
     >
       {match.imageUrl ? (
-        <Image source={{ uri: match.imageUrl }} style={styles.thumb} accessibilityIgnoresInvertColors />
+        <Image source={{ uri: match.imageUrl }} style={styles.thumb} accessible={false} accessibilityIgnoresInvertColors />
       ) : (
         <View style={[styles.thumb, { backgroundColor: c.surfaceSunken }]} />
       )}
@@ -51,7 +51,7 @@ function Group({ title, matches }: { title: string; matches: PantrySearchResult[
 
   return (
     <View style={styles.group}>
-      <Text style={[styles.groupHeading, { color: c.textMuted }]}>{title.toUpperCase()}</Text>
+      <Text accessibilityRole="header" style={[styles.groupHeading, { color: c.textMuted }]}>{title.toUpperCase()}</Text>
       {matches.map((m) => (
         <MatchRow key={m.recipeId} match={m} />
       ))}

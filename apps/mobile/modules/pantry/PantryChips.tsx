@@ -31,6 +31,7 @@ export function PantryChips({
           value={text}
           onChangeText={setText}
           placeholder="2 chicken thighs, rice, tomatoes"
+          accessibilityLabel="Add pantry ingredients"
           autoCapitalize="none"
           onSubmitEditing={submit}
           style={styles.input}
@@ -83,6 +84,7 @@ const styles = StyleSheet.create({
   chip: {
     flexDirection: "row",
     alignItems: "baseline",
+    minHeight: 44,
     borderWidth: 1,
     borderRadius: radius.pill,
     paddingHorizontal: 10,

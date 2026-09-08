@@ -1,10 +1,11 @@
 import { Image, Linking, StyleSheet, Text, View } from "react-native";
 import type { Recipe } from "@seconds/core/format";
 import { space, type as typeScale, usePalette } from "@/ui";
+import { FoodIllustration, woodlandEnabled } from '@/modules/woodland/Artwork';
 
 export function RecipeHero({ imageUrl }: { imageUrl: string | null }) {
-  if (!imageUrl) return null;
-  return <Image source={{ uri: imageUrl }} style={styles.hero} accessibilityIgnoresInvertColors />;
+  if (!imageUrl) return woodlandEnabled ? <View style={{alignItems:'center',paddingTop:18}}><FoodIllustration foodId="journal" size={120} /></View> : null;
+  return <Image source={{ uri: imageUrl }} style={styles.hero} accessible={false} accessibilityIgnoresInvertColors />;
 }
 
 export function RecipeHeader({ recipe }: { recipe: Recipe }) {
@@ -15,14 +16,19 @@ export function RecipeHeader({ recipe }: { recipe: Recipe }) {
 
   return (
     <View>
-      <Text style={[styles.title, { color: c.text }]}>{recipe.title}</Text>
+      <Text accessibilityRole="header" style={[styles.title, { color: woodlandEnabled ? c.accent : c.text, fontFamily:woodlandEnabled ? 'serif' : undefined }]}>{recipe.title}</Text>
       {recipe.description ? (
         <Text style={[styles.lede, { color: c.textMuted }]}>{recipe.description}</Text>
       ) : null}
       <Text style={[styles.attribution, { color: c.textMuted }]}>
         {source.author ? `By ${source.author} · ` : ""}
         {source.url ? (
-          <Text style={{ color: c.accent }} onPress={() => Linking.openURL(source.url as string)}>
+          <Text
+            accessibilityRole="link"
+            accessibilityLabel={`${label}, opens source recipe`}
+            style={{ color: c.accent }}
+            onPress={() => Linking.openURL(source.url as string)}
+          >
             {label}
           </Text>
         ) : (

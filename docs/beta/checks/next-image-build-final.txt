@@ -1,0 +1,110 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: only the reviewed runtime config may change
++ actual - expected
+
+  [
++   'apps/web/app/cook/page.tsx',
++   'apps/web/app/discover/page.tsx',
++   'apps/web/app/friends/page.tsx',
++   'apps/web/app/list/page.tsx',
++   'apps/web/app/plan/page.tsx',
++   'apps/web/app/profile/page.tsx',
++   'apps/web/app/recipe/[id]/cook/page.tsx',
++   'apps/web/app/recipe/[id]/edit/page.tsx',
++   'apps/web/app/recipe/[id]/page.tsx',
++   'apps/web/app/recipe/new/page.tsx',
++   'apps/web/app/templates/page.tsx',
++   'apps/web/modules/care/care.module.css',
++   'apps/web/modules/care/CareScreen.tsx',
++   'apps/web/modules/cook/cook.module.css',
++   'apps/web/modules/cook/FinishPanel.tsx',
++   'apps/web/modules/discover/discover.module.css',
++   'apps/web/modules/editor/editor.module.css',
++   'apps/web/modules/friends/friends.module.css',
++   'apps/web/modules/import/import.module.css',
++   'apps/web/modules/library/NewShelf.tsx',
++   'apps/web/modules/library/woodland-library.module.css',
++   'apps/web/modules/list/list.module.css',
++   'apps/web/modules/pantry/pantry.module.css',
++   'apps/web/modules/plan/plan.module.css',
++   'apps/web/modules/plans/plans.module.css',
++   'apps/web/modules/profile/DietaryProfileForm.tsx',
++   'apps/web/modules/profile/profile.module.css',
++   'apps/web/modules/recipe/NutritionFacts.module.css',
++   'apps/web/modules/recipe/PairingSuggestions.module.css',
++   'apps/web/modules/recipe/recipe.module.css',
++   'apps/web/modules/recipe/RecipeCard.tsx',
++   'apps/web/modules/recipe/RecipeFacts.module.css',
++   'apps/web/modules/recipe/RecipeHeader.tsx',
++   'apps/web/modules/sharing/sharing.module.css',
++   'apps/web/modules/shelves/shelves.module.css',
++   'apps/web/modules/templates/templates.module.css',
++   'apps/web/modules/woodland/Woodland.tsx',
+    'apps/web/next.config.ts',
++   'apps/web/ui/Button.module.css',
++   'apps/web/ui/Callout.module.css',
++   'apps/web/ui/Field.module.css',
++   'apps/web/ui/Panel.module.css',
++   'apps/web/ui/woodland.css'
+  ]
+
+    at file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-build.mjs:19:8
+    at ModuleJob.run (node:internal/modules/esm/module_job:439:25)
+    at async node:internal/modules/esm/loader:643:26
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: [
+    'apps/web/app/cook/page.tsx',
+    'apps/web/app/discover/page.tsx',
+    'apps/web/app/friends/page.tsx',
+    'apps/web/app/list/page.tsx',
+    'apps/web/app/plan/page.tsx',
+    'apps/web/app/profile/page.tsx',
+    'apps/web/app/recipe/[id]/cook/page.tsx',
+    'apps/web/app/recipe/[id]/edit/page.tsx',
+    'apps/web/app/recipe/[id]/page.tsx',
+    'apps/web/app/recipe/new/page.tsx',
+    'apps/web/app/templates/page.tsx',
+    'apps/web/modules/care/care.module.css',
+    'apps/web/modules/care/CareScreen.tsx',
+    'apps/web/modules/cook/cook.module.css',
+    'apps/web/modules/cook/FinishPanel.tsx',
+    'apps/web/modules/discover/discover.module.css',
+    'apps/web/modules/editor/editor.module.css',
+    'apps/web/modules/friends/friends.module.css',
+    'apps/web/modules/import/import.module.css',
+    'apps/web/modules/library/NewShelf.tsx',
+    'apps/web/modules/library/woodland-library.module.css',
+    'apps/web/modules/list/list.module.css',
+    'apps/web/modules/pantry/pantry.module.css',
+    'apps/web/modules/plan/plan.module.css',
+    'apps/web/modules/plans/plans.module.css',
+    'apps/web/modules/profile/DietaryProfileForm.tsx',
+    'apps/web/modules/profile/profile.module.css',
+    'apps/web/modules/recipe/NutritionFacts.module.css',
+    'apps/web/modules/recipe/PairingSuggestions.module.css',
+    'apps/web/modules/recipe/recipe.module.css',
+    'apps/web/modules/recipe/RecipeCard.tsx',
+    'apps/web/modules/recipe/RecipeFacts.module.css',
+    'apps/web/modules/recipe/RecipeHeader.tsx',
+    'apps/web/modules/sharing/sharing.module.css',
+    'apps/web/modules/shelves/shelves.module.css',
+    'apps/web/modules/templates/templates.module.css',
+    'apps/web/modules/woodland/Woodland.tsx',
+    'apps/web/next.config.ts',
+    'apps/web/ui/Button.module.css',
+    'apps/web/ui/Callout.module.css',
+    'apps/web/ui/Field.module.css',
+    'apps/web/ui/Panel.module.css',
+    'apps/web/ui/woodland.css'
+  ],
+  expected: [ 'apps/web/next.config.ts' ],
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

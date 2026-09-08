@@ -81,6 +81,56 @@ export function products(): Product[] {
 export const productById = (id: string): Product | undefined =>
   products().find((product) => product.id === id);
 
+/** Only public availability reaches the plans client, never Stripe credentials or IDs. */
+export interface BillingAvailability {
+  checkoutProducts: ProductId[];
+  checkoutNotice: string | null;
+  portal: boolean;
+}
+
+export function billingAvailability(input: {
+  checkoutEnabled: boolean;
+  signedIn: boolean;
+  databaseReady: boolean;
+  stripeReady: boolean;
+  webhookReady: boolean;
+  pricedProducts: readonly ProductId[];
+  hasCustomer: boolean;
+  portalConfigured: boolean;
+}): BillingAvailability {
+  const checkoutReady = input.checkoutEnabled && input.signedIn && input.databaseReady
+    && input.stripeReady && input.webhookReady;
+  const checkoutProducts = checkoutReady
+    ? products().filter((product) => input.pricedProducts.includes(product.id)).map((product) => product.id)
+    : [];
+  let checkoutNotice: string | null = null;
+  if (!input.checkoutEnabled) {
+    checkoutNotice = "This private beta is free. Paid plans and credit top-ups are not available.";
+  } else if (!input.databaseReady || !input.stripeReady || !input.webhookReady) {
+    checkoutNotice = "Purchases are not available yet. You can keep using the free plan.";
+  } else if (!input.signedIn) {
+    checkoutNotice = "Sign in to purchase a plan or credits.";
+  } else if (checkoutProducts.length !== products().length) {
+    checkoutNotice = "Some paid options are not available yet. You can keep using the free plan.";
+  }
+  return {
+    checkoutProducts,
+    checkoutNotice,
+    portal: input.signedIn && input.databaseReady && input.stripeReady
+      && input.hasCustomer && input.portalConfigured,
+  };
+}
+
+/** A completed form can still be waiting for a bank payment to settle. */
+export function fulfillableCheckoutProduct(session: {
+  payment_status?: string;
+  metadata?: Record<string, string> | null;
+}): Product | undefined {
+  if (session.metadata?.app !== "secondbreakfast" || !session.metadata.userId) return undefined;
+  if (session.payment_status !== "paid" && session.payment_status !== "no_payment_required") return undefined;
+  return productById(session.metadata.productId ?? "");
+}
+
 /**
  * What a completed payment does to an account.
  *
@@ -111,6 +161,8 @@ export function fulfilmentFor(product: Product): Fulfilment {
  */
 export const HANDLED_EVENTS = [
   "checkout.session.completed",
+  "checkout.session.async_payment_succeeded",
+  "checkout.session.async_payment_failed",
   "customer.subscription.deleted",
   "customer.subscription.updated",
 ] as const;

@@ -1,0 +1,7 @@
+- heading "Offline privacy QA" [level=1]
+- paragraph: Synthetic fixtures only. This server binds to loopback.
+- button "Install and test privacy"
+- button "Update and retest" [active]
+- link "Test offline navigation":
+  - /url: /care
+- status: "PASS: legacy cache removed; only public assets stored. { \"keys\": [ \"seconds-public-v2\" ], \"entries\": [ \"/care-offline.html\", \"/care-offline.js\", \"/icons/icon-192.png\", \"/icons/icon-512.png\" ] } PASS: changed worker activated and privacy checks repeated."

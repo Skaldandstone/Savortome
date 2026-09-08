@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
+  async headers() {
+    return [
+      { source: '/api/:path*', headers: [{ key: 'Cache-Control', value: 'private, no-store' }] },
+      { source: '/care', headers: [{ key: 'Cache-Control', value: 'private, no-store' }, { key: 'Referrer-Policy', value: 'no-referrer' }, { key: 'X-Robots-Tag', value: 'noindex, nofollow' }] },
+      { source: '/sw.js', headers: [{ key: 'Cache-Control', value: 'no-cache' }] },
+    ];
+  },
   /**
    * `next build` and `next dev` both write to `.next` by default, so building
    * while the dev server is running leaves it serving production chunks it
@@ -24,8 +31,12 @@ const config: NextConfig = {
     resolveExtensions: [".ts", ".tsx", ".mdx", ".js", ".jsx", ".mjs", ".json"],
   },
   images: {
-    // Recipe thumbnails come from wherever the source lives.
-    remotePatterns: [{ protocol: "https", hostname: "**" }],
+    // Recipe photos use browser <img> URLs; woodland art uses public files.
+    // Neither needs the server optimizer. Close its request endpoint rather
+    // than accepting arbitrary HTTPS images. Keep static metadata/icon support.
+    // This reduces exposure; it does not patch Next's bundled image parser.
+    unoptimized: true,
+    remotePatterns: [],
   },
 };
 

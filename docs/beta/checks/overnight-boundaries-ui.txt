@@ -1,0 +1,30 @@
+✔ disabled server gate ignores invited identity and frontend flags without reading auth (50.501ms)
+✔ signed-out redirect contains only validated handoff fields (18.2099ms)
+✔ non-invited user cannot forge access or redirect through query fields (22.1262ms)
+✔ invited user receives only validated care props; arbitrary return rejected (15.0395ms)
+✔ missing Clerk configuration cannot enable local preview in production (11.1534ms)
+✔ local development preview remains usable without an account (12.0141ms)
+✔ unavailable/expired auth fails closed and never renders care (31.7306ms)
+✔ CodeBuild report writer emits actual inspected digest/revision/config without key values (4.1664ms)
+✔ CodeBuild report writer refuses substituted image metadata (3.5448ms)
+✔ every care catalogue ID maps to one authored food cell, never inferred recipe names (4.6708ms)
+✔ reduced decoration and non-beta builds do not mount food art or timber (3.7944ms)
+✔ food atlas is decorative and a failed asset removes its occupied frame (2.1229ms)
+✔ Future me expands all exact ingredients and steps and labels only its single shopping item (2.6369ms)
+✔ enlarged care text removes illustration and does not clamp labels or step text (2.1464ms)
+✔ paper applies readable ink while reduced decoration retains the selected palette (5.0511ms)
+✔ kitchen entry stays reachable with illustrations off (4.2683ms)
+✔ mobile and web ship byte-identical production woodland art (102.6717ms)
+✔ both themes meet body and primary-action text contrast before texture (7.3851ms)
+✔ server-selected legacy home cannot opt into woodland through query flags (50.8022ms)
+✔ server-selected woodland home passes the real entries to the illustrated list (19.8049ms)
+✔ legacy library keeps its empty copy and missing-image placeholder without atlas art (21.5038ms)
+✔ illustrated library alone receives the journal fallback and arrow (17.3586ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 22
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2552.3349

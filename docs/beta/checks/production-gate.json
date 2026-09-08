@@ -1,0 +1,32 @@
+[
+  {
+    "Path": "/",
+    "Status": 200,
+    "HasWoodland": false,
+    "CacheControl": "no-store, must-revalidate, no-cache, max-age=0, private"
+  },
+  {
+    "Path": "/care",
+    "Status": 404,
+    "HasWoodland": false,
+    "CacheControl": "no-store, private"
+  },
+  {
+    "Path": "/care?beta=true&userId=user_fake",
+    "Status": 404,
+    "HasWoodland": false,
+    "CacheControl": "no-store, private"
+  },
+  {
+    "Path": "/api/profile/dietary",
+    "Status": 501,
+    "HasWoodland": false,
+    "CacheControl": ""
+  },
+  {
+    "Path": "/sw.js",
+    "Status": 200,
+    "HasWoodland": false,
+    "CacheControl": "no-cache"
+  }
+]

@@ -1,0 +1,17 @@
+{
+  "archive": "C:\\Users\\James\\Documents\\Codex\\2026-08-31\\i-n\\outputs\\secondbreakfast-release\\secondbreakfast-beta-source-6aeb5d28a68bf33f88ce8904013d38ee570c35b472c9b9c1eaf9b6b1347c2920.zip",
+  "bytes": 35265720,
+  "sha256": "0d274519adef66872f41bba1c610080c45d618f37e0f9a2966b9cd4527a897d0",
+  "entries": 594,
+  "badCrcOrRead": 0,
+  "unsafePaths": 0,
+  "duplicatePaths": 0,
+  "embeddedManifestSha256": "6aeb5d28a68bf33f88ce8904013d38ee570c35b472c9b9c1eaf9b6b1347c2920",
+  "reportManifestSha256": "6aeb5d28a68bf33f88ce8904013d38ee570c35b472c9b9c1eaf9b6b1347c2920",
+  "manifestMatches": true,
+  "application": "secondbreakfast",
+  "snapshotCommit": "4b9c653507bf47975df7f2889845442a14ad8052",
+  "sourceFiles": 593,
+  "reportSourceFiles": 593,
+  "realIndexChanged": false
+}

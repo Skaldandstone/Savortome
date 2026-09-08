@@ -1,4 +1,5 @@
 import { notFound, redirect } from "next/navigation";
+import { KitchenPageHeading } from '@/modules/woodland/KitchenPageHeading';
 import { CookMode } from "@/modules/cook";
 import { toRecipe } from "@/modules/recipe";
 import { loadRecipe } from "@/lib/library";
@@ -18,7 +19,8 @@ export default async function CookPage({ params }: { params: Promise<{ id: strin
   if (!row) notFound();
 
   return (
-    <main>
+    <main className="woodland-workspace" data-kitchen-page="recipe/cook">
+      <KitchenPageHeading title={row.title} description="One step at a time." icon="pot" />
       <CookMode recipe={toRecipe(row)} recipeId={row.id} />
     </main>
   );

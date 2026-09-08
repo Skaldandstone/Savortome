@@ -1,0 +1,17 @@
+{
+  "recordedAt": "2026-08-31T09:56:45.806Z",
+  "buildId": "JU_bSJRJvJgnvh6kH4QVX",
+  "sourceCount": 333,
+  "artifactCount": 476,
+  "drift": [],
+  "docs": 7,
+  "localLinks": 76,
+  "missingLinks": [],
+  "packageFiles": [
+    "apps/web/package.json",
+    "package.json",
+    "packages/core/package.json",
+    "packages/db/package.json",
+    "pnpm-lock.yaml"
+  ]
+}

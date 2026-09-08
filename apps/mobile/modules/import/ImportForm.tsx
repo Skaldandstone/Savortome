@@ -48,6 +48,7 @@ export function ImportForm({
           value={url}
           onChangeText={setUrl}
           placeholder="https://www.youtube.com/watch?v=..."
+          accessibilityLabel="Recipe URL"
           autoCapitalize="none"
           autoCorrect={false}
           inputMode="url"
@@ -61,6 +62,7 @@ export function ImportForm({
           value={text}
           onChangeText={setText}
           placeholder="Paste a recipe, a screenshot transcription, or a text from a friend."
+          accessibilityLabel="Recipe text"
           multiline
           editable={!busy}
         />

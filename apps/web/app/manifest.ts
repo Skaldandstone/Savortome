@@ -3,8 +3,8 @@ import type { MetadataRoute } from "next";
 /**
  * Installable to a home screen.
  *
- * The point isn't the icon — it's that a recipe you've already opened stays
- * readable in a kitchen with no signal, which is exactly where phones lose it.
+ * Only public assets and a generic care shell are available offline.
+ * Private recipes and account responses are never stored by the worker.
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -21,15 +21,9 @@ export default function manifest(): MetadataRoute.Manifest {
     icons: [
       { src: "/icons/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icons/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
-      // Its own file: a maskable icon is cropped to whatever shape the platform
-      // fancies, so the mark is drawn well inside the safe area. Reusing the
-      // square one here would let a circular mask take the handle off.
-      {
-        src: "/icons/icon-maskable-512.png",
-        sizes: "512x512",
-        type: "image/png",
-        purpose: "maskable",
-      },
+      // Its own file: a maskable icon is cropped to the platform shape, so the
+      // mark stays inside the safe area instead of losing the skillet handle.
+      { src: "/icons/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
     ],
   };
 }

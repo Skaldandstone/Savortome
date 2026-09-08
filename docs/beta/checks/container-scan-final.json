@@ -1,0 +1,54 @@
+{
+  "recordedAt": "2026-09-01T01:22:41.4707196Z",
+  "account": "734702670689",
+  "region": "us-east-2",
+  "buildId": "skaldandstone-development-foundation-secondbreakfast-web:6bee0ad2-b664-4f43-9edb-7a2b7aa0ce0f",
+  "s3VersionId": "Pu4iA6JJ23l4fuliS6NS8RbCb9_GAqcw",
+  "manifestSha256": "28491f46acea729f83403bad7b4b0325a2b6fd4be4f90b34964de5269e6236ab",
+  "imageDigest": "sha256:79d7d53cbf332b288d075e9981edf09a49837a1db06f5276842506e4423a55e7",
+  "configDigest": "sha256:23f67759a5f0c776308469994d81e7bd85e0b0cb4bd8c958693b29b023ff9976",
+  "imageBytes": 264060805,
+  "runtime": {
+    "os": "linux",
+    "architecture": "amd64",
+    "user": "65532",
+    "entrypoint": [
+      "/nodejs/bin/node"
+    ],
+    "cmd": [
+      "apps/web/node_modules/next/dist/bin/next",
+      "start",
+      "apps/web"
+    ],
+    "nodeEnvironment": "production",
+    "serviceWorkerEnabled": true,
+    "clerkPublishableKeyPresent": true,
+    "publicCacheVersion": "3",
+    "runtimeLabel": "distroless-nodejs22-nonroot",
+    "revision": "87e04ab9e9029a1b86893e8ef4a788de3e77949d",
+    "sourceLabel": "28491f46acea729f83403bad7b4b0325a2b6fd4be4f90b34964de5269e6236ab",
+    "rdsCaPresent": true,
+    "ffmpegPathPresent": false,
+    "ytDlpPathPresent": false
+  },
+  "scan": {
+    "status": "COMPLETE",
+    "completedAt": "2026-08-31T18:21:07-07:00",
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "undefined": 0
+  },
+  "rejectedPrior": {
+    "digest": "sha256:22db27f0bb383c006158e7feb6f916f08f48233018ee6213468ed1513e3e9a8c",
+    "critical": 5,
+    "high": 52,
+    "medium": 26,
+    "low": 2,
+    "undefined": 2,
+    "deployed": false
+  },
+  "deployed": false,
+  "endpointCreated": false
+}

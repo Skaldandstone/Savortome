@@ -1,0 +1,43 @@
+▶ Stripe routes enforce current product/customer ownership with atomic SQL
+  ✔ missing or altered signatures do not claim events (41.3253ms)
+  ✔ signed wrong environment and unsupported events cannot grant (23.2586ms)
+  ✔ another product in the shared account never unlocks this app (29.4365ms)
+  ✔ old subscription cancellation cannot downgrade its replacement (46.3081ms)
+  ✔ current Price sets tier even when metadata names the old tier (28.5931ms)
+  ✔ late active snapshot reads current cancellation; duplicate delivery is inert (30.7841ms)
+  ✔ unpaid identity remains pinned and payment recovery restores its plan (37.0346ms)
+  ✔ unknown and cross-product Prices fail closed without guessed Plus (42.1595ms)
+  ✔ customer metadata cannot move an entitlement to a different account (18.5904ms)
+  ✔ subscription/customer mismatch rolls back and does not dump upstream errors (24.5161ms)
+  ✔ paid pack grants once across event IDs and preserves the subscription (57.7929ms)
+  ✔ pending payment does not grant; later paid event does (70.9357ms)
+  ✔ mismatched actual Checkout Price cannot grant from metadata (21.7052ms)
+  ✔ fulfilled old Checkout cannot relink a later subscription (54.3485ms)
+  ✔ post-grant SQL failure rolls back receipt and purchase; retry succeeds (91.515ms)
+  ✔ pending Session recovery cannot change the ledger owner or product (67.1086ms)
+  ✔ checkout is disabled by default and requires an authenticated owner (17.1852ms)
+  ✔ null, unknown and non-string product IDs return 400 without SDK writes (17.2749ms)
+  ✔ checkout ignores client price and uses validated server Price and metadata (20.4377ms)
+  ✔ existing active subscription prevents another recurring Checkout (44.1732ms)
+  ✔ an open matching plan Checkout is reused instead of duplicated (13.0293ms)
+  ✔ wrong-product catalog or mispriced plan is rejected before purchase (18.3225ms)
+  ✔ portal rejects deleted, foreign or wrong-environment customer links (17.2629ms)
+  ✔ portal uses only authenticated customer and works when new Checkout is off (12.5598ms)
+  ✔ origin, prototype names and ambiguous Price configuration fail closed (11.1965ms)
+  ✔ multi-item subscriptions cannot infer a paid tier (29.9301ms)
+  ✔ unsupported quantity cannot infer a paid tier (22.5766ms)
+  ✔ monthly price cannot infer a paid tier (22.5371ms)
+  ✔ wrong currency cannot infer a paid tier (27.1202ms)
+  ✔ wrong environment price cannot infer a paid tier (36.6038ms)
+  ✔ past-due retains the existing documented grace policy (30.9643ms)
+  ✔ unknown Customer owners block both Checkout and portal writes (15.6533ms)
+  ✔ first customer creation uses stable private ownership and idempotency (23.304ms)
+✔ Stripe routes enforce current product/customer ownership with atomic SQL (3790.7421ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3806.5312

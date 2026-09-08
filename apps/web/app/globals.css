@@ -17,6 +17,39 @@ html, body {
 
 a { color: var(--accent); }
 
+:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.legal-footer {
+  margin-top: 48px;
+  padding: 20px 0;
+  border-top: 1px solid var(--border);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.legal-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-block: 12px;
+}
+
+.legal-footer summary {
+  min-height: 44px;
+  padding-block: 10px;
+  cursor: pointer;
+}
+
+/* Clerk's development badge places partially transparent text over an orange
+ * swatch. Its public footer item hook keeps the required attribution readable
+ * without relying on generated internal class names. */
+.cl-footerItem p {
+  color: #1f1008 !important;
+}
+
 /**
  * Printing.
  *

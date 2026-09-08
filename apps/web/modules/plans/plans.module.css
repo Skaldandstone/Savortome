@@ -32,7 +32,7 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #fff;
+  color: var(--on-accent, #fff);
   background: var(--accent);
   border-radius: 999px;
 }
@@ -84,7 +84,7 @@
   font: inherit;
   font-size: var(--step-3);
   font-weight: 600;
-  color: #fff;
+  color: var(--on-accent, #fff);
   background: var(--accent);
   border: none;
   border-radius: var(--radius-sm);
@@ -92,7 +92,16 @@
 }
 
 .buy:hover:not(:disabled) { opacity: 0.9; }
-.buy:disabled { cursor: progress; opacity: 0.6; }
+.buy:disabled { cursor: not-allowed; opacity: 0.6; }
+
+.availability {
+  margin: 20px 0 0;
+  padding: 14px 18px;
+  color: var(--text);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
 
 /* --- what's free, and why ------------------------------------------------- */
 
@@ -152,8 +161,17 @@
 }
 
 .pack:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-.pack:disabled { cursor: progress; opacity: 0.6; }
+.pack:disabled { cursor: not-allowed; opacity: 0.6; }
 
 @media (max-width: 640px) {
   .freeList { columns: 1; }
 }
+
+:global([data-woodland='true']) .grid { grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); gap:20px; }
+:global([data-woodland='true']) .tier { border-radius:4px; box-shadow:none; }
+:global([data-woodland='true']) .name,:global([data-woodland='true']) .freeTitle { font:1.4rem Georgia,serif; color:var(--accent); text-transform:none; letter-spacing:0; }
+:global([data-woodland='true']) .price { font-family:Georgia,serif; font-weight:400; margin-top:12px; }
+:global([data-woodland='true']) .buy { background:var(--action-surface); color:var(--action-text); border:1px solid var(--border); font-family:Georgia,serif; }
+:global([data-woodland='true']) .badge { border-radius:3px; }
+:global([data-woodland='true']) :is(.free,.packs) { border:1px solid var(--border); }
+:global([data-text-size='200']) .freeList { columns:1; }

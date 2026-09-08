@@ -1,0 +1,19 @@
+PASS  nobody starts connected
+PASS  the token is stored
+PASS  ...along with the refresh token
+PASS  ...and no store yet
+PASS  the access token is encrypted at rest
+PASS  ...and so is the refresh token
+PASS  ...and the plaintext isn't sitting in the column
+PASS  a new token replaces the old one
+PASS  ...and the store they picked survives it
+PASS  there is only ever one row per person per provider
+PASS  the store can be changed
+PASS  ...and it stuck
+PASS  setting a store with nothing connected is a no-op, not an error
+PASS  connections aren't shared
+PASS  disconnecting removes it
+PASS  ...and leaves everyone else alone
+PASS  deleting the account takes the connection with it
+
+All good.
