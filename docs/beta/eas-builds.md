@@ -4,7 +4,7 @@ Date: 2026-09-08 (America/Los_Angeles)
 
 ## Configuration
 
-Savortome is linked to Expo project `@skald-and-stone/seconds` (`88e6ce04-9624-4c8e-8004-1c8147cf4265`). Both platforms use application identifier `com.secondbreakfast.app` and app version `0.1.0`.
+Savortome is linked to Expo project `@skald-and-stone/seconds` (`88e6ce04-9624-4c8e-8004-1c8147cf4265`). The EAS dashboard display name is `Savortome`; the compatibility slug remains `seconds` so the existing project ID and build history stay linked. Both platforms use application identifier `com.secondbreakfast.app` and app version `0.1.0`.
 
 `apps/mobile/eas.json` defines two internal-distribution profiles:
 
@@ -42,11 +42,36 @@ The compiled bundle contains the hosted beta API URL, Clerk test-key marker, and
 
 This artifact is suitable only for an iOS Simulator. It is not an iPhone build, TestFlight build, App Store submission, device validation, or owner visual acceptance. Expo-hosted artifacts expire; the locally hashed copy is the durable review evidence.
 
-## Android EAS result
+## Successful Android EAS build
 
-EAS accepted the reviewed 84.0 MB archive and generated/stored a remote Android keystore for this project, but it did not schedule a build because the account's free Android build quota is exhausted until 2026-10-01. There is therefore no Android EAS build ID or EAS APK artifact.
+The initial submission attempt reached the account's free Android quota gate and did not create a build. After the Expo account was upgraded, the same committed configuration was submitted once and completed successfully.
 
-Completing the Android EAS build requires either waiting for the quota reset or an owner-approved Expo Starter subscription. No subscription or paid build was purchased. Existing local Android APKs remain separate evidence and must not be described as EAS builds.
+- EAS build: `9a9588da-17e5-48d6-b763-2b03b07b6d9a`
+- Status: `FINISHED`
+- Profile/distribution: `beta` / internal APK
+- Completed: `2026-09-09T05:13:51.941Z`
+- Git commit: `447b51e101799a4836eac0da913905600ec8fef8`
+- EAS fingerprint: `1f61c36f6eb49e0bc070bb421010391f759e58d7`
+- EAS artifact: `https://expo.dev/artifacts/eas/j1jSouIfSkHkw_F2tl0wtANzurccnIqNmxjF31xZD7g.apk`
+- Local artifact: `C:\Users\James\AppData\Local\Savortome\eas-builds\9a9588da-17e5-48d6-b763-2b03b07b6d9a\savortome-android-0.1.0-1.apk`
+- Size: `115,941,989` bytes
+- SHA-256: `d21dcdd754b76019e87d9d349d379e0911751d7e51eb9fe2388b70d98ac4e729`
+
+Package inspection reports:
+
+- Package: `com.secondbreakfast.app`
+- App/version: `Savortome` / `0.1.0` (`versionCode 1`)
+- Minimum/target SDK: 24 / 36
+- Native architectures: `arm64-v8a`, `armeabi-v7a`, `x86`, and `x86_64`
+- `android:allowBackup=false`
+- APK Signature Scheme v2 signature and content digest both verified.
+- Signing certificate SHA-256: `93305b6b387c7f5c1ce0f5e1626fcfd5136c7de0bae5514c510cbf684325647c`
+- The EAS-managed signing certificate is not the Android debug certificate.
+- Packaged Hermes bundle: 4,275,244 bytes, SHA-256 `33442b65fb4c979f13e57b89adc9589b6bfe71386f27e19b91f3757cc56607a1`
+
+The packaged Android bundle contains the hosted beta API URL, Clerk test-key marker, and Feed me gently copy. It does not contain the `localhost:3000` fallback. The manifest requests network, notification, biometric, wake-lock, boot, install-referrer, and launcher-badge permissions contributed by the configured app and notification dependencies. No blocked external-storage or overlay permission was present.
+
+This is an internally distributed APK signed with the EAS-managed project keystore. It is not a Play Store submission, production release, physical-device validation, or owner visual acceptance.
 
 ## Physical iOS result
 
@@ -65,4 +90,4 @@ Completing this path requires registering at least one intended test device with
 - iOS production JS export: passed, 30 files / 13,773,032 bytes.
 - `git diff --check`: passed with only the repository's expected CRLF conversion warnings.
 
-No store submission, public distribution, physical-device test, Android EAS artifact, or physical iOS artifact is claimed.
+No store submission, public distribution, physical-device test, or physical iOS artifact is claimed.
