@@ -20,6 +20,13 @@
       "ios": {
         "simulator": true
       }
+    },
+    "testflight": {
+      "environment": "preview",
+      "distribution": "store",
+      "ios": {
+        "simulator": false
+      }
     }
   }
 }

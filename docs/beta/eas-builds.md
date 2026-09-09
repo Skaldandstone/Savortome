@@ -6,10 +6,11 @@ Date: 2026-09-08 (America/Los_Angeles)
 
 Savortome is linked to Expo project `@skald-and-stone/seconds` (`88e6ce04-9624-4c8e-8004-1c8147cf4265`). The EAS dashboard display name is `Savortome`; the compatibility slug remains `seconds` so the existing project ID and build history stay linked. Both platforms use application identifier `com.secondbreakfast.app` and app version `0.1.0`.
 
-`apps/mobile/eas.json` defines two internal-distribution profiles:
+`apps/mobile/eas.json` defines two internal-distribution profiles and one store profile:
 
 - `beta`: Android APK and physical-device iOS build.
 - `beta-simulator`: iOS Simulator build.
+- `testflight`: iOS App Store distribution for private TestFlight review.
 
 The EAS `preview` environment contains a sensitive Clerk test publishable key and the non-secret hosted API and woodland-beta settings. No secret value is recorded here. The inspected EAS archive contained no `.env` file or `node_modules` directory and did contain the complete monorepo packages needed by the mobile workspace.
 
@@ -73,11 +74,28 @@ The packaged Android bundle contains the hosted beta API URL, Clerk test-key mar
 
 This is an internally distributed APK signed with the EAS-managed project keystore. It is not a Play Store submission, production release, physical-device validation, or owner visual acceptance.
 
+## TestFlight build and submission
+
+- EAS build: `df058551-dae7-473c-9064-12a3e8f29f27`
+- Status: `FINISHED`
+- Profile/distribution: `testflight` / App Store
+- Completed: `2026-09-09T07:51:31.017Z`
+- Git commit: `37ccd7032c19f2421e4e5f27dd35aa7a820d5425`
+- EAS fingerprint: `47d6718ee043e769508fb2c28f14f1509e35d9e9`
+- App/version: `Savortome` / `0.1.0` (build `1`)
+- Bundle ID: `com.secondbreakfast.app`
+- EAS submission: `4bc81c24-fc51-492a-bbde-ccd332fbd7be`
+- App Store Connect app: `6810124754`
+
+App Store Connect accepted and processed the binary as valid. The private external group `Savortome Private Beta` contains the three owner-supplied tester addresses and build 1 is attached. Tester identities remain out of Git. Apple still reports the testers as `NOT_INVITED` / `NO_BUILDS` because the first external build has not passed Beta App Review. The beta description, feedback address, marketing URL and privacy URL are configured. Apple requires a review contact phone number before the remaining contact details and guest-review instructions can be saved; no phone number was invented.
+
+This is a private TestFlight submission, not a public App Store release, physical-device validation, or owner acceptance.
+
 ## Physical iOS result
 
 The `beta` physical-device build was not submitted. Apple team `BVB696HTCS` is visible to EAS, but that team currently has no registered devices, so EAS cannot create the Ad Hoc provisioning profile required for internal distribution.
 
-Completing this path requires registering at least one intended test device with EAS and then creating the provisioning profile interactively. A later TestFlight path instead requires App Store Connect setup and explicit submission authorization. Neither path was taken here.
+Completing the Ad Hoc path requires registering at least one intended test device with EAS and then creating the provisioning profile interactively. The separate TestFlight path above does not require device registration.
 
 ## Validation performed
 
@@ -90,4 +108,4 @@ Completing this path requires registering at least one intended test device with
 - iOS production JS export: passed, 30 files / 13,773,032 bytes.
 - `git diff --check`: passed with only the repository's expected CRLF conversion warnings.
 
-No store submission, public distribution, physical-device test, or physical iOS artifact is claimed.
+No public App Store distribution, physical-device test, or owner acceptance is claimed.
