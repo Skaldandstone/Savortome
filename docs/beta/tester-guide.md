@@ -1,25 +1,18 @@
 # Invited tester guide
 
-This guide becomes usable after the release owner supplies a reviewed URL/build and confirms enrollment. A repository build or screenshot is not an invitation. The beta has no meal scores, reminders, completion tracking or medical advice.
+This guide lists the current private web and internal mobile review builds. Access still depends on the release owner confirming enrollment. A repository build or screenshot is not an invitation. The beta has no meal scores, reminders, completion tracking or medical advice.
 
 ## Web access
 
-The expected existing host is [Second Breakfast](https://secondbreakfast.skaldandstone.com/care), but its beta revision and cohort rollout have not been verified. Wait for the release owner's explicit ready notice. Sign in using the account enrolled in the correct Clerk instance. A non-invited account retains the current app and cannot open hosted care. Do not send passwords, session links or verification codes in feedback.
+Use the private [Savortome beta](https://beta.secondbreakfast.skaldandstone.com/care). Sign in using the account enrolled in the beta's Clerk instance. A non-invited account cannot open the hosted beta. Do not send passwords, session links or verification codes in feedback.
 
 Opening care from Wispling transfers only optional source, intent, effort, time, temperature, texture and the fixed return destination. It does not send your health history, diagnosis, medication, dietary profile, chosen food or eating-completion information. Back to Wispling is navigation only. It cannot skip Wispling onboarding.
 
 ## Android installation
 
-31 August local review artifacts are listed with exact hashes in
-[overnight-integration.md](overnight-integration.md): an illustrated account
-preview and a separate guest preview. Neither is cohort-approved or installed on
-a device yet. The account preview's API origin still names the prior service and
-does not establish hosted-candidate integration. The guest preview contains no
-configured Clerk test key and can be used for the planned account-free care check
-once the owner selects a disposable test device. Both use the same package ID;
-do not replace a personal installation or erase its data to switch previews.
+Download the current [Savortome Android internal build](https://expo.dev/artifacts/eas/j1jSouIfSkHkw_F2tl0wtANzurccnIqNmxjF31xZD7g.apk). It is EAS build `9a9588da-17e5-48d6-b763-2b03b07b6d9a`, package `com.secondbreakfast.app`, version `0.1.0` (`versionCode 1`), and SHA-256 `d21dcdd754b76019e87d9d349d379e0911751d7e51eb9fe2388b70d98ac4e729`. The APK is signed with the EAS-managed project certificate, whose SHA-256 is `93305b6b387c7f5c1ce0f5e1626fcfd5136c7de0bae5514c510cbf684325647c`. The build and artifact inspection record is in [eas-builds.md](eas-builds.md).
 
-Obtain the reviewed APK, SHA256, package/version and signing identity directly from the release owner. No distributable approved APK is promised by this guide. Compare the APK hash with `Get-FileHash -Algorithm SHA256` on Windows before installation. Avoid public uploads or third-party download mirrors.
+Compare the downloaded APK hash with `Get-FileHash -Algorithm SHA256` on Windows before installation. Avoid public uploads or third-party download mirrors. Expo-hosted internal artifacts expire, so ask the release owner for a refreshed link if this one no longer responds.
 
 On an explicitly selected disposable Android test device, either open that APK and permit installation for that source, or use:
 
@@ -28,7 +21,13 @@ adb devices -l
 adb -s SERIAL install -r PATH_TO_REVIEWED_APK
 ```
 
-Replace SERIAL and the path with the intended device/build. Stop on a signing mismatch. Do not uninstall an existing personal app or erase its data to work around it. Restore the temporary install-source permission afterward. Local debug-keystore review builds are not cohort-approved releases. A guest-only build cannot test sign-in; the owner must identify which configuration was delivered.
+Replace SERIAL and the path with the downloaded APK. Stop on a signing mismatch. Do not uninstall an existing personal app or erase its data to work around it. Restore the temporary install-source permission afterward. This build targets the private hosted beta and includes its Clerk test configuration; it is not a Play Store release or physical-device acceptance evidence.
+
+## iOS installation
+
+The current [Savortome iOS EAS build](https://expo.dev/accounts/skald-and-stone/projects/seconds/builds/02f55da1-20c1-4a3e-977e-60f3644a9aa7) is an iOS Simulator artifact only. Download and extract it on a Mac with Xcode, then drag `Savortome.app` into an open Simulator or use `xcrun simctl install booted PATH_TO_SAVORTOME_APP`. Its archive SHA-256 is `1ff091355d8a899bbf3b8f109c7c0ca210e08a71dfcc2560b84dbed3b8b83844`.
+
+This artifact cannot be installed on an iPhone. Physical internal distribution remains blocked until the intended iPhone is registered with EAS on Apple team `BVB696HTCS` and a new Ad Hoc build is created. No TestFlight or App Store build is currently available.
 
 ## Care and offline behavior
 
