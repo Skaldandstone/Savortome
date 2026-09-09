@@ -25,9 +25,9 @@ Replace SERIAL and the path with the downloaded APK. Stop on a signing mismatch.
 
 ## iOS installation
 
-The current [Savortome iOS EAS build](https://expo.dev/accounts/skald-and-stone/projects/seconds/builds/02f55da1-20c1-4a3e-977e-60f3644a9aa7) is an iOS Simulator artifact only. Download and extract it on a Mac with Xcode, then drag `Savortome.app` into an open Simulator or use `xcrun simctl install booted PATH_TO_SAVORTOME_APP`. Its archive SHA-256 is `1ff091355d8a899bbf3b8f109c7c0ca210e08a71dfcc2560b84dbed3b8b83844`.
+Savortome build 1 has been uploaded to [App Store Connect TestFlight](https://appstoreconnect.apple.com/apps/6810124754/testflight/ios). Three owner-supplied addresses are enrolled in the private external group, but Apple has not sent invitations yet because the first external build still requires Beta App Review. Once Apple approves it, install Apple's TestFlight app and accept the invitation sent to the enrolled address. Do not forward the invitation.
 
-This artifact cannot be installed on an iPhone. Physical internal distribution remains blocked until the intended iPhone is registered with EAS on Apple team `BVB696HTCS` and a new Ad Hoc build is created. No TestFlight or App Store build is currently available.
+For simulator-only review, the earlier [iOS Simulator build](https://expo.dev/accounts/skald-and-stone/projects/seconds/builds/02f55da1-20c1-4a3e-977e-60f3644a9aa7) remains available. Its archive SHA-256 is `1ff091355d8a899bbf3b8f109c7c0ca210e08a71dfcc2560b84dbed3b8b83844`. It cannot be installed on an iPhone.
 
 ## Care and offline behavior
 
