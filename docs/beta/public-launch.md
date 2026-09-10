@@ -65,6 +65,60 @@ These are not blocked on code. Each needs an action only James can take.
 
 ## Evidence for the 2026-09-10 launch on the existing host
 
-Recorded below as each step completes. Source revision, sealed snapshot,
-CodeBuild identity, image digest, scan, and stack update are listed separately
-so a reader can tell provider evidence from source evidence.
+Source revision, sealed snapshot, CodeBuild identity, image digest, scan, and
+stack updates are listed separately so a reader can tell provider evidence from
+source evidence. All times America/Los_Angeles unless marked Z.
+
+Source and snapshot:
+
+- Reviewed commit: `928d20b5bf91d28bfc7cf7a64b08f35cbba9f97b` on `main`.
+- `scripts/build-beta-source-snapshot.ps1`: snapshot commit
+  `01c128f9b04905ef5ef58f5fec4582194b6fd4e3`, source tree `6209c865…`, 925
+  files, 48,522,264 bytes, manifest SHA-256
+  `95206934e8653ff397ffd0f6993b3cfe8d9685b76036d778015cfdbe77ce3086`, archive
+  SHA-256 `97ec48edcd7f23e3409041721c9049fa171a28a907414d7b2be69317dea41976`.
+  Real Git index unchanged.
+- S3: `s3://secondbreakfast-build-source-051722405355/sources/secondbreakfast/public-launch-20260910/95206934….zip`,
+  version `mYvoKBEi2KqaZugAOK2UeruF2He6b1ks`, S3-computed SHA-256 equal to the
+  archive hash above.
+
+Build and image:
+
+- CodeBuild `secondbreakfast-web-build:746af80a-00a2-46b6-840f-aa7a9e19df59`,
+  source override pinned to the object version above, `SOURCE_SHA256`
+  override only; all other project environment unchanged (`PUBLIC_KEY_REQUIRED=true`,
+  Clerk publishable key from Secrets Manager). `SUCCEEDED` 16:39:35.
+- ECR `secondbreakfast-web` tag `95206934…`, digest
+  `sha256:dd3475fb0d121918230d404a84b21ae81ab79ce5780c7b4c23d604c641ad5761`,
+  265,227,964 bytes, BASIC scan `COMPLETE` with zero findings.
+
+Stack updates (account `051722405355`, `us-east-2`):
+
+- `skaldandstone-development-secondbreakfast-database`: `DeletionProtection=true`,
+  `BackupRetentionDays=7`, other parameters previous values. `UPDATE_COMPLETE`;
+  RDS reports deletion protection on and 7-day retention, instance `available`.
+- `skaldandstone-development-secondbreakfast-runtime`: `CandidateImage` set to
+  the digest above, `PublicAccess=true`, every other parameter previous value.
+  `UPDATE_COMPLETE`. This produced candidate task definition revision 10 and
+  rollback revision 18 (rollback keeps image `sha256:38394ffa…`).
+- Because the template binds the ECS service to the rollback task definition,
+  the stack update briefly moved `secondbreakfast-web` onto rollback:18 (old
+  image, `SB_PUBLIC_ACCESS=true` present but ignored by that image). The service
+  was then pointed at candidate:10 with `ecs update-service`; `services-stable`
+  returned and the single running `web` container reports digest
+  `sha256:dd3475fb…`. Future rollouts should expect this two-step behaviour or
+  use `scripts/beta-release.ps1`.
+
+Live verification, signed out, over the Cloudflare hostname:
+
+- `/` returns 200 with `data-woodland="true"`, `<title>Savortome™</title>`, and
+  the "Sign in to see the recipes you've saved" notice.
+- `/sign-up` 200, `/discover` 200, `/care` 200 (public mode renders the care
+  screen; before launch it redirected to sign-in).
+- `/api/recipes` returns 401 signed out. Account data remains gated.
+- The inlined Clerk key is still `pk_test_`: this launch runs on the Clerk
+  development instance. See the owner gates above.
+
+Not verified in this pass: a real self-service sign-up on the Clerk instance,
+authenticated flows on the new image, Clerk dashboard restriction mode, load
+behaviour, and any owner visual acceptance.
