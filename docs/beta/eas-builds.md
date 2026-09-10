@@ -91,6 +91,28 @@ App Store Connect accepted and processed the binary as valid. The private extern
 
 This is a private TestFlight submission, not a public App Store release, physical-device validation, or owner acceptance.
 
+## TestFlight build 2 (2026-09-10)
+
+A second TestFlight build was produced from `main` after the iOS build number was raised to `2`, because App Store Connect already holds `0.1.0 (1)` and rejects a duplicate `CFBundleVersion`. The Android `versionCode` is unchanged.
+
+- Source commit: `5d14418bfcf485f0e5e35fa0759252e9bb57202e` (bumps `ios.buildNumber` only; the preceding `0696867` main build passed all four typechecks, the web production build and 639/639 core tests).
+- EAS build: `609425a4-f82b-4cbf-997a-873d81ef58e3`
+- Status: `FINISHED`
+- Profile/distribution: `testflight` / App Store
+- Completed: `2026-09-10T20:04:14.827Z`
+- EAS fingerprint: `17c290a45ac2ed21d5c9b90cf24a1e2f22950c32`
+- App/version: `Savortome` / `0.1.0` (build `2`)
+- Bundle ID: `com.secondbreakfast.app`
+- Expo SDK: `57.0.0`
+- EAS artifact: `https://expo.dev/artifacts/eas/MXHHi1wo-c3fNbQtLKZOLFDJvVr6upTPOZfdJ9iczXE.ipa` (expires `2026-10-10`; no local copy or hash was taken in this pass)
+
+Submission used a new `submit.testflight` profile in `apps/mobile/eas.json` carrying the public App Store Connect app ID `6810124754` and Apple team `BVB696HTCS`, because `eas submit --non-interactive` cannot resolve the target app without it. The App Store Connect API key remains on EAS servers (key ID `P6KLFX57HZ`); no credential value is recorded here.
+
+- First submission attempt `c96a9489-0a1f-4c2a-8c24-3eeaaa378ebc` reached `ERRORED` at `2026-09-10T20:07:36Z` with no error text surfaced by the CLI; EAS marked it retryable.
+- Retry `aaffbb1c-112a-4235-8e57-fa41a588731d` reached `FINISHED` at `2026-09-10T20:11:53.275Z`; EAS reported the binary uploaded to App Store Connect.
+
+App Store Connect processing, attachment of build 2 to the `Savortome Private Beta` group, tester invitation state and Beta App Review were not inspected in this pass. As with build 1, this is a private TestFlight submission, not a public App Store release, physical-device validation or owner acceptance.
+
 ## Physical iOS result
 
 The `beta` physical-device build was not submitted. Apple team `BVB696HTCS` is visible to EAS, but that team currently has no registered devices, so EAS cannot create the Ad Hoc provisioning profile required for internal distribution.
