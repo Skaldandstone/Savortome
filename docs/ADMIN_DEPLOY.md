@@ -67,7 +67,7 @@ so its Second Breakfast proxy can authenticate:
 grok-adminhelper secret  SB_ADMIN_TOKEN = <same token>
 ```
 
-(See `ginnungagap/infra/adminhelper/DEPLOY.md`.)
+(See `Studio/workers/adminhelper/DEPLOY.md`.) On the private-beta runtime the token is injected from Secrets Manager `dev/secondbreakfast/admin` (JSON key `ADMIN_API_TOKEN`) through the `AdminSecretArn` stack parameter in `infra/secondbreakfast-private-runtime.yaml`; the portal reaches the runtime at `https://beta.secondbreakfast.skaldandstone.com/api/admin`.
 
 ## Verify
 

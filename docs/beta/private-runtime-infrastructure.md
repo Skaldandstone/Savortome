@@ -157,7 +157,7 @@ aws cloudformation deploy `
   --stack-name skaldandstone-development-secondbreakfast-runtime `
   --template-file infra/secondbreakfast-private-runtime.yaml `
   --capabilities CAPABILITY_IAM `
-  --parameter-overrides ActivationGate=REVIEWED_EPHEMERAL_PRIVATE_HTTPS VpcId=vpc-0d22c584310bfebb4 PublicSubnetIds=subnet-06041fe2602a0ad47,subnet-04abce656ea3cc00a CloudflareIpv4PrefixListId=pl-0766b29f8525ef6e0 ApplicationCertificateArn=arn:aws:acm:us-east-2:734702670689:certificate/f746b9e6-b4f2-48f2-b5ee-36112c7c39db DatabaseSecurityGroupId=$databaseSecurityGroupId DatabaseSecretArn=$databaseSecretArn DesiredCount=0 BetaEnabled=false ExpiresAtEpoch=$expires `
+  --parameter-overrides ActivationGate=REVIEWED_EPHEMERAL_PRIVATE_HTTPS VpcId=vpc-0d22c584310bfebb4 PublicSubnetIds=subnet-06041fe2602a0ad47,subnet-04abce656ea3cc00a CloudflareIpv4PrefixListId=pl-0766b29f8525ef6e0 ApplicationCertificateArn=arn:aws:acm:us-east-2:734702670689:certificate/f746b9e6-b4f2-48f2-b5ee-36112c7c39db DatabaseSecurityGroupId=$databaseSecurityGroupId DatabaseSecretArn=$databaseSecretArn AdminSecretArn=$adminSecretArn DesiredCount=0 BetaEnabled=false ExpiresAtEpoch=$expires `
   --tags $stackTags `
   --profile skaldandstone-dev --region us-east-2
 

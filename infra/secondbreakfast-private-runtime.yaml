@@ -54,6 +54,13 @@ Parameters:
   DatabaseSecretArn:
     Type: String
     AllowedPattern: '^arn:aws:secretsmanager:us-east-2:051722405355:secret:dev/secondbreakfast/database/[0-9]{10}-[A-Za-z0-9]+$'
+  AdminSecretArn:
+    Type: String
+    AllowedPattern: '^arn:aws:secretsmanager:us-east-2:051722405355:secret:dev/secondbreakfast/admin-[A-Za-z0-9]+$'
+    Description: >-
+      Required admin secret JSON containing ADMIN_API_TOKEN, the shared token the
+      grok-adminhelper staff portal presents as X-Admin-Token on /api/admin/*.
+      No default is safe; the routes refuse every call when it is unset.
   BetaClerkUserIds:
     Type: String
     NoEcho: true
@@ -204,7 +211,7 @@ Resources:
             Statement:
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
-                Resource: [!Ref ClerkSecretArn, !Ref DatabaseSecretArn]
+                Resource: [!Ref ClerkSecretArn, !Ref DatabaseSecretArn, !Ref AdminSecretArn]
 
   TaskRole:
     Type: AWS::IAM::Role
@@ -314,6 +321,7 @@ Resources:
           Secrets:
             - {Name: CLERK_SECRET_KEY, ValueFrom: !Sub '${ClerkSecretArn}:CLERK_SECRET_KEY::'}
             - {Name: DATABASE_URL, ValueFrom: !Sub '${DatabaseSecretArn}:DATABASE_URL::'}
+            - {Name: ADMIN_API_TOKEN, ValueFrom: !Sub '${AdminSecretArn}:ADMIN_API_TOKEN::'}
           MountPoints:
             - {SourceVolume: temporary-files, ContainerPath: /tmp, ReadOnly: false}
             - {SourceVolume: next-cache, ContainerPath: /app/apps/web/.next/cache, ReadOnly: false}
@@ -380,6 +388,7 @@ Resources:
           Secrets:
             - {Name: CLERK_SECRET_KEY, ValueFrom: !Sub '${ClerkSecretArn}:CLERK_SECRET_KEY::'}
             - {Name: DATABASE_URL, ValueFrom: !Sub '${DatabaseSecretArn}:DATABASE_URL::'}
+            - {Name: ADMIN_API_TOKEN, ValueFrom: !Sub '${AdminSecretArn}:ADMIN_API_TOKEN::'}
           MountPoints:
             - {SourceVolume: temporary-files, ContainerPath: /tmp, ReadOnly: false}
             - {SourceVolume: next-cache, ContainerPath: /app/apps/web/.next/cache, ReadOnly: false}

@@ -22,7 +22,7 @@ rule runtime_shape_is_bounded {
 
 rule containers_are_nonroot_readonly_and_billing_disabled {
     %tasks.Properties.ContainerDefinitions.*.ReadonlyRootFilesystem == true
-    %tasks.Properties.ContainerDefinitions.*.Secrets.*.Name IN ['CLERK_SECRET_KEY', 'DATABASE_URL', 'ADMIN_DATABASE_URL', 'SB_DB_PASSWORD']
+    %tasks.Properties.ContainerDefinitions.*.Secrets.*.Name IN ['CLERK_SECRET_KEY', 'DATABASE_URL', 'ADMIN_DATABASE_URL', 'SB_DB_PASSWORD', 'ADMIN_API_TOKEN']
     Resources.CandidateTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'STRIPE_CHECKOUT_ENABLED' ].Value == 'false'
     Resources.CandidateTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'STRIPE_LIVEMODE' ].Value == 'false'
     Resources.CandidateTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'SB_BETA_ENABLED' ].Value == { 'Ref': 'BetaEnabled' }
