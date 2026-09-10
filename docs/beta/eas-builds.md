@@ -104,7 +104,23 @@ A second TestFlight build was produced from `main` after the iOS build number wa
 - App/version: `Savortome` / `0.1.0` (build `2`)
 - Bundle ID: `com.secondbreakfast.app`
 - Expo SDK: `57.0.0`
-- EAS artifact: `https://expo.dev/artifacts/eas/MXHHi1wo-c3fNbQtLKZOLFDJvVr6upTPOZfdJ9iczXE.ipa` (expires `2026-10-10`; no local copy or hash was taken in this pass)
+- EAS artifact: `https://expo.dev/artifacts/eas/MXHHi1wo-c3fNbQtLKZOLFDJvVr6upTPOZfdJ9iczXE.ipa` (expires `2026-10-10`)
+- Local artifact: `C:UsersJamesAppDataLocalSavortomeeas-builds09425a4-f82b-4cbf-997a-873d81ef58e3savortome-ios-testflight-0.1.0-2.ipa` (sidecar `.sha256` alongside)
+- Size: `38,275,582` bytes
+- SHA-256: `d4cd67cc77b65e742413815cf3355b7664bb29bbfd3ca612713a8e712cdcc9ef`
+- Archive validation: 215 entries, no absolute/traversal/backslash paths, and no duplicate paths. `embedded.mobileprovision` and `_CodeSignature/CodeResources` are present.
+
+The extracted app reports:
+
+- Display/name: `Savortome`
+- Bundle ID: `com.secondbreakfast.app`
+- Version/build: `0.1.0` / `2`
+- Minimum OS: iOS 17.0; device families iPhone and iPad
+- Platform: `iPhoneOS`, built with Xcode 26.6 against the iOS 26.5 SDK
+- `ITSAppUsesNonExemptEncryption`: `false`
+- `main.jsbundle`: 4,942,635 bytes, SHA-256 `850e7a5fcc4beb01969115b31d003245bf3f4dd44e0c8637fd9eb26d6c436189`
+
+The compiled bundle contains the hosted beta API URL, Clerk test-key marker and Feed me gently copy, and still carries the inactive `localhost:3000` development fallback noted for the simulator build. That residual string remains a configuration-hardening follow-up.
 
 Submission used a new `submit.testflight` profile in `apps/mobile/eas.json` carrying the public App Store Connect app ID `6810124754` and Apple team `BVB696HTCS`, because `eas submit --non-interactive` cannot resolve the target app without it. The App Store Connect API key remains on EAS servers (key ID `P6KLFX57HZ`); no credential value is recorded here.
 
