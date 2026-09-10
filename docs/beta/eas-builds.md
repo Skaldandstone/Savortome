@@ -127,7 +127,39 @@ Submission used a new `submit.testflight` profile in `apps/mobile/eas.json` carr
 - First submission attempt `c96a9489-0a1f-4c2a-8c24-3eeaaa378ebc` reached `ERRORED` at `2026-09-10T20:07:36Z` with no error text surfaced by the CLI; EAS marked it retryable.
 - Retry `aaffbb1c-112a-4235-8e57-fa41a588731d` reached `FINISHED` at `2026-09-10T20:11:53.275Z`; EAS reported the binary uploaded to App Store Connect.
 
-App Store Connect processing, attachment of build 2 to the `Savortome Private Beta` group, tester invitation state and Beta App Review were not inspected in this pass. As with build 1, this is a private TestFlight submission, not a public App Store release, physical-device validation or owner acceptance.
+App Store Connect (inspected 2026-09-10 through the owner's signed-in browser): build 2 finished processing and initially sat at `Ready to Submit` in the internal `Team (Expo)` group only. Build 1 had been attached to `Savortome Private Beta` on 2026-09-09 but was never sent to Beta App Review, so all three external testers still showed `No Builds Available`. Build 2 was then added to `Savortome Private Beta`; Apple's Test Information form (review contact, phone, demo sign-in) was completed by James, and build 2 now shows `Waiting for Review` with both groups attached. Build 1 remains `Ready to Submit`. Apple allows one 0.1.0 build in Beta App Review at a time.
+
+This is a private TestFlight submission awaiting Beta App Review, not a public App Store release, physical-device validation or owner acceptance.
+
+## Google Play internal testing release (2026-09-10)
+
+Savortome had no Google Play presence before this pass; the earlier Android EAS builds were internally distributed APKs. Google Play now holds the app and an internal testing release restricted to a single owner tester.
+
+Repository changes (commit `b34540d`): Android `versionCode` raised to `2` to match the iOS build number, and a `playstore` EAS build profile added (`distribution: store`, `buildType: app-bundle`, `preview` environment). A `submit.playstore` profile (`track: internal`, `releaseStatus: draft`) was added afterwards for EAS Submit.
+
+- EAS build: `6493eff6-fa54-4b4a-ba78-93f280cbcfa9`
+- Status: `FINISHED`
+- Profile/distribution: `playstore` / store app bundle
+- Git commit: `b34540d`
+- App/version: `Savortome` / `0.1.0` (`versionCode 2`)
+- Package: `com.secondbreakfast.app`
+- Signing: EAS-managed upload keystore `Build Credentials 9WYXcomKgp` (same keystore as the 2026-09-09 APK); Google Play App Signing now holds the distribution key.
+- EAS artifact: `https://expo.dev/artifacts/eas/VVIi7MaFo-5q7xLwkLZL1wC0-XB2okIxIPamfZrmvWE.aab`
+- Local artifact: `C:UsersJamesAppDataLocalSavortomeeas-builds493eff6-fa54-4b4a-ba78-93f280cbcfa9savortome-android-playstore-0.1.0-2.aab` (sidecar `.sha256` alongside)
+- Size: `85,508,001` bytes
+- SHA-256: `557e7066f907795ed48b1920830283674e1c94e8bd8d235feeecfe388993107e`
+- Archive validation: 2,056 entries, no absolute/traversal/backslash paths, no duplicates, signed (`META-INF`), single `base` module, ABIs `arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`.
+
+Play Console setup, performed in the owner's signed-in browser:
+
+- Play app created under the Skald and Stone organization account (`6979476981750544407`) as `Savortome`, package `com.secondbreakfast.app`, App, Free, Developer Program Policies and US export-law declarations accepted. Play app ID `4974432210122251491`. No store listing was created.
+- Internal testing tester list `Savortome Owner` created with exactly one address (the owner's personal Gmail; identity kept out of Git). The pre-existing `Kall Testers` list was not selected.
+- The existing `kall-eas-submit@kall-production.iam.gserviceaccount.com` service account was granted Savortome app permissions for draft apps, testing-track releases and tester-list management only. No production or financial permissions.
+- That service account key, already stored on EAS servers at the account level, was linked to the Savortome project's Android credentials on expo.dev. No key material was downloaded or committed.
+- EAS submission `60a0d0f5-4c7a-4004-ac59-b0c4e6503056` uploaded the bundle to the `internal` track as a draft; the draft was reviewed and published in Play Console. Play reported one warning (no deobfuscation file) and a 39.8 MB install size. The release shows `Available to internal testers`, released 2026-09-10 15:51 America/Los_Angeles, `Not reviewed`, temporary app name `com.secondbreakfast.app (unreviewed)`.
+- Tester join link: `https://play.google.com/apps/internaltest/4701704693437397036` (works only for addresses on the selected list).
+
+This is an internal testing release visible to one tester. It is not a closed or open test, a Play Store listing, a production release, physical-device validation or owner acceptance.
 
 ## Physical iOS result
 

@@ -42,6 +42,12 @@
         "ascAppId": "6810124754",
         "appleTeamId": "BVB696HTCS"
       }
+    },
+    "playstore": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
     }
   }
 }
