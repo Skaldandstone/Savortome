@@ -30,8 +30,22 @@ Parameters:
     Type: String
     AllowedPattern: '^[0-9]{10}$'
     Description: Mandatory expiry recorded for the reviewed cleanup workflow.
+  DeletionProtection:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: >-
+      Public launch durability. 'true' blocks accidental instance deletion.
+      Default false keeps the reviewed ephemeral beta behaviour.
+  BackupRetentionDays:
+    Type: Number
+    Default: 1
+    MinValue: 1
+    MaxValue: 35
+    Description: Automated backup retention. The ephemeral beta used 1 day; a public launch should use 7 or more.
 
 Conditions:
+  ProtectFromDeletion: !Equals [!Ref DeletionProtection, 'true']
   CreateReviewedDatabase: !Equals [!Ref ActivationGate, REVIEWED_EPHEMERAL_DATABASE]
 
 Resources:
@@ -145,10 +159,10 @@ Resources:
       DBSubnetGroupName: !Ref DatabaseSubnetGroup
       DBParameterGroupName: !Ref DatabaseParameterGroup
       VPCSecurityGroups: [!GetAtt DatabaseSecurityGroup.GroupId]
-      BackupRetentionPeriod: 1
+      BackupRetentionPeriod: !Ref BackupRetentionDays
       AutoMinorVersionUpgrade: true
       CopyTagsToSnapshot: true
-      DeletionProtection: false
+      DeletionProtection: !If [ProtectFromDeletion, true, false]
       EnableIAMDatabaseAuthentication: false
       EnablePerformanceInsights: false
       Tags:

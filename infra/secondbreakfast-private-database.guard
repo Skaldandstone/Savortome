@@ -4,6 +4,8 @@ let parameters = Resources.*[ Type == 'AWS::RDS::DBParameterGroup' ]
 
 rule database_defaults_fail_closed {
     Parameters.ActivationGate.Default == 'NOT_APPROVED'
+    Parameters.DeletionProtection.Default == 'false'
+    Parameters.BackupRetentionDays.Default == 1
 }
 
 rule database_is_private_encrypted_and_snapshot_preserved {
@@ -11,8 +13,8 @@ rule database_is_private_encrypted_and_snapshot_preserved {
     %databases.Properties.StorageEncrypted == true
     %databases.Properties.ManageMasterUserPassword == true
     %databases.Properties.MultiAZ == false
-    %databases.Properties.DeletionProtection == false
-    %databases.Properties.BackupRetentionPeriod == 1
+    %databases.Properties.DeletionProtection == { 'Fn::If': ['ProtectFromDeletion', true, false] }
+    %databases.Properties.BackupRetentionPeriod == { 'Ref': 'BackupRetentionDays' }
     %databases.DeletionPolicy == 'Snapshot'
     %databases.UpdateReplacePolicy == 'Snapshot'
 }

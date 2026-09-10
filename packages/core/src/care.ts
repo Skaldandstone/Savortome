@@ -109,8 +109,12 @@ export function suggestCare(choices: CareChoices = {}, context: CareContext = {}
 }
 
 /** Server supplies verified Clerk identity. Query strings and public flags cannot grant access. */
-export function betaAccess(input: { enabled?: string; nodeEnv?: string; localPreview?: string; userId?: string | null; allowedIds?: string }): boolean {
+export function betaAccess(input: { enabled?: string; nodeEnv?: string; localPreview?: string; userId?: string | null; allowedIds?: string; publicAccess?: string }): boolean {
   if (input.enabled !== 'true') return false;
+  // Exact 'true' opens the experience to every visitor. Account-bound data
+  // still requires a signed-in user at each read site; this only removes the
+  // owner-approval cohort gate in front of the woodland experience.
+  if (input.publicAccess === 'true') return true;
   if (input.nodeEnv === 'development' && input.localPreview === 'true') return true;
   return !!input.userId && (input.allowedIds ?? '').split(',').map(x => x.trim()).filter(Boolean).includes(input.userId);
 }

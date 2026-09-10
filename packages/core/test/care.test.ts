@@ -104,3 +104,10 @@ test('beta is closed by default and a local-preview flag never opens production'
   assert.equal(betaAccess({ enabled: 'true', userId: 'user_a', allowedIds: 'user_b, user_a' }), true);
   assert.equal(betaAccess({ enabled: 'true', nodeEnv: 'development', localPreview: 'true' }), true);
 });
+test('public access opens the experience only when enabled and set to the exact string true', () => {
+  assert.equal(betaAccess({ enabled: 'true', publicAccess: 'true' }), true);
+  assert.equal(betaAccess({ enabled: 'true', nodeEnv: 'production', publicAccess: 'true', userId: null }), true);
+  assert.equal(betaAccess({ publicAccess: 'true' }), false);
+  assert.equal(betaAccess({ enabled: 'false', publicAccess: 'true' }), false);
+  for (const value of ['TRUE', ' true', '1', 'yes', 'on', '', undefined]) assert.equal(betaAccess({ enabled: 'true', nodeEnv: 'production', publicAccess: value }), false);
+});

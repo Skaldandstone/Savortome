@@ -17,6 +17,10 @@ export function hasStudioBetaApproval(metadata: unknown): boolean {
 
 export const canUseBeta = cache(async (): Promise<boolean> => {
   if (process.env.SB_BETA_ENABLED !== 'true') return false;
+  // SB_PUBLIC_ACCESS=true is the public-launch switch: every visitor gets the
+  // woodland experience and the owner-approval cohort check is skipped.
+  // Account-bound data remains behind Clerk sign-in at each read site.
+  if (process.env.SB_PUBLIC_ACCESS === 'true') return true;
   if (!clerkConfigured()) {
     return betaAccess({
       enabled: process.env.SB_BETA_ENABLED,

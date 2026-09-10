@@ -84,6 +84,14 @@ Parameters:
     Type: String
     Default: 'false'
     AllowedValues: ['true', 'false']
+  PublicAccess:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: >-
+      Public launch switch. Exact 'true' opens the woodland experience to every
+      visitor and skips the owner-approval cohort check. Account data still
+      requires Clerk sign-in. Default false keeps private beta admission.
   ExpiresAtEpoch:
     Type: String
     AllowedPattern: '^[0-9]{10}$'
@@ -314,6 +322,7 @@ Resources:
             - {Name: TMPDIR, Value: /tmp}
             - {Name: NEXT_PUBLIC_APP_URL, Value: 'https://beta.secondbreakfast.skaldandstone.com'}
             - {Name: SB_BETA_ENABLED, Value: !Ref BetaEnabled}
+            - {Name: SB_PUBLIC_ACCESS, Value: !Ref PublicAccess}
             - {Name: SB_BETA_CLERK_USER_IDS, Value: !Ref BetaClerkUserIds}
             - {Name: SB_BETA_LOCAL_PREVIEW, Value: 'false'}
             - {Name: STRIPE_CHECKOUT_ENABLED, Value: 'false'}
@@ -381,6 +390,7 @@ Resources:
             - {Name: TMPDIR, Value: /tmp}
             - {Name: NEXT_PUBLIC_APP_URL, Value: 'https://beta.secondbreakfast.skaldandstone.com'}
             - {Name: SB_BETA_ENABLED, Value: !Ref BetaEnabled}
+            - {Name: SB_PUBLIC_ACCESS, Value: !Ref PublicAccess}
             - {Name: SB_BETA_CLERK_USER_IDS, Value: !Ref BetaClerkUserIds}
             - {Name: SB_BETA_LOCAL_PREVIEW, Value: 'false'}
             - {Name: STRIPE_CHECKOUT_ENABLED, Value: 'false'}
