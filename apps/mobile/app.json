@@ -38,7 +38,8 @@
       "infoPlist": {
         "CFBundleDisplayName": "Savortome",
         "ITSAppUsesNonExemptEncryption": false
-      }
+      },
+      "buildNumber": "2"
     },
     "android": {
       "package": "com.secondbreakfast.app",
@@ -58,7 +59,9 @@
       ]
     },
     "extra": {
-      "eas": { "projectId": "88e6ce04-9624-4c8e-8004-1c8147cf4265" },
+      "eas": {
+        "projectId": "88e6ce04-9624-4c8e-8004-1c8147cf4265"
+      },
       "apiBaseUrl": "http://localhost:3000"
     },
     "icon": "./assets/icon.png"
