@@ -41,9 +41,16 @@ Parameters:
     Description: Current reviewed Cloudflare IPv4 origin ranges. Prevents direct ALB bypass.
   ApplicationCertificateArn:
     Type: String
-    Default: arn:aws:acm:us-east-2:051722405355:certificate/d93bcaed-e77a-4a56-b872-a6e6bf2f639e
-    AllowedPattern: '^arn:aws:acm:us-east-2:051722405355:certificate/d93bcaed-e77a-4a56-b872-a6e6bf2f639e$'
-    Description: Must cover beta.secondbreakfast.skaldandstone.com.
+    Default: arn:aws:acm:us-east-2:051722405355:certificate/2fa45f4c-4190-418d-a135-828baf2ce6eb
+    AllowedPattern: '^arn:aws:acm:us-east-2:051722405355:certificate/[0-9a-f-]{36}$'
+    Description: >-
+      Issued account-local certificate for the ALB listener. The default covers
+      savortome.skaldandstone.com and beta.secondbreakfast.skaldandstone.com.
+  AppUrl:
+    Type: String
+    Default: 'https://savortome.skaldandstone.com'
+    AllowedPattern: '^https://[a-z0-9.-]+\.skaldandstone\.com$'
+    Description: Public origin the web app advertises (NEXT_PUBLIC_APP_URL). Must be an HTTPS skaldandstone.com host.
   DatabaseSecurityGroupId:
     Type: AWS::EC2::SecurityGroup::Id
     Description: Dedicated nonpublic Second Breakfast PostgreSQL security group.
@@ -320,7 +327,7 @@ Resources:
             - {Name: NEXT_TELEMETRY_DISABLED, Value: '1'}
             - {Name: HOME, Value: /tmp}
             - {Name: TMPDIR, Value: /tmp}
-            - {Name: NEXT_PUBLIC_APP_URL, Value: 'https://beta.secondbreakfast.skaldandstone.com'}
+            - {Name: NEXT_PUBLIC_APP_URL, Value: !Ref AppUrl}
             - {Name: SB_BETA_ENABLED, Value: !Ref BetaEnabled}
             - {Name: SB_PUBLIC_ACCESS, Value: !Ref PublicAccess}
             - {Name: SB_BETA_CLERK_USER_IDS, Value: !Ref BetaClerkUserIds}
@@ -388,7 +395,7 @@ Resources:
             - {Name: NEXT_TELEMETRY_DISABLED, Value: '1'}
             - {Name: HOME, Value: /tmp}
             - {Name: TMPDIR, Value: /tmp}
-            - {Name: NEXT_PUBLIC_APP_URL, Value: 'https://beta.secondbreakfast.skaldandstone.com'}
+            - {Name: NEXT_PUBLIC_APP_URL, Value: !Ref AppUrl}
             - {Name: SB_BETA_ENABLED, Value: !Ref BetaEnabled}
             - {Name: SB_PUBLIC_ACCESS, Value: !Ref PublicAccess}
             - {Name: SB_BETA_CLERK_USER_IDS, Value: !Ref BetaClerkUserIds}
