@@ -135,7 +135,7 @@ export function LibraryScreen() {
     >
       <View style={styles.masthead}>
         {woodlandEnabled && <Image source={require('../../assets/icon.png')} accessible={false} style={{width:38,height:38,borderRadius:8}} />}
-        <Text style={[styles.wordmark, { color: woodlandEnabled ? c.accent : c.text, fontFamily:woodlandEnabled ? 'serif' : undefined, flexShrink:1 }]}>Savortome™</Text>
+        <Text style={[styles.wordmark, { color: woodlandEnabled ? c.accent : c.text, fontFamily:woodlandEnabled ? 'serif' : undefined, flexShrink:1 }]}>Savortome<Text style={[styles.wordmarkTm, { color: woodlandEnabled ? c.accent : c.text }]}>™</Text></Text>
         <View style={styles.spacer} />
         <SignOutButton />
       </View>
@@ -218,6 +218,7 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1 },
   masthead: { flexDirection: "row", flexWrap:'wrap', gap:10, alignItems: "center", marginBottom: space.lg },
   wordmark: { fontSize: typeScale.display, fontWeight: "700", letterSpacing: -0.5 },
+  wordmarkTm: { fontSize: typeScale.small, fontWeight: "400", top: -6 },
   spacer: { flex: 1 },
   importCta: { borderRadius: radius.sm, paddingVertical: 13, alignItems: "center" },
   importCtaText: { color: "#fff", fontWeight: "700", fontSize: typeScale.body },

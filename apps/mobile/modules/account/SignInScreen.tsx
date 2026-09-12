@@ -33,7 +33,7 @@ export function SignInScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: c.bg }]}>
-      <Text style={[styles.wordmark, { color: c.text }]}>Savortome™</Text>
+      <Text style={[styles.wordmark, { color: c.text }]}>Savortome<Text style={[styles.wordmarkTm, { color: c.text }]}>™</Text></Text>
       <Text style={[styles.tagline, { color: c.textMuted }]}>Food is magic. Cooking shouldn’t require it.</Text>
       {process.env.EXPO_PUBLIC_WOODLAND_BETA === 'true' && <Link href="/care" style={{color:c.accent,paddingVertical:16}}>Feed me gently without signing in</Link>}
 
@@ -68,6 +68,7 @@ export function SignInScreen() {
 const styles = StyleSheet.create({
   screen: { flex: 1, justifyContent: "center", padding: space.lg + 4 },
   wordmark: { fontSize: typeScale.display, fontWeight: "700", letterSpacing: -0.5 },
+  wordmarkTm: { fontSize: typeScale.small, fontWeight: "400", top: -6 },
   tagline: { fontSize: 14, marginBottom: space.xl },
   panel: { marginTop: space.md },
   actions: { flexDirection: "row", gap: space.md, alignItems: "center", flexWrap: "wrap" },
