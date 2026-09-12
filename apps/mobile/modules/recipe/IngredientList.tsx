@@ -55,10 +55,10 @@ export function IngredientList({ ingredients }: { ingredients: Ingredient[] }) {
 }
 
 const styles = StyleSheet.create({
-  scaler: { flexDirection: "row", alignItems: "center", gap: space.sm },
+  scaler: { flexDirection: "row", flexWrap:'wrap', alignItems: "center", gap: space.sm },
   scalerLabel: { fontSize: typeScale.small },
-  row: { flexDirection: "row", gap: space.md, paddingVertical: 7, borderBottomWidth: StyleSheet.hairlineWidth },
-  amount: { width: 92, fontWeight: "600", fontSize: typeScale.body, fontVariant: ["tabular-nums"] },
-  item: { flex: 1, fontSize: typeScale.body, lineHeight: 21 },
+  row: { flexDirection: "row", flexWrap:'wrap', gap: space.md, paddingVertical: 7, borderBottomWidth: StyleSheet.hairlineWidth },
+  amount: { minWidth:62,maxWidth:'100%', fontWeight: "600", fontSize: typeScale.body, fontVariant: ["tabular-nums"] },
+  item: { flex: 1,minWidth:100, fontSize: typeScale.body, lineHeight: 23 },
   groupHeading: { fontWeight: "700", fontSize: typeScale.small, paddingTop: space.md + 2 },
 });

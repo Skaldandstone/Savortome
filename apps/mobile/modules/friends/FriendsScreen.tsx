@@ -30,6 +30,7 @@ function Avatar({ person }: { person: PersonSummary }) {
       <Image
         source={{ uri: person.avatarUrl }}
         style={styles.avatar}
+        accessible={false}
         accessibilityIgnoresInvertColors
       />
     );
@@ -178,6 +179,7 @@ export function FriendsScreen() {
             value={handle}
             onChangeText={setHandle}
             placeholder="@their-handle"
+            accessibilityLabel="Friend handle"
             autoCapitalize="none"
             autoCorrect={false}
             style={styles.addInput}
@@ -190,7 +192,7 @@ export function FriendsScreen() {
 
         {overview.incoming.length > 0 ? (
           <View style={styles.group}>
-            <Text style={[styles.groupHeading, { color: c.textMuted }]}>
+            <Text accessibilityRole="header" style={[styles.groupHeading, { color: c.textMuted }]}>
               WAITING ON YOU ({overview.incoming.length})
             </Text>
             {overview.incoming.map((request) => (
@@ -216,7 +218,7 @@ export function FriendsScreen() {
 
         {overview.friends.length > 0 ? (
           <View style={styles.group}>
-            <Text style={[styles.groupHeading, { color: c.textMuted }]}>
+            <Text accessibilityRole="header" style={[styles.groupHeading, { color: c.textMuted }]}>
               FRIENDS ({overview.friends.length})
             </Text>
             {overview.friends.map((person) => (
@@ -237,7 +239,7 @@ export function FriendsScreen() {
 
         {overview.outgoing.length > 0 ? (
           <View style={styles.group}>
-            <Text style={[styles.groupHeading, { color: c.textMuted }]}>
+            <Text accessibilityRole="header" style={[styles.groupHeading, { color: c.textMuted }]}>
               ASKED ({overview.outgoing.length})
             </Text>
             {overview.outgoing.map((request) => (
@@ -264,7 +266,7 @@ export function FriendsScreen() {
       </Panel>
 
       <View style={styles.feedSection}>
-        <Text style={[styles.feedHeading, { color: c.text }]}>
+        <Text accessibilityRole="header" style={[styles.feedHeading, { color: c.text }]}>
           What they&apos;ve been cooking
         </Text>
         {feed.length === 0 ? (

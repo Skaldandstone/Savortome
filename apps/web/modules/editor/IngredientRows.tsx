@@ -136,7 +136,7 @@ function IngredientRow({
         />
         {!heading && showCanonical ? (
           <p className={styles.understood}>
-            Matches <strong>{canonical}</strong> in your pantry
+            Ingredient name for pantry matching: <strong>{canonical}</strong>
           </p>
         ) : null}
       </div>
@@ -145,6 +145,7 @@ function IngredientRow({
         <label className={styles.optional}>
           <input
             type="checkbox"
+            aria-label={`Ingredient ${index + 1} is optional`}
             checked={ingredient.optional}
             onChange={(e) => onReplace(index, { ...ingredient, optional: e.target.checked })}
           />

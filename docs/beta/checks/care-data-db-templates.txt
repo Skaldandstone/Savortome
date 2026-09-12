@@ -1,0 +1,30 @@
+$ tsx scripts/check-templates.ts
+--- creating ---
+PASS  a template can't be built from a recipe you don't own
+PASS  the template shows up in the owner's list
+PASS  ...with both dishes attached
+
+--- template visibility ---
+PASS  a stranger can't see a private template
+PASS  nor signed out
+PASS  a stranger can see a public template
+
+--- per-recipe gating inside a public template ---
+PASS  the public main is visible inside a public template
+PASS  the still-private side is left out, even though the template itself is public
+PASS  the owner sees every dish in their own template, private or not
+PASS  the owner is not offered a save of their own template
+
+--- saving a copy ---
+PASS  the copy has exactly the dishes the stranger could actually see
+PASS  the copy is named after the original
+PASS  the copied dish belongs to whoever saved the template
+PASS  ...and records where it came from
+PASS  saving your own template is refused
+
+--- deleting ---
+PASS  a stranger cannot delete someone else's template
+PASS  the owner can delete their own template
+PASS  ...and it's gone
+
+All good.

@@ -1,0 +1,32 @@
+$ tsx scripts/check-library.ts
+PASS  finds a recipe by its name
+PASS  ranks the title above a passing mention in the description
+PASS  matches on cuisine
+PASS  handles a phrase
+PASS  handles punctuation people type
+PASS  finds by tag
+PASS  a tag matches exactly, not stemmed
+PASS  finds every recipe using an ingredient
+PASS  finds by an ingredient no other field mentions
+PASS  never reaches someone else's recipes
+PASS  ...and the other person's own search sees only theirs
+PASS  an empty query returns nothing rather than everything
+PASS  a query matching nothing returns nothing
+PASS  a deleted recipe stops matching
+PASS  A-Z sorts by name, case-insensitively
+PASS  ...and runs to the end of the alphabet
+PASS  quickest puts the fastest first
+PASS  ...and a recipe with no stated time last, not first
+PASS  best rated puts five stars first
+PASS  ...then the two-star one
+PASS  ...and unrated recipes last, not floated up by a null
+PASS  recently cooked puts it first
+PASS  newest is the default when no sort is given
+PASS  the card carries this person's own stars
+PASS  ...and how many times they cooked it
+PASS  an unrated recipe reports null rather than a fabricated zero
+PASS  another person's rating never leaks onto your card
+PASS  a search keeps its relevance order when no sort is asked for
+PASS  ...and takes the sort when one is
+
+All good.

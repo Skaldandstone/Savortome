@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from 'expo-router';
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useHostedAuth } from "@clerk/expo/hosted-auth";
 import { Button, Callout, Panel, PanelHeader, space, type as typeScale, usePalette } from "@/ui";
@@ -32,8 +33,9 @@ export function SignInScreen() {
 
   return (
     <View style={[styles.screen, { backgroundColor: c.bg }]}>
-      <Text style={[styles.wordmark, { color: c.text }]}>Second Breakfast</Text>
-      <Text style={[styles.tagline, { color: c.textMuted }]}>recipes, from anywhere</Text>
+      <Text style={[styles.wordmark, { color: c.text }]}>Savortome™</Text>
+      <Text style={[styles.tagline, { color: c.textMuted }]}>Food is magic. Cooking shouldn’t require it.</Text>
+      {process.env.EXPO_PUBLIC_WOODLAND_BETA === 'true' && <Link href="/care" style={{color:c.accent,paddingVertical:16}}>Feed me gently without signing in</Link>}
 
       <Panel style={styles.panel}>
         <PanelHeader
@@ -55,9 +57,10 @@ export function SignInScreen() {
           />
         </View>
 
-        {busy ? <ActivityIndicator style={styles.spinner} color={c.accent} /> : null}
+        {busy ? <ActivityIndicator accessibilityLabel="Signing in" style={styles.spinner} color={c.accent} /> : null}
         {error ? <Callout tone="error" title="Couldn't sign in">{error}</Callout> : null}
       </Panel>
+      <Link href="/legal" style={{ color: c.text, paddingVertical: 16, minHeight: 48 }}>About Savortome and legal</Link>
     </View>
   );
 }

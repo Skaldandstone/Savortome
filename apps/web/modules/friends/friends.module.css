@@ -85,3 +85,14 @@
 .review { font-size: var(--step-2); color: var(--text-muted); font-style: italic; }
 
 .feedWhen { flex: none; font-size: var(--step-1); color: var(--text-muted); }
+
+:global([data-woodland='true']) .empty { font-size:.9375rem; line-height:1.65; }
+:global([data-woodland='true']) .groupHeading,:global([data-woodland='true']) .feedHeading { font:1.35rem Georgia,serif; color:var(--accent); text-transform:none; letter-spacing:0; }
+:global([data-woodland='true']) .person { padding:16px; border:1px solid var(--border); border-radius:4px; flex-wrap:wrap; }
+:global([data-woodland='true']) .personText { min-width:9rem; }
+:global([data-woodland='true']) .personActions { margin-left:auto; }
+:global([data-woodland='true']) .feedItem { padding:14px; border-radius:4px; gap:14px; }
+:global([data-woodland='true']) .feedThumb { width:72px; height:72px; border-radius:2px; }
+:global([data-woodland='true']) .feedText strong { font:1.1rem/1.5 Georgia,serif; }
+@media(max-width:560px) { :global([data-woodland='true']) .feedItem { flex-wrap:wrap; } :global([data-woodland='true']) .feedWhen { flex-basis:100%; text-align:right; } }
+:global([data-text-size='200']) .feedItem { flex-wrap:wrap; }

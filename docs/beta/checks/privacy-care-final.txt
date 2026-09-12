@@ -1,0 +1,39 @@
+✔ destructive beta fixtures reject query overrides and every other database (3.9733ms)
+✔ link parser removes private, unknown, duplicate and malformed values (3.1222ms)
+✔ malformed containers and inherited or unknown fields cannot become link parameters (0.6988ms)
+✔ all seven documented handoff fields round trip without any extra personal data (0.3153ms)
+✔ all combinations keep explicit effort and time ceilings and unique choices (12.4764ms)
+✔ each available candidate fills the next slot, including equal-time alternatives (3.7295ms)
+✔ pantry priority remains intact across all slots rather than forcing a slower second choice (0.9675ms)
+✔ pantry names use the existing canonicalizer and complete coverage precedes partial coverage (4.6884ms)
+✔ pantry canonicalization never changes preparation requirements or relaxes restrictions (5.4159ms)
+✔ sensory, appetite and dietary filters apply to every suggestion slot (15.3983ms)
+✔ each known detected allergen conflict is excluded even with a favored pantry match (266.007ms)
+✔ never broadens impossible requests or uncertain dietary certifications (0.3519ms)
+✔ allergens exclude conflicts including optional future shopping suggestions (2.2231ms)
+✔ pantry ranking is opt-in, deterministic, and does not override sensory preferences (2.6669ms)
+✔ beta is closed by default and a local-preview flag never opens production (0.186ms)
+✔ database TLS validates remote peers despite connection-string overrides (2.4803ms)
+✔ the actual pg client cannot replace certificate checks with URL SSL options (4.6739ms)
+✔ a query host override cannot turn a remote connection into a plaintext local one (1.41ms)
+✔ connection parsing preserves non-TLS settings and never repeats malformed credentials (0.9901ms)
+✔ environment SSL defaults cannot weaken the explicit remote TLS configuration (0.6619ms)
+✔ only a development loopback database may omit TLS (0.1588ms)
+✔ generated offline catalogue matches current shared ranking across strict choices (122.8667ms)
+✔ generated worker contains the current audited worker source (0.9178ms)
+✔ service worker never intercepts APIs, authenticated fetches, auth pages or mutations (28.5797ms)
+✔ activation removes legacy private caches, preserving unrelated origin caches (2.4811ms)
+✔ precache omits credentials and validates the whole shell before storing (3.8364ms)
+✔ a private or redirected precache response fails installation without partial storage (3.3728ms)
+✔ offline document has no public HTML file and online requests never return the cached shell (1.2584ms)
+✔ static cache rejects account-shaped responses, redirects, failures, and cookie variation (6.3556ms)
+✔ valid public image is cached while query URLs and unknown static payloads are excluded (1.7181ms)
+✔ offline private-page navigation returns only the generic shell and stores no response (1.858ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 706.4278

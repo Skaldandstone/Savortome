@@ -1,0 +1,1634 @@
+To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.3.1/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+> Task :gradle-plugin:settings-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :gradle-plugin:shared:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:pluginDescriptors UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:processResources UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:pluginDescriptors UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:processResources UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:processResources NO-SOURCE
+> Task :gradle-plugin:shared:processResources NO-SOURCE
+> Task :gradle-plugin:shared:compileKotlin
+> Task :gradle-plugin:shared:compileJava NO-SOURCE
+> Task :gradle-plugin:shared:classes UP-TO-DATE
+> Task :gradle-plugin:shared:jar
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:compileKotlin
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:classes UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin-shared:jar UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:compileKotlin
+> Task :gradle-plugin:settings-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:settings-plugin:classes UP-TO-DATE
+> Task :gradle-plugin:settings-plugin:jar
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:compileKotlin
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:classes UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-settings-plugin:jar UP-TO-DATE
+> Task :expo-gradle-plugin:expo-autolinking-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-module-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-module-gradle-plugin:pluginDescriptors
+> Task :expo-module-gradle-plugin:processResources
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:compileKotlin
+> Task :expo-gradle-plugin:expo-autolinking-plugin:pluginDescriptors
+> Task :expo-gradle-plugin:expo-autolinking-plugin:processResources
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:pluginDescriptors
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:processResources
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:classes
+> Task :expo-gradle-plugin:expo-max-sdk-override-plugin:jar
+> Task :gradle-plugin:react-native-gradle-plugin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :expo-gradle-plugin:expo-autolinking-plugin:compileKotlin
+> Task :gradle-plugin:react-native-gradle-plugin:pluginDescriptors
+> Task :gradle-plugin:react-native-gradle-plugin:processResources
+> Task :expo-gradle-plugin:expo-autolinking-plugin:compileJava NO-SOURCE
+> Task :expo-gradle-plugin:expo-autolinking-plugin:classes
+> Task :expo-gradle-plugin:expo-autolinking-plugin:jar
+> Task :gradle-plugin:react-native-gradle-plugin:compileKotlin
+> Task :gradle-plugin:react-native-gradle-plugin:compileJava NO-SOURCE
+> Task :gradle-plugin:react-native-gradle-plugin:classes
+> Task :gradle-plugin:react-native-gradle-plugin:jar
+
+> Task :expo-module-gradle-plugin:compileKotlin
+w: file:///C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/expo-modules-core@57.0.13_r_0f965f5735652177b9cfb9e0b7440a5c/node_modules/expo-modules-core/expo-module-gradle-plugin/src/main/kotlin/expo/modules/plugin/android/AndroidLibraryExtension.kt:9:24 'var targetSdk: Int?' is deprecated. Will be removed from library DSL in v9.0. Use testOptions.targetSdk or/and lint.targetSdk instead.
+
+> Task :expo-module-gradle-plugin:compileJava NO-SOURCE
+> Task :expo-module-gradle-plugin:classes
+> Task :expo-module-gradle-plugin:jar
+
+> Configure project :
+[32m[ExpoRootProject][0m Using the following versions:
+  - buildTools:  [32m36.0.0[0m
+  - minSdk:      [32m24[0m
+  - compileSdk:  [32m36[0m
+  - targetSdk:   [32m36[0m
+  - ndk:         [32m27.1.12297006[0m
+  - kotlin:      [32m2.1.20[0m
+  - ksp:         [32m2.1.20-2.0.1[0m
+
+> Configure project :app
+ ℹ️  [33mApplying gradle plugin[0m '[32mexpo-max-sdk-override-plugin[0m'
+  [expo-max-sdk-override-plugin] This plugin will find all permissions declared with `android:maxSdkVersion`. If there exists a declaration with the `android:maxSdkVersion` annotation and another one without, the plugin will remove the annotation from the final merged manifest. In order to see a log with the changes run a clean build of the app.
+
+> Configure project :expo
+
+Using expo modules
+  - [32mclerk-expo[0m (1.0.0)
+  - [32mexpo-log-box[0m (57.0.3)
+  - [32mexpo-constants[0m (57.0.14)
+
+> Configure project :expo-modules-core
+Linking react-native-worklets native libs into expo-modules-core build tasks
+task ':react-native-worklets:mergeDebugNativeLibs'
+task ':react-native-worklets:mergeReleaseNativeLibs'
+
+> Configure project :expo
+  - [32mexpo-modules-core[0m (57.0.13)
+  - [33m[📦][0m [32mexpo-dom-webview[0m (57.0.1)
+  - [33m[📦][0m [32mexpo-ui[0m (57.0.13)
+  - [33m[📦][0m [32mexpo-application[0m (57.0.2)
+  - [33m[📦][0m [32mexpo-asset[0m (57.0.14)
+  - [33m[📦][0m [32mexpo-clipboard[0m (57.0.1)
+  - [33m[📦][0m [32mexpo-file-system[0m (57.0.5)
+  - [33m[📦][0m [32mexpo-font[0m (57.0.1)
+  - [33m[📦][0m [32mexpo-keep-awake[0m (57.0.1)
+  - [33m[📦][0m [32mexpo-linking[0m (57.0.7)
+  - [33m[📦][0m [32mexpo-notifications[0m (57.0.14)
+  - [33m[📦][0m [32mexpo-router[0m (57.0.16)
+  - [33m[📦][0m [32mexpo-secure-store[0m (57.0.1)
+  - [33m[📦][0m [32mexpo-status-bar[0m (57.0.1)
+  - [33m[📦][0m [32mexpo-system-ui[0m (57.0.3)
+  - [33m[📦][0m [32mexpo-web-browser[0m (57.0.2)
+
+Warning: SDK processing. This version only understands SDK XML versions up to 3 but an SDK XML file of version 4 was encountered. This can happen if you use versions of Android Studio and the command-line tools that were released at different times.
+
+> Task :clerk-expo:preBuild UP-TO-DATE
+> Task :app:generateAutolinkingNewArchitectureFiles
+> Task :app:generateAutolinkingPackageList
+> Task :app:generateCodegenSchemaFromJavaScript SKIPPED
+> Task :app:generateCodegenArtifactsFromSchema SKIPPED
+> Task :expo:generatePackagesList
+> Task :expo:preBuild
+> Task :app:generateReactNativeEntryPoint
+> Task :expo-log-box:preBuild UP-TO-DATE
+> Task :expo-modules-core:preBuild UP-TO-DATE
+
+> Task :expo-constants:createExpoConfig
+✅ Clerk iOS plugin loaded
+✅ Clerk Android plugin loaded
+The NODE_ENV environment variable is required but was not specified. Ensure the project is bundled with Expo CLI or NODE_ENV is set. Using only .env.local and .env
+
+> Task :react-native-async-storage_async-storage:generateCodegenSchemaFromJavaScript
+> Task :expo-constants:preBuild
+> Task :react-native-async-storage_async-storage:generateCodegenArtifactsFromSchema
+> Task :react-native-async-storage_async-storage:preBuild
+> Task :react-native-masked-view_masked-view:preBuild UP-TO-DATE
+> Task :react-native-reanimated:assertMinimalReactNativeVersionTask
+> Task :react-native-gesture-handler:generateCodegenSchemaFromJavaScript
+> Task :react-native-reanimated:assertWorkletsVersionTask
+> Task :react-native-reanimated:generateCodegenSchemaFromJavaScript
+> Task :react-native-gesture-handler:generateCodegenArtifactsFromSchema
+> Task :react-native-gesture-handler:preBuild
+> Task :react-native-reanimated:generateCodegenArtifactsFromSchema
+> Task :react-native-safe-area-context:generateCodegenSchemaFromJavaScript
+> Task :react-native-reanimated:prepareReanimatedHeadersForPrefabs
+> Task :react-native-reanimated:preBuild
+> Task :react-native-safe-area-context:generateCodegenArtifactsFromSchema
+> Task :react-native-safe-area-context:preBuild
+> Task :react-native-screens:generateCodegenSchemaFromJavaScript
+> Task :react-native-worklets:assertMinimalReactNativeVersionTask
+> Task :react-native-worklets:generateCodegenSchemaFromJavaScript
+> Task :react-native-screens:generateCodegenArtifactsFromSchema
+> Task :react-native-screens:preBuild
+> Task :solana-mobile_mobile-wallet-adapter-protocol:generateCodegenSchemaFromJavaScript
+> Task :react-native-worklets:generateCodegenArtifactsFromSchema
+> Task :react-native-worklets:prepareWorkletsHeadersForPrefabs
+> Task :react-native-worklets:preBuild
+> Task :react-native-reanimated:preReleaseBuild
+> Task :react-native-worklets:preReleaseBuild
+> Task :solana-mobile_mobile-wallet-adapter-protocol:generateCodegenArtifactsFromSchema
+> Task :solana-mobile_mobile-wallet-adapter-protocol:preBuild
+> Task :app:preBuild
+> Task :app:preReleaseBuild
+> Task :app:mergeReleaseJniLibFolders
+> Task :clerk-expo:preReleaseBuild UP-TO-DATE
+> Task :clerk-expo:mergeReleaseJniLibFolders
+> Task :clerk-expo:mergeReleaseNativeLibs NO-SOURCE
+> Task :clerk-expo:copyReleaseJniLibsProjectOnly
+> Task :expo:preReleaseBuild
+> Task :expo:mergeReleaseJniLibFolders
+> Task :expo:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo:copyReleaseJniLibsProjectOnly
+> Task :expo-constants:preReleaseBuild
+> Task :expo-constants:mergeReleaseJniLibFolders
+> Task :expo-constants:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-constants:copyReleaseJniLibsProjectOnly
+> Task :expo-log-box:preReleaseBuild UP-TO-DATE
+> Task :expo-log-box:mergeReleaseJniLibFolders
+> Task :expo-log-box:mergeReleaseNativeLibs NO-SOURCE
+> Task :expo-log-box:copyReleaseJniLibsProjectOnly
+> Task :expo-modules-core:preReleaseBuild UP-TO-DATE
+> Task :expo-modules-core:mergeReleaseJniLibFolders
+> Task :react-native-async-storage_async-storage:preReleaseBuild
+> Task :react-native-async-storage_async-storage:mergeReleaseJniLibFolders
+> Task :react-native-async-storage_async-storage:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-async-storage_async-storage:copyReleaseJniLibsProjectOnly
+> Task :react-native-gesture-handler:preReleaseBuild
+> Task :react-native-gesture-handler:mergeReleaseJniLibFolders
+> Task :react-native-masked-view_masked-view:preReleaseBuild UP-TO-DATE
+> Task :react-native-masked-view_masked-view:mergeReleaseJniLibFolders
+> Task :react-native-masked-view_masked-view:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-masked-view_masked-view:copyReleaseJniLibsProjectOnly
+> Task :react-native-reanimated:mergeReleaseJniLibFolders
+> Task :react-native-safe-area-context:preReleaseBuild
+> Task :react-native-safe-area-context:mergeReleaseJniLibFolders
+> Task :react-native-safe-area-context:mergeReleaseNativeLibs NO-SOURCE
+> Task :react-native-safe-area-context:copyReleaseJniLibsProjectOnly
+> Task :react-native-screens:preReleaseBuild
+> Task :react-native-worklets:configureCMakeRelWithDebInfo[arm64-v8a]
+> Task :react-native-screens:configureCMakeRelWithDebInfo[arm64-v8a]
+C/C++: CMake Warning in C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/CMakeTmp/CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/CMakeTmp/CMakeFiles/cmTC_248bc.dir/./
+C/C++:   has 257 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     CMakeCCompilerABI.c.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/CMakeTmp/CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/CMakeTmp/CMakeFiles/cmTC_52de2.dir/./
+C/C++:   has 257 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     CMakeCXXCompilerABI.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/OnLoad.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+
+> Task :react-native-screens:buildCMakeRelWithDebInfo[arm64-v8a]
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/OnLoad.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+
+> Task :react-native-worklets:configureCMakeRelWithDebInfo[arm64-v8a]
+C/C++: CMake Warning in C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/CMakeTmp/CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/CMakeTmp/CMakeFiles/cmTC_012ef.dir/./
+C/C++:   has 258 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     CMakeCCompilerABI.c.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/CMakeTmp/CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/CMakeTmp/CMakeFiles/cmTC_789cc.dir/./
+C/C++:   has 258 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     CMakeCXXCompilerABI.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Registries/WorkletRuntimeRegistry.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+
+> Task :react-native-screens:buildCMakeRelWithDebInfo[arm64-v8a]
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/NativeProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/OnLoad.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/NativeProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/NativeProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/NativeProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/OnLoad.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/OnLoad.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/OnLoad.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/OnLoad.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/OnLoad.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/OnLoad.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+
+> Task :react-native-worklets:buildCMakeRelWithDebInfo[arm64-v8a][worklets]
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Compat/StableApi.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/AnimationFrameQueue/AnimationFrameBatchinator.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Compat/StableApi.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Compat/StableApi.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/JSIWorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/AnimationFrameQueue/AnimationFrameBatchinator.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/WorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/AnimationFrameQueue/AnimationFrameBatchinator.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/AnimationFrameQueue/AnimationFrameBatchinator.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/JSIWorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Compat/StableApi.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/JSIWorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/JSIWorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/RunLoop/AsyncQueueImpl.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/WorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/SharedItems/MemoryManager.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Compat/StableApi.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/RunLoop/AsyncQueueImpl.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/AnimationFrameQueue/AnimationFrameBatchinator.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/SharedItems/SerializableFactory.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Compat/StableApi.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/SharedItems/Serializable.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Compat/StableApi.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/AnimationFrameQueue/AnimationFrameBatchinator.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Registries/WorkletRuntimeRegistry.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+
+> Task :react-native-screens:buildCMakeRelWithDebInfo[arm64-v8a]
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/OnLoad.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/NativeProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/NativeProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/NativeProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/OnLoad.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/OnLoad.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/OnLoad.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+
+> Task :react-native-worklets:buildCMakeRelWithDebInfo[arm64-v8a][worklets]
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/AnimationFrameQueue/AnimationFrameBatchinator.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/JSIWorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/RunLoop/AsyncQueueImpl.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/AnimationFrameQueue/AnimationFrameBatchinator.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Compat/StableApi.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/AnimationFrameQueue/AnimationFrameBatchinator.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Registries/WorkletRuntimeRegistry.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Compat/StableApi.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Compat/StableApi.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/RunLoop/EventLoop.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/AnimationFrameQueue/AnimationFrameBatchinator.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/JSIWorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Registries/WorkletRuntimeRegistry.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/JSIWorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/JSIWorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/SharedItems/Serializable.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+
+> Task :react-native-screens:buildCMakeRelWithDebInfo[arm64-v8a]
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/OnLoad.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/OnLoad.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/OnLoad.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+
+> Task :react-native-worklets:buildCMakeRelWithDebInfo[arm64-v8a][worklets]
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Compat/StableApi.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/JSIWorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/AnimationFrameQueue/AnimationFrameBatchinator.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Registries/WorkletRuntimeRegistry.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Compat/StableApi.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Registries/WorkletRuntimeRegistry.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/JSIWorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/JSIWorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+
+> Task :react-native-screens:buildCMakeRelWithDebInfo[arm64-v8a]
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/NativeProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/NativeProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/NativeProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+
+> Task :react-native-worklets:buildCMakeRelWithDebInfo[arm64-v8a][worklets]
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Registries/WorkletRuntimeRegistry.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Compat/StableApi.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Compat/StableApi.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Compat/StableApi.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/AnimationFrameQueue/AnimationFrameBatchinator.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/AnimationFrameQueue/AnimationFrameBatchinator.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+
+> Task :react-native-screens:buildCMakeRelWithDebInfo[arm64-v8a]
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/NativeProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/NativeProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/OnLoad.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNSScreenRemovalListener.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/NativeProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     src/main/cpp/jni-adapter.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/android/.cxx/RelWithDebInfo/my4l1t61/arm64-v8a/CMakeFiles/rnscreens.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-screens@4.26.2_45b8ad1ef3530975fcd09008a05c6574/node_modules/react-native-screens/cpp/RNScreensTurboModule.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: ninja: error: manifest 'build.ninja' still dirty after 100 tries
+
+> Task :react-native-screens:buildCMakeRelWithDebInfo[arm64-v8a] FAILED
+
+> Task :react-native-worklets:buildCMakeRelWithDebInfo[arm64-v8a][worklets]
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/JSIWorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/AnimationFrameQueue/AnimationFrameBatchinator.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/AnimationFrameQueue/AnimationFrameBatchinator.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/WorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/RunLoop/AsyncQueueImpl.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/WorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/SharedItems/SerializableRemoteFunction.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/JSIWorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/AnimationFrameQueue/AnimationFrameBatchinator.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Compat/StableApi.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/RunLoop/EventLoop.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/Compat/StableApi.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/WorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/SharedItems/MemoryManager.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/WorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.
+C/C++: CMake Warning in CMakeLists.txt:
+C/C++:   The object file directory
+C/C++:     C:/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/android/.cxx/RelWithDebInfo/1q6o2q2z/arm64-v8a/CMakeFiles/worklets.dir/./
+C/C++:   has 236 characters.  The maximum full path to an object file is 250
+C/C++:   characters (see CMAKE_OBJECT_PATH_MAX).  Object file
+C/C++:     C_/Users/James/Documents/GitHub/SecondBreakfast/node_modules/.pnpm/react-native-worklets@0.12._e5a4fb89963f644af2c93aeef8e932aa/node_modules/react-native-worklets/Common/cpp/worklets/NativeModules/WorkletsModuleProxy.cpp.o
+C/C++:   cannot be safely placed under this directory.  The build may not work
+C/C++:   correctly.

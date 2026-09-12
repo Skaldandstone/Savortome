@@ -1,0 +1,64 @@
+{
+    "recordedAt":  "2026-08-31T01:55:00.4736586-07:00",
+    "configuration":  "account-preview",
+    "apk":  "C:\\Users\\James\\Documents\\GitHub\\SecondBreakfast\\apps\\mobile\\.expo-export\\account-preview\\second-breakfast-arm64-woodland-review.apk",
+    "bytes":  58536845,
+    "sha256":  "1677bb302e8e9a7054df391182a9b6517d181c74ca2160b75b792a8d09f201cf",
+    "bundleSha256":  "79fb8af3866980ea44408e85161a84ea773adad850ace6554bb6baf77e0d0cc9",
+    "bundleBytes":  4239880,
+    "containsConfiguredClerkTestKey":  true,
+    "markers":  [
+                    {
+                        "marker":  "Your woodland kitchen",
+                        "present":  true
+                    },
+                    {
+                        "marker":  "View details",
+                        "present":  true
+                    },
+                    {
+                        "marker":  "Sign in again before saving.",
+                        "present":  true
+                    },
+                    {
+                        "marker":  "We could not confirm the list update.",
+                        "present":  true
+                    },
+                    {
+                        "marker":  "Matches use ingredient names, not quantities or preparation.",
+                        "present":  true
+                    },
+                    {
+                        "marker":  "Feed me gently",
+                        "present":  true
+                    }
+                ],
+    "assets":  [
+                   {
+                       "path":  "apps/mobile/assets/woodland/kitchen-scene.webp",
+                       "sha256":  "7c27f1c204647d690c0126d637453e179e945640f9f51dbac4c61d638768fb5b",
+                       "apkEntry":  "res/Ry.webp"
+                   },
+                   {
+                       "path":  "apps/mobile/assets/woodland/food-atlas.webp",
+                       "sha256":  "cb96b0f9d3262f4f593c3b8db2051336758c04eaedcef0f50a049ef1b1d7697c",
+                       "apkEntry":  "res/k2.webp"
+                   },
+                   {
+                       "path":  "apps/mobile/assets/woodland/parchment.webp",
+                       "sha256":  "5546ede20f7a470a059496332108661ef19b98ce1bc40aba69684afe8c9ee837",
+                       "apkEntry":  "res/Tg.webp"
+                   },
+                   {
+                       "path":  "apps/mobile/assets/woodland/timber.webp",
+                       "sha256":  "b58046618f7c5597cfd04697c356c4a9eff03a5b4848bae2417da45eff9c88a6",
+                       "apkEntry":  "res/XL.webp"
+                   }
+               ],
+    "sourceFiles":  161,
+    "sourceDrift":  0,
+    "signing":  "Android debug certificate, local review only; see separate apksigner output",
+    "runtimeTested":  false,
+    "physicalDeviceTested":  false,
+    "visualAccepted":  false
+}

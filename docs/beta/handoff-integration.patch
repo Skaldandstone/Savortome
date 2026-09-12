@@ -1,0 +1,181 @@
+diff --git a/app.json b/app.json
+index 4f6a9ce..98f0f30 100644
+--- a/app.json
++++ b/app.json
+@@ -45,7 +45,8 @@
+             "minSdkVersion": 26
+           }
+         }
+-      ]
++      ],
++      "./plugins/withSecondBreakfastQueries.js"
+     ]
+   }
+ }
+diff --git a/plugins/withSecondBreakfastQueries.js b/plugins/withSecondBreakfastQueries.js
+new file mode 100644
+index 0000000..102a136
+--- /dev/null
++++ b/plugins/withSecondBreakfastQueries.js
+@@ -0,0 +1,10 @@
++const { withAndroidManifest, withInfoPlist } = require('expo/config-plugins');
++module.exports = function withSecondBreakfastQueries(config) {
++  config=withInfoPlist(config, value=>{ value.modResults.LSApplicationQueriesSchemes=Array.from(new Set([...(value.modResults.LSApplicationQueriesSchemes||[]),'seconds'])); return value; });
++  return withAndroidManifest(config,value=>{
++    const manifest=value.modResults.manifest;
++    manifest.queries=manifest.queries||[];
++    if(!JSON.stringify(manifest.queries).includes('"seconds"')) manifest.queries.push({intent:[{action:[{$:{'android:name':'android.intent.action.VIEW'}}],data:[{$:{'android:scheme':'seconds'}}]}]});
++    return value;
++  });
++};
+diff --git a/src/integrations/FoodHandoffCard.tsx b/src/integrations/FoodHandoffCard.tsx
+new file mode 100644
+index 0000000..eb0b22b
+--- /dev/null
++++ b/src/integrations/FoodHandoffCard.tsx
+@@ -0,0 +1,17 @@
++import React, {useState} from 'react';
++import {Linking,Pressable,Text,View} from 'react-native';
++import {openSecondBreakfast,type FoodHandoff} from './secondBreakfast';
++import {color,font} from '../theme/tokens';
++export function FoodHandoffCard() {
++  const [message,setMessage]=useState(''); const [busy,setBusy]=useState(false); const [dismissed,setDismissed]=useState(false);
++  if(process.env.EXPO_PUBLIC_SECOND_BREAKFAST_BETA !== 'true' || dismissed) return null;
++  async function open(input:FoodHandoff) { setBusy(true); const result=await openSecondBreakfast(Linking,input); setBusy(false); setMessage(result==='unavailable'?'Second Breakfast could not open. A familiar snack or a few sips of water can still be a small next step.':'You can come back whenever you like. Nothing to finish or report.'); }
++  return <View style={{padding:18,borderRadius:16,borderWidth:1,borderColor:color.rule,gap:12}}>
++    <Text style={{fontFamily:font.displaySemibold,fontSize:22,color:color.ink}}>Something easy to eat?</Text>
++    <Text style={{fontFamily:font.body,fontSize:15,color:color.inkQuiet}}>Second Breakfast can offer a few ideas. It is optional, and the web beta needs an invitation.</Text>
++    {[{label:'Something I can eat now',choices:{effort:'open',time:'two'}},{label:'Something warm, almost no prep',choices:{effort:'microwave',time:'ten',temperature:'warm'}},{label:'Help me find a simple option',choices:{}}].map(({label,choices})=><Pressable key={label} accessibilityRole="button" accessibilityState={{disabled:busy}} disabled={busy} onPress={()=>void open(choices as FoodHandoff)} style={{minHeight:48,padding:12,borderWidth:1,borderColor:color.rule,borderRadius:10}}><Text style={{fontFamily:font.bodyBold,color:color.ink}}>{label}</Text></Pressable>)}
++    <Pressable accessibilityRole="button" onPress={()=>setDismissed(true)} style={{minHeight:44,justifyContent:'center'}}><Text style={{color:color.inkQuiet}}>Not right now</Text></Pressable>
++    {!!message&&<Text accessibilityLiveRegion="polite" style={{color:color.inkQuiet,fontFamily:font.body}}>{message}</Text>}
++    <Text style={{fontFamily:font.body,fontSize:12,color:color.inkQuiet}}>Only the preparation choices you tap are shared. No support history, health data, or eating report.</Text>
++  </View>;
++}
+diff --git a/src/integrations/secondBreakfast.test.ts b/src/integrations/secondBreakfast.test.ts
+new file mode 100644
+index 0000000..8f314a4
+--- /dev/null
++++ b/src/integrations/secondBreakfast.test.ts
+@@ -0,0 +1,32 @@
++import {secondBreakfastLinks,openSecondBreakfast,careReturnState} from './secondBreakfast';
++test('only broad user-selected choices cross the boundary',()=>{
++  const link=secondBreakfastLinks({effort:'open',time:'two',mood:'private',diagnosis:'private',return_to:'https://evil.test'} as any);
++  expect(link.app).toBe('seconds://care?source=wispling&intent=eat_now&return_to=wispling%3A%2F%2Fcare-return&effort=open&time=two');
++  expect(link.web).not.toContain('private');expect(link.web).not.toContain('evil');
++});
++test('installed app opens without web navigation',async()=>{
++  const openURL=jest.fn().mockResolvedValue(undefined);expect(await openSecondBreakfast({canOpenURL:async()=>true,openURL})).toBe('app');expect(openURL).toHaveBeenCalledTimes(1);expect(openURL.mock.calls[0][0]).toMatch(/^seconds:\/\/care/);
++});
++test('missing app or failed app launch uses web; both failures remain non-blocking',async()=>{
++  const openURL=jest.fn().mockRejectedValueOnce(new Error('app gone')).mockResolvedValue(undefined);
++  expect(await openSecondBreakfast({canOpenURL:async()=>true,openURL})).toBe('web');
++  expect(await openSecondBreakfast({canOpenURL:async()=>false,openURL:async()=>{throw new Error('offline');}})).toBe('unavailable');
++});
++test('absent app and failed detection can both use the web fallback',async()=>{
++  for(const canOpenURL of [async()=>false,async()=>{throw new Error('detection unavailable');}]) {
++    const openURL=jest.fn().mockResolvedValue(undefined);
++    expect(await openSecondBreakfast({canOpenURL,openURL},{effort:'open',time:'two'})).toBe('web');
++    expect(openURL).toHaveBeenCalledWith(secondBreakfastLinks({effort:'open',time:'two'}).web);
++    expect(openURL).toHaveBeenCalledTimes(1);
++  }
++});
++test('food return cannot bypass onboarding or carry a query payload',()=>{
++  expect(careReturnState('care-return',false)).toBeUndefined();
++  expect(careReturnState('care-return',true)).toEqual({routes:[{name:'Home'}]});
++  for(const path of ['care-return?food=banana','care-return?completed=true','care-return/elsewhere','care-return#completed','weather']) expect(careReturnState(path,true)).toBeUndefined();
++});
++test('malformed and unknown preparation values never enter either link',()=>{
++  const links=secondBreakfastLinks({effort:['open'],time:'999',temperature:'hot',texture:'private',appetite:'none'} as any);
++  expect(links.app).toBe(secondBreakfastLinks().app);
++  expect(links.web).toBe(secondBreakfastLinks().web);
++});
+diff --git a/src/integrations/secondBreakfast.ts b/src/integrations/secondBreakfast.ts
+new file mode 100644
+index 0000000..8f93843
+--- /dev/null
++++ b/src/integrations/secondBreakfast.ts
+@@ -0,0 +1,21 @@
++export type FoodEffort = 'open' | 'microwave' | 'one_pan' | 'cook';
++export type FoodTime = 'two' | 'ten' | 'twenty';
++export interface FoodHandoff { effort?: FoodEffort; time?: FoodTime; temperature?: 'cold' | 'warm' | 'any'; texture?: 'crunchy' | 'soft' | 'smooth' | 'plain' | 'any' }
++export const CARE_RETURN = 'wispling://care-return';
++/** The return is navigation only. Never decode query data into home-screen params. */
++export function careReturnState(path: string, onboarded: boolean) {
++  return onboarded && path === 'care-return' ? { routes: [{ name: 'Home' as const }] } : undefined;
++}
++/** An explicit allowlist. No support context or user state is accepted or spread. */
++export function secondBreakfastLinks(input: FoodHandoff = {}) {
++  const parts = ['source=wispling','intent=eat_now',`return_to=${encodeURIComponent(CARE_RETURN)}`];
++  const choices: Record<string,readonly string[]> = { effort:['open','microwave','one_pan','cook'],time:['two','ten','twenty'],temperature:['cold','warm','any'],texture:['crunchy','soft','smooth','plain','any'] };
++  for (const [key, allowed] of Object.entries(choices)) { const value=input[key as keyof FoodHandoff]; if(value && allowed.includes(value)) parts.push(`${key}=${encodeURIComponent(value)}`); }
++  const query=parts.join('&');
++  return { app:`seconds://care?${query}`, web:`https://secondbreakfast.skaldandstone.com/care?${query}` };
++}
++export async function openSecondBreakfast(linking: {canOpenURL:(url:string)=>Promise<boolean>;openURL:(url:string)=>Promise<unknown>}, input: FoodHandoff = {}): Promise<'app'|'web'|'unavailable'> {
++  const links=secondBreakfastLinks(input);
++  try { if(await linking.canOpenURL(links.app)) { await linking.openURL(links.app); return 'app'; } } catch { /* Detection or launch can fail independently; the web remains optional. */ }
++  try { await linking.openURL(links.web); return 'web'; } catch { return 'unavailable'; }
++}
+diff --git a/src/navigation/RootNavigator.tsx b/src/navigation/RootNavigator.tsx
+index 46f18be..5bcbdf8 100644
+--- a/src/navigation/RootNavigator.tsx
++++ b/src/navigation/RootNavigator.tsx
+@@ -1,8 +1,9 @@
+ import React from 'react';
+-import { NavigationContainer, DarkTheme } from '@react-navigation/native';
++import { NavigationContainer, DarkTheme, getStateFromPath, type LinkingOptions } from '@react-navigation/native';
+ import { createNativeStackNavigator } from '@react-navigation/native-stack';
+ import { color } from '../theme/tokens';
+ import { useAppStore } from '../state/store';
++import { careReturnState } from '../integrations/secondBreakfast';
+ 
+ import { OnboardingScreen } from '../screens/OnboardingScreen';
+ import { HomeScreen } from '../screens/HomeScreen';
+@@ -42,18 +43,23 @@ const navTheme = {
+   },
+ };
+ 
+-// Deep links (currently only the widget's "open straight to Weather"
+-// tap target) resolve into this stack via the app's own URL scheme
++// Widget Weather links and the fixed food-support return resolve via our scheme.
++// The return contains no food choice or completion information.
++// Both resolve into this stack via the app's own URL scheme
+ // (app.json's "scheme": "wispling"). Only mapped when already
+ // onboarded - App.tsx gates all rendering until the store has
+ // hydrated, so `onboarded` here is never a stale default, and this
+ // stops a stray or reinstalled-widget deep link from letting someone
+ // skip onboarding by landing straight on a screen deep in the stack.
+-function useLinking(onboarded: boolean) {
++function useLinking(onboarded: boolean): LinkingOptions<RootStackParamList> {
+   return {
+     prefixes: ['wispling://'],
++    getStateFromPath(path, options) {
++      if (path.split(/[/?#]/)[0] === 'care-return') return careReturnState(path, onboarded);
++      return getStateFromPath(path, options);
++    },
+     config: {
+-      screens: onboarded ? ({ Weather: 'weather' } as const) : {},
++      screens: onboarded ? ({ Weather: 'weather', Home: 'care-return' } as const) : {},
+     },
+   };
+ }
+diff --git a/src/screens/TalkConversationScreen.tsx b/src/screens/TalkConversationScreen.tsx
+index d309c22..d1a9534 100644
+--- a/src/screens/TalkConversationScreen.tsx
++++ b/src/screens/TalkConversationScreen.tsx
+@@ -9,6 +9,7 @@ import { sincere } from '../voice/sincere';
+ import { getConversation } from '../support/conversations';
+ import { useReadAloud } from '../accessibility/useReadAloud';
+ import { color, font, radius, space } from '../theme/tokens';
++import { FoodHandoffCard } from '../integrations/FoodHandoffCard';
+ 
+ type Props = NativeStackScreenProps<RootStackParamList, 'TalkConversation'>;
+ 
+@@ -66,6 +67,7 @@ export function TalkConversationScreen({ route, navigation }: Props) {
+       </View>
+ 
+       <ScrollView style={{ flex: 1, marginTop: space.md }} contentContainerStyle={{ gap: 11 }}>
++        {conversation.id === 'basics' && <FoodHandoffCard />}
+         {conversation.bubbles.map((bubble, i) => (
+           <Bubble key={i} align={bubble.align}>
+             {bubble.text}

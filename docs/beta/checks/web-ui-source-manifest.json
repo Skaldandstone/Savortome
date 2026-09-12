@@ -1,0 +1,408 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-08-31T20:46:19.227Z",
+  "scope": "Remaining-feature web UI source handoff, not production artifact acceptance",
+  "previousCheckpoint": "docs/beta/checks/image-security-build-manifest.json",
+  "previousCheckpointSha256": "98754c46756c5ecbd20a8b4d66fff6569a6c6ff05280b079e0759e5b249d1fbb",
+  "previousBuildId": "JU_bSJRJvJgnvh6kH4QVX",
+  "changedExistingWebCount": 42,
+  "source": [
+    {
+      "path": "apps/web/app/cook/page.tsx",
+      "previousSha256": "f1fa7360d0b4f7ef662bb2e323853ab60df1eca264d716b146f589f9f3ea7df0",
+      "sha256": "530ad82312f3f02dff56789da9e03b634381d3cc61df23bbac0ab82b8684467f"
+    },
+    {
+      "path": "apps/web/app/discover/page.tsx",
+      "previousSha256": "4e45a64f86c3ad01e58f5cd5d746cbf8464038ee9373d3ad11a532f9702b63b5",
+      "sha256": "8f9243ef6706593af9e152974edb1da43a2d9dd135d55fa5be7bf209577ed156"
+    },
+    {
+      "path": "apps/web/app/friends/page.tsx",
+      "previousSha256": "0aa015c9df3194c8dea987c42cf48066ef17cb57325d1bfcb987a5fd7201fdd0",
+      "sha256": "b229b8314322956b266a0c8daaff190d896d5a76be35c69c7204dbc4c0e60044"
+    },
+    {
+      "path": "apps/web/app/list/page.tsx",
+      "previousSha256": "1ef104ff3a5dc44fc94156bd3541f5f797c9fd83ce219d57eb0f09f3cb579a20",
+      "sha256": "d09e56fc367952b7e7159da3d6d620e2c3e0300e7f86bc33626a448af3798ebc"
+    },
+    {
+      "path": "apps/web/app/plan/page.tsx",
+      "previousSha256": "6d8744f19728f92c4e4262396f822d12f15162cf8fd4684f452559b88aae2d78",
+      "sha256": "d32f90db4c23e3ec1c8b89493531e27ef0579d6e6be40fd1ee015f9d85e8c8e9"
+    },
+    {
+      "path": "apps/web/app/profile/page.tsx",
+      "previousSha256": "5b89af47b0cb223fbd31e678d724b5e022dbab856c0cccf21f614a5098bbd575",
+      "sha256": "58f0a6d1bf884440f81e73f36260c5e03fae6ae4da867aa5e0bf2d89a6cf7dd6"
+    },
+    {
+      "path": "apps/web/app/recipe/[id]/cook/page.tsx",
+      "previousSha256": "1840027fcf69d3b89ad65936bf57c87d4817017757bdd6cce3ad4b0babe146dc",
+      "sha256": "478b18ef2a3f4450f73d1df54200bb34e85531650aba2c7b86ff0828d5906394"
+    },
+    {
+      "path": "apps/web/app/recipe/[id]/edit/page.tsx",
+      "previousSha256": "569814b8afd13484e1dd53221d5053af92571c542490549d8df4ed97f452373f",
+      "sha256": "4fc7b269b69e7058e35a61dedb432e0a35fb2721ecf9304e2c092bd82128fc6d"
+    },
+    {
+      "path": "apps/web/app/recipe/[id]/page.tsx",
+      "previousSha256": "ee86de3c226b97a9fc5eaaa7c6d7a71d361e2f305709519a7433622164c4dac6",
+      "sha256": "585e684b0c0ca99da3939f0845da8d930554a9cd7df0dba88b2ac764ba4e0b3f"
+    },
+    {
+      "path": "apps/web/app/recipe/new/page.tsx",
+      "previousSha256": "9bdf5d6813a84cc46b8fa6edba4fa1f12f34d17a0506db53bdfd8ae74256399d",
+      "sha256": "c5644b9311eb5dd1e807a1ad15b0548e37edfae7fa2b35470bb6bbf02b260a69"
+    },
+    {
+      "path": "apps/web/app/templates/page.tsx",
+      "previousSha256": "a7ed00fec0147f5af5d9c366c39d048ee951d2fe6773bf178a8177a78f1193bc",
+      "sha256": "8233ef1f2beb6a74edaf8baddf326e2dffac8a1e6b479207ce3df6268ee69140"
+    },
+    {
+      "path": "apps/web/modules/care/care.module.css",
+      "previousSha256": "e8a180ff0971cd7d1e479f5583e64c8a538827fe0763a3718ab7c9f10336614c",
+      "sha256": "e94777fa4907e8ce4db0d6fb511d77da020bc1c3ad0cb4ada6bdc18db2dabaaf"
+    },
+    {
+      "path": "apps/web/modules/care/CareScreen.tsx",
+      "previousSha256": "634265b8b9492284d4e189812c32e56b580e91075950830b566020f22c8bd726",
+      "sha256": "013da50fd7f464dbeb8ee44a32ef2447495d7f233455ebe990190273969e391d"
+    },
+    {
+      "path": "apps/web/modules/cook/cook.module.css",
+      "previousSha256": "f52a7ec59299af15307de7bba8cfefc73d423cfa0e5696f6b31557913561ff24",
+      "sha256": "f329a09cc6fe22462c927c9fbedbb03a59077331366b8cebed6b0caafdbc6f8c"
+    },
+    {
+      "path": "apps/web/modules/cook/FinishPanel.tsx",
+      "previousSha256": "418d4ed250860c26bc014d366fddabb5370f78a53dbc14b0a757a28d8d9c4ad3",
+      "sha256": "69d0e9c87a4334dc2b5252f8934f8ee81c6ff90e161534e10bc5f2aa1f8f09a7"
+    },
+    {
+      "path": "apps/web/modules/discover/discover.module.css",
+      "previousSha256": "30323b3b164661163fd200eccd5df99493799f8aa5264820da28d9e1c70a0e2f",
+      "sha256": "a915dea8c59123a0d2c2b7bd5c4a6344eddc0a2117dad3b91da14781d74a5952"
+    },
+    {
+      "path": "apps/web/modules/editor/editor.module.css",
+      "previousSha256": "2a680f4647d26029a08cb965b47681a8f4f0919ba130915b97adf28798f29b4d",
+      "sha256": "cdbdef5aeae2184a6b9522e8b6e19506d21cc9ec1248c8247452ebd105da8642"
+    },
+    {
+      "path": "apps/web/modules/friends/friends.module.css",
+      "previousSha256": "6942373530f99fde53867e2936bae94652aeef7a4d120846ed42e9a458da409f",
+      "sha256": "7123d334c9679048c289654691d5842bb4e3090280a58e0d9fb38136d1b6d9cd"
+    },
+    {
+      "path": "apps/web/modules/import/import.module.css",
+      "previousSha256": "9d05d52ec0a97fb21daab2911313d8270466211ae7a356d718c166907d931642",
+      "sha256": "979c11a6c5630822c992aa146998b5cedd4e5eab6879f0f218ab85cfe62b1a02"
+    },
+    {
+      "path": "apps/web/modules/library/NewShelf.tsx",
+      "previousSha256": "1324fb019191b1460a9e732544ed821d01be81fc6b9daabfbec3fb880c35280c",
+      "sha256": "a84521a1833a2f212f3a5f075c90ca0b8e9570ef86dbce8a0a80357498bcecd7"
+    },
+    {
+      "path": "apps/web/modules/library/woodland-library.module.css",
+      "previousSha256": "366312dfe73865636423e1cea81d61229664a6837ccc2972eb9cfc66ee2b605c",
+      "sha256": "e45921e4f827cbb06208db9010a888fa9ad24817dba38b8bbf18f83a91ce4c7d"
+    },
+    {
+      "path": "apps/web/modules/list/list.module.css",
+      "previousSha256": "6876d63accda86976c9a4a18a0170b42f2f21c5a859b8c2aa4598c3998cc3259",
+      "sha256": "d51f8a022428c75f952a768d7be9b055bf45341449b552f2993b75deaf2806c0"
+    },
+    {
+      "path": "apps/web/modules/pantry/pantry.module.css",
+      "previousSha256": "6bae4c2a57976be6e4cedffeebfbc6ef6d049b03cbd9c26343d63da4f93b866e",
+      "sha256": "d8905c1426f0629950391f71bf97b90da5cd5c56a7531d86bfd69d7a1df47917"
+    },
+    {
+      "path": "apps/web/modules/plan/plan.module.css",
+      "previousSha256": "9ba0f5b7045c8a461d299bef89e92625a971578ac66c7f1322e635f9be3a4ff6",
+      "sha256": "0ebec42f62bdeb53f4ea1a706abe1a4fde3dbbc90f8b74a62dd2fa5ac58566a6"
+    },
+    {
+      "path": "apps/web/modules/plans/plans.module.css",
+      "previousSha256": "baa2c9410ba1834bdce9b5fbeb87caa656e37f7fd34022b8a92fda36b4edf544",
+      "sha256": "1276df973b92da8354883f8f12221295af15f11f5ec2cc371066947f379c7dce"
+    },
+    {
+      "path": "apps/web/modules/profile/DietaryProfileForm.tsx",
+      "previousSha256": "4248ff4923df24546fb673a18a12904799194e74afff83c572b19f32fe43d5b9",
+      "sha256": "f86634a2b5ecd8e612445c76a4d369c351f528f74c828334b25f3a93d8b23a5d"
+    },
+    {
+      "path": "apps/web/modules/profile/profile.module.css",
+      "previousSha256": "f78bcf8052758bc8bc0f6a0e896beb667fe460c39ed9565c7c428f323fdb15ea",
+      "sha256": "20425df6fafdd09e9d5e253d1b8769e9f3e9347284cb1bc488a33c0155f66d04"
+    },
+    {
+      "path": "apps/web/modules/recipe/NutritionFacts.module.css",
+      "previousSha256": "dbc5aaa8c110500d67b1d2e0524f75c6d2753edd312dc8c26cb45b4ef1829c2e",
+      "sha256": "12f2a443893651a35dfe5e75a74cf4c4affc1a2a1022c3b666998786bed98adb"
+    },
+    {
+      "path": "apps/web/modules/recipe/PairingSuggestions.module.css",
+      "previousSha256": "8bafa53f8c87e0a01d256764c739c5555585d97f5ec678dbd7c33709ed7bd8a1",
+      "sha256": "d045b9f157aee7c26fa0d163fda3ff80a769e03d6fde7a27b264bc8e5c5427d3"
+    },
+    {
+      "path": "apps/web/modules/recipe/recipe.module.css",
+      "previousSha256": "150bc30fc8a261e8d244a9054d4616b0c2adc49b496cbb87bf55827f3e14d0f8",
+      "sha256": "36d0943aa85d2b292f1039f2d7f863a44947a6f58d80f66e951a39c14165ec38"
+    },
+    {
+      "path": "apps/web/modules/recipe/RecipeCard.tsx",
+      "previousSha256": "c0ff8d884820de65bbd5115be4b200ace669f487a3be06556725bfc9b5ed335b",
+      "sha256": "d76cb610c26d06c12d0b8fede48d787c4d7b0b90608b54a36b9dcc40f435b81b"
+    },
+    {
+      "path": "apps/web/modules/recipe/RecipeFacts.module.css",
+      "previousSha256": "9d1984f0985b0bc8a68cd6db05f91a96775ed35c17d65a5edf71e8397f6a347d",
+      "sha256": "20cce9434af16569c03121a627afabd50d042173f74f63e1599c36fa5198f673"
+    },
+    {
+      "path": "apps/web/modules/recipe/RecipeHeader.tsx",
+      "previousSha256": "73848d6231407d39224acff1a6147917867c9f438eb6ef3215ccd3a30dfd46e6",
+      "sha256": "1109b15bbb8da270195cdf8845fad3e6ac93cbd8b240ee6e4d154c8e4a71c4a3"
+    },
+    {
+      "path": "apps/web/modules/sharing/sharing.module.css",
+      "previousSha256": "1624d97d0a20e5b39d627a7ae1f00fe9d5681216bc41e6545e7abd27a975afa5",
+      "sha256": "ecae2ee3f0afa50247e0ab21c25dffee1dab7b2fdc94444d3bc4a3d06e758fbb"
+    },
+    {
+      "path": "apps/web/modules/shelves/shelves.module.css",
+      "previousSha256": "0f9e7b60eb7316bf4ada4f3f970a0aeb8d0496a53f01630e1ff15054b7ff1d2c",
+      "sha256": "cbb21ab7075b75a560a97f36eb01507b3b57de1aa31d06f8334877115a144051"
+    },
+    {
+      "path": "apps/web/modules/templates/templates.module.css",
+      "previousSha256": "4e15c58fa831812980ae123f1277c689107387222ba1ddd7555e1962bb41215f",
+      "sha256": "13fa32fbea138da7246440333b3d8e9141a05470b8c2f17e40448101f901f9f6"
+    },
+    {
+      "path": "apps/web/modules/woodland/Woodland.tsx",
+      "previousSha256": "3fb330b9ffa9775034bc7e9b7193493a73cf7c842df821873fe41d2910ce6901",
+      "sha256": "56321eda1036914566c9e5f7816af367301dcba0b569e7911c4ac2e51ffb83ef"
+    },
+    {
+      "path": "apps/web/ui/Button.module.css",
+      "previousSha256": "1c016c75d2bbb0741d2358140582a9ce369e79acae8a0c58a3d8f1ee0740f3e2",
+      "sha256": "d08be9d8ed359c7c2642904738baff24f6fbd7d0d1cafb3dd4cc8eb4d6b56fe5"
+    },
+    {
+      "path": "apps/web/ui/Callout.module.css",
+      "previousSha256": "88abf0eec28ca5b873c9cb06a07bc2fcc641a78eee0830ca13887968be615827",
+      "sha256": "69100be7ddda67351f7e3f2bbd300a3dd8c71fbfcb8865e34711983da388abee"
+    },
+    {
+      "path": "apps/web/ui/Field.module.css",
+      "previousSha256": "74a45891e5ae689dd8ed333521ad4c83609970db1029b58902fbe1dd0f4f52fa",
+      "sha256": "2dd50ba9f23678440777ab7d5e08aa9cdd030b4fd718c16238da4d1f75dd9ee9"
+    },
+    {
+      "path": "apps/web/ui/Panel.module.css",
+      "previousSha256": "69a26a7f70ac31e833c1cc9674774d9db0264a99d4c013ba3ad98830c878b1bd",
+      "sha256": "709571387bd9369c0b7ee7772651a836dcea144f22620a83d47bb1e11182510d"
+    },
+    {
+      "path": "apps/web/ui/woodland.css",
+      "previousSha256": "33ec56e24b88e03f0c0d02e3e18911b219ce5d3ab4d4e3e23df6b55eafb9380f",
+      "sha256": "6e98c6c202572a962f3028e78fa7ea706f2eda8a41f6d5d2a5a267dc14bbdd5c"
+    },
+    {
+      "path": "apps/web/modules/woodland/KitchenPageHeading.tsx",
+      "sha256": "cb26e88f5b6d654ad5d1c19ddf8b44171ec83cf0af43bb873f7817925a62ed32"
+    },
+    {
+      "path": "scripts/check-woodland-ui.mjs",
+      "sha256": "bf6cb2294815c03f72c3ce31ef8e0e6d789ee680a7d6b3b310cec11b4d7635e8"
+    },
+    {
+      "path": "STYLE_GUIDE.md",
+      "sha256": "3c81c3c3fc21ad09daeff8ec962d2be879afb5d04e7b836f458a4f360e479642"
+    }
+  ],
+  "preservation": {
+    "unchangedPriorSourceCount": 291,
+    "protectedFiles": [
+      {
+        "path": "apps/web/app/api/admin/users/[id]/billing/route.ts",
+        "sha256": "cf7bac3549f3e2d77e292f8358385606d416f73f5c7d1619f74c9e24cafe1310"
+      },
+      {
+        "path": "apps/web/app/api/billing/checkout/route.ts",
+        "sha256": "6761a67dcb0f7a0ccb4815c2b4b49578c28f9db3cf60c5c628f2e85e16bcfa5e"
+      },
+      {
+        "path": "apps/web/app/api/billing/portal/route.ts",
+        "sha256": "83287f5571545c59b271118bb2b462026d4d6a4922612d88e869c2b65943aac6"
+      },
+      {
+        "path": "apps/web/app/api/billing/webhook/route.ts",
+        "sha256": "105f2072f82e383b8a894090c379c8b974a9d94c11851fb8d9feb085debea069"
+      },
+      {
+        "path": "apps/web/app/care/page.tsx",
+        "sha256": "a61b376a483fdfa9bfd242f82abbcfccb4b6c7aba75c1274786eb926a6a546ea"
+      },
+      {
+        "path": "apps/web/app/offline/page.tsx",
+        "sha256": "adbc15782761ab3723ad07064c4f141bdfd5b864301062e072d879f9203e3f72"
+      },
+      {
+        "path": "apps/web/lib/beta.ts",
+        "sha256": "0c92ebda27a523cc1919f72b91780b4101cba5eee8556a1c0b68f5f7853cfdea"
+      },
+      {
+        "path": "apps/web/lib/stripe-fulfillment.ts",
+        "sha256": "36dc09042c6dee456e78523e4ff68a13b56fd805cbd9ec4f9d0d5f91d05c4fc7"
+      },
+      {
+        "path": "apps/web/lib/stripe-policy.ts",
+        "sha256": "9522e34922929bdd6bcd961c2997680942c1630e87ada8031b1921a4b554bbb4"
+      },
+      {
+        "path": "apps/web/lib/stripe.ts",
+        "sha256": "0308a64e96330af0967646164df64c41165cc1d2f6b30c3d107e15d19f6bde66"
+      },
+      {
+        "path": "apps/web/modules/offline/index.ts",
+        "sha256": "82933b6e90dbcdb34db926a62d523f375633111f36dd521e69942f45a9ae9bd0"
+      },
+      {
+        "path": "apps/web/modules/offline/offline.module.css",
+        "sha256": "b043c167472abda5a668fcbfc7128b525551783dc5ab88422f4ee5ac26cb41c9"
+      },
+      {
+        "path": "apps/web/modules/offline/OfflineBanner.tsx",
+        "sha256": "afe25c6070ea225a9c7631e40e522712d718eb7647b9b01335485cdcdea2a77d"
+      },
+      {
+        "path": "apps/web/modules/offline/ServiceWorkerRegistration.tsx",
+        "sha256": "674b174c06585e743ec4683ae025983cd9f2d50aba03fafc9090bbb0e2a9fe3c"
+      },
+      {
+        "path": "apps/web/modules/offline/worker.js",
+        "sha256": "26ac80d4b890cbe2b42849f9aa74f158aeb8afc4b1bc427df4279ad55a74e2e8"
+      },
+      {
+        "path": "apps/web/next.config.ts",
+        "sha256": "461786a534001bbe8e0c1d5529c305f87ba78d79899475194e46bda4a94c57e7"
+      },
+      {
+        "path": "apps/web/package.json",
+        "sha256": "3353fa5d9a18c2c622ac83244776c08a031265e5cb767babb8e2234a35674e16"
+      },
+      {
+        "path": "apps/web/public/care-offline.js",
+        "sha256": "79ef837665b9cef597c6ca470fc09cdc63e0c048a8e27fcc0855b46a5b924b97"
+      },
+      {
+        "path": "apps/web/public/sw.js",
+        "sha256": "db6ec08b5a561d37b8faaac5c000daa6579c5df2fe6a826be05a9ed07785d6e4"
+      },
+      {
+        "path": "apps/web/public/woodland/food-atlas.png",
+        "sha256": "8754fd719c4ab90b6079090461edc69ab2a790958848d9e26ad73751581c1823"
+      },
+      {
+        "path": "apps/web/public/woodland/food-atlas.webp",
+        "sha256": "cb96b0f9d3262f4f593c3b8db2051336758c04eaedcef0f50a049ef1b1d7697c"
+      },
+      {
+        "path": "apps/web/public/woodland/hearth.png",
+        "sha256": "14b5667c03722b56809c5e900d76afd3d61df129f99bf7854c1bb8124f045bad"
+      },
+      {
+        "path": "apps/web/public/woodland/kettle-journal.png",
+        "sha256": "a7e472cdec2f7f8371b88d08e0599e3ca7b520a46fbbd6ea4c8cdf0e497c93d1"
+      },
+      {
+        "path": "apps/web/public/woodland/kitchen-scene.png",
+        "sha256": "a2c499cdc5409f0ce4ae77cb480b35336b9f0a37c02e4d9c82954c023ccca097"
+      },
+      {
+        "path": "apps/web/public/woodland/kitchen-scene.webp",
+        "sha256": "7c27f1c204647d690c0126d637453e179e945640f9f51dbac4c61d638768fb5b"
+      },
+      {
+        "path": "apps/web/public/woodland/parchment.png",
+        "sha256": "49a9ca43100581dbf3266ba8c04b4a3f3f6a6b1666d9673f0c4cae8d75da30bd"
+      },
+      {
+        "path": "apps/web/public/woodland/parchment.webp",
+        "sha256": "5546ede20f7a470a059496332108661ef19b98ce1bc40aba69684afe8c9ee837"
+      },
+      {
+        "path": "apps/web/public/woodland/timber.png",
+        "sha256": "44af2527e3a6d5bbedb50a6ffe630320da065b7b19b222be6b341e8d5975e5e1"
+      },
+      {
+        "path": "apps/web/public/woodland/timber.webp",
+        "sha256": "b58046618f7c5597cfd04697c356c4a9eff03a5b4848bae2417da45eff9c88a6"
+      },
+      {
+        "path": "apps/web/ui/LegalFooter.tsx",
+        "sha256": "862f0878ae46835975debe7c94a179748f947ac33a09da127147e808bc4817ea"
+      },
+      {
+        "path": "package.json",
+        "sha256": "523bccc201812067067b21179365f38d5ce844f5457141c3e456b8bb1f7e27ef"
+      },
+      {
+        "path": "packages/core/package.json",
+        "sha256": "ce21bc4c2ba1c4d02f4d67e299cce1894bd0118b3b9ab15ff019c994954a2ffb"
+      },
+      {
+        "path": "packages/core/src/billing.ts",
+        "sha256": "87fb04c815c657423942d5316370d4d78c692becddc8896259e0fccc95f440c7"
+      },
+      {
+        "path": "packages/db/package.json",
+        "sha256": "fd2049ad8413d92a499af4c740f69da109523ce3a1170e3ce5e8464ab6136770"
+      },
+      {
+        "path": "packages/db/src/queries/billing.ts",
+        "sha256": "5ccea08b87c03faa78ef33d69b0ef4739c93b4dea2cd2c9fa59c1a7e3565c3ce"
+      },
+      {
+        "path": "pnpm-lock.yaml",
+        "sha256": "90d8b177b1242842f2c8797c4fad9257dfec28a00a0216e0aa398f929391c6c3"
+      }
+    ],
+    "unchangedNativeSourceCount": 161,
+    "nativeDrift": [],
+    "androidArtifacts": [
+      {
+        "path": "apps/mobile/.expo-export/account-preview/second-breakfast-arm64-review.apk",
+        "sha256": "b828dcf86cbba709d0fc1905a38e5cf1495cb8acd789e4c2357aae0fe4d82957"
+      },
+      {
+        "path": "apps/mobile/.expo-export/account-preview/second-breakfast-arm64-woodland-review.apk",
+        "sha256": "1677bb302e8e9a7054df391182a9b6517d181c74ca2160b75b792a8d09f201cf"
+      },
+      {
+        "path": "apps/mobile/.expo-export/guest-preview/second-breakfast-arm64-woodland-guest.apk",
+        "sha256": "9dda3582dbb846c00ca29f57805f60114417bd6fb9b94cb0ade31e68ee719293"
+      }
+    ],
+    "apkDrift": []
+  },
+  "validation": {
+    "componentAndBoundaryTests": 24,
+    "careStateTests": 4,
+    "webTypecheck": "pass",
+    "cssFiles": 24,
+    "flatColorPairs": 22,
+    "browser": "not run: prior URL security denial",
+    "productionBuild": "parent integration pending"
+  }
+}

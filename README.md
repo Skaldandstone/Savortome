@@ -1,4 +1,6 @@
-﻿# Second Breakfast
+﻿# Savortome™
+
+**Food is magic. Cooking shouldn’t require it.**
 
 Goodreads for recipes - with an importer that turns a YouTube video, a TikTok, a
 Reel, or a 2,000-word blog post into a recipe card you can actually cook from.
@@ -28,13 +30,10 @@ discovery. Anything platform-agnostic -
 request shapes, shelf rules, quantity scaling, the optimistic-update logic -
 lives in `@seconds/core/format` so the two clients can't drift apart.
 
-The app is **Second Breakfast** everywhere except an iPhone home screen, where
-`ios.infoPlist.CFBundleDisplayName` shortens it to **2xBreakfast**. iOS elides
-an icon label somewhere around twelve characters - it's really a width, not a
-count - and "Second Breaâ€¦" is a worse thing to look at every day than a
-contraction that fits whole. The bundle identifier, the App Store name and the
-web app are all unchanged; only the icon caption is shorter. Android keeps the
-full name, having room for it.
+The public product name is **Savortome™** across web and mobile. The existing
+package namespace, Expo slug and scheme, mobile bundle identifier, Clerk access
+key, infrastructure names, and beta hostname remain stable compatibility
+identifiers during the rebrand. See [the migration record](docs/SAVORTOME-REBRAND.md).
 
 `@seconds/core` has two entry points:
 
@@ -82,6 +81,8 @@ pnpm test
 
 | Doc | What it covers |
 |---|---|
+| [ASSET-LAYOUT.md](ASSET-LAYOUT.md) | Canonical design sources, runtime derivatives, beta evidence, and the isolated demo-video boundary |
+| [Demo video](Demo%20video/README.md) | Selected presentation recording and sharing requirements; no approved recording is currently present |
 | [docs/PRODUCT.md](docs/PRODUCT.md) | Every feature, end to end: imports, accounts, shelves, search, pantry, planning, shopping lists and carts, sharing, friends, discovery, nutrition, pairing, editing, cook mode, print/export, AI credits, PWA, payments |
 | [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) | Persistence, video transcription, mobile development, and the test suites |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Production constraints, build-time env vars, and the AWS deploy |

@@ -1,0 +1,34 @@
+// Opt-in local Windows workaround for pnpm's deeply nested native packages.
+// Keep generated CMake/Prefab files short without changing dependencies or the SDK.
+// Usage: gradlew -I ../scripts/windows-native.init.gradle ...
+def stagingRoot = System.getenv('SECONDS_NATIVE_STAGING')
+def ninjaExecutable = System.getenv('SECONDS_NINJA_EXECUTABLE')
+if (stagingRoot) {
+    if (!new File(stagingRoot).isAbsolute() || stagingRoot.length() > 70) {
+        throw new GradleException('SECONDS_NATIVE_STAGING must be a short absolute directory (at most 70 characters).')
+    }
+    gradle.beforeProject { nativeProject ->
+        nativeProject.pluginManager.withPlugin('com.facebook.react') {
+            nativeProject.extensions.getByName('react').extraPackagerArgs.addAll(['--max-workers', '2'])
+            nativeProject.tasks.configureEach { bundleTask ->
+                if (bundleTask.name.startsWith('createBundle') && bundleTask.name.endsWith('JsAndAssets')) {
+                    bundleTask.inputs.property('secondsReviewConfiguration', System.getenv('SECONDS_BUNDLE_CONFIGURATION') ?: 'unconfigured')
+                }
+            }
+        }
+        ['com.android.application', 'com.android.library'].each { pluginId ->
+            nativeProject.pluginManager.withPlugin(pluginId) {
+                nativeProject.extensions.getByName('androidComponents').finalizeDsl { androidDsl ->
+                    def checkoutId = Integer.toHexString(nativeProject.rootDir.absolutePath.hashCode())
+                    def moduleId = nativeProject.path.replace(':', '_')
+                    androidDsl.externalNativeBuild.cmake.buildStagingDirectory =
+                        new File(stagingRoot, "${checkoutId}/${moduleId}")
+                    if (ninjaExecutable) {
+                        if (!new File(ninjaExecutable).isFile()) throw new GradleException('SECONDS_NINJA_EXECUTABLE must identify an existing Ninja executable.')
+                        androidDsl.defaultConfig.externalNativeBuild.cmake.arguments.add("-DCMAKE_MAKE_PROGRAM=${ninjaExecutable.replace('\\', '/')}".toString())
+                    }
+                }
+            }
+        }
+    }
+}

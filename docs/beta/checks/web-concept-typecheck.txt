@@ -1,0 +1,1 @@
+PASS: web TypeScript check (direct Node, no incremental cache).

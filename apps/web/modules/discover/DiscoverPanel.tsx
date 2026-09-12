@@ -3,11 +3,13 @@
 import { Button, Callout, FieldRow, Panel, PanelHeader, TextField } from "@/ui";
 import { DiscoverCards } from "./DiscoverCards";
 import { useDiscover } from "./useDiscover";
+import { WebRecipeFinder } from "./WebRecipeFinder";
 import styles from "./discover.module.css";
 
 /** Browse and search what other people have shared. */
 export function DiscoverPanel() {
-  const { data, loading, error, query, activeTags, setQuery, search, toggleTag } = useDiscover();
+  const { data, loading, error, query, searchedQuery, activeTags, setQuery, search, toggleTag } =
+    useDiscover();
 
   return (
     <>
@@ -25,6 +27,7 @@ export function DiscoverPanel() {
         >
           <FieldRow>
             <TextField
+              aria-label="Search shared recipes"
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -62,15 +65,25 @@ export function DiscoverPanel() {
         ) : null}
       </Panel>
 
-      <section className={styles.results}>
+      <section
+        className={styles.results}
+        aria-label="Shared recipe results"
+        aria-busy={loading}
+        aria-live="polite"
+      >
         {loading ? (
-          <p className={styles.empty}>Looking…</p>
-        ) : data.recipes.length === 0 ? (
-          <p className={styles.empty}>
-            {data.query || activeTags.length > 0
-              ? "Nothing shared matches that yet."
-              : "No one has shared anything yet. Set one of your recipes to “Anyone with the link” and it turns up here."}
+          <p className={styles.empty} role="status">
+            Looking for shared recipes…
           </p>
+        ) : data.recipes.length === 0 ? (
+          <>
+            <p className={styles.empty}>
+              {searchedQuery || activeTags.length > 0
+                ? "Nothing shared matches that yet."
+                : "No one has shared anything yet. Set one of your recipes to “Anyone with the link” and it turns up here."}
+            </p>
+            <WebRecipeFinder query={searchedQuery} />
+          </>
         ) : (
           <DiscoverCards cards={data.recipes} />
         )}

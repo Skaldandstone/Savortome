@@ -65,6 +65,7 @@ export interface DiscoverQuery {
   maxMinutes?: number | null;
 }
 import type { ImportRequest, ImportResponse } from "./import-client.js";
+import type { WebRecipeSearchResponse } from "./web-recipes.js";
 import type { CreditBalance, CreditPack } from "./credits.js";
 import type { PhotoMediaType, Recipe, RecipePhoto } from "./recipe.js";
 import type { RecipeDraft } from "./editor.js";
@@ -229,6 +230,8 @@ export interface SecondsClient {
   ) => Promise<FriendsOverview>;
   feed: () => Promise<FeedItem[]>;
   discover: (query?: DiscoverQuery) => Promise<DiscoverResponse>;
+  /** Recipe pages from the open web, for when nothing saved or shared matches. */
+  searchWeb: (query: string) => Promise<WebRecipeSearchResponse>;
   similarRecipes: (recipeId: string) => Promise<DiscoverCard[]>;
   pairings: (recipeId: string) => Promise<PairingSuggestions>;
   credits: () => Promise<CreditsResponse>;
@@ -457,6 +460,9 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
       const qs = params.toString();
       return send<DiscoverResponse>(`/api/discover${qs ? `?${qs}` : ""}`);
     },
+
+    searchWeb: (query) =>
+      send<WebRecipeSearchResponse>(`/api/search/web?q=${encodeURIComponent(query)}`),
 
     similarRecipes: (recipeId) => send<DiscoverCard[]>(`/api/recipes/${recipeId}/similar`),
 

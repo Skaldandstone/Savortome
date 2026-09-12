@@ -1,0 +1,12 @@
+--- your own profile ---
+PASS  a fresh account starts with no preferences or allergies
+PASS  preferences round-trip
+PASS  allergies round-trip
+
+--- a friend's allergens ---
+PASS  a non-friend's allergens are not readable
+PASS  a friend's allergens are readable once you actually are friends
+PASS  a stranger still can't read them, even though someone else can
+PASS  asking about someone who isn't your friend at all also answers null
+
+All good.

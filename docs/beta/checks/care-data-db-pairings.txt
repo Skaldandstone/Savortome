@@ -1,0 +1,15 @@
+$ tsx scripts/check-pairings.ts
+--- pairing suggestions ---
+PASS  suggests the same-cuisine side first
+PASS  still offers the other side after it
+PASS  excludes the other main course from any slot
+PASS  has no drink or dessert candidates in this fixture
+PASS  never mixes another owner's recipes into someone else's suggestions
+PASS  a recipe that doesn't exist (or isn't yours) answers empty, not an error
+
+--- full-meal totals ---
+PASS  a candidate's own nutrition round-trips through the suggestion
+PASS  a full meal sums one serving of each dish per guest
+PASS  ...and scales that by the guest count for the table total
+
+All good.

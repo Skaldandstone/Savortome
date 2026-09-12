@@ -1,3 +1,4 @@
+import { connectionOptions } from "../src/connection.js";
 /**
  * Encrypt grocery tokens that were written before column encryption existed.
  *
@@ -32,7 +33,7 @@ if (!url) {
   process.exit(1);
 }
 
-const db = drizzle(new pg.Pool({ connectionString: url, ssl: { rejectUnauthorized: false } }), { schema });
+const db = drizzle(new pg.Pool(connectionOptions(url)), { schema });
 
 // Reading a token column proves the key is usable before we touch a single row;
 // better to fail here than halfway through a table.

@@ -1,0 +1,61 @@
+{
+  "recordedAt": "2026-09-01T01:08:35.7311978Z",
+  "artifacts": [
+    {
+      "path": "apps/mobile/.expo-export/guest-preview/second-breakfast-x86_64-woodland-emulator-v2.apk",
+      "bytes": 56753588,
+      "sha256": "d40d8cffe3bcc2e05636ad3a822ab249211c5bf66d85b4197fdc52b9628da380",
+      "abi": "x86_64",
+      "allowBackupFalse": true,
+      "secondsScheme": true,
+      "readExternalStorageAbsent": true,
+      "writeExternalStorageAbsent": true,
+      "overlayAbsent": true,
+      "v2Signature": true,
+      "debugCertificate": true,
+      "certificateSha256": "fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c"
+    },
+    {
+      "path": "apps/mobile/.expo-export/account-preview/second-breakfast-x86_64-woodland-account-v2.apk",
+      "bytes": 56754180,
+      "sha256": "28fec279974735aaa72d40e555748e991910fc5f2d0383d32f29b5c35db035d1",
+      "abi": "x86_64",
+      "allowBackupFalse": true,
+      "secondsScheme": true,
+      "readExternalStorageAbsent": true,
+      "writeExternalStorageAbsent": true,
+      "overlayAbsent": true,
+      "v2Signature": true,
+      "debugCertificate": true,
+      "certificateSha256": "fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c"
+    },
+    {
+      "path": "apps/mobile/.expo-export/account-preview/second-breakfast-arm64-woodland-account-v2.apk",
+      "bytes": 56309105,
+      "sha256": "d63843c2952b31964a88b6bb8bec32ee1437e41e5425fa8e8f3316fa4723d6c8",
+      "abi": "arm64-v8a",
+      "allowBackupFalse": true,
+      "secondsScheme": true,
+      "readExternalStorageAbsent": true,
+      "writeExternalStorageAbsent": true,
+      "overlayAbsent": true,
+      "v2Signature": true,
+      "debugCertificate": true,
+      "certificateSha256": "fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c"
+    },
+    {
+      "path": "apps/mobile/.expo-export/guest-preview/second-breakfast-arm64-woodland-guest-v2.apk",
+      "bytes": 56308513,
+      "sha256": "02453c28831de91c5024057b523473863b1d3ecdb08e9fc2fa46c49f6a67336f",
+      "abi": "arm64-v8a",
+      "allowBackupFalse": true,
+      "secondsScheme": true,
+      "readExternalStorageAbsent": true,
+      "writeExternalStorageAbsent": true,
+      "overlayAbsent": true,
+      "v2Signature": true,
+      "debugCertificate": true,
+      "certificateSha256": "fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c"
+    }
+  ]
+}

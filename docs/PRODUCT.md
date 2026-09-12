@@ -1,4 +1,4 @@
-﻿# Second Breakfast: how it works
+﻿# Savortome™: how it works
 
 Feature-by-feature documentation. For layout and getting started, see the [README](../README.md); for deploying, see [DEPLOYMENT.md](DEPLOYMENT.md).
 

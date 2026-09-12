@@ -1,0 +1,10 @@
+{
+  "validBackToWispling": true,
+  "validFixedScheme": true,
+  "plainBackToWispling": false,
+  "validH1": 1,
+  "validSuggestions": true,
+  "validIngredients": true,
+  "disclaimer": true,
+  "legal": true
+}

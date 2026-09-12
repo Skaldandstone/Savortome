@@ -1,0 +1,144 @@
+{
+  "recordedAt": "2026-08-31T00:54:09.481Z",
+  "scope": "web concept source handoff only, not full repository/build fingerprint",
+  "files": [
+    {
+      "file": "STYLE_GUIDE.md",
+      "bytes": 7395,
+      "sha256": "2ce058cea7be2eb5aefc1e902d7fa1b8bade3853d2974c4f32b7e9fd5485f71d"
+    },
+    {
+      "file": "apps/web/app/layout.tsx",
+      "bytes": 3399,
+      "sha256": "5fd337318a2ff207b9f087c91a7eaf8ec116afdc96006d3b0c36e8185705cf0f"
+    },
+    {
+      "file": "apps/web/app/page.tsx",
+      "bytes": 2051,
+      "sha256": "abd5d8c69b60dc5a2042f69d34e054b7d00549a0923cb487a7cece6614f0e78c"
+    },
+    {
+      "file": "apps/web/modules/woodland/KitchenIcon.tsx",
+      "bytes": 1631,
+      "sha256": "d4bf0acd92e235dd1fd135e2b88a899b5e4253cf67008a92e7373f88f933880e"
+    },
+    {
+      "file": "apps/web/modules/woodland/FoodIllustration.tsx",
+      "bytes": 744,
+      "sha256": "d7bee824aa95bb12a780adf3dec2c5e1fd79de2c19e0daa401e420f77d61e292"
+    },
+    {
+      "file": "apps/web/modules/woodland/Woodland.tsx",
+      "bytes": 4519,
+      "sha256": "dfdeb72e55caa66ca772cec771e7c83823dcd124f885cb95d92d1d4bf859401e"
+    },
+    {
+      "file": "apps/web/modules/library/WoodlandLibrary.tsx",
+      "bytes": 3066,
+      "sha256": "3406f49f2dc8119ea3e8be24fc094db6f9a48a9f7d9cc8388bf4475be2c5595b"
+    },
+    {
+      "file": "apps/web/modules/library/NewShelf.tsx",
+      "bytes": 1401,
+      "sha256": "1324fb019191b1460a9e732544ed821d01be81fc6b9daabfbec3fb880c35280c"
+    },
+    {
+      "file": "apps/web/modules/library/woodland-library.module.css",
+      "bytes": 2854,
+      "sha256": "366312dfe73865636423e1cea81d61229664a6837ccc2972eb9cfc66ee2b605c"
+    },
+    {
+      "file": "apps/web/modules/library/LibraryItem.tsx",
+      "bytes": 2135,
+      "sha256": "48d909fa763756e4cb45ceabd6f0c5a81d1240b2b90f2f9b8e9fabe6179782c2"
+    },
+    {
+      "file": "apps/web/modules/library/LibraryList.tsx",
+      "bytes": 646,
+      "sha256": "b1d0d547da4c804075c95458ba3352c76c115ea6e5b4dd424c689071ab1db026"
+    },
+    {
+      "file": "apps/web/modules/library/library.module.css",
+      "bytes": 7717,
+      "sha256": "3e692706b5f188af9e04c56299c0cbf64e069287ba944b571da4542cd9b97458"
+    },
+    {
+      "file": "apps/web/modules/care/CareScreen.tsx",
+      "bytes": 13539,
+      "sha256": "a4a47a5a6aa7d8119e9d589653d468e33123bad15e7efb9442afaf15edc5bc5e"
+    },
+    {
+      "file": "apps/web/modules/care/care.module.css",
+      "bytes": 7434,
+      "sha256": "e8a180ff0971cd7d1e479f5583e64c8a538827fe0763a3718ab7c9f10336614c"
+    },
+    {
+      "file": "apps/web/modules/recipe/RecipeCard.tsx",
+      "bytes": 3816,
+      "sha256": "c0ff8d884820de65bbd5115be4b200ace669f487a3be06556725bfc9b5ed335b"
+    },
+    {
+      "file": "apps/web/modules/recipe/recipe.module.css",
+      "bytes": 2800,
+      "sha256": "150bc30fc8a261e8d244a9054d4616b0c2adc49b496cbb87bf55827f3e14d0f8"
+    },
+    {
+      "file": "apps/web/modules/recipe/RecipeHeader.module.css",
+      "bytes": 847,
+      "sha256": "9dc2afd36b14ab965c61dcf4c0ba5595b695a299a6da8405c945cc7d95b59a48"
+    },
+    {
+      "file": "apps/web/modules/recipe/RecipeFacts.module.css",
+      "bytes": 1032,
+      "sha256": "9d1984f0985b0bc8a68cd6db05f91a96775ed35c17d65a5edf71e8397f6a347d"
+    },
+    {
+      "file": "apps/web/modules/cook/cook.module.css",
+      "bytes": 7189,
+      "sha256": "f52a7ec59299af15307de7bba8cfefc73d423cfa0e5696f6b31557913561ff24"
+    },
+    {
+      "file": "apps/web/ui/woodland.css",
+      "bytes": 10779,
+      "sha256": "93c7f264dfd759caa64fabb530c95d9c0cb548e7c7dd3ba6a139afbc834368f5"
+    },
+    {
+      "file": "apps/web/ui/Panel.module.css",
+      "bytes": 858,
+      "sha256": "69a26a7f70ac31e833c1cc9674774d9db0264a99d4c013ba3ad98830c878b1bd"
+    },
+    {
+      "file": "apps/web/ui/Button.module.css",
+      "bytes": 1116,
+      "sha256": "1c016c75d2bbb0741d2358140582a9ce369e79acae8a0c58a3d8f1ee0740f3e2"
+    },
+    {
+      "file": "apps/web/public/woodland/kitchen-scene.png",
+      "bytes": 2673084,
+      "sha256": "a2c499cdc5409f0ce4ae77cb480b35336b9f0a37c02e4d9c82954c023ccca097",
+      "width": 1536,
+      "height": 1024
+    },
+    {
+      "file": "apps/web/public/woodland/food-atlas.png",
+      "bytes": 2704853,
+      "sha256": "8754fd719c4ab90b6079090461edc69ab2a790958848d9e26ad73751581c1823",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "file": "apps/web/public/woodland/parchment.png",
+      "bytes": 2333199,
+      "sha256": "49a9ca43100581dbf3266ba8c04b4a3f3f6a6b1666d9673f0c4cae8d75da30bd",
+      "width": 1254,
+      "height": 1254
+    },
+    {
+      "file": "apps/web/public/woodland/timber.png",
+      "bytes": 2344565,
+      "sha256": "44af2527e3a6d5bbedb50a6ffe630320da065b7b19b222be6b341e8d5975e5e1",
+      "width": 1254,
+      "height": 1254
+    }
+  ]
+}

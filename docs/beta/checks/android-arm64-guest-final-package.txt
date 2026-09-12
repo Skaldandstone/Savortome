@@ -1,0 +1,7 @@
+Android source drift: 2 files
+At C:\Users\James\Documents\GitHub\SecondBreakfast\scripts\check-android-review.ps1:44 char:20
++ ... if($drift.Count){throw "Android source drift: $($drift.Count) files"}
++                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Android source drift: 2 files:String) [], RuntimeException
+    + FullyQualifiedErrorId : Android source drift: 2 files
+ 

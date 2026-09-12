@@ -1,0 +1,7 @@
+Expected service is unavailable.
+At C:\Users\James\Documents\GitHub\SecondBreakfast\scripts\beta-release.ps1:159 char:71
++ ... ponse.services.Count -ne 1){throw 'Expected service is unavailable.'}
++                                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Expected service is unavailable.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Expected service is unavailable.
+ 

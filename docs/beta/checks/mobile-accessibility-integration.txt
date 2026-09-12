@@ -1,0 +1,27 @@
+Second Breakfast mobile accessibility integration, 2026-08-31
+
+Commands completed successfully from C:\Users\James\Documents\GitHub\SecondBreakfast:
+- node scripts/check-mobile-accessibility-source.mjs
+  PASS: 67 TSX files, zero findings; checker fixtures also passed.
+- node --test scripts/check-mobile-woodland.mjs
+  PASS: 11 tests.
+- node node_modules/typescript/bin/tsc -p packages/core/tsconfig.json --noEmit
+- node node_modules/typescript/bin/tsc -p packages/db/tsconfig.json --noEmit
+- node node_modules/typescript/bin/tsc -p apps/web/tsconfig.json --noEmit
+- node node_modules/typescript/bin/tsc -p apps/mobile/tsconfig.json --noEmit
+  PASS: all four workspace typechecks.
+- node --test scripts/check-mobile-woodland.mjs scripts/check-woodland-ui.mjs scripts/check-woodland-library.mjs scripts/check-beta-authorization.mjs scripts/check-next-image-boundary.mjs
+  PASS: 48 tests.
+- PowerShell AST parse of scripts/check-android-review.ps1
+  PASS: zero parser errors.
+- git diff --check against the changed mobile, accessibility, audit and evidence paths
+  PASS: no whitespace errors. Git printed only expected CRLF conversion warnings.
+
+Native build:
+- guest-preview, arm64-v8a, full Expo Android prebuild, JDK 21, Ninja 1.13.2, one Gradle worker
+- BUILD SUCCESSFUL in 9m09s, 608 actionable tasks: 580 executed, 28 up to date
+- No dependency install, provider call, device installation or deployment
+- No Gradle/native process remained after completion
+
+Evidence boundaries:
+- Source/static/package checks do not prove TalkBack, Switch Access, focus order, touch behavior, enlarged-text layout, emulator, physical-device, visual, account or cohort acceptance.

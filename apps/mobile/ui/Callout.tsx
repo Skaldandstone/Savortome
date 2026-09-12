@@ -19,7 +19,11 @@ export function Callout({
   const color = tone === "warn" ? c.warn : tone === "error" ? c.error : c.textMuted;
 
   return (
-    <View style={[styles.callout, { backgroundColor: background }]}>
+    <View
+      accessibilityRole={tone === "error" ? "alert" : undefined}
+      accessibilityLiveRegion={tone === "error" ? "assertive" : "polite"}
+      style={[styles.callout, { backgroundColor: background }]}
+    >
       {title ? <Text style={[styles.title, { color }]}>{title}</Text> : null}
       {typeof children === "string" ? (
         <Text style={[styles.body, { color }]}>{children}</Text>

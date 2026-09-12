@@ -1,3 +1,4 @@
+import { KitchenPageHeading } from '@/modules/woodland/KitchenPageHeading';
 import { redirect } from "next/navigation";
 import { TemplateList } from "@/modules/templates";
 import { Callout } from "@/ui";
@@ -9,7 +10,8 @@ export const dynamic = "force-dynamic";
 export default async function TemplatesPage() {
   if (!databaseConfigured()) {
     return (
-      <main>
+      <main className="woodland-workspace" data-kitchen-page="templates">
+      <KitchenPageHeading title="Meals to come back to" description="Keep your saved meal combinations together." icon="book" />
         <Callout tone="warn" title="Nowhere to keep a saved meal">
           Set DATABASE_URL in .env.local to save meals.
         </Callout>
@@ -22,7 +24,8 @@ export default async function TemplatesPage() {
   }
 
   return (
-    <main>
+    <main className="woodland-workspace" data-kitchen-page="templates">
+      <KitchenPageHeading title="Meals to come back to" description="Keep your saved meal combinations together." icon="book" />
       <TemplateList />
     </main>
   );

@@ -1,0 +1,60 @@
+✔ journal page headings remain server-gated and contain a native h1 when allowed (31.9613ms)
+✔ recipe headings default to legacy h2 and accept the server-selected page h1 (7.7446ms)
+✔ navigation includes saved meals and marks its containing disclosure active (10.3548ms)
+✔ Escape closes either native disclosure and requests focus on its summary only (16.6168ms)
+✔ every initial care choice keeps explicit ingredients and steps in its expanded content (20.2674ms)
+✔ failed dietary-profile loading never exposes an empty editable form; retry restores actual saved choices (13.5533ms)
+✔ cook finish scroll respects reduced motion without recording a cooking event in the test (15.0648ms)
+✔ an empty saved profile is editable, while a stale retry callback cannot replace later edits (12.6545ms)
+✔ late profile responses are ignored after cleanup and newer successful requests (21.8845ms)
+✖ profile choices cannot change during a pending save; failure preserves choices and reopens editing (15.3172ms)
+✖ profile save results after unmount do not update state or show confirmation (10.6745ms)
+✔ guest shopping feedback and safe sign-in are colocated with the selected care choice, with no API write (11.9571ms)
+✔ offline shopping feedback never reports saved or starts a write (9.8578ms)
+✔ new shelf confirms only a resolved write; failed writes retain the entered name (25.174ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 12
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2488.6135
+
+✖ failing tests:
+
+test at scripts\check-woodland-ui.mjs:203:1
+✖ profile choices cannot change during a pending save; failure preserves choices and reopens editing (15.3172ms)
+  AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+  
+    assert.ok(nodes(pending).filter(n => n.props?.['aria-pressed'] !== undefined).every(n => n.props.disabled === true))
+  
+      at TestContext.<anonymous> (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-woodland-ui.mjs:214:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+
+test at scripts\check-woodland-ui.mjs:226:1
+✖ profile save results after unmount do not update state or show confirmation (10.6745ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + '[{"allergens":["milk"],"dietaryTags":[]},{"allergens":["milk"],"dietaryTags":[]},"ready",false,true,null]'
+  - '[{"allergens":[],"dietaryTags":["vegetarian"]},{"allergens":[],"dietaryTags":[]},"ready",true,false,null]'
+  
+      at TestContext.<anonymous> (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-woodland-ui.mjs:238:10)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: '[{"allergens":["milk"],"dietaryTags":[]},{"allergens":["milk"],"dietaryTags":[]},"ready",false,true,null]',
+    expected: '[{"allergens":[],"dietaryTags":["vegetarian"]},{"allergens":[],"dietaryTags":[]},"ready",true,false,null]',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

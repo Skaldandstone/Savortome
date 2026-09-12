@@ -1,0 +1,20 @@
+✔ source config disables optimizer while retaining metadata/static import support (0.7853ms)
+✔ installed production handler rejects all image queries before validation/cache (4.5624ms)
+✔ installed development handler rejects all image queries before validation/cache (3.086ms)
+✔ baseline wildcard control reaches optimizer boundary without any fetch (2.3408ms)
+✔ removed wildcard independently rejects remote hosts if optimizer were enabled (0.8187ms)
+✔ plain public image paths do not enter the optimizer handler (2.6265ms)
+✔ installed metadata sizing preserves the actual skillet icon dimensions (0.8801ms)
+✔ new web image-loader imports require this exposure review to be revisited (167.7701ms)
+✔ server-selected legacy home cannot opt into woodland through query flags (26.8419ms)
+✔ server-selected woodland home passes the real entries to the illustrated list (8.0927ms)
+✔ legacy library keeps its empty copy and missing-image placeholder without atlas art (8.6851ms)
+✔ illustrated library alone receives the journal fallback and arrow (8.218ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 751.2373

@@ -1,17 +1,29 @@
 {
   "expo": {
-    "name": "Second Breakfast",
+    "name": "Savortome",
     "slug": "seconds",
+    "owner": "skald-and-stone",
     "scheme": "seconds",
     "version": "0.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "plugins": [
       "expo-router",
       "@clerk/expo",
       "expo-secure-store",
       "expo-web-browser",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#fbf8f4",
+          "dark": {
+            "image": "./assets/splash-icon.png",
+            "backgroundColor": "#16130f"
+          }
+        }
+      ],
       [
         "expo-notifications",
         {
@@ -22,34 +34,36 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.secondbreakfast.app",
+      "bundleIdentifier": "com.skaldandstone.savortome",
       "infoPlist": {
-        "CFBundleDisplayName": "2xBreakfast"
-      }
+        "CFBundleDisplayName": "Savortome",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "buildNumber": "1"
     },
     "android": {
-      "package": "com.secondbreakfast.app",
+      "package": "com.skaldandstone.savortome",
       "versionCode": 1,
+      "allowBackup": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#E89A0C"
+        "backgroundColor": "#4A423A"
       },
       "permissions": [
         "android.permission.POST_NOTIFICATIONS"
+      ],
+      "blockedPermissions": [
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW"
       ]
     },
     "extra": {
+      "eas": {
+        "projectId": "88e6ce04-9624-4c8e-8004-1c8147cf4265"
+      },
       "apiBaseUrl": "http://localhost:3000"
     },
-    "icon": "./assets/icon.png",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#fbf8f4",
-      "dark": {
-        "image": "./assets/splash-icon.png",
-        "backgroundColor": "#16130f"
-      }
-    }
+    "icon": "./assets/icon.png"
   }
 }

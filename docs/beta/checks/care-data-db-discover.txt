@@ -1,0 +1,30 @@
+$ tsx scripts/check-discover.ts
+PASS  the feed shows public recipes
+PASS  the feed hides private ones
+PASS  the feed hides friends-only ones
+PASS  the feed hides your own
+PASS  a signed-out visitor sees public recipes
+PASS  ...and still no private ones
+PASS  tag filter narrows the feed
+PASS  time filter drops the slow one
+PASS  search finds it by title
+PASS  search ranks the title match above a passing mention
+PASS  search still respects visibility
+PASS  search matches on cuisine
+PASS  search handles a phrase without erroring
+PASS  search handles punctuation people type
+PASS  an empty query falls back to the feed
+PASS  a search with no matches returns nothing
+PASS  similar finds the one sharing an ingredient
+PASS  similar explains itself
+PASS  similar excludes recipes with nothing in common
+PASS  similar never includes the recipe itself
+PASS  similar respects visibility
+PASS  similar for a recipe that doesn't exist is empty
+PASS  similar works from one of your own recipes, which is the usual case
+PASS  the feed reports how many people saved a recipe
+PASS  the most-saved recipe leads the feed
+PASS  popular tags includes tags from public recipes
+PASS  popular tags is most-common first
+
+ALL CHECKS PASSED

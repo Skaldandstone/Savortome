@@ -1,0 +1,4065 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-08-31T01:03:08.569Z",
+  "branch": "codex/whimsical-private-beta",
+  "baseCommit": "dcb6f7112d4b5dbc54ec9e4009be8b09e9aa30c9",
+  "sourceState": "uncommitted concept rebuild with documented integration fixes",
+  "buildId": "xRryI_oXqVxfyyv5CUkPT",
+  "configuration": {
+    "nodeEnv": "production",
+    "betaEnabled": false,
+    "localPreview": false,
+    "clerkConfigured": false,
+    "databaseConfigured": false,
+    "paidIntegrationsConfigured": false,
+    "serviceWorkerCompiled": true
+  },
+  "sourceSnapshotSha256": "06f3086ca9f96c0689c721c73a908f19ed2dc429d8576e65c526e72cc8d77e26",
+  "sourceChangesAfterHandoff": [
+    "apps/web/modules/woodland/Woodland.tsx",
+    "apps/web/modules/library/WoodlandLibrary.tsx",
+    "apps/web/modules/library/LibraryItem.tsx",
+    "apps/web/modules/library/LibraryList.tsx",
+    "apps/web/modules/care/CareScreen.tsx",
+    "apps/web/ui/woodland.css"
+  ],
+  "source": [
+    {
+      "path": ".dockerignore",
+      "bytes": 237,
+      "sha256": "64f33a9f58a3059c0f22245a02d7297a8f7036dfdd36605c74025d8f9c16d16d"
+    },
+    {
+      "path": "Dockerfile.web",
+      "bytes": 2059,
+      "sha256": "61b35a81e0073b8b865551f9c65defd9a87fae470ea2da329aa0ce19809e3298"
+    },
+    {
+      "path": "apps/web/app/api/admin/imports/failures/route.ts",
+      "bytes": 602,
+      "sha256": "118b0703d32aaa31124e289a07810bd74832f5172015ee1af060cc3f47d246b4"
+    },
+    {
+      "path": "apps/web/app/api/admin/reviews/hide/route.ts",
+      "bytes": 848,
+      "sha256": "58d9994dd1876a0f5b3213f1ebb0a07668437bca4f024dfe95aa3d580aa23ef3"
+    },
+    {
+      "path": "apps/web/app/api/admin/reviews/route.ts",
+      "bytes": 324,
+      "sha256": "a38e1df5d00fc2649d0faec0a9b986300bf53dad66cb16ef00581a6495c49a38"
+    },
+    {
+      "path": "apps/web/app/api/admin/users/[id]/billing/route.ts",
+      "bytes": 722,
+      "sha256": "cf7bac3549f3e2d77e292f8358385606d416f73f5c7d1619f74c9e24cafe1310"
+    },
+    {
+      "path": "apps/web/app/api/admin/users/[id]/credits/route.ts",
+      "bytes": 955,
+      "sha256": "b3c9b8edd039022703b92c98639a0bd8721fe72626f417df71855aa1f93d8525"
+    },
+    {
+      "path": "apps/web/app/api/admin/users/[id]/imports/route.ts",
+      "bytes": 612,
+      "sha256": "8d9a7a84a0190247d377190a93137f71bcee4d7a83addd539f31680a10dc0c5c"
+    },
+    {
+      "path": "apps/web/app/api/admin/users/[id]/refund/route.ts",
+      "bytes": 4369,
+      "sha256": "f09d9ea11337cf17e1b9c2e43a456896ee14da893707ada03231692f8f81503c"
+    },
+    {
+      "path": "apps/web/app/api/admin/users/[id]/route.ts",
+      "bytes": 579,
+      "sha256": "2c1b491de86781f5ed4d95e821823486b1d33564ffb380a1a30ff3594919198f"
+    },
+    {
+      "path": "apps/web/app/api/admin/users/[id]/status/route.ts",
+      "bytes": 917,
+      "sha256": "4815d4e91eec824118c641e0a6839647450bcd176a7bc99b78a7c436ead445d4"
+    },
+    {
+      "path": "apps/web/app/api/admin/users/[id]/tier/route.ts",
+      "bytes": 935,
+      "sha256": "d1320f9205583d65e0e70327dfb7290f4ee288ed6c6c6f3f037562761cc552bd"
+    },
+    {
+      "path": "apps/web/app/api/admin/users/route.ts",
+      "bytes": 418,
+      "sha256": "d13cce1533ef61953a147060076962c56746e1a852506ee3d624b0ba96fb2527"
+    },
+    {
+      "path": "apps/web/app/api/billing/checkout/route.ts",
+      "bytes": 3075,
+      "sha256": "376a545e19330cdd8cab35de180bf0707c171420c79bac6a3a7c434b15b3a8e5"
+    },
+    {
+      "path": "apps/web/app/api/billing/portal/route.ts",
+      "bytes": 1058,
+      "sha256": "4c324c8ae98a4ae6d703d0923cb16b69eb46d78dbba831e69bf958f3778316d4"
+    },
+    {
+      "path": "apps/web/app/api/billing/webhook/route.ts",
+      "bytes": 7655,
+      "sha256": "2fe7379309693e28910f412db54cc76e9e8499f1e0842ba9efc4be2e986bf45b"
+    },
+    {
+      "path": "apps/web/app/api/credits/route.ts",
+      "bytes": 570,
+      "sha256": "864e6849777517d87454553b0b6176c6e328f724755388a62d21e936a8f02462"
+    },
+    {
+      "path": "apps/web/app/api/discover/route.ts",
+      "bytes": 1504,
+      "sha256": "aa9e1b3c1f92c73cc23fda557c72c3c0facf3943255a20f3b732e98aa4a247d1"
+    },
+    {
+      "path": "apps/web/app/api/export/route.ts",
+      "bytes": 1295,
+      "sha256": "17c241398dd732c9ef2401eb66edffe882e786f323af76993fc497d718236870"
+    },
+    {
+      "path": "apps/web/app/api/feed/route.ts",
+      "bytes": 228,
+      "sha256": "4d74f461a1128236e917a6e241b1b8b5eb9022f69f4ec63bb6b0eddd27ca1c69"
+    },
+    {
+      "path": "apps/web/app/api/friends/[id]/allergens/route.ts",
+      "bytes": 1097,
+      "sha256": "d18d5a8dfad8255c22c3c3003ccdf5cfbcefe5e99124aed33c3325f01fe58159"
+    },
+    {
+      "path": "apps/web/app/api/friends/[id]/route.ts",
+      "bytes": 1325,
+      "sha256": "705531dbbb9d3af6a576d2e872e565ff715ef18865b4ff730946a934aa9b551a"
+    },
+    {
+      "path": "apps/web/app/api/friends/route.ts",
+      "bytes": 595,
+      "sha256": "0b0360154379a2c6e5a2712f4121143152e467ed6c30497becd0f443f074e9f5"
+    },
+    {
+      "path": "apps/web/app/api/grocery/kroger/callback/route.ts",
+      "bytes": 1680,
+      "sha256": "e62d988689c72236bca77760cdff7a9ddb6a86fa73350b04c9a77ee48a3b6c08"
+    },
+    {
+      "path": "apps/web/app/api/grocery/kroger/connect/route.ts",
+      "bytes": 1269,
+      "sha256": "75db41b1793986388e557fd93d649ee0c65e0c9b820e9a9b42a8d2e082c0639e"
+    },
+    {
+      "path": "apps/web/app/api/grocery/kroger/route.ts",
+      "bytes": 2498,
+      "sha256": "7875c2211b61a3cdc142d4298130ef7cfb4373f6b9a4703966d078c452390c61"
+    },
+    {
+      "path": "apps/web/app/api/import/route.ts",
+      "bytes": 5908,
+      "sha256": "1296aa7f32806d43a6800d94613483709fc1c6269fbdff93b4b14ea49ecb729f"
+    },
+    {
+      "path": "apps/web/app/api/list/cart/route.ts",
+      "bytes": 1934,
+      "sha256": "dde2cd04a8791c2a19613c519535ddb5328bbc65ee37c8f63e3af67fe1d81a60"
+    },
+    {
+      "path": "apps/web/app/api/list/items/[id]/route.ts",
+      "bytes": 939,
+      "sha256": "776bffc357daade5dc997baf79b377b62db2018600ee7642c8c7433ebbd98ad1"
+    },
+    {
+      "path": "apps/web/app/api/list/route.ts",
+      "bytes": 1450,
+      "sha256": "b8ace8acf598b3d9c856455fa0e3e00e52c2c299f39de202862aa714d7a9036b"
+    },
+    {
+      "path": "apps/web/app/api/pantry/reindex/route.ts",
+      "bytes": 523,
+      "sha256": "6e332a77aacea5a6a10f75ff2cf5831a86f2a1b43e68733aa6889d899eeac483"
+    },
+    {
+      "path": "apps/web/app/api/pantry/route.ts",
+      "bytes": 1211,
+      "sha256": "0198c07a45d244b3c1ac0ed831dcaf4e5d6880d8431f3c62916737a197806ab5"
+    },
+    {
+      "path": "apps/web/app/api/pantry/search/route.ts",
+      "bytes": 1715,
+      "sha256": "d685f70b1ac177e28447593f4dcb35b4ecb42723b1f68faabf456ba79a032d2d"
+    },
+    {
+      "path": "apps/web/app/api/plan/route.ts",
+      "bytes": 2988,
+      "sha256": "2bf25448afd9526d5476ac14ab053f63ad95587ded1db8fde6315f953a23dd43"
+    },
+    {
+      "path": "apps/web/app/api/plan/suggestions/[id]/route.ts",
+      "bytes": 694,
+      "sha256": "73848157e0ee02ce392f276526a624a5d71e776141d2c5fe52b3e52630c3a203"
+    },
+    {
+      "path": "apps/web/app/api/plan/suggestions/route.ts",
+      "bytes": 1064,
+      "sha256": "ae3ddedc9c1bbe0c3fe4f794266ded805604f67d962d6e81352dd8adc2040155"
+    },
+    {
+      "path": "apps/web/app/api/profile/dietary/route.ts",
+      "bytes": 1096,
+      "sha256": "7a293224ca49a726184f9039a1f573c2cdddb7c5ded359c00b3a3bba367bc5b5"
+    },
+    {
+      "path": "apps/web/app/api/recipes/[id]/nutrition/route.ts",
+      "bytes": 2224,
+      "sha256": "b8cb6cb8ccecd358af7806888d18a6a453a5aae1bc89ef6387143198532b73dc"
+    },
+    {
+      "path": "apps/web/app/api/recipes/[id]/pairings/route.ts",
+      "bytes": 1077,
+      "sha256": "43a7186b326ee94af1cb61d9e414b6ea8ee8c37636621b52c298a7ab305a9d00"
+    },
+    {
+      "path": "apps/web/app/api/recipes/[id]/rating/route.ts",
+      "bytes": 747,
+      "sha256": "fedc4ab090425c2e9c43ef2d122b72c6148898d183ca4950d01ef5ea59d470a1"
+    },
+    {
+      "path": "apps/web/app/api/recipes/[id]/route.ts",
+      "bytes": 2821,
+      "sha256": "b12929603cf9bb30b9f6ba78420d8325680e591d5376d3c89bc54000f235e042"
+    },
+    {
+      "path": "apps/web/app/api/recipes/[id]/save/route.ts",
+      "bytes": 468,
+      "sha256": "8d864d1da0a36bddbabe42ed2f0fba5469226545fee4e511ebd2dda4fcd36eca"
+    },
+    {
+      "path": "apps/web/app/api/recipes/[id]/share/route.ts",
+      "bytes": 864,
+      "sha256": "046cb81bc0e0fdd6d1943b50a47f8f9bde93d0dc9c4de3533151e7956b79369c"
+    },
+    {
+      "path": "apps/web/app/api/recipes/[id]/shelf/route.ts",
+      "bytes": 1196,
+      "sha256": "273bcd105b40ffcf8439b7dab55db4dd9504451f74e21a0649844abab4f3614c"
+    },
+    {
+      "path": "apps/web/app/api/recipes/[id]/similar/route.ts",
+      "bytes": 716,
+      "sha256": "d6b5b84b5873b16fadab071eb8f0db17b5f295f475da2941fd91e6afcb794c9d"
+    },
+    {
+      "path": "apps/web/app/api/recipes/route.ts",
+      "bytes": 2435,
+      "sha256": "48f93548004991a1219be90bc723ace17cd0d0caef05e61091ac8abef820f96b"
+    },
+    {
+      "path": "apps/web/app/api/shared-templates/[id]/route.ts",
+      "bytes": 1051,
+      "sha256": "0f8623ac4b064f2ec880eb9a740a44d4ce926bd0d4449574a0af31117d10fc08"
+    },
+    {
+      "path": "apps/web/app/api/shared/[id]/route.ts",
+      "bytes": 1124,
+      "sha256": "8bc8151542614283ea0cfa962cce4faf9218b45157e31737fb132e54263fbd92"
+    },
+    {
+      "path": "apps/web/app/api/shelves/[id]/route.ts",
+      "bytes": 982,
+      "sha256": "086f03acea853131f19492c109116e53e088b9c057fcb5ec838d30634fe475b6"
+    },
+    {
+      "path": "apps/web/app/api/shelves/route.ts",
+      "bytes": 453,
+      "sha256": "bafc4a63f956c9b66313d82e4685730c4ed60fabeabd7e819d4fd662a6243d93"
+    },
+    {
+      "path": "apps/web/app/api/templates/[id]/route.ts",
+      "bytes": 456,
+      "sha256": "1cd35e2afcfbe86445ba2b655ee48bca791cb7aeb21d72efcf796bfb4524a5a1"
+    },
+    {
+      "path": "apps/web/app/api/templates/[id]/save/route.ts",
+      "bytes": 455,
+      "sha256": "612dcf59ba7b0d67b1797d8ad7e5925b00fcc986413d2737eaaa5099287273f7"
+    },
+    {
+      "path": "apps/web/app/api/templates/[id]/share/route.ts",
+      "bytes": 765,
+      "sha256": "0b863abaa35ac45cb02fecff4313eb2a8add3affadbe5a7ec603e11c0d1c8c7a"
+    },
+    {
+      "path": "apps/web/app/api/templates/route.ts",
+      "bytes": 857,
+      "sha256": "5afaf996b9edb95780642cad69ff590242553ddd7b7ef23a11d6317f02a64209"
+    },
+    {
+      "path": "apps/web/app/api/webhooks/clerk/route.ts",
+      "bytes": 2953,
+      "sha256": "e3683103be45a372c98deffd987b4862d213a689849f6160bdb6b749a665d4b5"
+    },
+    {
+      "path": "apps/web/app/apple-icon.png",
+      "bytes": 2534,
+      "sha256": "c46eeae3f2596bfc9a7b3c151172ac0ff6d6f675b99caf9275ca7ec064cdb556"
+    },
+    {
+      "path": "apps/web/app/auth.module.css",
+      "bytes": 89,
+      "sha256": "c8d6d661ec4d05668f14e25ada7c884c7a5b3ede73ccf4ab2d116190f8a64e95"
+    },
+    {
+      "path": "apps/web/app/care/page.tsx",
+      "bytes": 893,
+      "sha256": "a61b376a483fdfa9bfd242f82abbcfccb4b6c7aba75c1274786eb926a6a546ea"
+    },
+    {
+      "path": "apps/web/app/cook/page.tsx",
+      "bytes": 348,
+      "sha256": "f1fa7360d0b4f7ef662bb2e323853ab60df1eca264d716b146f589f9f3ea7df0"
+    },
+    {
+      "path": "apps/web/app/discover/page.tsx",
+      "bytes": 211,
+      "sha256": "4e45a64f86c3ad01e58f5cd5d746cbf8464038ee9373d3ad11a532f9702b63b5"
+    },
+    {
+      "path": "apps/web/app/friends/page.tsx",
+      "bytes": 207,
+      "sha256": "0aa015c9df3194c8dea987c42cf48066ef17cb57325d1bfcb987a5fd7201fdd0"
+    },
+    {
+      "path": "apps/web/app/globals.css",
+      "bytes": 1528,
+      "sha256": "a9bfabe7cf6ba00e2a64e3fb74bbf586fc6d19b200910208a41a1a74bf5fb4e6"
+    },
+    {
+      "path": "apps/web/app/icon.png",
+      "bytes": 608,
+      "sha256": "030a67a36c5bda828c124405a9dbcbf1402ba5848985a3061d608e439a85f493"
+    },
+    {
+      "path": "apps/web/app/layout.module.css",
+      "bytes": 1134,
+      "sha256": "2866eb13201df141b57ea1aa7add532dd055564e8de7abe9eed79433ea26cc74"
+    },
+    {
+      "path": "apps/web/app/layout.tsx",
+      "bytes": 3399,
+      "sha256": "5fd337318a2ff207b9f087c91a7eaf8ec116afdc96006d3b0c36e8185705cf0f"
+    },
+    {
+      "path": "apps/web/app/list/page.tsx",
+      "bytes": 195,
+      "sha256": "1ef104ff3a5dc44fc94156bd3541f5f797c9fd83ce219d57eb0f09f3cb579a20"
+    },
+    {
+      "path": "apps/web/app/manifest.ts",
+      "bytes": 1042,
+      "sha256": "2893db776738a29205bd308b2a8031a0f312f27a1e776c10f1960d4eebcd69d5"
+    },
+    {
+      "path": "apps/web/app/offline/page.tsx",
+      "bytes": 787,
+      "sha256": "adbc15782761ab3723ad07064c4f141bdfd5b864301062e072d879f9203e3f72"
+    },
+    {
+      "path": "apps/web/app/page.tsx",
+      "bytes": 2051,
+      "sha256": "abd5d8c69b60dc5a2042f69d34e054b7d00549a0923cb487a7cece6614f0e78c"
+    },
+    {
+      "path": "apps/web/app/plan/page.tsx",
+      "bytes": 958,
+      "sha256": "6d8744f19728f92c4e4262396f822d12f15162cf8fd4684f452559b88aae2d78"
+    },
+    {
+      "path": "apps/web/app/plans/page.tsx",
+      "bytes": 1989,
+      "sha256": "1206e68e26b5cd9a33ea87183bab90658a9430e8f15c16fd7335be00cf89e90a"
+    },
+    {
+      "path": "apps/web/app/profile/page.tsx",
+      "bytes": 845,
+      "sha256": "5b89af47b0cb223fbd31e678d724b5e022dbab856c0cccf21f614a5098bbd575"
+    },
+    {
+      "path": "apps/web/app/r/[id]/page.tsx",
+      "bytes": 2225,
+      "sha256": "718943c537ee88d7205b45f1bc55c9c461021dfea25e1904fed7460c161bf527"
+    },
+    {
+      "path": "apps/web/app/recipe/[id]/cook/page.tsx",
+      "bytes": 846,
+      "sha256": "1840027fcf69d3b89ad65936bf57c87d4817017757bdd6cce3ad4b0babe146dc"
+    },
+    {
+      "path": "apps/web/app/recipe/[id]/edit/page.tsx",
+      "bytes": 975,
+      "sha256": "569814b8afd13484e1dd53221d5053af92571c542490549d8df4ed97f452373f"
+    },
+    {
+      "path": "apps/web/app/recipe/[id]/page.tsx",
+      "bytes": 1082,
+      "sha256": "ee86de3c226b97a9fc5eaaa7c6d7a71d361e2f305709519a7433622164c4dac6"
+    },
+    {
+      "path": "apps/web/app/recipe/new/page.tsx",
+      "bytes": 865,
+      "sha256": "9bdf5d6813a84cc46b8fa6edba4fa1f12f34d17a0506db53bdfd8ae74256399d"
+    },
+    {
+      "path": "apps/web/app/sign-in/[[...sign-in]]/page.tsx",
+      "bytes": 762,
+      "sha256": "2fa283814b2b1fdf06e5591cb1a6992145c3e7a25a75b0779cf35e9bb5e58589"
+    },
+    {
+      "path": "apps/web/app/sign-up/[[...sign-up]]/page.tsx",
+      "bytes": 222,
+      "sha256": "c2a87fe0b97a10c8272a1a1ea51b8abfee642bc7c6907516b652a2f93f6eb072"
+    },
+    {
+      "path": "apps/web/app/t/[id]/page.tsx",
+      "bytes": 1697,
+      "sha256": "21dc1169d6a7638323150f0fc8fc8d02c36471a9826bfd11d02c4b7dba049351"
+    },
+    {
+      "path": "apps/web/app/templates/page.tsx",
+      "bytes": 804,
+      "sha256": "a7ed00fec0147f5af5d9c366c39d048ee951d2fe6773bf178a8177a78f1193bc"
+    },
+    {
+      "path": "apps/web/lib/admin.ts",
+      "bytes": 1614,
+      "sha256": "ffcf9c7f3a962a3fc1b0ae7baa39f2f726dfe9f83c1307aa587529404171e6fb"
+    },
+    {
+      "path": "apps/web/lib/api.ts",
+      "bytes": 4523,
+      "sha256": "40577434d8136b072f54a76834948983ce150d50f4c4081d73fd45ec38966df7"
+    },
+    {
+      "path": "apps/web/lib/beta.ts",
+      "bytes": 589,
+      "sha256": "0c92ebda27a523cc1919f72b91780b4101cba5eee8556a1c0b68f5f7853cfdea"
+    },
+    {
+      "path": "apps/web/lib/client.ts",
+      "bytes": 255,
+      "sha256": "3a55beec7b8777e651043f2adc6ddb8727fa419b858f63d96d4e504bdc2363de"
+    },
+    {
+      "path": "apps/web/lib/kroger.ts",
+      "bytes": 2637,
+      "sha256": "49776d90760a8f7b45a689da9302fac16bd235638bab1e231f41146f13c6ab04"
+    },
+    {
+      "path": "apps/web/lib/library.ts",
+      "bytes": 3665,
+      "sha256": "514a9a2b942dbf5e60ed0152628d93301f4cfc111ed24647d0df4bf8ec988c9a"
+    },
+    {
+      "path": "apps/web/lib/session.ts",
+      "bytes": 3107,
+      "sha256": "219043e5abb13d3f41a339cb88ffb5a8b5a7cc88afd0f77822924ce976a417ad"
+    },
+    {
+      "path": "apps/web/lib/stripe.ts",
+      "bytes": 2914,
+      "sha256": "bfd4e5b447916baf9a44191843e327094a0b20d6d9e4b6e001a83d2934e25ce7"
+    },
+    {
+      "path": "apps/web/middleware.ts",
+      "bytes": 1392,
+      "sha256": "56830c05951edb7aa75f611403607507e6d10661de0d25b48f1564b8a8335524"
+    },
+    {
+      "path": "apps/web/modules/account/AccountMenu.tsx",
+      "bytes": 1103,
+      "sha256": "2beb753f4f8b08e38f0dec5857cb32b63a2cd10cd78619c624ea9df20bbe4484"
+    },
+    {
+      "path": "apps/web/modules/account/account.module.css",
+      "bytes": 744,
+      "sha256": "48e9d3a537dc452797ff5ff4e37886fc71f87e661acced97f3537ed52eeadfb9"
+    },
+    {
+      "path": "apps/web/modules/account/index.ts",
+      "bytes": 63,
+      "sha256": "6fcc0990df27109f1680aee37b0e90c1b69f4486e91ad62265df35f4411d3941"
+    },
+    {
+      "path": "apps/web/modules/care/CareScreen.tsx",
+      "bytes": 13616,
+      "sha256": "634265b8b9492284d4e189812c32e56b580e91075950830b566020f22c8bd726"
+    },
+    {
+      "path": "apps/web/modules/care/care-state.ts",
+      "bytes": 1944,
+      "sha256": "658dbb93ffb6f6e795074b43e32b8dc8038d44faa869bf259c113f137f6ffb26"
+    },
+    {
+      "path": "apps/web/modules/care/care.module.css",
+      "bytes": 7434,
+      "sha256": "e8a180ff0971cd7d1e479f5583e64c8a538827fe0763a3718ab7c9f10336614c"
+    },
+    {
+      "path": "apps/web/modules/care/offline.ts",
+      "bytes": 3454,
+      "sha256": "3e9b26ebf42544d31f4b36bf0b6b5b30540e9aae38ccc32855035943f03d7aa1"
+    },
+    {
+      "path": "apps/web/modules/cook/CookMode.tsx",
+      "bytes": 10176,
+      "sha256": "2bbccabd3208efdbfad7b6ebd6c3282e649539bf46bf73c98625e4c21b2941b1"
+    },
+    {
+      "path": "apps/web/modules/cook/FinishPanel.tsx",
+      "bytes": 3508,
+      "sha256": "418d4ed250860c26bc014d366fddabb5370f78a53dbc14b0a757a28d8d9c4ad3"
+    },
+    {
+      "path": "apps/web/modules/cook/TimerTray.tsx",
+      "bytes": 2614,
+      "sha256": "c9bfea2aeedd46d06d1460ce34aced950c859199ef3694cdcbb88ee1d3fefe4e"
+    },
+    {
+      "path": "apps/web/modules/cook/cook.module.css",
+      "bytes": 7189,
+      "sha256": "f52a7ec59299af15307de7bba8cfefc73d423cfa0e5696f6b31557913561ff24"
+    },
+    {
+      "path": "apps/web/modules/cook/index.ts",
+      "bytes": 40,
+      "sha256": "a7b4ec85d4a7fc18c7ee72d8a5eaf474c88b4443dda5e2d306fe3afc55cfb038"
+    },
+    {
+      "path": "apps/web/modules/cook/notify.ts",
+      "bytes": 2659,
+      "sha256": "775794aa37c69ef9dd98f799e8b15e4455cb64d71b37052fb182aa2801780ad1"
+    },
+    {
+      "path": "apps/web/modules/cook/useCookSession.ts",
+      "bytes": 2021,
+      "sha256": "ad6d43eb14b80b7a84462f2fc5f018530071ccf01179a85aafb9cdf7d3746e31"
+    },
+    {
+      "path": "apps/web/modules/cook/useTimers.ts",
+      "bytes": 4631,
+      "sha256": "464059934c72ce95c9aefb0dd22710e70f2e9f369664403e8b77048759c395cc"
+    },
+    {
+      "path": "apps/web/modules/cook/useWakeLock.ts",
+      "bytes": 1417,
+      "sha256": "0dbfaa33e362efc31ff84579306d589e87b9f5e714b07d230dfdf98bf69c1213"
+    },
+    {
+      "path": "apps/web/modules/discover/DiscoverCards.tsx",
+      "bytes": 1520,
+      "sha256": "365c6d7b5471feba7a38d7ea385a11fbd49cca4ba20ac7e3d5bd3df206f4b7e4"
+    },
+    {
+      "path": "apps/web/modules/discover/DiscoverPanel.tsx",
+      "bytes": 2519,
+      "sha256": "db3a9eec2deb02ea27e505431bf9539ac9c426f51b23134a1a2e521798e7f104"
+    },
+    {
+      "path": "apps/web/modules/discover/SimilarRecipes.tsx",
+      "bytes": 1173,
+      "sha256": "538754b4e2ef141b81d37cf38887dab275fe3e47a9c2fbfaff9781c2d39a1bd1"
+    },
+    {
+      "path": "apps/web/modules/discover/discover.module.css",
+      "bytes": 2131,
+      "sha256": "30323b3b164661163fd200eccd5df99493799f8aa5264820da28d9e1c70a0e2f"
+    },
+    {
+      "path": "apps/web/modules/discover/index.ts",
+      "bytes": 239,
+      "sha256": "b6d14368c8317ff27783ca564528030924e8db2d0abdd556a5421bd0b4dcd67d"
+    },
+    {
+      "path": "apps/web/modules/discover/useDiscover.ts",
+      "bytes": 1810,
+      "sha256": "3b9a79b0f0fcf7c3370dcad822ad2845e20d250c45702f641b8943ba9490a25c"
+    },
+    {
+      "path": "apps/web/modules/editor/DetailFields.tsx",
+      "bytes": 5908,
+      "sha256": "8fd3396291b6ca003ffb8bffe48610579792a05dbc6df1c584dad8a9d72fa499"
+    },
+    {
+      "path": "apps/web/modules/editor/IngredientRows.tsx",
+      "bytes": 5461,
+      "sha256": "71d1e510026d9458dcd334aae88091e0163861e0351c87bbe01021512548b750"
+    },
+    {
+      "path": "apps/web/modules/editor/RecipeEditor.tsx",
+      "bytes": 5366,
+      "sha256": "3f49b55e64329e21b3fc4f519443eb5482fd0e393958ac63dff7a738fcfaabf3"
+    },
+    {
+      "path": "apps/web/modules/editor/RowActions.tsx",
+      "bytes": 1409,
+      "sha256": "e8861ac0366dde95e572f92defd485002e9cbc77b2b01e2daecf8c8042273d63"
+    },
+    {
+      "path": "apps/web/modules/editor/StepRows.tsx",
+      "bytes": 1428,
+      "sha256": "f29b8513b8207f0270979023764a9672b51f07c486a938c1cb045d6ff5af2782"
+    },
+    {
+      "path": "apps/web/modules/editor/editor.module.css",
+      "bytes": 4046,
+      "sha256": "2a680f4647d26029a08cb965b47681a8f4f0919ba130915b97adf28798f29b4d"
+    },
+    {
+      "path": "apps/web/modules/editor/index.ts",
+      "bytes": 86,
+      "sha256": "33233f428ff74821f3ab5b3225b39c2ccfb1ac4d623c65971db5d13a49d1b3b4"
+    },
+    {
+      "path": "apps/web/modules/editor/toDraft.ts",
+      "bytes": 582,
+      "sha256": "0b6ff5a6c806b1d73472e085f65b2a26883ebaee5cc8c6844317fd85e674ffcb"
+    },
+    {
+      "path": "apps/web/modules/editor/useDraft.ts",
+      "bytes": 2886,
+      "sha256": "60a1dce3f91428d3ccfd6229a0a019215b878c7b36c6b2aad02893b9cecd0939"
+    },
+    {
+      "path": "apps/web/modules/friends/FeedList.tsx",
+      "bytes": 1841,
+      "sha256": "67759116b3f4096d717adac991090aed2a6b736831c797fcd0bf008846bc6b0f"
+    },
+    {
+      "path": "apps/web/modules/friends/FriendsPanel.tsx",
+      "bytes": 4510,
+      "sha256": "82e798d9e297d5885d1d2996fb8ffc9527d925eb2c1c8d5c5fd491415dee3ce0"
+    },
+    {
+      "path": "apps/web/modules/friends/PersonRow.tsx",
+      "bytes": 1511,
+      "sha256": "d6498f9b05af5e75e73101e4d28a26e9b02889c49ca8b01245c2cc3d47856c7b"
+    },
+    {
+      "path": "apps/web/modules/friends/friends.module.css",
+      "bytes": 2151,
+      "sha256": "6942373530f99fde53867e2936bae94652aeef7a4d120846ed42e9a458da409f"
+    },
+    {
+      "path": "apps/web/modules/friends/index.ts",
+      "bytes": 198,
+      "sha256": "d08a760a999f6ebca44ca9013450697ea6094f087ed9186c16494df424527f73"
+    },
+    {
+      "path": "apps/web/modules/friends/useFriends.ts",
+      "bytes": 2162,
+      "sha256": "3474f24cc35a896a296d54c3e629a93df90f4e03766a840fc2c5fd8899703572"
+    },
+    {
+      "path": "apps/web/modules/import/CreditMeter.tsx",
+      "bytes": 4065,
+      "sha256": "4ad9e743517f9f779b41bfc8eaf14e8f98f4a2423c3ee636381937e851acc29a"
+    },
+    {
+      "path": "apps/web/modules/import/ImportForm.tsx",
+      "bytes": 1841,
+      "sha256": "1965f03e29b7d606616a5eefbcce6824c226e527abbe1004105f1962cc0cbde0"
+    },
+    {
+      "path": "apps/web/modules/import/ImportPanel.tsx",
+      "bytes": 2741,
+      "sha256": "24409808ee17a7d6cf58301c4980ba5b623f95daada004af01c5e7cbda4bf656"
+    },
+    {
+      "path": "apps/web/modules/import/ImportProgress.tsx",
+      "bytes": 512,
+      "sha256": "fffabb924747388ae45fab61a21958ec8e62532e3b92f7e7c0f797c1ab1d0209"
+    },
+    {
+      "path": "apps/web/modules/import/ModeSwitch.tsx",
+      "bytes": 802,
+      "sha256": "d5709f1005fdc69fbb11c17d1d2526b8f383a3bcfd2f0fc159c29f2e4a8326bb"
+    },
+    {
+      "path": "apps/web/modules/import/import.module.css",
+      "bytes": 2191,
+      "sha256": "9d05d52ec0a97fb21daab2911313d8270466211ae7a356d718c166907d931642"
+    },
+    {
+      "path": "apps/web/modules/import/index.ts",
+      "bytes": 157,
+      "sha256": "6655f35473ae3fc2a10926c7acf5ce17aadd34a33e90705c2c8c69ae38f93e46"
+    },
+    {
+      "path": "apps/web/modules/import/useImport.ts",
+      "bytes": 1646,
+      "sha256": "4bbad1d72718c98d8e41375369320b155296c7a39daee8e52d0206bad4403f9d"
+    },
+    {
+      "path": "apps/web/modules/library/LibraryExport.tsx",
+      "bytes": 913,
+      "sha256": "8c08c54bc0d61837cd661b781b700089de2d2861666cdd4004e5e62fcb59e76b"
+    },
+    {
+      "path": "apps/web/modules/library/LibraryItem.tsx",
+      "bytes": 2212,
+      "sha256": "defb37f9b9c3a90379536372f46a61360e9672526fe30bc6da32babd8beb56e4"
+    },
+    {
+      "path": "apps/web/modules/library/LibraryList.tsx",
+      "bytes": 763,
+      "sha256": "3bdeac706e8e0a220e594c4d2fb58556fb87f1e6fa7cba921501bffe7a56ecea"
+    },
+    {
+      "path": "apps/web/modules/library/LibrarySearch.tsx",
+      "bytes": 1683,
+      "sha256": "409d346cd93cdda6737e07589337e725213a908283e41492bb9bd4ea26a385e7"
+    },
+    {
+      "path": "apps/web/modules/library/LibrarySort.tsx",
+      "bytes": 1494,
+      "sha256": "dfe455957eb1276ad1401f876bb978429ae5ea8d59a5bdf0e9ec7c99dc15f988"
+    },
+    {
+      "path": "apps/web/modules/library/NewShelf.tsx",
+      "bytes": 1401,
+      "sha256": "1324fb019191b1460a9e732544ed821d01be81fc6b9daabfbec3fb880c35280c"
+    },
+    {
+      "path": "apps/web/modules/library/ShelfFilter.tsx",
+      "bytes": 1649,
+      "sha256": "acbcf4879955319da1428c5d96edce10f5290a9e68acbd6613d300b82a4fc4b4"
+    },
+    {
+      "path": "apps/web/modules/library/WoodlandLibrary.tsx",
+      "bytes": 3074,
+      "sha256": "c8382db7264a761884b46d1eb4df9b74522efc05ee0e6ca99b865bf59f10f149"
+    },
+    {
+      "path": "apps/web/modules/library/index.ts",
+      "bytes": 305,
+      "sha256": "ac4c33516452b57b1de3c3e5016d9760b7b33735d17f40ccef94f9ef4251a5dc"
+    },
+    {
+      "path": "apps/web/modules/library/library.module.css",
+      "bytes": 7717,
+      "sha256": "3e692706b5f188af9e04c56299c0cbf64e069287ba944b571da4542cd9b97458"
+    },
+    {
+      "path": "apps/web/modules/library/woodland-library.module.css",
+      "bytes": 2854,
+      "sha256": "366312dfe73865636423e1cea81d61229664a6837ccc2972eb9cfc66ee2b605c"
+    },
+    {
+      "path": "apps/web/modules/list/AddToListButton.tsx",
+      "bytes": 2121,
+      "sha256": "c6ede3bd3c432840602654d9b58532b467648e7560595f41ad988e50684cf9f5"
+    },
+    {
+      "path": "apps/web/modules/list/CartButtons.tsx",
+      "bytes": 2605,
+      "sha256": "a9c95e748c727f40691efa6376794125e19a3206365be2b199eeb679185b2939"
+    },
+    {
+      "path": "apps/web/modules/list/KrogerConnection.tsx",
+      "bytes": 5642,
+      "sha256": "778895793683d334bbc04df8f67721662ddcef5fc8144f54aa2d3289e12251c9"
+    },
+    {
+      "path": "apps/web/modules/list/ListItems.tsx",
+      "bytes": 3356,
+      "sha256": "140e55e4a338c56b70eaae6a12efb22e0b3c5676a687211321b21afe61aa7da2"
+    },
+    {
+      "path": "apps/web/modules/list/ListPanel.tsx",
+      "bytes": 2146,
+      "sha256": "e5f912562d8eb1461fa6a3b031603e988046f4b63ebb77bc590086cc4e615138"
+    },
+    {
+      "path": "apps/web/modules/list/index.ts",
+      "bytes": 333,
+      "sha256": "80a47018676c97c76b96d9ea7b0386350ee3f6f58231f5783ebb32876aa44804"
+    },
+    {
+      "path": "apps/web/modules/list/list.module.css",
+      "bytes": 3688,
+      "sha256": "6876d63accda86976c9a4a18a0170b42f2f21c5a859b8c2aa4598c3998cc3259"
+    },
+    {
+      "path": "apps/web/modules/list/useShoppingList.ts",
+      "bytes": 3690,
+      "sha256": "67c636832ee50ec2bb7ad76bc9fed15047c4beafa7422d53d4b6d56fa24bd7c7"
+    },
+    {
+      "path": "apps/web/modules/offline/OfflineBanner.tsx",
+      "bytes": 1270,
+      "sha256": "afe25c6070ea225a9c7631e40e522712d718eb7647b9b01335485cdcdea2a77d"
+    },
+    {
+      "path": "apps/web/modules/offline/ServiceWorkerRegistration.tsx",
+      "bytes": 1226,
+      "sha256": "674b174c06585e743ec4683ae025983cd9f2d50aba03fafc9090bbb0e2a9fe3c"
+    },
+    {
+      "path": "apps/web/modules/offline/index.ts",
+      "bytes": 124,
+      "sha256": "82933b6e90dbcdb34db926a62d523f375633111f36dd521e69942f45a9ae9bd0"
+    },
+    {
+      "path": "apps/web/modules/offline/offline.module.css",
+      "bytes": 524,
+      "sha256": "b043c167472abda5a668fcbfc7128b525551783dc5ab88422f4ee5ac26cb41c9"
+    },
+    {
+      "path": "apps/web/modules/offline/worker.js",
+      "bytes": 3691,
+      "sha256": "26ac80d4b890cbe2b42849f9aa74f158aeb8afc4b1bc427df4279ad55a74e2e8"
+    },
+    {
+      "path": "apps/web/modules/pantry/CookPanel.tsx",
+      "bytes": 4041,
+      "sha256": "88858e3ae6ad83f83ae9dbc2f193220a0a51672df34374db4b7acef95a8bc3c0"
+    },
+    {
+      "path": "apps/web/modules/pantry/MatchList.tsx",
+      "bytes": 4093,
+      "sha256": "f247d7480e351aad535c5b778dbf97dd17e90c39770f3b92dd144e166ab4c3bc"
+    },
+    {
+      "path": "apps/web/modules/pantry/PantryList.tsx",
+      "bytes": 2481,
+      "sha256": "cb86185b71a48ea0477a08cb1fcfc1afec1280a61badb365725ee92387fc0623"
+    },
+    {
+      "path": "apps/web/modules/pantry/index.ts",
+      "bytes": 248,
+      "sha256": "64d8af5845f3cafca3f39fb0a89bbaa876cdbf79b1b4dc5def60b3bf7602ab3e"
+    },
+    {
+      "path": "apps/web/modules/pantry/pantry.module.css",
+      "bytes": 3051,
+      "sha256": "6bae4c2a57976be6e4cedffeebfbc6ef6d049b03cbd9c26343d63da4f93b866e"
+    },
+    {
+      "path": "apps/web/modules/pantry/usePantry.ts",
+      "bytes": 2576,
+      "sha256": "03902ec208a34066720ab3c404f7a391b2dec9cf91b189224f1af989fd99a2f3"
+    },
+    {
+      "path": "apps/web/modules/plan/AddMealDialog.tsx",
+      "bytes": 2693,
+      "sha256": "88aa45239cfe78feedb06f50c5d6034d5e31238b6b78401704bda8057ddd6059"
+    },
+    {
+      "path": "apps/web/modules/plan/PlanWeek.tsx",
+      "bytes": 10688,
+      "sha256": "53a2a288e99fe4fdd4a23a925d3ccdb932a881185af7ee8d07f6132f98063160"
+    },
+    {
+      "path": "apps/web/modules/plan/SuggestMeal.tsx",
+      "bytes": 4740,
+      "sha256": "84757fe9f67265786b53384c8839269d9e000a501464bce32577008a05993fdc"
+    },
+    {
+      "path": "apps/web/modules/plan/index.ts",
+      "bytes": 86,
+      "sha256": "f4a8535cc5491aa4889f58a6e0da6ec0f8b827ac87b67e28f56c90097acd339a"
+    },
+    {
+      "path": "apps/web/modules/plan/plan.module.css",
+      "bytes": 6383,
+      "sha256": "9ba0f5b7045c8a461d299bef89e92625a971578ac66c7f1322e635f9be3a4ff6"
+    },
+    {
+      "path": "apps/web/modules/plans/PlanTable.tsx",
+      "bytes": 6795,
+      "sha256": "15a3ad31b79b7e537e26b2aac2e12ceed805db52a47c741ff523bcd24d7f70d7"
+    },
+    {
+      "path": "apps/web/modules/plans/index.ts",
+      "bytes": 42,
+      "sha256": "7f7748b943866ced8de454c145769e5f13f6ed6e6ee0c9f5a0d48a7459482f27"
+    },
+    {
+      "path": "apps/web/modules/plans/plans.module.css",
+      "bytes": 3320,
+      "sha256": "baa2c9410ba1834bdce9b5fbeb87caa656e37f7fd34022b8a92fda36b4edf544"
+    },
+    {
+      "path": "apps/web/modules/profile/AllergenWarning.tsx",
+      "bytes": 1873,
+      "sha256": "8b9f9d22b4fe06e3a75d8e273a6ad45186e97ef9e0c8b247c7a5d24840b931bb"
+    },
+    {
+      "path": "apps/web/modules/profile/DietaryProfileForm.tsx",
+      "bytes": 4242,
+      "sha256": "4248ff4923df24546fb673a18a12904799194e74afff83c572b19f32fe43d5b9"
+    },
+    {
+      "path": "apps/web/modules/profile/index.ts",
+      "bytes": 114,
+      "sha256": "ec17d5e5bb36202af503a38b8d3367ad32f7a1cbc53b362b12f88128894089fa"
+    },
+    {
+      "path": "apps/web/modules/profile/profile.module.css",
+      "bytes": 903,
+      "sha256": "f78bcf8052758bc8bc0f6a0e896beb667fe460c39ed9565c7c428f323fdb15ea"
+    },
+    {
+      "path": "apps/web/modules/recipe/IngredientList.module.css",
+      "bytes": 740,
+      "sha256": "825a06606fca7e896817a630fe110ca23da7be4b625f2cfb946feaab2a75984e"
+    },
+    {
+      "path": "apps/web/modules/recipe/IngredientList.tsx",
+      "bytes": 1699,
+      "sha256": "ff6c085fa19de43b2e13d026137bb3dbfa130331cdf92f577b430234559d3bdc"
+    },
+    {
+      "path": "apps/web/modules/recipe/NutritionFacts.module.css",
+      "bytes": 1866,
+      "sha256": "dbc5aaa8c110500d67b1d2e0524f75c6d2753edd312dc8c26cb45b4ef1829c2e"
+    },
+    {
+      "path": "apps/web/modules/recipe/NutritionFacts.tsx",
+      "bytes": 3683,
+      "sha256": "c85cfa40e6508a7560b02d25e9e15909e69fdfa34e6feca0ab0a23867e028402"
+    },
+    {
+      "path": "apps/web/modules/recipe/PairingSuggestions.module.css",
+      "bytes": 3606,
+      "sha256": "8bafa53f8c87e0a01d256764c739c5555585d97f5ec678dbd7c33709ed7bd8a1"
+    },
+    {
+      "path": "apps/web/modules/recipe/PairingSuggestions.tsx",
+      "bytes": 8163,
+      "sha256": "f0ee6e73d5f7392bfef43445f420c81c6d85e7fb2423771da36ebfff14f2c50c"
+    },
+    {
+      "path": "apps/web/modules/recipe/Provenance.module.css",
+      "bytes": 232,
+      "sha256": "f0e5d54ab4f272d18fc297d697fca60ee9597e72217d52027f315fafb1d59da1"
+    },
+    {
+      "path": "apps/web/modules/recipe/Provenance.tsx",
+      "bytes": 2463,
+      "sha256": "2c69e458c54607524d6cad77666e416effb7244fc4250fc6ddca10b0d64b288d"
+    },
+    {
+      "path": "apps/web/modules/recipe/RecipeCard.tsx",
+      "bytes": 3816,
+      "sha256": "c0ff8d884820de65bbd5115be4b200ace669f487a3be06556725bfc9b5ed335b"
+    },
+    {
+      "path": "apps/web/modules/recipe/RecipeExport.module.css",
+      "bytes": 455,
+      "sha256": "c7c9869d354faebcf4ecbf341849416e601923c79f660fda2499b82a377b47ab"
+    },
+    {
+      "path": "apps/web/modules/recipe/RecipeExport.tsx",
+      "bytes": 2940,
+      "sha256": "b1c3f60121976cf076003afc2a8e7ca2b95d77a3dfcf585e240a88e9112df723"
+    },
+    {
+      "path": "apps/web/modules/recipe/RecipeFacts.module.css",
+      "bytes": 1032,
+      "sha256": "9d1984f0985b0bc8a68cd6db05f91a96775ed35c17d65a5edf71e8397f6a347d"
+    },
+    {
+      "path": "apps/web/modules/recipe/RecipeFacts.tsx",
+      "bytes": 1340,
+      "sha256": "ab2a50a9cf36c6a223f8d55db3b341590e72eccb8da0df7baf805ab2d3981804"
+    },
+    {
+      "path": "apps/web/modules/recipe/RecipeHeader.module.css",
+      "bytes": 847,
+      "sha256": "9dc2afd36b14ab965c61dcf4c0ba5595b695a299a6da8405c945cc7d95b59a48"
+    },
+    {
+      "path": "apps/web/modules/recipe/RecipeHeader.tsx",
+      "bytes": 1383,
+      "sha256": "73848d6231407d39224acff1a6147917867c9f438eb6ef3215ccd3a30dfd46e6"
+    },
+    {
+      "path": "apps/web/modules/recipe/StepList.module.css",
+      "bytes": 381,
+      "sha256": "33a797786fc69625963bed2e569360fe8e737f1855e8fd792603c15e3a3b7fed"
+    },
+    {
+      "path": "apps/web/modules/recipe/StepList.tsx",
+      "bytes": 1250,
+      "sha256": "c1bd36770ef1ced1e4b76a90e341b4d649ed3a0cc1b937a74a80c718261ff776"
+    },
+    {
+      "path": "apps/web/modules/recipe/index.ts",
+      "bytes": 261,
+      "sha256": "4d4309a133b0185b4c9600d2385fba54c430a323cddac34d1f45e3812d760096"
+    },
+    {
+      "path": "apps/web/modules/recipe/recipe.module.css",
+      "bytes": 2800,
+      "sha256": "150bc30fc8a261e8d244a9054d4616b0c2adc49b496cbb87bf55827f3e14d0f8"
+    },
+    {
+      "path": "apps/web/modules/recipe/toRecipe.ts",
+      "bytes": 2369,
+      "sha256": "4c95e7c7368db87a2807039e78b08f0ff6076ab0cc0eed752e33f301ed3470c6"
+    },
+    {
+      "path": "apps/web/modules/recipe/useServings.ts",
+      "bytes": 1055,
+      "sha256": "748fbf9061b08337497ebf36f557d3f63f268be15dbca7b3752e65aac4279cd5"
+    },
+    {
+      "path": "apps/web/modules/sharing/SaveSharedButton.tsx",
+      "bytes": 1915,
+      "sha256": "5b3328b9794f3fab777d25f7389b10526da2f1c904cb962c11877ea461a2f816"
+    },
+    {
+      "path": "apps/web/modules/sharing/ShareControl.tsx",
+      "bytes": 3093,
+      "sha256": "201e3e0b3ce56a8e6c087aa6decf313f0b916e991107a817da8f69cc4e7e661b"
+    },
+    {
+      "path": "apps/web/modules/sharing/SharedByLine.tsx",
+      "bytes": 767,
+      "sha256": "31c8c23865bfb9b5667c05f5142830242dbf41b74bc9c67cf430d5f9338fea71"
+    },
+    {
+      "path": "apps/web/modules/sharing/index.ts",
+      "bytes": 152,
+      "sha256": "08d17e816f825c972d3233908c4b3f8f97207613052546f5d36ebba71f5b4287"
+    },
+    {
+      "path": "apps/web/modules/sharing/sharing.module.css",
+      "bytes": 1474,
+      "sha256": "1624d97d0a20e5b39d627a7ae1f00fe9d5681216bc41e6545e7abd27a975afa5"
+    },
+    {
+      "path": "apps/web/modules/shelves/ShelfChecklist.tsx",
+      "bytes": 2078,
+      "sha256": "07f58fb1f361521647c53ec89dd43868c467d99353ae11046e399f022d25cf07"
+    },
+    {
+      "path": "apps/web/modules/shelves/ShelfControls.tsx",
+      "bytes": 2603,
+      "sha256": "a6b0526a0f19b5af4f24ecb35e1b3769615604ac09a895bea1e041743658c9ec"
+    },
+    {
+      "path": "apps/web/modules/shelves/StarRating.tsx",
+      "bytes": 1316,
+      "sha256": "055da8ea41c6030a534838ba089a74a266bf4d1535ac9b4d40a93afd4005bd43"
+    },
+    {
+      "path": "apps/web/modules/shelves/StatusPicker.tsx",
+      "bytes": 953,
+      "sha256": "c8ac781203224f48e174ec5fdabfb40a71335022d0f23884837173ba9eb055df"
+    },
+    {
+      "path": "apps/web/modules/shelves/index.ts",
+      "bytes": 226,
+      "sha256": "81d32c0044e6d28dfb31e21e223fe0e7bfc92c0df7ab9854227ed2aed4de0d09"
+    },
+    {
+      "path": "apps/web/modules/shelves/shelves.module.css",
+      "bytes": 1943,
+      "sha256": "0f9e7b60eb7316bf4ada4f3f970a0aeb8d0496a53f01630e1ff15054b7ff1d2c"
+    },
+    {
+      "path": "apps/web/modules/shelves/useShelfState.ts",
+      "bytes": 4381,
+      "sha256": "e06220abcde7b876d3fe06849b6a04c76cdb3d2dc1d7a651d914313463262f0e"
+    },
+    {
+      "path": "apps/web/modules/templates/SaveTemplateButton.tsx",
+      "bytes": 1712,
+      "sha256": "9ebcc59fc31ad7ba0c7eb79bda112d425d83250afe92310313005b04bb2c3af5"
+    },
+    {
+      "path": "apps/web/modules/templates/TemplateItems.tsx",
+      "bytes": 1162,
+      "sha256": "780c5c5ab43cc4ad996aa2144026b09212b977d255044fe4dff26e4ef113bfbc"
+    },
+    {
+      "path": "apps/web/modules/templates/TemplateList.tsx",
+      "bytes": 2328,
+      "sha256": "94ba751909a7e915eac7374fc52f050c05cd1f9c8728869b0f94257f0293e0d1"
+    },
+    {
+      "path": "apps/web/modules/templates/TemplateShareControl.tsx",
+      "bytes": 2871,
+      "sha256": "7d6f3e6db85bc8e8d7bbf33652d5b2194cd3b97b1194ff5ad3646abdaf8aaa56"
+    },
+    {
+      "path": "apps/web/modules/templates/index.ts",
+      "bytes": 222,
+      "sha256": "26bccb63a18ca75a5a0431a8510064fca8f56d227b8e7306ec01f51a3f3f958a"
+    },
+    {
+      "path": "apps/web/modules/templates/templates.module.css",
+      "bytes": 1071,
+      "sha256": "4e15c58fa831812980ae123f1277c689107387222ba1ddd7555e1962bb41215f"
+    },
+    {
+      "path": "apps/web/modules/woodland/FoodIllustration.tsx",
+      "bytes": 744,
+      "sha256": "d7bee824aa95bb12a780adf3dec2c5e1fd79de2c19e0daa401e420f77d61e292"
+    },
+    {
+      "path": "apps/web/modules/woodland/KitchenIcon.tsx",
+      "bytes": 1631,
+      "sha256": "d4bf0acd92e235dd1fd135e2b88a899b5e4253cf67008a92e7373f88f933880e"
+    },
+    {
+      "path": "apps/web/modules/woodland/Woodland.tsx",
+      "bytes": 4520,
+      "sha256": "3fb330b9ffa9775034bc7e9b7193493a73cf7c842df821873fe41d2910ce6901"
+    },
+    {
+      "path": "apps/web/next.config.ts",
+      "bytes": 1627,
+      "sha256": "198203770d78a221087f85da75397ef5be08062f83b3a533e44eb8d6128a89b7"
+    },
+    {
+      "path": "apps/web/package.json",
+      "bytes": 739,
+      "sha256": "3353fa5d9a18c2c622ac83244776c08a031265e5cb767babb8e2234a35674e16"
+    },
+    {
+      "path": "apps/web/public/care-offline.js",
+      "bytes": 341403,
+      "sha256": "79ef837665b9cef597c6ca470fc09cdc63e0c048a8e27fcc0855b46a5b924b97"
+    },
+    {
+      "path": "apps/web/public/icons/icon-192.png",
+      "bytes": 2989,
+      "sha256": "37cc483af5b955f9ab85f21594729e612e5618bceceff15f0b5d1ec23f6e6096"
+    },
+    {
+      "path": "apps/web/public/icons/icon-512.png",
+      "bytes": 8243,
+      "sha256": "fe17e31a678e4449a4552acbc3c0570940d6536eb62ce82c80acf51a9b250b60"
+    },
+    {
+      "path": "apps/web/public/icons/icon-maskable-512.png",
+      "bytes": 6653,
+      "sha256": "3d7b173c394528869e8a6132a05737a7b2cf9f638bc20d8f00a703ffed5e71cd"
+    },
+    {
+      "path": "apps/web/public/sw.js",
+      "bytes": 5601,
+      "sha256": "db6ec08b5a561d37b8faaac5c000daa6579c5df2fe6a826be05a9ed07785d6e4"
+    },
+    {
+      "path": "apps/web/public/woodland/food-atlas.png",
+      "bytes": 2704853,
+      "sha256": "8754fd719c4ab90b6079090461edc69ab2a790958848d9e26ad73751581c1823"
+    },
+    {
+      "path": "apps/web/public/woodland/food-atlas.webp",
+      "bytes": 1956010,
+      "sha256": "cb96b0f9d3262f4f593c3b8db2051336758c04eaedcef0f50a049ef1b1d7697c"
+    },
+    {
+      "path": "apps/web/public/woodland/hearth.png",
+      "bytes": 2414078,
+      "sha256": "14b5667c03722b56809c5e900d76afd3d61df129f99bf7854c1bb8124f045bad"
+    },
+    {
+      "path": "apps/web/public/woodland/kettle-journal.png",
+      "bytes": 2487233,
+      "sha256": "a7e472cdec2f7f8371b88d08e0599e3ca7b520a46fbbd6ea4c8cdf0e497c93d1"
+    },
+    {
+      "path": "apps/web/public/woodland/kitchen-scene.png",
+      "bytes": 2673084,
+      "sha256": "a2c499cdc5409f0ce4ae77cb480b35336b9f0a37c02e4d9c82954c023ccca097"
+    },
+    {
+      "path": "apps/web/public/woodland/kitchen-scene.webp",
+      "bytes": 1854426,
+      "sha256": "7c27f1c204647d690c0126d637453e179e945640f9f51dbac4c61d638768fb5b"
+    },
+    {
+      "path": "apps/web/public/woodland/parchment.png",
+      "bytes": 2333199,
+      "sha256": "49a9ca43100581dbf3266ba8c04b4a3f3f6a6b1666d9673f0c4cae8d75da30bd"
+    },
+    {
+      "path": "apps/web/public/woodland/parchment.webp",
+      "bytes": 1721724,
+      "sha256": "5546ede20f7a470a059496332108661ef19b98ce1bc40aba69684afe8c9ee837"
+    },
+    {
+      "path": "apps/web/public/woodland/timber.png",
+      "bytes": 2344565,
+      "sha256": "44af2527e3a6d5bbedb50a6ffe630320da065b7b19b222be6b341e8d5975e5e1"
+    },
+    {
+      "path": "apps/web/public/woodland/timber.webp",
+      "bytes": 1721258,
+      "sha256": "b58046618f7c5597cfd04697c356c4a9eff03a5b4848bae2417da45eff9c88a6"
+    },
+    {
+      "path": "apps/web/tsconfig.json",
+      "bytes": 610,
+      "sha256": "2c52d5feaa018ba99ada0ab7bef298a26ed70f3443de532c7129d86500a6c8c7"
+    },
+    {
+      "path": "apps/web/ui/Button.module.css",
+      "bytes": 1116,
+      "sha256": "1c016c75d2bbb0741d2358140582a9ce369e79acae8a0c58a3d8f1ee0740f3e2"
+    },
+    {
+      "path": "apps/web/ui/Button.tsx",
+      "bytes": 455,
+      "sha256": "d08eccbbc2df8cb532101b907f66384e9d3efc422128007c41249b8df2c887ea"
+    },
+    {
+      "path": "apps/web/ui/Callout.module.css",
+      "bytes": 635,
+      "sha256": "88abf0eec28ca5b873c9cb06a07bc2fcc641a78eee0830ca13887968be615827"
+    },
+    {
+      "path": "apps/web/ui/Callout.tsx",
+      "bytes": 647,
+      "sha256": "fdd6302993383186a09fe6603248d83da4369f17f649208136acdec71a42093c"
+    },
+    {
+      "path": "apps/web/ui/Field.module.css",
+      "bytes": 508,
+      "sha256": "74a45891e5ae689dd8ed333521ad4c83609970db1029b58902fbe1dd0f4f52fa"
+    },
+    {
+      "path": "apps/web/ui/Field.tsx",
+      "bytes": 656,
+      "sha256": "056eac737f0d705af686ca736fb712e3dcf06d7b8187123243895053b83d8111"
+    },
+    {
+      "path": "apps/web/ui/LegalFooter.tsx",
+      "bytes": 579,
+      "sha256": "862f0878ae46835975debe7c94a179748f947ac33a09da127147e808bc4817ea"
+    },
+    {
+      "path": "apps/web/ui/Panel.module.css",
+      "bytes": 858,
+      "sha256": "69a26a7f70ac31e833c1cc9674774d9db0264a99d4c013ba3ad98830c878b1bd"
+    },
+    {
+      "path": "apps/web/ui/Panel.tsx",
+      "bytes": 627,
+      "sha256": "e3cb89df0e92d7f2d934f2870a6625fb24c756fb63ff3c2c9e193594c69e814d"
+    },
+    {
+      "path": "apps/web/ui/index.ts",
+      "bytes": 215,
+      "sha256": "7ff960c6ac2dee28c4544d1db7173a363040626731e1f4fbefb454ae099cfb71"
+    },
+    {
+      "path": "apps/web/ui/tokens.css",
+      "bytes": 1017,
+      "sha256": "920797d10e113efe23df6b5f8a7b5adaad8231a832228f35697a0ff13ca6f0d8"
+    },
+    {
+      "path": "apps/web/ui/woodland.css",
+      "bytes": 10784,
+      "sha256": "33ec56e24b88e03f0c0d02e3e18911b219ce5d3ab4d4e3e23df6b55eafb9380f"
+    },
+    {
+      "path": "package.json",
+      "bytes": 1437,
+      "sha256": "523bccc201812067067b21179365f38d5ce844f5457141c3e456b8bb1f7e27ef"
+    },
+    {
+      "path": "packages/core/package.json",
+      "bytes": 756,
+      "sha256": "ce21bc4c2ba1c4d02f4d67e299cce1894bd0118b3b9ab15ff019c994954a2ffb"
+    },
+    {
+      "path": "packages/core/src/aisles.ts",
+      "bytes": 6543,
+      "sha256": "95a48813bb521ed8c2cd61082d09c809c2b2829b529114e0bb8fd531cb3d9968"
+    },
+    {
+      "path": "packages/core/src/api-client.ts",
+      "bytes": 19736,
+      "sha256": "75fc1e65931e7ae047b909874ca09440bf29e62a778058b0768efbb1544286da"
+    },
+    {
+      "path": "packages/core/src/billing.ts",
+      "bytes": 7158,
+      "sha256": "87fb04c815c657423942d5316370d4d78c692becddc8896259e0fccc95f440c7"
+    },
+    {
+      "path": "packages/core/src/care.ts",
+      "bytes": 9953,
+      "sha256": "f2247e78ffb654123fea0124af637d884f09fecbff203c2ff86316793fa8a8a3"
+    },
+    {
+      "path": "packages/core/src/carts-instacart.ts",
+      "bytes": 4278,
+      "sha256": "681d92e7d105490df81c1f8fc3c5bfdd55294f720f167b8917695b3dfdbd5049"
+    },
+    {
+      "path": "packages/core/src/carts-kroger.ts",
+      "bytes": 15630,
+      "sha256": "bd16f45e5a561ec28925566e00006c6f9fcff4ead2aad4c7db5111470087d5f3"
+    },
+    {
+      "path": "packages/core/src/carts.ts",
+      "bytes": 5273,
+      "sha256": "e491cd7c5915d767e4dbbfb7ca590d6726a0a28fc8bbd1743c16d1902dd54700"
+    },
+    {
+      "path": "packages/core/src/cli.ts",
+      "bytes": 3405,
+      "sha256": "38f4083843caee94f07b5e8620737d2a89ba0b2968b894b89678b7795ffbdb91"
+    },
+    {
+      "path": "packages/core/src/cook.ts",
+      "bytes": 9389,
+      "sha256": "078c73dcd58ae2ec684e94684e3123135d6f48041569f708ff82549ec18dfafd"
+    },
+    {
+      "path": "packages/core/src/credits.ts",
+      "bytes": 8287,
+      "sha256": "029bd71cf514341abd7a2182e06c69deee0717052eb27dc98e3b514a2a60c24d"
+    },
+    {
+      "path": "packages/core/src/dietary.ts",
+      "bytes": 6120,
+      "sha256": "4825fbb98c55f35c8f51c0c3d487f8bdca80c3a236e664b141142a54e7096c4d"
+    },
+    {
+      "path": "packages/core/src/editor.ts",
+      "bytes": 10535,
+      "sha256": "7aeb2f27d5debfab1fe3f31b862a291cf547e1d0ff5327f3e5703bd9835ee366"
+    },
+    {
+      "path": "packages/core/src/export.ts",
+      "bytes": 7034,
+      "sha256": "79b3dc4c2c4eb05dc9ca17b9a7a3a2ff194797cbf9a9ac159167a08c3bc63a55"
+    },
+    {
+      "path": "packages/core/src/extract.ts",
+      "bytes": 10445,
+      "sha256": "0e3e218393a7745b8e1155923b78c63c1552d27ad3dd1445267c06d9ddf45d62"
+    },
+    {
+      "path": "packages/core/src/format.ts",
+      "bytes": 1040,
+      "sha256": "31886687e7d1fff827a8b3c9fab0cdaa81be43ec8846585cbb4aa2a1c38aee7b"
+    },
+    {
+      "path": "packages/core/src/friends.ts",
+      "bytes": 4391,
+      "sha256": "6fa77ff296d83ddaafd4c3533f5dec994c8c236f72c32838d4348d20c3752454"
+    },
+    {
+      "path": "packages/core/src/ids.ts",
+      "bytes": 1112,
+      "sha256": "62dc9d0087a3ddb62d05e4b7bb733ed3e71d9ac09b15639a185c781808cc226b"
+    },
+    {
+      "path": "packages/core/src/import-client.ts",
+      "bytes": 2953,
+      "sha256": "3b8fb3173f1634edaee3415b553e473ea946b00d5dafd06144c90533406933ac"
+    },
+    {
+      "path": "packages/core/src/index.ts",
+      "bytes": 1274,
+      "sha256": "1de191909a2d5746f0c8383e9eac1caf40e60ef6fadebca4541d8f631061596c"
+    },
+    {
+      "path": "packages/core/src/ingest.ts",
+      "bytes": 7396,
+      "sha256": "2f1a7a1415616c1a3ac8e353ea56427d2bb39d1f27951a6416478e67a0110625"
+    },
+    {
+      "path": "packages/core/src/library.ts",
+      "bytes": 1814,
+      "sha256": "6caa2f790c8c0f549d17b47cb8640f1ea0ad91d14f370e4de6cb77de35589efd"
+    },
+    {
+      "path": "packages/core/src/nutrition-usda.ts",
+      "bytes": 9609,
+      "sha256": "75d56ee303db2e9a121d773055cc6a41a47aa3e5aac00f8592a7ccf19bc33210"
+    },
+    {
+      "path": "packages/core/src/nutrition.ts",
+      "bytes": 9527,
+      "sha256": "ecf10c5944299d85ddfdc72797e32c15acd149e3efb7a5ee3fa8560c0b64a972"
+    },
+    {
+      "path": "packages/core/src/pairing.ts",
+      "bytes": 3257,
+      "sha256": "fa6d05c4a888888b016620a87ed7f9c9ddd0a8c457b38990142f6e7ac4204428"
+    },
+    {
+      "path": "packages/core/src/pantry-query.ts",
+      "bytes": 6095,
+      "sha256": "9b2870114ba7e982f9f5968fc9ef0fc19a18eb05e7dce99881e2cd20c11bfce4"
+    },
+    {
+      "path": "packages/core/src/pantry.ts",
+      "bytes": 6040,
+      "sha256": "de8dac31a9dceeb956486bbffcdceba49275f48487ac18678cb3485cf80c2ffe"
+    },
+    {
+      "path": "packages/core/src/plan.ts",
+      "bytes": 5458,
+      "sha256": "1996ea0944b93e465605049b9456f4be7db67732a4cd38e05cf281396ea02ffd"
+    },
+    {
+      "path": "packages/core/src/recipe.ts",
+      "bytes": 7438,
+      "sha256": "29e246b60b1db085c624a58cb47940b7faa60edafb8ad3fb8a5faae7a544fe32"
+    },
+    {
+      "path": "packages/core/src/secret-box.ts",
+      "bytes": 4993,
+      "sha256": "a8b4991fe35478db602d4fcff065a66349954fdc620c27efc4192bdda9c4071c"
+    },
+    {
+      "path": "packages/core/src/sharing.ts",
+      "bytes": 2910,
+      "sha256": "5f439ff2de2dbf2806791df91e7654e54d16482d57eb73627a0e7612fbf0b0e1"
+    },
+    {
+      "path": "packages/core/src/shelves.ts",
+      "bytes": 4996,
+      "sha256": "199c5b40e2a0c2bae697013e985c2304b8a66b28336d109354a4f1c95e11df3c"
+    },
+    {
+      "path": "packages/core/src/shopping.ts",
+      "bytes": 7812,
+      "sha256": "1ac50aba656c1865ceb7e7b6296bee215fd3c4a2e672a6e2b9d3f0eb5fc27122"
+    },
+    {
+      "path": "packages/core/src/source-kind.ts",
+      "bytes": 1270,
+      "sha256": "144362e542c9c924a3463b92050631dec8e9455f50958330d330e735de6c8028"
+    },
+    {
+      "path": "packages/core/src/sources/article.ts",
+      "bytes": 2575,
+      "sha256": "679375476ec6da8a6e4ea71fbe9786cb03f90be522f905ea8a4dba6433e0b0da"
+    },
+    {
+      "path": "packages/core/src/sources/fetch.ts",
+      "bytes": 1935,
+      "sha256": "3dd190540cd3aaede65e0f09d380f2740ade235f5feb3e444373f4ea5ac72eb6"
+    },
+    {
+      "path": "packages/core/src/sources/index.ts",
+      "bytes": 8438,
+      "sha256": "d3852910aa5d4a1b4120ab05354fd76e3c2df713fcd90782449fdb1ce7b9a488"
+    },
+    {
+      "path": "packages/core/src/sources/jsonld.ts",
+      "bytes": 9928,
+      "sha256": "a529213a4a84444d1276bd025cbe65a05a06564e7669b8fbb07fd803386ffc8d"
+    },
+    {
+      "path": "packages/core/src/sources/social.ts",
+      "bytes": 2268,
+      "sha256": "ea772934484eadd7949b2b0f05187613ff7bf4b5c3d3176e8a54a15b5f3cc9b7"
+    },
+    {
+      "path": "packages/core/src/sources/transcribe.ts",
+      "bytes": 9067,
+      "sha256": "892a529ece7a926bc95099ec8845b6bac3562f3d41cfb7904f5466a65dab8cfb"
+    },
+    {
+      "path": "packages/core/src/sources/types.ts",
+      "bytes": 1876,
+      "sha256": "7b1a45b20829190e062ae271a43d67c1b0dc0e786158e32d44972ecae57bdf04"
+    },
+    {
+      "path": "packages/core/src/sources/url-guard.ts",
+      "bytes": 3017,
+      "sha256": "4edb55dc5e94c0049561b6120079f75f2d8d2e39e5b50cf04f410df87495281c"
+    },
+    {
+      "path": "packages/core/src/sources/youtube.ts",
+      "bytes": 5458,
+      "sha256": "aa77b738e9aebec8854f596c0b7011f5b5937843b877e06cc48e6d9142e09b0d"
+    },
+    {
+      "path": "packages/core/src/staples.ts",
+      "bytes": 1668,
+      "sha256": "735d882faaaf215cec2361d227799db72e228a6d6b54c8e22aed5f679f7bb8a3"
+    },
+    {
+      "path": "packages/core/src/step-ingredients.ts",
+      "bytes": 8507,
+      "sha256": "d928a7abb0806202ea4da38c6cd23e3594e73051783ec0e20e51aac7010b96db"
+    },
+    {
+      "path": "packages/core/src/template.ts",
+      "bytes": 1605,
+      "sha256": "07084664c15ad896fcc8b9e432a679f1c1353938be51284d72158c06bb1d8926"
+    },
+    {
+      "path": "packages/core/src/units-convert.ts",
+      "bytes": 3178,
+      "sha256": "6af7e07338ac3c751536a7d1d4a17fd94820507ee9de52df64f241e39deb6210"
+    },
+    {
+      "path": "packages/core/src/units.ts",
+      "bytes": 11869,
+      "sha256": "864c1aa599e425a2fbd5f8acd48aee54fae50ed0c275f950cd91b6febf9db89c"
+    },
+    {
+      "path": "packages/core/tsconfig.json",
+      "bytes": 139,
+      "sha256": "a3830a46473abcf52088718c782b6fbe6fdf8a711f8a4ea3428acafd78d1b5d6"
+    },
+    {
+      "path": "packages/db/package.json",
+      "bytes": 1862,
+      "sha256": "fd2049ad8413d92a499af4c740f69da109523ce3a1170e3ce5e8464ab6136770"
+    },
+    {
+      "path": "packages/db/src/client.ts",
+      "bytes": 1530,
+      "sha256": "2c7a5198276314ddf58f81d30dd2c544559393e5f393ed23ab442fbe59b4040c"
+    },
+    {
+      "path": "packages/db/src/connection.ts",
+      "bytes": 1816,
+      "sha256": "e31a30331fa2a8333ac36bac59c2170f7d5855fb4cd715c4946a6b21eed8341c"
+    },
+    {
+      "path": "packages/db/src/crypto.ts",
+      "bytes": 5359,
+      "sha256": "d3a42562782efb01c28d67924e8933973994d2947b432ded71f0b4b9c86c5d45"
+    },
+    {
+      "path": "packages/db/src/index.ts",
+      "bytes": 879,
+      "sha256": "ff33bcb7d02287a02dfbc37c793737f8e91955c6690a6930912ba145e77ff9fd"
+    },
+    {
+      "path": "packages/db/src/loadEnv.ts",
+      "bytes": 1547,
+      "sha256": "4d7a61c4da1882ab1731621b4e8438b38255d54d8ace0815b86ebe176ca222b1"
+    },
+    {
+      "path": "packages/db/src/migrate.ts",
+      "bytes": 1796,
+      "sha256": "84b85824d91cff680530ffafd36fa82e167b46b43bdbeaaecf05ae9d006d62ae"
+    },
+    {
+      "path": "packages/db/src/queries/admin.ts",
+      "bytes": 8025,
+      "sha256": "1befe61a3a4e88924ca3538557ba02f03cf037358b6a6119b73d6914b4be074b"
+    },
+    {
+      "path": "packages/db/src/queries/billing.ts",
+      "bytes": 7198,
+      "sha256": "c75c8da57bc21fd8930e75668935a370235adb2a5d2fa7bbbbe35e01470d5e19"
+    },
+    {
+      "path": "packages/db/src/queries/credits.ts",
+      "bytes": 5841,
+      "sha256": "5972643b445b15614cb20ec9207279340c70c1666cc44db57dcf0b1a73d940ff"
+    },
+    {
+      "path": "packages/db/src/queries/discover.ts",
+      "bytes": 8499,
+      "sha256": "c3e32b6888076ebd133688e08e3630d3b460f4e38e438edb98a7e694aa73c65d"
+    },
+    {
+      "path": "packages/db/src/queries/friends.ts",
+      "bytes": 11788,
+      "sha256": "2c4a15dcf6a23fdae7510aaaea188df093fd2180eb7f8ee23ed6deb416c3f592"
+    },
+    {
+      "path": "packages/db/src/queries/grocery.ts",
+      "bytes": 3296,
+      "sha256": "1088aecbe93be1821f68dffd5d0dbf98529beea6ac2d8490b11bc8f58154eb3d"
+    },
+    {
+      "path": "packages/db/src/queries/pantry.ts",
+      "bytes": 7763,
+      "sha256": "40fe10ba99b45010216c41ea2c697d1a33ccc9d00f556f16a9ecbf0fbf0031c9"
+    },
+    {
+      "path": "packages/db/src/queries/plan.ts",
+      "bytes": 5353,
+      "sha256": "55e43538b7774bf1bae061d344343ee693314a74ec92396483b27b314f392fa7"
+    },
+    {
+      "path": "packages/db/src/queries/ratings.ts",
+      "bytes": 2198,
+      "sha256": "c5e7742cd27a270305eca320334b968135ba0577ff3c0a3190537ce31954e8c9"
+    },
+    {
+      "path": "packages/db/src/queries/recipes.ts",
+      "bytes": 18587,
+      "sha256": "f4434292050fe10927807d4d9f0c44d1067362bf6b6cecc9bfce76253912b18f"
+    },
+    {
+      "path": "packages/db/src/queries/sharing.ts",
+      "bytes": 8110,
+      "sha256": "450c1549268f8c8e60af45736979145eee1af60ed73c41ca08db948ad2efbbf1"
+    },
+    {
+      "path": "packages/db/src/queries/shelves.ts",
+      "bytes": 11436,
+      "sha256": "acaf7fabd092cad23dd6d5682e9f0ed5a75fde7d1ca070efb5d85253c2231cbc"
+    },
+    {
+      "path": "packages/db/src/queries/shopping.ts",
+      "bytes": 10197,
+      "sha256": "1c78e37ec1b73937b64445a76b1fefcc643461cc92095f656e9eb1f6b3da60a7"
+    },
+    {
+      "path": "packages/db/src/queries/suggestions.ts",
+      "bytes": 6111,
+      "sha256": "5ac410eb5709a9c2bb7723a04735e384d11af6f59fc30d4de9b7446764e5e497"
+    },
+    {
+      "path": "packages/db/src/queries/templates.ts",
+      "bytes": 8366,
+      "sha256": "00c67ab6ee8750f8c4cc0ebace4fcb288a4334f8bddfdac932df008a179057ea"
+    },
+    {
+      "path": "packages/db/src/queries/users.ts",
+      "bytes": 5434,
+      "sha256": "9d0e4125646729a26b3727515a8b50f2539bdcf2b42590390c2f9a286f7f2189"
+    },
+    {
+      "path": "packages/db/src/schema.ts",
+      "bytes": 28733,
+      "sha256": "e71e24b77cde02071381ed519354b2dbc1a7cab0656cdfe7acc2840db93703e6"
+    },
+    {
+      "path": "packages/db/tsconfig.json",
+      "bytes": 160,
+      "sha256": "2101e9be8e141e6aa688a4d63102e780e4962cc19734a14c51052d863baacc29"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "bytes": 399848,
+      "sha256": "90d8b177b1242842f2c8797c4fad9257dfec28a00a0216e0aa398f929391c6c3"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "bytes": 1251,
+      "sha256": "a924e6c36b593f2146a59c6e2412684b34045df34473e4b07b129a32f81470c7"
+    },
+    {
+      "path": "scripts/build-care-offline.mjs",
+      "bytes": 2666,
+      "sha256": "bc8758847e90304ac8ff7a5f2c4e8da978bdc19b9dd9f555c03dd2fa74a3fbbc"
+    },
+    {
+      "path": "scripts/check-woodland-library.mjs",
+      "bytes": 5823,
+      "sha256": "a03200ff74fdd1e51e2c76d1667843b67c7010c36abc395cdfea00fc1b0d3bdc"
+    },
+    {
+      "path": "scripts/encode-woodland-assets.mjs",
+      "bytes": 2269,
+      "sha256": "41c55040ff1b3441aaa053da741edb3e58fdede48aa5af8f884fb98d6ea73f4a"
+    },
+    {
+      "path": "tsconfig.base.json",
+      "bytes": 397,
+      "sha256": "ac04cf0c59ac5f7b9a2f60d535eb7562b67c054c97341069336d438acbee741f"
+    }
+  ],
+  "artifact": [
+    {
+      "path": "apps/web/.next-build/BUILD_ID",
+      "bytes": 21,
+      "sha256": "4ffb68c68d87abb8a28f0869767b8b9b541d28b65376bceca94df37e762abef5"
+    },
+    {
+      "path": "apps/web/.next-build/app-build-manifest.json",
+      "bytes": 28076,
+      "sha256": "6d0d7f4a041a3972123fa43a34218a0355de8e8c6297ac6d26a72dcfbd370db2"
+    },
+    {
+      "path": "apps/web/.next-build/app-path-routes-manifest.json",
+      "bytes": 3799,
+      "sha256": "850259ea7f335adc51bd5190cd8cc207766d7eadbaf1c5dd95551152bcf5cc59"
+    },
+    {
+      "path": "apps/web/.next-build/build-manifest.json",
+      "bytes": 996,
+      "sha256": "35d02f892acc931193dddded5df4b91d64d492cd6d043e7e2f7a761494d7ecf3"
+    },
+    {
+      "path": "apps/web/.next-build/diagnostics/build-diagnostics.json",
+      "bytes": 94,
+      "sha256": "7791dabafe22e1fbe99d0207b1f5eeb12605b298898125bcee0aee4a4d81381c"
+    },
+    {
+      "path": "apps/web/.next-build/diagnostics/framework.json",
+      "bytes": 38,
+      "sha256": "cb1158fb9e0967390fab67ff99c60e5f5ecd73f7e2f77a510c02e4912ab33780"
+    },
+    {
+      "path": "apps/web/.next-build/export-marker.json",
+      "bytes": 111,
+      "sha256": "82356527db218adb95bd1eca0ede6f3391165b38b22d667d064e62e6b539d974"
+    },
+    {
+      "path": "apps/web/.next-build/images-manifest.json",
+      "bytes": 1127,
+      "sha256": "c6231035f345f8dc8e6264852cab30ff88508479bbcec2a31cbea8b3b88af927"
+    },
+    {
+      "path": "apps/web/.next-build/next-minimal-server.js.nft.json",
+      "bytes": 14736,
+      "sha256": "f8c94e82441ada20f0194f8b2b3d7614c1aa12f4abb51d42fd862ff133c6b15b"
+    },
+    {
+      "path": "apps/web/.next-build/next-server.js.nft.json",
+      "bytes": 93944,
+      "sha256": "fe5f62a3df25bbc43b9590e79e0171d851cff3d1785e06bef427d3994def37f3"
+    },
+    {
+      "path": "apps/web/.next-build/package.json",
+      "bytes": 20,
+      "sha256": "091a04fa67c7907b98e106fcff8b964e13129754fce72d24f3025b97c4887fa3"
+    },
+    {
+      "path": "apps/web/.next-build/prerender-manifest.json",
+      "bytes": 4241,
+      "sha256": "e85fbc215356fbbf2e6a7be893df37d43c9caeb8a5cf58097abbf93735ce870f"
+    },
+    {
+      "path": "apps/web/.next-build/react-loadable-manifest.json",
+      "bytes": 498,
+      "sha256": "2f26dbaa7d39da11cfc97f471dc224cd5d431ab176d9231046c54df9dc4bb7ec"
+    },
+    {
+      "path": "apps/web/.next-build/required-server-files.json",
+      "bytes": 9558,
+      "sha256": "b790faeb8f08f982c4c03036eacad090fe55e9f51b1ddb64937ff601a67a7cc6"
+    },
+    {
+      "path": "apps/web/.next-build/routes-manifest.json",
+      "bytes": 11389,
+      "sha256": "9163d633035cecb8e060a9d6613efb4302bc83dedea45393d19b3ba3aa8f55d3"
+    },
+    {
+      "path": "apps/web/.next-build/server/app-paths-manifest.json",
+      "bytes": 4690,
+      "sha256": "101d08d893bf26fae78e8b86a0b06b3b84fa60f0b34341a95f82217651caff8c"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/_not-found.html",
+      "bytes": 11298,
+      "sha256": "a658bceded565efe0fe93ad749e8d84a49bfdcde0d839a9e15f638bebc4de454"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/_not-found.meta",
+      "bytes": 207,
+      "sha256": "d2b0809d85d7e8932a2288cdcddbf8886f4c8c5a1a5c0a2414e63c3f5f5ef600"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/_not-found.rsc",
+      "bytes": 6080,
+      "sha256": "769aaa5a2318666d1c0968679b12702cb0de379b62038f44eb9ad7fece1ffceb"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/_not-found/page.js",
+      "bytes": 17029,
+      "sha256": "908c486de6cda08fb690be0de70344fff2365de8d391f90231b1226ae15c9d59"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/_not-found/page.js.nft.json",
+      "bytes": 8419,
+      "sha256": "4456a8ec8fa097da0e6f6e8a319f635d3619a93a59dd5a5bb257a352d0806cea"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/_not-found/page_client-reference-manifest.js",
+      "bytes": 31691,
+      "sha256": "a3a16285b0f5de7ad830d49916896e3ab2a36400b8fb2a0a4cd3a27270ee6245"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/imports/failures/route.js",
+      "bytes": 12953,
+      "sha256": "7d4074d4a1a6b4e26fb575f2b1a02758db76d2a2f658b871ce4fcb79eb820ab6"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/imports/failures/route.js.nft.json",
+      "bytes": 9082,
+      "sha256": "30f16b439983cf0ce3568820ea86ba6d5097f6d6718a8bef6c1ea06a1dd62c6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/imports/failures/route_client-reference-manifest.js",
+      "bytes": 31728,
+      "sha256": "80137d996c62b30128cdded787acd9958c3236acdb12d619f34edeb126656d39"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/reviews/hide/route.js",
+      "bytes": 12994,
+      "sha256": "7bf2f1aee1a302bb4ad7ba27224bbf5abd54e9a2fdd0bf1a1ec257023f3ce5b1"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/reviews/hide/route.js.nft.json",
+      "bytes": 9082,
+      "sha256": "30f16b439983cf0ce3568820ea86ba6d5097f6d6718a8bef6c1ea06a1dd62c6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/reviews/hide/route_client-reference-manifest.js",
+      "bytes": 31822,
+      "sha256": "6fbc66fc9730705c19e24abb93b99f046b6b50c2f8f0425f2c705166bef4c184"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/reviews/route.js",
+      "bytes": 12789,
+      "sha256": "3a972ac04a36074a426a6d9bd1755c0c9f84a8c80a16102b90212ac9d0094d8b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/reviews/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/reviews/route_client-reference-manifest.js",
+      "bytes": 31709,
+      "sha256": "7e148f2efc77bcc77daa6d9d585952d2c3f06c0a1dc27ac4cc696416b9e476d6"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/billing/route.js",
+      "bytes": 12965,
+      "sha256": "ed840358c34b57f405b4e4ebf9e9a373272804d5067be8dd280b49f9b7627de2"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/billing/route.js.nft.json",
+      "bytes": 9301,
+      "sha256": "9bcf14094fe72738055fce7eae64eab29851429f8d091e6805b43cb8202aa714"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/billing/route_client-reference-manifest.js",
+      "bytes": 31939,
+      "sha256": "269e0d30f25dc08686cf659e714658a2bd1160578dbd94a002f9343f41b2dc2d"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/credits/route.js",
+      "bytes": 13139,
+      "sha256": "dd32f7dceac2b3477dfc6cb35ca96cfd719a9bd11eac25e8ac887c77f657eaa9"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/credits/route.js.nft.json",
+      "bytes": 9301,
+      "sha256": "9bcf14094fe72738055fce7eae64eab29851429f8d091e6805b43cb8202aa714"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/credits/route_client-reference-manifest.js",
+      "bytes": 31939,
+      "sha256": "644e9fadc8f4e285be9a3137e8039bb5fbc7aa9fdd67071c4344a6c5c5aad098"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/imports/route.js",
+      "bytes": 12920,
+      "sha256": "fba861528812c53c6d538f8af043e154b3660e6e95d117d81f66c101ba4b02ce"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/imports/route.js.nft.json",
+      "bytes": 9301,
+      "sha256": "9bcf14094fe72738055fce7eae64eab29851429f8d091e6805b43cb8202aa714"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/imports/route_client-reference-manifest.js",
+      "bytes": 31939,
+      "sha256": "d3ce1171aa8e0f22edfcd3c2d865f361c48e28b993b67764782d868145162f73"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/refund/route.js",
+      "bytes": 15861,
+      "sha256": "fce2b82a9a4444607d90194f29aa2bec8f42e0458586a0f7f5b75a1eb9a6fb9f"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/refund/route.js.nft.json",
+      "bytes": 9301,
+      "sha256": "9bcf14094fe72738055fce7eae64eab29851429f8d091e6805b43cb8202aa714"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/refund/route_client-reference-manifest.js",
+      "bytes": 31937,
+      "sha256": "1c08ab7fb3be6adc7b19cea04214be374397b5b197a19b2b61cb7db881aafa6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/route.js",
+      "bytes": 12905,
+      "sha256": "28a563bbf9248b8896bed769409f873a0b66857f16baafe3ae02d09eaf40e231"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/route.js.nft.json",
+      "bytes": 9082,
+      "sha256": "30f16b439983cf0ce3568820ea86ba6d5097f6d6718a8bef6c1ea06a1dd62c6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/route_client-reference-manifest.js",
+      "bytes": 31816,
+      "sha256": "c5784f90ddc1feff307cd89ae4de2c590bb77a9aed66182c57aae138b51e88fe"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/status/route.js",
+      "bytes": 13083,
+      "sha256": "b02ea1f9e1870300e642d03ce992b4775858a2bde4a7fc2ab23aedf9f08a9761"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/status/route.js.nft.json",
+      "bytes": 9301,
+      "sha256": "9bcf14094fe72738055fce7eae64eab29851429f8d091e6805b43cb8202aa714"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/status/route_client-reference-manifest.js",
+      "bytes": 31937,
+      "sha256": "f789ff9329a343849317d06b0e96dfec6882efbc160c1df53f4940b41b8a9c88"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/tier/route.js",
+      "bytes": 13087,
+      "sha256": "6e64e25c39766c4e0a43bd06b6b791456edcbca3f334e4e09bca2e5c9d010a1d"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/tier/route.js.nft.json",
+      "bytes": 9301,
+      "sha256": "9bcf14094fe72738055fce7eae64eab29851429f8d091e6805b43cb8202aa714"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/[id]/tier/route_client-reference-manifest.js",
+      "bytes": 31933,
+      "sha256": "1b4354ecfa708ada2b5fe796c27c881ad205085087e4e0a31d0786732eab4c87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/route.js",
+      "bytes": 12843,
+      "sha256": "788859057615ecb5f5d5b540ae0bf9caadb0b9561c7e0aa01b3680c3096e103e"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/admin/users/route_client-reference-manifest.js",
+      "bytes": 31705,
+      "sha256": "ab16dc9dba57d2e2ad09516d8b228d11c84ecd5ed90450f9b13469500190a00d"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/billing/checkout/route.js",
+      "bytes": 14780,
+      "sha256": "6d97aa8fb4480b00929abef2ae4cc7b785ac232fb8a3f960245e343e42d9ed56"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/billing/checkout/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/billing/checkout/route_client-reference-manifest.js",
+      "bytes": 31715,
+      "sha256": "671b6ba688e4c2766cca6d44964bcfc8a1d1a5093f688f235ec4d00b6c81ca0c"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/billing/portal/route.js",
+      "bytes": 14047,
+      "sha256": "6bb2a68e5143e0d5091b8b7f8d345406fb43704dd8fbb860b2cc610e083e4f5d"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/billing/portal/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/billing/portal/route_client-reference-manifest.js",
+      "bytes": 31711,
+      "sha256": "aa38b60d9c3d6db233dd6772581b83207dde63ac8ef2de1aa78292fc77fd765a"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/billing/webhook/route.js",
+      "bytes": 14736,
+      "sha256": "1ee24cb6d632045ec836a0ddd611557baec5e4f38852997500927435242f4f42"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/billing/webhook/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/billing/webhook/route_client-reference-manifest.js",
+      "bytes": 31713,
+      "sha256": "565b73580be1e61cc9f571c3a0bbbbe4a8f3c0a1009edf2b820167ff4a2b420d"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/credits/route.js",
+      "bytes": 12153,
+      "sha256": "4a40420658509097e28140ef155dcda9851de5dcdb746f3e70eab6b95a5675c7"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/credits/route.js.nft.json",
+      "bytes": 8644,
+      "sha256": "c4b21f86fefc797e0c1d7d33ec81137665a7aa52f286979a33ae6f5580df8ae1"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/credits/route_client-reference-manifest.js",
+      "bytes": 31696,
+      "sha256": "57b54898a8f06f4886b9a5f0c70829e9714b9cd6f040657d1c4efd8bfd15a3b1"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/discover/route.js",
+      "bytes": 12570,
+      "sha256": "d9da38e3a4f8d2d1e10fc958ad7380c393a989e31820bd4095f23961919a5a04"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/discover/route.js.nft.json",
+      "bytes": 8644,
+      "sha256": "c4b21f86fefc797e0c1d7d33ec81137665a7aa52f286979a33ae6f5580df8ae1"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/discover/route_client-reference-manifest.js",
+      "bytes": 31698,
+      "sha256": "3123ac27c8b12a64333bf1f534e7afc870b7ceb6f8996804a1d70d0de4c818c3"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/export/route.js",
+      "bytes": 21387,
+      "sha256": "8651bd5adb23cb0a50b1d2f085b471434c8c0e5d5ef576502bcb8f32bf2cfe0f"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/export/route.js.nft.json",
+      "bytes": 8644,
+      "sha256": "c4b21f86fefc797e0c1d7d33ec81137665a7aa52f286979a33ae6f5580df8ae1"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/export/route_client-reference-manifest.js",
+      "bytes": 34619,
+      "sha256": "a1e46077df7b2447b981223aa474139681a4a81a73ae889ac993605cacc4a6e3"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/feed/route.js",
+      "bytes": 12071,
+      "sha256": "485964f2e084a2887a03b9f860e96b48efde27284d9c40a69f544e0bcef8e264"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/feed/route.js.nft.json",
+      "bytes": 8644,
+      "sha256": "c4b21f86fefc797e0c1d7d33ec81137665a7aa52f286979a33ae6f5580df8ae1"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/feed/route_client-reference-manifest.js",
+      "bytes": 31690,
+      "sha256": "65a36638ca2bb581d3f0f2b4c9d9a0b5fffd3d813575109cd0c818ae5f693e00"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/friends/[id]/allergens/route.js",
+      "bytes": 12371,
+      "sha256": "1d149e80a7e9b7066dc818b78383308830477b8c91619ad4df86dad9c193554b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/friends/[id]/allergens/route.js.nft.json",
+      "bytes": 9082,
+      "sha256": "30f16b439983cf0ce3568820ea86ba6d5097f6d6718a8bef6c1ea06a1dd62c6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/friends/[id]/allergens/route_client-reference-manifest.js",
+      "bytes": 31924,
+      "sha256": "5aeede0152395496d72d8464ef63fa2b7b71b9dba4dad9c8f90d67450a806a91"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/friends/[id]/route.js",
+      "bytes": 12350,
+      "sha256": "c366eb3be6c259dbd176d2461e20997ff73843c5fc9ea618b7c26cb2ed90ec55"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/friends/[id]/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/friends/[id]/route_client-reference-manifest.js",
+      "bytes": 31802,
+      "sha256": "42fd66ca2d75c9dc516081e28b49b1a3ce21024ff07c3530c92025fc80cc3dd3"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/friends/route.js",
+      "bytes": 12218,
+      "sha256": "bd400b9d7807ede2bc2603df127351f70777e99bff5ba36aaf5b4226ed1f8424"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/friends/route.js.nft.json",
+      "bytes": 8644,
+      "sha256": "c4b21f86fefc797e0c1d7d33ec81137665a7aa52f286979a33ae6f5580df8ae1"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/friends/route_client-reference-manifest.js",
+      "bytes": 31696,
+      "sha256": "b0941c406183ea509c3df5ddb69893d5b7c829c56e8921848e25076cf930f489"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/grocery/kroger/callback/route.js",
+      "bytes": 13493,
+      "sha256": "24bad3abfda1432ed10848facda93df0a8ce80a2bb6a8321bf152185702564f3"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/grocery/kroger/callback/route.js.nft.json",
+      "bytes": 9082,
+      "sha256": "30f16b439983cf0ce3568820ea86ba6d5097f6d6718a8bef6c1ea06a1dd62c6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/grocery/kroger/callback/route_client-reference-manifest.js",
+      "bytes": 31833,
+      "sha256": "c4567fb81aaba277a32853488594e1b2131385dcc479c1a67c69b3c1cea78c3b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/grocery/kroger/connect/route.js",
+      "bytes": 13207,
+      "sha256": "4e3cb34cb31d6d01c9563881813651bab5050ccef91e32e878ba3344a38996d2"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/grocery/kroger/connect/route.js.nft.json",
+      "bytes": 9082,
+      "sha256": "30f16b439983cf0ce3568820ea86ba6d5097f6d6718a8bef6c1ea06a1dd62c6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/grocery/kroger/connect/route_client-reference-manifest.js",
+      "bytes": 31831,
+      "sha256": "592f2b0f90bc46db57e9b81ad3beaed524ce8fda96961c9b6099054eda9126b8"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/grocery/kroger/route.js",
+      "bytes": 13465,
+      "sha256": "166136d342a7329de6a1f02d509524500a1f0953296b98ec1ac2382408c47936"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/grocery/kroger/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/grocery/kroger/route_client-reference-manifest.js",
+      "bytes": 31711,
+      "sha256": "cffc820507dd4283fa9645757fd6fd3cc624e9ee5020432543219f7085e9a717"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/import/route.js",
+      "bytes": 13837,
+      "sha256": "cb04f1d8160c8df9b26b9bff06c112f1b8cf0d9f76651a1da5e9b57347e31a44"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/import/route.js.nft.json",
+      "bytes": 8644,
+      "sha256": "c4b21f86fefc797e0c1d7d33ec81137665a7aa52f286979a33ae6f5580df8ae1"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/import/route_client-reference-manifest.js",
+      "bytes": 31694,
+      "sha256": "6cb593c1dee1a4a5b5cb2092c86439e7927e643307a74cba4a9065bf060a0a12"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/list/cart/route.js",
+      "bytes": 13381,
+      "sha256": "e575ccf447943e8f4b98eadedeb230f037c5d7eafba92eaed7137802334d8c92"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/list/cart/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/list/cart/route_client-reference-manifest.js",
+      "bytes": 31793,
+      "sha256": "c50dee8b2a73d74ffca29cf48819722690b5ef295f326b49b8dde391252753d8"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/list/items/[id]/route.js",
+      "bytes": 12398,
+      "sha256": "6fd197d1ed15e8f3eb23bfd084277f2f352d18e99415807feee4fe457893c28f"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/list/items/[id]/route.js.nft.json",
+      "bytes": 9082,
+      "sha256": "30f16b439983cf0ce3568820ea86ba6d5097f6d6718a8bef6c1ea06a1dd62c6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/list/items/[id]/route_client-reference-manifest.js",
+      "bytes": 31806,
+      "sha256": "57ad533ee4f2e73f8ab09d5e248d034901ad00d8ad988e5b8146cb0b8da0d9ad"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/list/route.js",
+      "bytes": 12469,
+      "sha256": "20db7570a71c63618a7d8e1b5fedbec33c858b36de48da4d23a6777900f4078c"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/list/route.js.nft.json",
+      "bytes": 8644,
+      "sha256": "c4b21f86fefc797e0c1d7d33ec81137665a7aa52f286979a33ae6f5580df8ae1"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/list/route_client-reference-manifest.js",
+      "bytes": 31690,
+      "sha256": "4ae15625cfe6f574c436e2753adfeb8e0e279bb8998fbc63917cfbb684bf06e0"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/pantry/reindex/route.js",
+      "bytes": 12150,
+      "sha256": "af56d6155d9a4faebfc5544a7dbb5fe28549bf279dd658de545c9ade89a14d0a"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/pantry/reindex/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/pantry/reindex/route_client-reference-manifest.js",
+      "bytes": 31805,
+      "sha256": "5d14b05275407700c16d683ebdcfac169b43ad266c116733ac0b4e5aa1baa4d9"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/pantry/route.js",
+      "bytes": 12401,
+      "sha256": "e4dca260a785a63d5b91d38a78e0fda025a41ad39469552a4fd8d4fc4357a372"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/pantry/route.js.nft.json",
+      "bytes": 8644,
+      "sha256": "c4b21f86fefc797e0c1d7d33ec81137665a7aa52f286979a33ae6f5580df8ae1"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/pantry/route_client-reference-manifest.js",
+      "bytes": 31694,
+      "sha256": "3cd3cc01a05adcaa5b2896f95eb7fb56d5757b3f9c5b4bcacad8ebf80d7d0c8b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/pantry/search/route.js",
+      "bytes": 12586,
+      "sha256": "7dc9ae3fe722648b55e72357b2b06899f4b64bdea160999f492b054da0db2b11"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/pantry/search/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/pantry/search/route_client-reference-manifest.js",
+      "bytes": 31803,
+      "sha256": "74dbc9644187088b7183b12d6d1f2ae860a2be58369adb933713248fc1d98c3d"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/plan/route.js",
+      "bytes": 12954,
+      "sha256": "9386c210a9274a8a6035f26452b9918d793bad309bbf2848a4d703282949a2b8"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/plan/route.js.nft.json",
+      "bytes": 8644,
+      "sha256": "c4b21f86fefc797e0c1d7d33ec81137665a7aa52f286979a33ae6f5580df8ae1"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/plan/route_client-reference-manifest.js",
+      "bytes": 31690,
+      "sha256": "393ccdfa153972508d0b2fdc33da686553fc52ee3b296bac525ab9d6a7fca4e3"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/plan/suggestions/[id]/route.js",
+      "bytes": 12277,
+      "sha256": "5eaa0eaa0a0ae171d588425ec224bebe30f33797af3dabe40b61fcacfee55a4e"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/plan/suggestions/[id]/route.js.nft.json",
+      "bytes": 9082,
+      "sha256": "30f16b439983cf0ce3568820ea86ba6d5097f6d6718a8bef6c1ea06a1dd62c6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/plan/suggestions/[id]/route_client-reference-manifest.js",
+      "bytes": 31923,
+      "sha256": "79ae2466792823c8b192e25b9841ba17aab61fbf9fc6822ca0ddeaf2ca0e34a1"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/plan/suggestions/route.js",
+      "bytes": 12386,
+      "sha256": "340cd959492268caa6d4ff8ba5ba28dc91d515880d3424ed117d6892f9fd8417"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/plan/suggestions/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/plan/suggestions/route_client-reference-manifest.js",
+      "bytes": 31807,
+      "sha256": "ba0eab50bf17c09792c1968bd5ec80282e41015925c91757116a2cc95038162d"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/profile/dietary/route.js",
+      "bytes": 12382,
+      "sha256": "5a91d45813899b84b9ae3e95ac1fce1f522839d6e8da9a74bf281293744a3d00"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/profile/dietary/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/profile/dietary/route_client-reference-manifest.js",
+      "bytes": 31713,
+      "sha256": "96082f598c4d2885c5e09cc1a83441976e890c9814ec9562d7ba9d1433c51876"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/nutrition/route.js",
+      "bytes": 12546,
+      "sha256": "784df72679a53d3f2065ef0e8d84ce8c52b93e1c7f189a84176bca2cf7463a53"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/nutrition/route.js.nft.json",
+      "bytes": 9082,
+      "sha256": "30f16b439983cf0ce3568820ea86ba6d5097f6d6718a8bef6c1ea06a1dd62c6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/nutrition/route_client-reference-manifest.js",
+      "bytes": 31924,
+      "sha256": "654f54856b61640e80de30cb78dae5c41fcd59a38b6628a2b762b36346ab992e"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/pairings/route.js",
+      "bytes": 12411,
+      "sha256": "f0db18a0d07e91e7c48eba795cc4b59f481fcae2319f04b7b2a6ad821750d7b5"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/pairings/route.js.nft.json",
+      "bytes": 9082,
+      "sha256": "30f16b439983cf0ce3568820ea86ba6d5097f6d6718a8bef6c1ea06a1dd62c6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/pairings/route_client-reference-manifest.js",
+      "bytes": 31922,
+      "sha256": "c05dd05bd0d3db7eb931e5481fe365f9eb43f75159da7f3d6d7f120d5828fbab"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/rating/route.js",
+      "bytes": 12359,
+      "sha256": "ef37330dafa6660e6923b71712db38bae579e0177a495e15a27b369321ec2af0"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/rating/route.js.nft.json",
+      "bytes": 9082,
+      "sha256": "30f16b439983cf0ce3568820ea86ba6d5097f6d6718a8bef6c1ea06a1dd62c6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/rating/route_client-reference-manifest.js",
+      "bytes": 31918,
+      "sha256": "b0dde88b43b52e43b8db27c185390102cfa2231e816b9b57e7033a8b67c1f1e2"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/route.js",
+      "bytes": 13219,
+      "sha256": "47eb2694e7e77206378103a57b168d5713fdfc4556747c0b92a65466e0841ebb"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/route_client-reference-manifest.js",
+      "bytes": 31802,
+      "sha256": "ab7998efa3f76e2d712510e8ebbb592ba864f8b9c87e00d748960a48dd9ecfe4"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/save/route.js",
+      "bytes": 12201,
+      "sha256": "610a247940f59f04800933163449ff95fac1185901fef9997e5f70f5bb6d65d8"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/save/route.js.nft.json",
+      "bytes": 9082,
+      "sha256": "30f16b439983cf0ce3568820ea86ba6d5097f6d6718a8bef6c1ea06a1dd62c6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/save/route_client-reference-manifest.js",
+      "bytes": 31914,
+      "sha256": "720bb13a07c2bd8561ddfd1234a4bd6a7e59c09a7de6c6417e2cb3cc47aa61e6"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/share/route.js",
+      "bytes": 12270,
+      "sha256": "ad5564a6149a4d7cd9e9538ead428da16e48d1db3bb9269a1b562c3e15197661"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/share/route.js.nft.json",
+      "bytes": 9082,
+      "sha256": "30f16b439983cf0ce3568820ea86ba6d5097f6d6718a8bef6c1ea06a1dd62c6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/share/route_client-reference-manifest.js",
+      "bytes": 31916,
+      "sha256": "4988b52b9a97a6bd566a98827fc25d03a7019c23e9776d9a64c01f3aafbe2a00"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/shelf/route.js",
+      "bytes": 12372,
+      "sha256": "83ffa7a14d1e06070b33d760946b300ca871d46fdcaac661c76bdce82a8808dd"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/shelf/route.js.nft.json",
+      "bytes": 9082,
+      "sha256": "30f16b439983cf0ce3568820ea86ba6d5097f6d6718a8bef6c1ea06a1dd62c6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/shelf/route_client-reference-manifest.js",
+      "bytes": 31916,
+      "sha256": "b04458d28dd3c08477f255735342179e61a189822ce60631f5d4147dd4d958b9"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/similar/route.js",
+      "bytes": 12335,
+      "sha256": "3f0c070a2c4b63de6ba480a9dd74b5832982e619e7a0d1cd44e92fd6b175d181"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/similar/route.js.nft.json",
+      "bytes": 9082,
+      "sha256": "30f16b439983cf0ce3568820ea86ba6d5097f6d6718a8bef6c1ea06a1dd62c6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/[id]/similar/route_client-reference-manifest.js",
+      "bytes": 31920,
+      "sha256": "20c5f59f5c3bf305d8ac9033c9d6393c4a7e8bdbc74cd3604ded1063bdccb60e"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/route.js",
+      "bytes": 12851,
+      "sha256": "5274a4e9d3e3703e8e2d04093495c4fac6467233c5120d5ebd8bebdc08479d70"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/route.js.nft.json",
+      "bytes": 8644,
+      "sha256": "c4b21f86fefc797e0c1d7d33ec81137665a7aa52f286979a33ae6f5580df8ae1"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/recipes/route_client-reference-manifest.js",
+      "bytes": 31696,
+      "sha256": "cbc75c8ba3c3bafa70a66fb4a19944d38789a137cc83104e825ba4132349ae03"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/shared-templates/[id]/route.js",
+      "bytes": 12468,
+      "sha256": "fc4c44c3e03fc31b3eebc07ba7e47048ec4f89c0c48ba47975e081802682a711"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/shared-templates/[id]/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/shared-templates/[id]/route_client-reference-manifest.js",
+      "bytes": 31725,
+      "sha256": "80034f03cbc468cff601c1467b0cb1d062b8549704ae43852bec832b3ee4cbf1"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/shared/[id]/route.js",
+      "bytes": 12420,
+      "sha256": "e608007db12efaff8beac4b9bc99029e4415898773e5ac74a4bf0727bc112ed6"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/shared/[id]/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/shared/[id]/route_client-reference-manifest.js",
+      "bytes": 31705,
+      "sha256": "a2696273677ec403a930c31989d055486d8571c9adb5c3ac1f86cc7bd779cd66"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/shelves/[id]/route.js",
+      "bytes": 12394,
+      "sha256": "703f78fb791f6cf0daa7dedf0249e3e315c2d9681525bbf324a15d6620827c17"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/shelves/[id]/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/shelves/[id]/route_client-reference-manifest.js",
+      "bytes": 31802,
+      "sha256": "916b010daede0e1bbddea81819505a9f382c1fb163e2842421aacdd49e2a1d98"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/shelves/route.js",
+      "bytes": 12189,
+      "sha256": "486bfc67f9c38c13e7e31e68e74bc28cdeabf5c57bec0b91c90c0deb8eac0288"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/shelves/route.js.nft.json",
+      "bytes": 8644,
+      "sha256": "c4b21f86fefc797e0c1d7d33ec81137665a7aa52f286979a33ae6f5580df8ae1"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/shelves/route_client-reference-manifest.js",
+      "bytes": 31696,
+      "sha256": "089e3698e013b0d22906075177da7ecba0c6850654b223aaaebb5fc4b98bb3de"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/templates/[id]/route.js",
+      "bytes": 12178,
+      "sha256": "31579aef4455c75ee3ff722ad3a2133af9acf9aebc61b67e6986d6198e39a631"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/templates/[id]/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/templates/[id]/route_client-reference-manifest.js",
+      "bytes": 31808,
+      "sha256": "a2a89d2374514f2eaf3c8e075bbce1ea373f157f54cbaf31eb7cbc228e0155fb"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/templates/[id]/save/route.js",
+      "bytes": 12205,
+      "sha256": "319fa7b757acba58d7f7e5c8f868d08b29a4de4122040e3916b5c550b6944188"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/templates/[id]/save/route.js.nft.json",
+      "bytes": 9082,
+      "sha256": "30f16b439983cf0ce3568820ea86ba6d5097f6d6718a8bef6c1ea06a1dd62c6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/templates/[id]/save/route_client-reference-manifest.js",
+      "bytes": 31922,
+      "sha256": "506b8a7926b75a0366ddc09c6f4ad3ca42ef02b857c87daf3fa4492120af0af8"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/templates/[id]/share/route.js",
+      "bytes": 12259,
+      "sha256": "05c815de0c7bd7a73c3d4cca2722d604c8eb8742ad7de418cbc96222743bd2dd"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/templates/[id]/share/route.js.nft.json",
+      "bytes": 9082,
+      "sha256": "30f16b439983cf0ce3568820ea86ba6d5097f6d6718a8bef6c1ea06a1dd62c6b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/templates/[id]/share/route_client-reference-manifest.js",
+      "bytes": 31924,
+      "sha256": "c56ce4b63ee102a36842f4729eb89295cc6d34687b3717499da71a0ca6db4df8"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/templates/route.js",
+      "bytes": 12254,
+      "sha256": "9e4e2359e344813114641c5f9a8f7a0af72d4cf66b10fcb3e0918470331a45af"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/templates/route.js.nft.json",
+      "bytes": 8644,
+      "sha256": "c4b21f86fefc797e0c1d7d33ec81137665a7aa52f286979a33ae6f5580df8ae1"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/templates/route_client-reference-manifest.js",
+      "bytes": 31700,
+      "sha256": "75defae2039a34415e8f519c28097eeb53aa41f266c2504e2596f8a3f1e3d729"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/webhooks/clerk/route.js",
+      "bytes": 12207,
+      "sha256": "3c99b739c882ddcd9b17c099ec9dbdfcdbe3b807eafd5365dfa65743b4ac700d"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/webhooks/clerk/route.js.nft.json",
+      "bytes": 8863,
+      "sha256": "df7b6ea3a9386884581501016e25a128d4409a7ec1b1ed3e29eea1de297b9e87"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/api/webhooks/clerk/route_client-reference-manifest.js",
+      "bytes": 31711,
+      "sha256": "e6091a3783df4a1b2968c23339e8505162e82a3887257c7bc60ccabfa150b97d"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/apple-icon.png.body",
+      "bytes": 2534,
+      "sha256": "c46eeae3f2596bfc9a7b3c151172ac0ff6d6f675b99caf9275ca7ec064cdb556"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/apple-icon.png.meta",
+      "bytes": 232,
+      "sha256": "6071d2d877c0556c064a2ba94dfa3d831ea966820df604238322c3e4d150f85d"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/apple-icon.png/route.js",
+      "bytes": 10888,
+      "sha256": "2784ec24e5dc5f08a90c430a35da374454587f0447959514b36e983685712312"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/apple-icon.png/route.js.nft.json",
+      "bytes": 8296,
+      "sha256": "44d11c69eda87c6be5d5d34d0c746f170bd78abc949392ec02a4e424bc7e0f63"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/care/page.js",
+      "bytes": 30220,
+      "sha256": "7158babd1b8698bd01e50326e2777bd0a6f26134133577efae3c62caf495e9d8"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/care/page.js.nft.json",
+      "bytes": 8571,
+      "sha256": "bb73a39b88000e773d1667ae522078302f9d12a1ce9adc900d8817a674100d82"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/care/page_client-reference-manifest.js",
+      "bytes": 31889,
+      "sha256": "6dd46606650bb450ee054145dd9828a2c8057626e4251e6c3fb45901a10b316c"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/cook/page.js",
+      "bytes": 29060,
+      "sha256": "76f274ebdf1699f209bffedc3b054a5a77620c3011c1ca1ee312de63d0f3fbb3"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/cook/page.js.nft.json",
+      "bytes": 8571,
+      "sha256": "bb73a39b88000e773d1667ae522078302f9d12a1ce9adc900d8817a674100d82"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/cook/page_client-reference-manifest.js",
+      "bytes": 32638,
+      "sha256": "63da6651616017ed15a772818a066a636327a0fb9a3788cbca36c4e59323f1dd"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/discover/page.js",
+      "bytes": 26936,
+      "sha256": "dd824d0d091ef02ba634a5d44352957bff6aaad359b466ae216a334aa127d249"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/discover/page.js.nft.json",
+      "bytes": 8479,
+      "sha256": "e100c2bd83c163485a1b06fd86f982ae81e626166d39fedeaaae71dc1a9202dd"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/discover/page_client-reference-manifest.js",
+      "bytes": 32620,
+      "sha256": "aed85401c74978f8b44665d22902599ede0a670bf33bde23dfa975a76cad95cb"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/friends/page.js",
+      "bytes": 28181,
+      "sha256": "bc9e4a8fb3c6b30addd5bf20ceb84c0f8455445f5417d4bf78c5adab1ee0d24d"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/friends/page.js.nft.json",
+      "bytes": 8479,
+      "sha256": "e100c2bd83c163485a1b06fd86f982ae81e626166d39fedeaaae71dc1a9202dd"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/friends/page_client-reference-manifest.js",
+      "bytes": 32555,
+      "sha256": "4f325e7d6f0ce2ecb0344fed89da44e839799fe8abd2d18a44b34e7dd3338395"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/icon.png.body",
+      "bytes": 608,
+      "sha256": "030a67a36c5bda828c124405a9dbcbf1402ba5848985a3061d608e439a85f493"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/icon.png.meta",
+      "bytes": 214,
+      "sha256": "3f5c05c6a160df7263f6d8980590cb78925e3ddaf9f4252b74225d1d7532c628"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/icon.png/route.js",
+      "bytes": 8284,
+      "sha256": "e3a448737ce313913c9de5059ec512f1ff8e1942763e141c2ecfdb446802280b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/icon.png/route.js.nft.json",
+      "bytes": 8296,
+      "sha256": "44d11c69eda87c6be5d5d34d0c746f170bd78abc949392ec02a4e424bc7e0f63"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/list/page.js",
+      "bytes": 22177,
+      "sha256": "1ca8b32f2ef566114e3440d38b0c74525f4e018d4a95ef079d97b6262608f784"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/list/page.js.nft.json",
+      "bytes": 8479,
+      "sha256": "e100c2bd83c163485a1b06fd86f982ae81e626166d39fedeaaae71dc1a9202dd"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/list/page_client-reference-manifest.js",
+      "bytes": 32937,
+      "sha256": "8eb45cdc18ee1df10dbd4a8c66e218cb51e21079269f5d3a04e39fb6289639a0"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/manifest.webmanifest.body",
+      "bytes": 530,
+      "sha256": "2c2ac816959957afbf724b88945529e6579f94a6550b658d50757ec52dd56e59"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/manifest.webmanifest.meta",
+      "bytes": 251,
+      "sha256": "1e60df82cbae9e5c51ea9be9aa67df4cb5ac15bc42320b136f71017253fe4491"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/manifest.webmanifest/route.js",
+      "bytes": 12170,
+      "sha256": "e0b067e3f9188c9270ecb2328122bd3898d38771b6c79c2ba87551f7909152f9"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/manifest.webmanifest/route.js.nft.json",
+      "bytes": 8333,
+      "sha256": "d57116bae9556c1edb463ff29421107fd97b8e136fcdc338f270fe96d2360e24"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/manifest.webmanifest/route_client-reference-manifest.js",
+      "bytes": 31713,
+      "sha256": "e8ad54cbe3b70dd84e2b6a49a4a716cbef66dfdc8fbbffa69fabb13e09cfc4ef"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/offline.html",
+      "bytes": 11220,
+      "sha256": "1ad3cc8782bf2007db98973859dc0198e71a3abbe8ce42aec47ad7654ae81806"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/offline.meta",
+      "bytes": 181,
+      "sha256": "26dbf381ca38b3388b1176d45e1bc0ad67b6c58476b7c65025384612cb7628cc"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/offline.rsc",
+      "bytes": 6637,
+      "sha256": "863c06ba163cb8c5eb55fe2dcb2902c27798812a6e27e0f18dad7596373f3f7c"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/offline/page.js",
+      "bytes": 20023,
+      "sha256": "b38793c4becdea3fa48f2f9f3749449efe4a9b251ef6046a7bb6edb09f0cdedb"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/offline/page.js.nft.json",
+      "bytes": 8479,
+      "sha256": "e100c2bd83c163485a1b06fd86f982ae81e626166d39fedeaaae71dc1a9202dd"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/offline/page_client-reference-manifest.js",
+      "bytes": 31707,
+      "sha256": "2f188492f5742f40cdc73e94a6ad36caf324e2321d79b4c32210ae722e50be61"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/page.js",
+      "bytes": 41647,
+      "sha256": "785263f2f8c9a99ab9f8f362b193fac0238aa9a4f504a8460e49c56d7cc88fec"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/page.js.nft.json",
+      "bytes": 8349,
+      "sha256": "6967eb26d0378ebc2c067fc03321274037bee46d7f82fa4c7d43620675fe15c7"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/page_client-reference-manifest.js",
+      "bytes": 31588,
+      "sha256": "b20b9d7a2ccaaf1dd21d036de8c8d0483cb56016fa13e196fba2e9905365873d"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/plan/page.js",
+      "bytes": 23168,
+      "sha256": "a14d96e0f04d4ed1d05eae59353b0c76c84d40c306b6c1ad8aec75f81270e02d"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/plan/page.js.nft.json",
+      "bytes": 8571,
+      "sha256": "bb73a39b88000e773d1667ae522078302f9d12a1ce9adc900d8817a674100d82"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/plan/page_client-reference-manifest.js",
+      "bytes": 33225,
+      "sha256": "66e4316660f79a3e7d8bdfa40d24da3e7a24dca92cfdfd17b71a5ce56d236d3d"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/plans/page.js",
+      "bytes": 28669,
+      "sha256": "9f04380c2075653b6154c1dfbc82e5be0c22b1241819f27b7bab831d3aa3b67c"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/plans/page.js.nft.json",
+      "bytes": 8571,
+      "sha256": "bb73a39b88000e773d1667ae522078302f9d12a1ce9adc900d8817a674100d82"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/plans/page_client-reference-manifest.js",
+      "bytes": 32499,
+      "sha256": "7d02780ce39d65cda0f3ebbed12ca1d6982bf72fd5c58bacbe83e714261ab8ad"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/profile/page.js",
+      "bytes": 25713,
+      "sha256": "857015f656d0f606402dd437a828215a937f9be3ffc9b1dd0ddc1a566893cabc"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/profile/page.js.nft.json",
+      "bytes": 8571,
+      "sha256": "bb73a39b88000e773d1667ae522078302f9d12a1ce9adc900d8817a674100d82"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/profile/page_client-reference-manifest.js",
+      "bytes": 32673,
+      "sha256": "22d775c65eeb7698add4bd945d69a051a295b6f96a01d67cf9f74a2e83a45ca6"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/r/[id]/page.js",
+      "bytes": 34659,
+      "sha256": "a2a2019a5f35aab8f3a6a04d5b66e84f96a43a66cf87f55c26d9c60862b59073"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/r/[id]/page.js.nft.json",
+      "bytes": 8793,
+      "sha256": "2df41bb4638734be91e3adcc754d6e0bdfd727d7a2a0c653f9ada82830c1a0ca"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/r/[id]/page_client-reference-manifest.js",
+      "bytes": 37110,
+      "sha256": "9eb5d25b09cb89852a9dbde07090d0528e22a61f33a3b925bbc3a33393fed04a"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/recipe/[id]/cook/page.js",
+      "bytes": 33114,
+      "sha256": "f5a5a027e6155b3988e7ea6948bac21b6f49acd722e13d9043b178ea1d361c2b"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/recipe/[id]/cook/page.js.nft.json",
+      "bytes": 9015,
+      "sha256": "a263998f7c207fafc07326e2c0d787eb52653752b8cf6e55758eadabec995c32"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/recipe/[id]/cook/page_client-reference-manifest.js",
+      "bytes": 36338,
+      "sha256": "f801e5f6903c382bc8b085ce9d3fc31d4273a8b199f3ca2f72c0c552b94934cf"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/recipe/[id]/edit/page.js",
+      "bytes": 20087,
+      "sha256": "b401fbd8ab488195d5c27bd0083b5237a09d612ac1f25e3a6d468e88708b48ea"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/recipe/[id]/edit/page.js.nft.json",
+      "bytes": 9015,
+      "sha256": "a263998f7c207fafc07326e2c0d787eb52653752b8cf6e55758eadabec995c32"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/recipe/[id]/edit/page_client-reference-manifest.js",
+      "bytes": 36143,
+      "sha256": "7cdfd748b1dedd47b50fa5139f65bd3c301561d8ef3903b9b2badb5a7a625491"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/recipe/[id]/page.js",
+      "bytes": 28828,
+      "sha256": "76896091593943cf6487db57f161c143b7c8fab9aeb8dfd97637da696d225369"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/recipe/[id]/page.js.nft.json",
+      "bytes": 8793,
+      "sha256": "2df41bb4638734be91e3adcc754d6e0bdfd727d7a2a0c653f9ada82830c1a0ca"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/recipe/[id]/page_client-reference-manifest.js",
+      "bytes": 35716,
+      "sha256": "b8c0df48e6b45af90501fcb7876163164df694c5e4839f67c321a4fae340225a"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/recipe/new/page.js",
+      "bytes": 20006,
+      "sha256": "073e137751ef8ad859587a285de31310821b37db899b4a665b683106ed44bcaa"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/recipe/new/page.js.nft.json",
+      "bytes": 8793,
+      "sha256": "2df41bb4638734be91e3adcc754d6e0bdfd727d7a2a0c653f9ada82830c1a0ca"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/recipe/new/page_client-reference-manifest.js",
+      "bytes": 33020,
+      "sha256": "a8f48c92a53b00b4aa6547e499d33f8eaac4a1c904cd36f7a65e3e0fdc862b36"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/sign-in/[[...sign-in]]/page.js",
+      "bytes": 19524,
+      "sha256": "4e06af9572b0d93c359d37d38183d519b1de61e83521ceca6d584154871f7311"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/sign-in/[[...sign-in]]/page.js.nft.json",
+      "bytes": 8793,
+      "sha256": "2df41bb4638734be91e3adcc754d6e0bdfd727d7a2a0c653f9ada82830c1a0ca"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/sign-in/[[...sign-in]]/page_client-reference-manifest.js",
+      "bytes": 31746,
+      "sha256": "4c5bb13c60ae23a87145ea5bb282594a74656568f2518f7b6858cc75fe3d9d1e"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/sign-up/[[...sign-up]]/page.js",
+      "bytes": 18863,
+      "sha256": "19d1c2678fc0730b6c15333cb661f3f438bf9be93f97c6cd2df165bc9273d4d1"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/sign-up/[[...sign-up]]/page.js.nft.json",
+      "bytes": 8695,
+      "sha256": "faeff24f7f3b33169c1021fcb11fdb42c5b29c700fecbc10e21f5d3d7048302a"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/sign-up/[[...sign-up]]/page_client-reference-manifest.js",
+      "bytes": 31828,
+      "sha256": "0874f9ba4ca4440b504f841f8716627fcb8b6c16f18811db7abd742fba6a5849"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/t/[id]/page.js",
+      "bytes": 28024,
+      "sha256": "6e743e946f20350d1f0bd063d3072989afb4dd7460871b0cf3b3e7d170c554af"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/t/[id]/page.js.nft.json",
+      "bytes": 8793,
+      "sha256": "2df41bb4638734be91e3adcc754d6e0bdfd727d7a2a0c653f9ada82830c1a0ca"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/t/[id]/page_client-reference-manifest.js",
+      "bytes": 32300,
+      "sha256": "9aa0eaedc13694700d51f14ea128ae49086e6a32da09453519e4d4ac18b97965"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/templates/page.js",
+      "bytes": 28815,
+      "sha256": "05cb93679883e2328658da3fb0483ebd70b1b456b0255d5fa49813cff15838ca"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/templates/page.js.nft.json",
+      "bytes": 8571,
+      "sha256": "bb73a39b88000e773d1667ae522078302f9d12a1ce9adc900d8817a674100d82"
+    },
+    {
+      "path": "apps/web/.next-build/server/app/templates/page_client-reference-manifest.js",
+      "bytes": 33119,
+      "sha256": "d570b0bbc08795977a57a4c0e4af7debe6d5e837ded606a00bbcbc8119763f84"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/134.js",
+      "bytes": 127777,
+      "sha256": "88c72f12eb3d5aaa570c9ac4c39f0310e985900244935f9ccdb048478879bd38"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/2068.js",
+      "bytes": 22386,
+      "sha256": "6c9d893619e9091c557104b3e858b8a681495314bbf916991fa7e664cc897c9b"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/2185.js",
+      "bytes": 122475,
+      "sha256": "1d8c14b2cc3aa1a2aa6cc05debe6d1a0a42d9a82b43cfa10dd41dec37b7210c2"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/2253.js",
+      "bytes": 8814,
+      "sha256": "b90cdaa45351860e7b36e8e39163137578361b8985f0030ba6965a7328bf7d46"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/2433.js",
+      "bytes": 211871,
+      "sha256": "13c47e1ce272f1c6b0567ce63add77fec58fb95852b7b764d83a9a56acf3bb3d"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/3506.js",
+      "bytes": 37850,
+      "sha256": "18f65c4d0ac3436cada43b259cd783b401ba7c7f971727ac74d90c692643c16e"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/3854.js",
+      "bytes": 1688978,
+      "sha256": "e51476d2e719c923be38cb07c4a41831b76ec0fae33b36d5293287197e456abb"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/4350.js",
+      "bytes": 1456,
+      "sha256": "aba8e0c17eac60ad17337705cbb089f70dfa176663613a892ba2a5568b679227"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/5609.js",
+      "bytes": 12827,
+      "sha256": "c1db5852fff81f8145225a68e63650ad029c8b485c13086001bce61966dc11d8"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/5859.js",
+      "bytes": 49356,
+      "sha256": "d73a49e45042f2ba17b3af11dff8e3e44284f8c7680ecf08b9383884fca073f6"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/610.js",
+      "bytes": 171,
+      "sha256": "7bdca10b4d101dbc1fb0641696e917e52c0d71ed331af27ffe71ffb8aca41f97"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/6933.js",
+      "bytes": 63174,
+      "sha256": "26801c97f428b360ef31bbc3a83b0ef63a7afb7cbf5acdfaea09f72524b34b0d"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/7154.js",
+      "bytes": 9069,
+      "sha256": "cd8d4238c43fc0274d9236242d63fe41a345a499f024c7beacc1878dd659c3e1"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/7390.js",
+      "bytes": 23758,
+      "sha256": "fd96988a2cad31feed64410338036dd7f87dc8fa6514c7dbd1e8d0e3435bbd8e"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/8032.js",
+      "bytes": 158612,
+      "sha256": "19ddd3c12796df6d1aef7590cccb2fc45e7ad24f0fdd4335f2d84c6d2edb9f6f"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/8207.js",
+      "bytes": 35439,
+      "sha256": "43936ed943a63aa73c3b695e8332a588ab016144bf98e65caf4c8c164555fceb"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/8361.js",
+      "bytes": 11854,
+      "sha256": "1717acf5fa85c6d7f7b548601e15e439bee67b64e725197685a5d04cd7f06bc9"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/9103.js",
+      "bytes": 69174,
+      "sha256": "c52c5ec3982d8f774633f46d48c99e61aa74b0513e80ebfa312f0b8641d1863a"
+    },
+    {
+      "path": "apps/web/.next-build/server/chunks/9649.js",
+      "bytes": 684024,
+      "sha256": "4ddf76f5d81ce5e1b47b7a28f9e6059115d626a5dde1bdd2c298e6d123492fbb"
+    },
+    {
+      "path": "apps/web/.next-build/server/edge-runtime-webpack.js",
+      "bytes": 1504,
+      "sha256": "1d4d9adefed01f14d2dd914ce5cb743cde6990ace1cd5e3a447a3aae554655ff"
+    },
+    {
+      "path": "apps/web/.next-build/server/edge-runtime-webpack.js.map",
+      "bytes": 6132,
+      "sha256": "bbba737112b423640d261b07e5bdf5037351728039ba5ef81cdf07e124db9fb0"
+    },
+    {
+      "path": "apps/web/.next-build/server/functions-config-manifest.json",
+      "bytes": 1851,
+      "sha256": "1364bf931d122e38358e059212d6d909b9164b65174f86f5afcec60e0a14a6d4"
+    },
+    {
+      "path": "apps/web/.next-build/server/interception-route-rewrite-manifest.js",
+      "bytes": 48,
+      "sha256": "fc5133e40acf09e6517b073ddd7b5c0c218d09938848902210f2cc13f08e1c81"
+    },
+    {
+      "path": "apps/web/.next-build/server/middleware-build-manifest.js",
+      "bytes": 922,
+      "sha256": "bf2ac94ce987e40a775e579a5ca3a7c26c84cceb8908fec967eeb80e7f30baf6"
+    },
+    {
+      "path": "apps/web/.next-build/server/middleware-manifest.json",
+      "bytes": 1403,
+      "sha256": "7171ba1349202943e0f219c933a78d3c199e30d6839a79bda5f5eb519d2ba389"
+    },
+    {
+      "path": "apps/web/.next-build/server/middleware-react-loadable-manifest.js",
+      "bytes": 505,
+      "sha256": "57159ad485ebf70864a82b02c96881b669026e56eec7dbb7c1b8d7c2ab2b0dcb"
+    },
+    {
+      "path": "apps/web/.next-build/server/middleware.js",
+      "bytes": 168333,
+      "sha256": "44973ebf90033616480b555fbe1128b822ca6eb59def2690c0ad306cb5d9183d"
+    },
+    {
+      "path": "apps/web/.next-build/server/middleware.js.map",
+      "bytes": 1004247,
+      "sha256": "d09ca2a3e6c1b3e34986bc3925fd734a36efc3912b17f7d3b905fc23b6f054d8"
+    },
+    {
+      "path": "apps/web/.next-build/server/next-font-manifest.js",
+      "bytes": 106,
+      "sha256": "2c0f5bbb79d07dfea405146a62d7e15a7a9e890d29e38b7db2631fcf6e480da8"
+    },
+    {
+      "path": "apps/web/.next-build/server/next-font-manifest.json",
+      "bytes": 77,
+      "sha256": "926e772d34a53f2a4d9b16071dd6ea77b051b2b7acc49d9165723debe3fbbe0f"
+    },
+    {
+      "path": "apps/web/.next-build/server/pages-manifest.json",
+      "bytes": 128,
+      "sha256": "48f6fa2203c6cce49f30cefb6cd53ce9852fc5a20f9552ea7f4f5d874d46b20c"
+    },
+    {
+      "path": "apps/web/.next-build/server/pages/404.html",
+      "bytes": 11298,
+      "sha256": "a658bceded565efe0fe93ad749e8d84a49bfdcde0d839a9e15f638bebc4de454"
+    },
+    {
+      "path": "apps/web/.next-build/server/pages/500.html",
+      "bytes": 2007,
+      "sha256": "9f25dbe4c8d66e2fddae3dace641e6b12bd2ada875fd71f27cc6bdf4b0eeaf96"
+    },
+    {
+      "path": "apps/web/.next-build/server/pages/_app.js",
+      "bytes": 3363,
+      "sha256": "15e3dcf6dde7055e96cd9fcc0c9dec62622f8fd530d0a131142d7c753f37f7f3"
+    },
+    {
+      "path": "apps/web/.next-build/server/pages/_app.js.nft.json",
+      "bytes": 1275,
+      "sha256": "0d437990c1cd119ac0a659f3f0448bb3c473cfdd8e9732ec528d7f8cc2ae30bc"
+    },
+    {
+      "path": "apps/web/.next-build/server/pages/_document.js",
+      "bytes": 376,
+      "sha256": "3d7e89241028a15e608e6e1ce4766b9de2bef1e5dd5e55e7444f242f4c237ba2"
+    },
+    {
+      "path": "apps/web/.next-build/server/pages/_document.js.nft.json",
+      "bytes": 9206,
+      "sha256": "b05fbc67359a2fef4dbdb9a3e894ce6907792911bd9157186deae9597b5917ed"
+    },
+    {
+      "path": "apps/web/.next-build/server/pages/_error.js",
+      "bytes": 79992,
+      "sha256": "57bfb3954819dab02fd08286b92043f1367e168819575e52fb9790c024e30316"
+    },
+    {
+      "path": "apps/web/.next-build/server/pages/_error.js.nft.json",
+      "bytes": 9198,
+      "sha256": "02018874004c60e33532197ab2aad7e88e0c8c20841e220ee3c679c0ec3b94ad"
+    },
+    {
+      "path": "apps/web/.next-build/server/server-reference-manifest.js",
+      "bytes": 4861,
+      "sha256": "00ff401326d1e4d28a320baeff486c2237f8fdb550dcd3078b3338fedf115c0a"
+    },
+    {
+      "path": "apps/web/.next-build/server/server-reference-manifest.json",
+      "bytes": 4254,
+      "sha256": "f3a1862f4dca3477d139911858533ae0fee419864cb24409e6309996893578e6"
+    },
+    {
+      "path": "apps/web/.next-build/server/webpack-runtime.js",
+      "bytes": 1565,
+      "sha256": "1a8c044f9d9f313ec82313d6d7e286e3fe53dc6d6292f20d49f3f5d1fb87d2a5"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/1320-a600f0c95e8e7018.js",
+      "bytes": 8536,
+      "sha256": "8f18448f2a1da79c8c19e1ecd2e828b7f08a06f69285160ff698b3cdacdf067c"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/2121-2abca5b9395c972d.js",
+      "bytes": 12678,
+      "sha256": "b98254b454676824bb29aa50c4bdd00f847022dc12641fa4d83ea9f87fe49088"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/2354-c84faaac74e5192f.js",
+      "bytes": 173673,
+      "sha256": "39f1203daa451b46be399fa4e16f2ccec1453fc68d8535de437a2d43dfeb2dca"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/2967-2ffb003bba80bb08.js",
+      "bytes": 25459,
+      "sha256": "396c4e683788ca072490c890898c2198fecbbbdbd25d294776383319d8483d13"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/2bdf986d-f41160a848b1a36d.js",
+      "bytes": 173019,
+      "sha256": "20e7cad1b2ad41fec674f40c048ab1206084533ff3a9c27a8cbb445149d62ad3"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/4314-74c809beb88a9105.js",
+      "bytes": 158497,
+      "sha256": "cbe31f379397ed680d592153bd700d47a69861ab536ce85e7b677c292a5aba85"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/4334-5b68fc1c6477c044.js",
+      "bytes": 9771,
+      "sha256": "268a3dc9993c74d6544f209515be1812e1c52fdec26789545fdb2e685e87c901"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/6071.3c24871ac2953afa.js",
+      "bytes": 741,
+      "sha256": "ecec1ac96ad3568881dafdde9af0b02cfac364086e1d764532d821480924dd5d"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/6668-dd5f5fe2d35345fb.js",
+      "bytes": 63335,
+      "sha256": "34dcd56f188ab83c74904809a8c489f45f7e545b9746218e5f706a841fbfcbf1"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/6750-4a180eeae44f1a82.js",
+      "bytes": 38298,
+      "sha256": "3e4f6925fb37b92ccc4b095ba45f2d4d9f8c8e9e79ddc511acccadb97443efff"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/8544-8eb15ad4b5a6cf89.js",
+      "bytes": 13040,
+      "sha256": "6814bf0bacac41d1de2aac9514dab478b4ef273afbc20d429ef2c4996f1bd61c"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/8898.0380fee3568cb370.js",
+      "bytes": 5443,
+      "sha256": "1e6977e5d78e383be232985f8daa87585c1ce61fbab4723023323ebc9b6e41f3"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/_not-found/page-ef720056850245f2.js",
+      "bytes": 2673,
+      "sha256": "266474617e5720a8660eb39705cfa79f6ec0e379e5e6de6dc9c5b8af4695c370"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/admin/imports/failures/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/admin/reviews/hide/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/admin/reviews/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/admin/users/[id]/billing/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/admin/users/[id]/credits/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/admin/users/[id]/imports/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/admin/users/[id]/refund/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/admin/users/[id]/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/admin/users/[id]/status/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/admin/users/[id]/tier/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/admin/users/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/billing/checkout/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/billing/portal/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/billing/webhook/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/credits/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/discover/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/export/route-0b4f53c83d4df5f4.js",
+      "bytes": 514,
+      "sha256": "e19730518cabc0f3d220a0938b4af6e02440cb75a25666e50d5fe36e4fbe9b04"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/feed/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/friends/[id]/allergens/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/friends/[id]/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/friends/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/grocery/kroger/callback/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/grocery/kroger/connect/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/grocery/kroger/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/import/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/list/cart/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/list/items/[id]/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/list/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/pantry/reindex/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/pantry/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/pantry/search/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/plan/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/plan/suggestions/[id]/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/plan/suggestions/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/profile/dietary/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/recipes/[id]/nutrition/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/recipes/[id]/pairings/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/recipes/[id]/rating/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/recipes/[id]/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/recipes/[id]/save/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/recipes/[id]/share/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/recipes/[id]/shelf/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/recipes/[id]/similar/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/recipes/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/shared-templates/[id]/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/shared/[id]/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/shelves/[id]/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/shelves/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/templates/[id]/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/templates/[id]/save/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/templates/[id]/share/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/templates/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/api/webhooks/clerk/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/care/page-97afb6348b161764.js",
+      "bytes": 14882,
+      "sha256": "09f303a235dd431b3d98512eada04e1ee9c2c1c90825d766311176a8ec32046d"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/cook/page-f7000054d6eda5df.js",
+      "bytes": 14040,
+      "sha256": "33591343323d56b9522763893ee72b26b89e48df51fea28b72af952ed70c200f"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/discover/page-e9afece1291ddc18.js",
+      "bytes": 6344,
+      "sha256": "a422cb5671d3b91c7a8f919112aa73a3f26735f127287f4c912c661628a0dde3"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/friends/page-c450370ca5237f4b.js",
+      "bytes": 8289,
+      "sha256": "cfb934f0e4d7eb0d3e0c5ba4c10530149bbff303e3e696680b5258e1b599d600"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/layout-4310b64b28f4c113.js",
+      "bytes": 8287,
+      "sha256": "4bc3b7e53681e04df66deb597eb8d1560c2fe8743a594ac38e5cdbce2b26b804"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/list/page-b484fecc688350f3.js",
+      "bytes": 390,
+      "sha256": "359f3edfa8c81e12b5b21d28f51295ee9453022a118e97a823918385c67b44dd"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/manifest.webmanifest/route-6b3ea320349343fe.js",
+      "bytes": 391,
+      "sha256": "1c4f728fd0edde8f514a170226619743b1fa2e212135b23971d8b8112909f1ef"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/offline/page-aee6964fbb75a9b2.js",
+      "bytes": 904,
+      "sha256": "5ab28eaf7c8b54479d450df7952f2ee0b2d917d8c687e008444b2639ef8c6f5c"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/page-74f8c77d70391a72.js",
+      "bytes": 14590,
+      "sha256": "d440dc68d8b20308f66700e2831daf1e86cc54041228b7a2438a4b92c3b85c9c"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/plan/page-b66579bc3234b161.js",
+      "bytes": 2267,
+      "sha256": "ea01a7dc376c05cca8d49cf2d32b3b9eecd26cda50e955de274eee6e9f213954"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/plans/page-076408e99a13e066.js",
+      "bytes": 6756,
+      "sha256": "b299270453bc3897c3409b7e0466edf86db2af5770b6f49d0d2f1a8b74138f59"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/profile/page-354c88aaf32eb604.js",
+      "bytes": 5519,
+      "sha256": "3e06b5498c84eb5634c769e6b7d71b2d2f92bfc9feca21b509842124f6498a01"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/r/[id]/page-26c8f4da5b7afd87.js",
+      "bytes": 7859,
+      "sha256": "d540bf8558a7a5f4d2d5cc859b34cb53de588f074242148ed75bffe1b1476fe3"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/recipe/[id]/cook/page-903a89222f10a457.js",
+      "bytes": 11986,
+      "sha256": "0cd08ecae5e1094069b6053a58bdd624aac3f96efe5d651cebff8d2f0e588aa7"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/recipe/[id]/edit/page-11150e4239fe600e.js",
+      "bytes": 202,
+      "sha256": "b35775007602ad0ab05ea6ed6c5b8342e2ebaaa635a5eedd00b17306cd08fa2c"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/recipe/[id]/page-23377ac585cc7520.js",
+      "bytes": 3523,
+      "sha256": "df37342c93cd196c46bf4857b411d964952e016493eb8c31ba0f9d54a3994d79"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/recipe/new/page-8e481d802d7e5593.js",
+      "bytes": 378,
+      "sha256": "ac22616dadf5fbbf30913bb31a0cb9e2be31de820b3c38a61ea8c59acbca962a"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/sign-in/[[...sign-in]]/page-4949e0bca1399b2e.js",
+      "bytes": 658,
+      "sha256": "14714ebc8ee9a84955a186ad8551553df8c904f11c4a89e39c594ff5f7373327"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/sign-up/[[...sign-up]]/page-99aaf20e77494daa.js",
+      "bytes": 609,
+      "sha256": "10801a6b608b0d8a2f427b9f1d92d6f49de422803fc98498aae17a81c5103d25"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/t/[id]/page-c6b15e302908ff5d.js",
+      "bytes": 7157,
+      "sha256": "30e3f94b4c4b4a8c5cd67e7aacd9a8ed6e44647dcc8c60b29b81e3e99c15ec05"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/app/templates/page-1c9d43df1b053ea9.js",
+      "bytes": 7335,
+      "sha256": "bf4ae131265695d9e05f6435e50856fefbdf3850d89eba4dbc07a4295cc62b8e"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/framework-252b2a37d898bec7.js",
+      "bytes": 189760,
+      "sha256": "8c9ae3f067eabe47208b1dbb24db59406ebd2d3ad98bdceaccbf02e39a741976"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/main-45955ab2f7b7ccd7.js",
+      "bytes": 122570,
+      "sha256": "2dc0141491b89516b33cefd4b00dd167a01a0eaa9cc16de5a4fdd46ee5f1476e"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/main-app-b40f7e831f15887b.js",
+      "bytes": 558,
+      "sha256": "4647084a193d281ad413f077cf42c05e098568850e2ec9e25e93ee7ab9aef09a"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/pages/_app-4e662050490f8705.js",
+      "bytes": 915,
+      "sha256": "28f9260654382ef515b8005d720709334a49994c45b176d5627719dddeec2c80"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/pages/_error-8f3ff3b1ba0e2984.js",
+      "bytes": 5654,
+      "sha256": "4507babcecf754f8440657a95ac1dd94196b4553d312d5bc6f8c1e86bcb310ff"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/polyfills-42372ed130431b0a.js",
+      "bytes": 112594,
+      "sha256": "0973c1d64c88adc8e3c950410cb58b288f72118d5965b78049438deb8f2f9683"
+    },
+    {
+      "path": "apps/web/.next-build/static/chunks/webpack-74d1afcb85c54a9c.js",
+      "bytes": 3561,
+      "sha256": "229968cd668e34600efa4203f9d89ec9c1df96a3162574558f1278f00b99c798"
+    },
+    {
+      "path": "apps/web/.next-build/static/css/1660050b9f1411c9.css",
+      "bytes": 1841,
+      "sha256": "66ca1a7a4074a74380c0535100ac1a3cf6da55eedaba1dc63585204db1e87b79"
+    },
+    {
+      "path": "apps/web/.next-build/static/css/29b0ff419ed03d8c.css",
+      "bytes": 80,
+      "sha256": "74d05b90766a85c6e429ac248165f7fb3ada1cec08531f8663b9de8d52a7ea9f"
+    },
+    {
+      "path": "apps/web/.next-build/static/css/404cd3a4fcf557a1.css",
+      "bytes": 54724,
+      "sha256": "44cf55f3a8e63520c93c232387e12e7e91573b129178e6066f84d4b2299d0bb7"
+    },
+    {
+      "path": "apps/web/.next-build/static/css/7b1001960dccfec4.css",
+      "bytes": 1634,
+      "sha256": "8ae65e2c0f265958432bdbb617a59d22118686c44162c24e66ae97c3be7a77ee"
+    },
+    {
+      "path": "apps/web/.next-build/static/css/a773cf2472db62e6.css",
+      "bytes": 7981,
+      "sha256": "e57f404540263c6b43b031f5cec1b56214207348b20fbb6bcf351f3ef6fe5f22"
+    },
+    {
+      "path": "apps/web/.next-build/static/css/d4f0eb1ed2445bfc.css",
+      "bytes": 1753,
+      "sha256": "8058de9afa4e73b35a2b15c11b97280af83973d755a528aae51df8386ca03325"
+    },
+    {
+      "path": "apps/web/.next-build/static/css/dcbde30587ac64ce.css",
+      "bytes": 12984,
+      "sha256": "4f081b49eaae82441ec022aee02dcea60e523d726b798eaeb406aefdf767f0ae"
+    },
+    {
+      "path": "apps/web/.next-build/static/xRryI_oXqVxfyyv5CUkPT/_buildManifest.js",
+      "bytes": 2660,
+      "sha256": "c7a0f8fb91246b4f515c190ae579c7a194aa9feb5b49c8fe374cfd26a4493d07"
+    },
+    {
+      "path": "apps/web/.next-build/static/xRryI_oXqVxfyyv5CUkPT/_ssgManifest.js",
+      "bytes": 80,
+      "sha256": "678f6ce2cb80b1fe72fc67e7412be6e2ab6ada083111b64f7c40d35e3cba5e00"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/admin/imports/failures/route.ts",
+      "bytes": 8807,
+      "sha256": "e166b84ae92bc4c2aa437e43d726ea7d39e42c9f5e41723707f97414b157f4b5"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/admin/reviews/hide/route.ts",
+      "bytes": 8795,
+      "sha256": "a4ec5fef3e2d0787c5a4ae7cec756ded903f8d908eb1346ebb7ec884c5509ab3"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/admin/reviews/route.ts",
+      "bytes": 8774,
+      "sha256": "d446de84a6a69cd112a01e7d24f3843e8d987ed0ff696a9b7e5fd85c6beba47d"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/admin/users/[id]/billing/route.ts",
+      "bytes": 8819,
+      "sha256": "5a72af3c9f5764564496260417114050d587c40888035c75ffc2bb32da2c28fa"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/admin/users/[id]/credits/route.ts",
+      "bytes": 8819,
+      "sha256": "8aead8d3567290273dc33dd3aa872d2b9821fa46a5ae853ddaa6025f6c123bea"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/admin/users/[id]/imports/route.ts",
+      "bytes": 8819,
+      "sha256": "91093cb1218fd01590de48209ae103bafb531be7c79c49befbe7abe58bb8c394"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/admin/users/[id]/refund/route.ts",
+      "bytes": 8816,
+      "sha256": "c633498a1bc9a83569be98fe2f6af618fcf45075013381f66d2603ee430d9f92"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/admin/users/[id]/route.ts",
+      "bytes": 8789,
+      "sha256": "d082b90fc45bf763cd9706c44ff2d368677642650e758030e4030cd894d523c8"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/admin/users/[id]/status/route.ts",
+      "bytes": 8816,
+      "sha256": "6d7f6682383f5c7a2a23ee10f2b5471a1037f980684b229ddfc2a5f05d56e876"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/admin/users/[id]/tier/route.ts",
+      "bytes": 8810,
+      "sha256": "a8a00bba8df99c7054fbd2e180c533b2cd67679b37d9a1f1dd4ca682ee85aa59"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/admin/users/route.ts",
+      "bytes": 8768,
+      "sha256": "f5d2d59604b7e40025ec3e0e13eae9c863a4353ac4209108b890e547400cc6e0"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/billing/checkout/route.ts",
+      "bytes": 8783,
+      "sha256": "7194267c293d8ceb92717350a0ab165ac305bcd472b3f363442bb0cbdf8112b0"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/billing/portal/route.ts",
+      "bytes": 8777,
+      "sha256": "7d4df99ee99c3280604915dbe66909954068aa384cf2e31aebcaadee669fc641"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/billing/webhook/route.ts",
+      "bytes": 8780,
+      "sha256": "8e2870efce2b0545091b3f5a376b660aae628be3c405753c29ba622f486c3bc2"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/credits/route.ts",
+      "bytes": 8750,
+      "sha256": "e5d3c06b6e27769574ccdf81ecf25ba7579f57415f4262da10e47f0e4785891b"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/discover/route.ts",
+      "bytes": 8753,
+      "sha256": "4af2420f786b727846cc0a8521b1df19549db37c864bbf464f29f259d07a2b54"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/export/route.ts",
+      "bytes": 8747,
+      "sha256": "f243abf4a3c40d418bf19027d03145d0ba3fd2424d69bccc36bc79d570a1e264"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/feed/route.ts",
+      "bytes": 8741,
+      "sha256": "033764f9877afa177c4bafc76a86778c4365cadcd38e80b8f6548aabd72a2a1d"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/friends/[id]/allergens/route.ts",
+      "bytes": 8807,
+      "sha256": "34c052ffb2a335af4c0b9a10ffb47ce71911d41ab9801e0b0451e91b40c2b3d8"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/friends/[id]/route.ts",
+      "bytes": 8771,
+      "sha256": "06c40f3f4f128a08efb06fa3978b529455baa6145a6b13a8cf463cdb54f6b9b2"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/friends/route.ts",
+      "bytes": 8750,
+      "sha256": "ae91313a8a4c3542f8cd098ff6b7fec15298530bbfe450e5d03cafcc866247c0"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/grocery/kroger/callback/route.ts",
+      "bytes": 8810,
+      "sha256": "b4ebddcc0640803cc440939aafe23b576416a5d87a0c49ba541cc4004a45b347"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/grocery/kroger/connect/route.ts",
+      "bytes": 8807,
+      "sha256": "565c1370569a50926783de3cb7cbf952d73e798e1902f4d706172624630d4699"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/grocery/kroger/route.ts",
+      "bytes": 8777,
+      "sha256": "459e475c2bcec0a8ae0450698f3aae08bd21b776459e039b52e0ee1b81474ed5"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/import/route.ts",
+      "bytes": 8747,
+      "sha256": "140b71cb5d56dcee3918dee8f9604f2003e92200ce01a209304ceb4d470c6d42"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/list/cart/route.ts",
+      "bytes": 8762,
+      "sha256": "5043e6d79361113ecb564c09c27313fe95cf02bb6491b37dc7c2c398f760904d"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/list/items/[id]/route.ts",
+      "bytes": 8786,
+      "sha256": "357bc29017191e713eb6a45a3624fb24c3e2caf7457d3aa089ac33934aa0e886"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/list/route.ts",
+      "bytes": 8741,
+      "sha256": "2a1b5c4bc0e88df9e7cc75d06c6b11002a7ac0c0b08c352ea9be74c7a93df46c"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/pantry/reindex/route.ts",
+      "bytes": 8777,
+      "sha256": "7d892f93f4c576aac0eeab196383db2ea291a5189beba0104101b769003f49d1"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/pantry/route.ts",
+      "bytes": 8747,
+      "sha256": "e02a67cc41775d4c6d0f5f4cf991883a3363bca33af4b275f96eb433448ed84e"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/pantry/search/route.ts",
+      "bytes": 8774,
+      "sha256": "cbe6bb8805faa6b0357dc91c1983c235842173371a5749cf3c3719337b83bc2f"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/plan/route.ts",
+      "bytes": 8741,
+      "sha256": "adce15e774934c58d38b2970dcc9474773271449686d676a2cb1a8091327cddb"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/plan/suggestions/[id]/route.ts",
+      "bytes": 8804,
+      "sha256": "3489fd5bcc5642089febb0f8e237ab2c7d7dfeea247f3c59aea8d8dbc5e75d63"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/plan/suggestions/route.ts",
+      "bytes": 8783,
+      "sha256": "4b70286c47ef25ab861c8f510572cd461942b1e91b3a81b8ef0c8e0dcf56e36b"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/profile/dietary/route.ts",
+      "bytes": 8780,
+      "sha256": "177e94b067fba45cafda58202bea66a23ddff9436c3144a7f4e723424c75de1f"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/recipes/[id]/nutrition/route.ts",
+      "bytes": 8807,
+      "sha256": "0012a3d10354a874084a5d7ae0c07ade9a2e1857ed49034ebca21766d30fe18a"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/recipes/[id]/pairings/route.ts",
+      "bytes": 8804,
+      "sha256": "988e1eaed460dd4cb919a9945e12cfbeff529fa7e1c38b4d085143a81dc2ca96"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/recipes/[id]/rating/route.ts",
+      "bytes": 8798,
+      "sha256": "c031cc0956f4246fffd82d634ac621739e9a2ea0a10312849a44e08e9dc6b218"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/recipes/[id]/route.ts",
+      "bytes": 8771,
+      "sha256": "6917f2f2dcd51f8b2e8d0ff85216dc6a67b4a91577437e203d013fac6591957f"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/recipes/[id]/save/route.ts",
+      "bytes": 8792,
+      "sha256": "9b9cafffd3104ff741f5a7ea5ce0e9a0bad67874d81cbbf46a9229011a980358"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/recipes/[id]/share/route.ts",
+      "bytes": 8795,
+      "sha256": "23b5addae13aae9890817c685d9e0e0270cc39f58a2c849f6da46b23a4100f2f"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/recipes/[id]/shelf/route.ts",
+      "bytes": 8795,
+      "sha256": "0d706a65cb7a51c14ed9cd31bf20672d7bcc95317e5fb826e267f3bdc92bfa10"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/recipes/[id]/similar/route.ts",
+      "bytes": 8801,
+      "sha256": "4dab7e148ca3845f687a555625962d693fc07fc7ac4928fa59b18bb469f30fb5"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/recipes/route.ts",
+      "bytes": 8750,
+      "sha256": "a470c08ed4f767411d94380f66de7da937d9f78d0af17118430911819b5042ef"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/shared-templates/[id]/route.ts",
+      "bytes": 8798,
+      "sha256": "ced940fc486645ca938eb11ae8c1092774395fb24e1fa4a898c7264b10ecc97c"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/shared/[id]/route.ts",
+      "bytes": 8768,
+      "sha256": "8dbfd9c6275e0358aa9f6f7e338dc9577832f2d3e4a664ec7fe0f457b033360b"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/shelves/[id]/route.ts",
+      "bytes": 8771,
+      "sha256": "6b37d84b3a04f5bea70aafaeab6780fe5e5e4d8ec41ac165ab81c31015f35d7f"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/shelves/route.ts",
+      "bytes": 8750,
+      "sha256": "a96c0b448204700a361f291161dbc841ab9662c8d8798d385067bbc22e4945bb"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/templates/[id]/route.ts",
+      "bytes": 8777,
+      "sha256": "3cdd810967c622ba73ac86f67a891a94c2bcb5eb9a2c33d4bcb1613e7c2f7641"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/templates/[id]/save/route.ts",
+      "bytes": 8798,
+      "sha256": "3ac81d8e1c56d85c1d7f5a578772ca1920fd46cb7ec5edaf08fc4b87ef5e8122"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/templates/[id]/share/route.ts",
+      "bytes": 8801,
+      "sha256": "c043ad056b3762c6ccf20d7bf7169416571315a1cb0fd87e5495fbea8a6029e8"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/templates/route.ts",
+      "bytes": 8756,
+      "sha256": "61b26148643dd95f90f24efde1d622197bafaae172f6ab36cdacf0398a050d2c"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/api/webhooks/clerk/route.ts",
+      "bytes": 8777,
+      "sha256": "3bd4eae0f4e67972b551961e23fea698de97131cde5affb93e551d5e278eccba"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/care/page.ts",
+      "bytes": 3733,
+      "sha256": "b72921dd26a4f01235d768826c99caf9a385f5b425612fc49c41327114fb8035"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/cook/page.ts",
+      "bytes": 3733,
+      "sha256": "e4908c763dd62caadf07e38221d1cddd927de8359b5239b2917ac8a947fadf88"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/discover/page.ts",
+      "bytes": 3745,
+      "sha256": "25d0976541bd469b0d99f7603e2e3781bf4d3de8576f29aeeb63e34bd495dd6c"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/friends/page.ts",
+      "bytes": 3742,
+      "sha256": "5df15c0c1acfe646cd17ba094ef40c170fe781852267b8bc11e7120eab319b88"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/list/page.ts",
+      "bytes": 3733,
+      "sha256": "ff7222baeec7c71c4f6975d3ff8eb68b16386cbab634dfa15f2ddbf3d4fbf167"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/offline/page.ts",
+      "bytes": 3742,
+      "sha256": "79f025fa250aa45773f67a407fac005c2fd2a4967540210fa7d45d19159f87e5"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/page.ts",
+      "bytes": 3712,
+      "sha256": "0f48925ee3336a7353d64317d715b4c878c2fba27f1e7980c786d2c99d5c9cb3"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/plan/page.ts",
+      "bytes": 3733,
+      "sha256": "04b9142c685c6a867c79ac39e3af5c86a432b87787e0eaf913c6ce542d683f9a"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/plans/page.ts",
+      "bytes": 3736,
+      "sha256": "a8ecb3b784666eafb95c8a6eabf087cdd84d71f3d68b60c193bda384c4ba742e"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/profile/page.ts",
+      "bytes": 3742,
+      "sha256": "74c0fa4921f51452b10b49abda951967f47e43c70877616b2ca5c3c5ec6e6f0c"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/r/[id]/page.ts",
+      "bytes": 3745,
+      "sha256": "51c931636e045a9962ade15d70d683843cf69f374c7cd432fe81a693dc007a35"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/recipe/[id]/cook/page.ts",
+      "bytes": 3781,
+      "sha256": "89af882f1f76f1e076059aaa78b96e756962a3c5b952b2d70831af0d464d29ad"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/recipe/[id]/edit/page.ts",
+      "bytes": 3781,
+      "sha256": "3832a25dcc0f3a649a89ad8c4a470aee7c5a42735b9a5c630c3030cc461324ae"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/recipe/[id]/page.ts",
+      "bytes": 3760,
+      "sha256": "399dff2e00fd2e531f326fedf0294cb3bdbff3d27f85cff9b58b95ed2c9733e8"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/recipe/new/page.ts",
+      "bytes": 3757,
+      "sha256": "e67d0d7db19eb4e7c70b18c3564eb9d77095860e3ddd915797e2185cd2c3f830"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/sign-in/[[...sign-in]]/page.ts",
+      "bytes": 3793,
+      "sha256": "b6d273be502f95f8ac9538f71f7a9a3afb68379e106dd59326174907689b2f3a"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/sign-up/[[...sign-up]]/page.ts",
+      "bytes": 3793,
+      "sha256": "4272df3bb15cb51fd4577a9dbfed209238b8f8c52c9f71a681d5451664dc5fab"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/t/[id]/page.ts",
+      "bytes": 3745,
+      "sha256": "3258114ae0cf89a316f2a929d8feef1de6d5d2314bb73ee1da0282417d9bf28d"
+    },
+    {
+      "path": "apps/web/.next-build/types/app/templates/page.ts",
+      "bytes": 3748,
+      "sha256": "a7b583f23be762d715219ade6859cbcea56919db225384396f66c31555d3d011"
+    },
+    {
+      "path": "apps/web/.next-build/types/cache-life.d.ts",
+      "bytes": 5863,
+      "sha256": "2552a31fad45a9ed1bde87e51b038dc0e786cd364b597162263abbf57018949b"
+    },
+    {
+      "path": "apps/web/.next-build/types/package.json",
+      "bytes": 18,
+      "sha256": "e3d5a4a2d8551aa52c5a01d2a0efb2e06a2d9711b4f5c5f1d20de6e21807e2cd"
+    },
+    {
+      "path": "apps/web/.next-build/types/routes.d.ts",
+      "bytes": 5866,
+      "sha256": "c5dd88a78f59d6b5883b656c70282d999c9f7ac50589b05e59652bafe670f9e4"
+    },
+    {
+      "path": "apps/web/.next-build/types/validator.ts",
+      "bytes": 24937,
+      "sha256": "5617bbd502b51ebb7822bbef95ff16bb20cd9807f21c3c537f28c0244c0da81a"
+    }
+  ],
+  "nativeVerification": {
+    "sourceFiles": 107,
+    "sourceDrift": [],
+    "apkHashMatches": true
+  },
+  "limits": [
+    "Local build fingerprint, not signed container provenance or a reviewed release commit.",
+    "No new browser interaction/screenshots, Android redesign, physical device test or cloud deployment.",
+    "Previous web build files have been replaced; previous logs/fingerprint remain historical evidence."
+  ]
+}

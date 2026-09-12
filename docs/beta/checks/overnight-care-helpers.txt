@@ -1,0 +1,21 @@
+✔ native care accepts the documented fields and keeps the fixed return (1.8793ms)
+✔ duplicate, malformed and private fields never enter native care navigation (0.6774ms)
+✔ care normalization preserves existing unrelated app routes (0.2325ms)
+✔ guest care never calls the shopping API (1.8629ms)
+✔ saved is reported only after an acknowledged authenticated write (2.8003ms)
+✔ session expiry and network failure keep a choice retryable without reporting saved (0.7338ms)
+✔ switching accounts suppresses both late success and late failure (0.4541ms)
+✔ a shopping write cannot acquire a different account token during token refresh (0.9234ms)
+✔ a hung shopping request becomes unconfirmed without queuing or retrying it (6.8366ms)
+✔ restoration validates untrusted fields and the fixed return destination (2.7882ms)
+✔ expired, future, malformed and non-finite return records cannot restore (0.4169ms)
+✔ selection and handoff survive locally without keeping a dietary profile (0.358ms)
+✔ sign-in redirect carries only the allowlisted protocol fields (0.6599ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1412.9932

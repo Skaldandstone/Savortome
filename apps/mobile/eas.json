@@ -1,0 +1,53 @@
+{
+  "cli": {
+    "version": ">= 23.2.0",
+    "appVersionSource": "local"
+  },
+  "build": {
+    "beta": {
+      "environment": "preview",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": false
+      }
+    },
+    "beta-simulator": {
+      "environment": "preview",
+      "distribution": "internal",
+      "ios": {
+        "simulator": true
+      }
+    },
+    "testflight": {
+      "environment": "preview",
+      "distribution": "store",
+      "ios": {
+        "simulator": false
+      }
+    },
+    "playstore": {
+      "environment": "preview",
+      "distribution": "store",
+      "android": {
+        "buildType": "app-bundle"
+      }
+    }
+  },
+  "submit": {
+    "testflight": {
+      "ios": {
+        "appleTeamId": "BVB696HTCS",
+        "ascAppId": "6811296756"
+      }
+    },
+    "playstore": {
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
+      }
+    }
+  }
+}

@@ -1,0 +1,12 @@
+✔ server-selected legacy home cannot opt into woodland through query flags (32.8181ms)
+✔ server-selected woodland home passes the real entries to the illustrated list (10.6313ms)
+✔ legacy library keeps its empty copy and missing-image placeholder without atlas art (10.8897ms)
+✔ illustrated library alone receives the journal fallback and arrow (9.8573ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 463.6674

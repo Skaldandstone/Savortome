@@ -45,6 +45,54 @@ describe("parseIngredientLine", () => {
     assert.equal(i.canonicalItem, "yellow onion");
   });
 
+  it("drops a second measure of the same amount instead of naming the food after it", () => {
+    // International sites routinely print both systems. Before this the food
+    // was called "/ 1.5 lb chicken thigh fillets" and its pantry key came out
+    // as "5 lb chicken thigh fillet", which matched nothing.
+    const i = parseIngredientLine("750 g / 1.5 lb chicken thigh fillets (skinless, boneless)");
+    assert.equal(i.quantity, 750);
+    assert.equal(i.unit, "g");
+    assert.equal(i.item, "chicken thigh fillets");
+    assert.equal(i.canonicalItem, "chicken thigh fillet");
+    assert.equal(i.notes, "skinless, boneless");
+
+    const pipe = parseIngredientLine("1 lb | 450 g ground beef");
+    assert.equal(pipe.item, "ground beef");
+
+    // A slash between two foods is not a second measurement, so both stay.
+    const either = parseIngredientLine("1 tbsp oil / butter");
+    assert.equal(either.item, "oil / butter");
+  });
+
+  it("keeps brackets balanced when splitting prep off the food", () => {
+    const i = parseIngredientLine("2 chicken breasts (about 300 g each), sliced thinly");
+    assert.equal(i.item, "chicken breasts");
+    assert.equal(i.notes, "about 300 g each, sliced thinly");
+
+    // A line that is only a bracket keeps its text rather than emptying out.
+    const odd = parseIngredientLine("(to taste) salt");
+    assert.ok(odd.item.length > 0);
+  });
+
+  it("keeps a compound amount's extra out of the food's name", () => {
+    const i = parseIngredientLine("1/3 cup + 2 tbsp white vinegar");
+    assert.equal(i.quantity, 0.333);
+    assert.equal(i.unit, "cup");
+    assert.equal(i.item, "white vinegar");
+    assert.equal(i.canonicalItem, "white vinegar");
+    // The extra is recorded, never silently dropped from the amount.
+    assert.match(i.notes ?? "", /plus 2 tbsp/);
+  });
+
+  it("lifts a whole trailing bracket off the food, nested brackets included", () => {
+    const i = parseIngredientLine(
+      "750 g / 1.5 lb chicken thigh fillets (, boneless and skinless (5 - 6 pieces) (Note 1))",
+    );
+    assert.equal(i.item, "chicken thigh fillets");
+    assert.equal(i.canonicalItem, "chicken thigh fillet");
+    assert.equal(i.notes, "boneless and skinless (5 - 6 pieces) (Note 1)");
+  });
+
   it("normalizes unit spellings", () => {
     assert.equal(parseIngredientLine("2 tablespoons olive oil").unit, "tbsp");
     assert.equal(parseIngredientLine("3 Tbsp. butter").unit, "tbsp");

@@ -1,0 +1,807 @@
+[
+  {
+    "path": "apps/mobile/app.json",
+    "sha256": "2b591335d329bc0ada2ad083d3319704648a3772c2ce23ddc09b10dc5d7dbf2f",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/_layout.tsx",
+    "sha256": "12112bc132579fea028e56b3da7805863b505fb1e0a46d57780a5f131a81f771",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/(protected)/_layout.tsx",
+    "sha256": "3a747a942f11cff4d27bf4889a1e73c91240b219fcc3a7ed80c3fbaf16ffe8a5",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/(protected)/(tabs)/_layout.tsx",
+    "sha256": "65fbd99141b7e6fc116b346cb04b2fc030497b35bb85371af3c94ec5e1a46b9d",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/(protected)/(tabs)/cook.tsx",
+    "sha256": "ba3141b99e46ba5f46d34abdeea72a6777fe3917a213496170ab0b61148eb016",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/(protected)/(tabs)/discover.tsx",
+    "sha256": "f60410a16e6007e84d431064dc857fedda5c00cbd660704c9e4eeb207f294feb",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/(protected)/(tabs)/friends.tsx",
+    "sha256": "852066b4fe6a862204d930d685b39487a3b254a67e3ba6437c2532538f17a7a5",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/(protected)/(tabs)/index.tsx",
+    "sha256": "7d3c7146e26f423a236680b55586e547d13e546fa1e370858b4fcda26de15990",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/(protected)/(tabs)/list.tsx",
+    "sha256": "e2279908d44d0b8335fe5241e695b9571f1e165cb6fd056adba5cecc31f4e5f0",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/(protected)/(tabs)/plan.tsx",
+    "sha256": "93a4a1dd59b2d7369e28ac25eae4f4d947e4ac7b7b38dbe02d770995178c10ef",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/(protected)/import.tsx",
+    "sha256": "418ea9c1ef96375dbf95eca19aa8f3eac5a0f7038ca7b910dde9dd98914c5135",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/(protected)/r/[id].tsx",
+    "sha256": "97eec996a18f1dd36de0092e4ce1e7ff2ddef591b9a90bab9a5bca0378f5aa40",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/(protected)/recipe/[id]/cook.tsx",
+    "sha256": "19035f3ef35f6b7fc3c5ef295890723d0eefa4ffb09a9ec626bfafdf10c6dea9",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/(protected)/recipe/[id]/edit.tsx",
+    "sha256": "3dc6066f347e5e43dfab3a72678d9b5c5fe48efde83dc51e003921d472459259",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/(protected)/recipe/[id]/index.tsx",
+    "sha256": "c2f05ff316a24200fe80d83fa9a14fff39e207f212548c7b169dcec337e2a34d",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/(protected)/recipe/new.tsx",
+    "sha256": "1f219bc38bc54aae4c007b34167965e56d3aa5263251ba60585b24ea6ee1d06a",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/+native-intent.tsx",
+    "sha256": "0711875c8afaae83b8bee938cbdecfcf842eac2a5d52edbc12a390cf5535e6f7",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/care.tsx",
+    "sha256": "3cccdf084c369d72c66ab225d74bca06110d83e9e79f01345c256bf847d89807",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/app/legal.tsx",
+    "sha256": "f72a4dc1fe1e3ca8673d85c6812e96a89dab209c21801d6159d26a439af0a346",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/assets/adaptive-icon.png",
+    "sha256": "1d7d5710bc3e38e232edb22ef215374a965721daa90862689727c92727e1ec9f",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/assets/hearth.png",
+    "sha256": "14b5667c03722b56809c5e900d76afd3d61df129f99bf7854c1bb8124f045bad",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/assets/icon.png",
+    "sha256": "92992a1322314d9d9b39c5f1ccd79c5f858c07498a06aae33e03180eae7ab9ab",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/assets/kettle-journal.png",
+    "sha256": "a7e472cdec2f7f8371b88d08e0599e3ca7b520a46fbbd6ea4c8cdf0e497c93d1",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/assets/notification-icon.png",
+    "sha256": "399c6f8d0be2a9b085120251c1e2daa38acb93f8f5e651fa6fb0762da95c0e1d",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/assets/splash-icon.png",
+    "sha256": "ad1c11b39dd823e3d164a4eb24df9d60256022055acf7650baf9c4049c7beca4",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/assets/woodland/food-atlas.webp",
+    "sha256": "cb96b0f9d3262f4f593c3b8db2051336758c04eaedcef0f50a049ef1b1d7697c",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/assets/woodland/kitchen-scene.webp",
+    "sha256": "7c27f1c204647d690c0126d637453e179e945640f9f51dbac4c61d638768fb5b",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/assets/woodland/parchment.webp",
+    "sha256": "5546ede20f7a470a059496332108661ef19b98ce1bc40aba69684afe8c9ee837",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/assets/woodland/timber.webp",
+    "sha256": "b58046618f7c5597cfd04697c356c4a9eff03a5b4848bae2417da45eff9c88a6",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/lib/accountToken.ts",
+    "sha256": "da9764bec57275858002b5b071efe4946c74d526b27d741f0289a855b45480dd",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/lib/api.ts",
+    "sha256": "cba056cbe3445a9eec1b67ff17a3a477f59ad4e6336840358f5156d63bfc1424",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/lib/client.ts",
+    "sha256": "1e702a587c166851270e8bd708971fe307473f286dd7b15c9b4bef7aba9be4a4",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/account/AuthGate.tsx",
+    "sha256": "b6ce0973129a793d410bdc34615742b05426fdeadef532e473b28badc7e7589b",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/account/index.ts",
+    "sha256": "b81007f3e85e71427c8648e6de4591aedf2d8bd9c648cb7baafa1a35c76dd733",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/account/SignInScreen.tsx",
+    "sha256": "eacf162839637a1b0afcef6c2d1883a88bc9c82a518d2442be6521f1353e552d",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/account/SignOutButton.tsx",
+    "sha256": "e1c1b35df3a13869302209a7e7df4ea78a3281101ad459c0f88d4652f8c89050",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/care/CareIdeaCard.tsx",
+    "sha256": "177e06781acdb3840547d3c78eadcbd52961820e2b068cf7fcb85bb9555207c0",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/care/CareScreen.tsx",
+    "sha256": "dd7d77a5056e269d34be0571e3f8d0b8594f7eb8ec500a4917c5ddd79e40f8a4",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/care/nativeLink.ts",
+    "sha256": "d3fd00693834ca97e6d3152552fed549f0e6867f74b7917436b5e3c0501b91c4",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/care/saveIdea.ts",
+    "sha256": "26faf477ff3dd52ac52f3cc326127e68b62b444066f3b7568324e65e97cfb979",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/cook/CookScreen.tsx",
+    "sha256": "6068cac5d0d4b84730ea1113f7243bf40ee09f289a50238a3c111e6346bcd20f",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/cook/FinishPanel.tsx",
+    "sha256": "2cac81ab437e692827eefe9bbbf38af75c6fe6829b33085772e35e27b9a5f454",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/cook/index.ts",
+    "sha256": "48ce91827c0a38a9e536eea42524dc9cee8920d16d5ed0ccfed52b4130f7099f",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/cook/notify.ts",
+    "sha256": "77f679fd0f3d7e36450f0d0e3b3eb1f8634134411138c022b7017d36093db2a8",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/cook/TimerTray.tsx",
+    "sha256": "f987f35c84b27b5cb581d4ca0881a3d17c9974993fb4230b322b7f5cf5a5bf11",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/cook/useCookSession.ts",
+    "sha256": "5d7af5ba17f330a26720f47d5218411aada69fad8534fd325352d8092bf57cfa",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/cook/useTimers.ts",
+    "sha256": "5a308f83568e3fa26d0eea6a6f309be152b4dc6217975be22e22559fe2a203fd",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/discover/DiscoverScreen.tsx",
+    "sha256": "f127af9c7656fe7bc158a9211d487e71766b40e38f047160fceb881a917dce8b",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/discover/index.ts",
+    "sha256": "20828ef85a03088a9ef659662da23c11040e4a0948622492ff9dea1c2de26a26",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/editor/DetailFields.tsx",
+    "sha256": "bfa66d5777577c1ead8594b4238033dad48eed168268199abcd6aa14e4d375f3",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/editor/index.ts",
+    "sha256": "3a345e2130d21a75bc460b9c37df4c37fcc1cfbfab26169ad78511df15633ef6",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/editor/IngredientRows.tsx",
+    "sha256": "f062d78ace6dfe6aae409740dd3438af0bfbb9dd97a7e6df64340baea631aad3",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/editor/RecipeEditorScreen.tsx",
+    "sha256": "0bbee6297e2a0b8813b7f07e52e1a3b4c154e950a9a2b735de2a88c8d15beba1",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/editor/RowActions.tsx",
+    "sha256": "44c1823c3abc6dde02416530ea6100d598c77e160ff7942f4614e67c7e48c993",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/editor/StepRows.tsx",
+    "sha256": "77af6644bc8f4cb41ab179583b5cf2b9c667b0f9e0dec9134919180e51ba41e9",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/editor/useDraft.ts",
+    "sha256": "72f38636328e2969fe616f762d262ca59ea4e5c6c871da9f82aa0f420361bcd6",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/friends/FriendsScreen.tsx",
+    "sha256": "be977dcb05e78aa36c2d82c98e29c3809bd9e64d950646711ae1683b6565fa28",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/friends/index.ts",
+    "sha256": "8c6e74a8317b5830e8dde11679506d327a2c6facc729a8d1447e1f57252372f8",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/import/ClipboardSuggestion.tsx",
+    "sha256": "bb925a30287fc151bbd2a9f435a3c5c54db106edaac1f9e248e8fcfa799ca8a6",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/import/CreditMeter.tsx",
+    "sha256": "9a6bcf2f2e354d9b9d078d15e69e3e114f7719fbc3a463f052c7a8f2ae448355",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/import/ImportForm.tsx",
+    "sha256": "fd9f2f82ae6d013f6f36effcab5d72112322a7c561c9e6ab0138833df9a39196",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/import/ImportProgress.tsx",
+    "sha256": "c41708a9be19b927d56269e1508178712e042b368a8744bebce093aafdbbaf97",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/import/ImportScreen.tsx",
+    "sha256": "d3668bc0c7085dc4b3addb0099dd1327b29e3e87f9ce65603347296eae016bce",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/import/index.ts",
+    "sha256": "e4cc2a8ec34a9a671ba95d1f13895cd5a8478250fbd644efac441d0c96fdca2c",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/import/ModeSwitch.tsx",
+    "sha256": "d7f6e867e1b9d976f0dfc3b2578ad95e77cdd2f73d0198161749ab066d1f54b3",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/import/useClipboardLink.ts",
+    "sha256": "6c0deae18dbd2c5546e291fc14e2d764c4ecbe22c3b94ae5433d5797aa467bd3",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/import/useImport.ts",
+    "sha256": "8dbd7857d77ae3cf45691a1446a988a772178ffa83ba5505c3abf5e2ed6caf96",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/library/index.ts",
+    "sha256": "faaf3ad3e3f59fa872e4c8a3f6fd53cc38ef7e8940a1783ea869541a60ce6e38",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/library/LibraryScreen.tsx",
+    "sha256": "b9d48f0575c2020d9371bb46aec408e750e717510cf1e613067fe59268d3af28",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/list/index.ts",
+    "sha256": "75c79ca2b086c7419ad751d204b07e9da61dbc6a6656778d8280c8a6d327c524",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/list/KrogerConnection.tsx",
+    "sha256": "b6cb6d3d3c032bf7056669c15d8524f15be4cca1152b5d78c0fa99997a738bff",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/list/ListScreen.tsx",
+    "sha256": "ea47c31eca1a1522673da0e4ec665256e9c5e153dcd2394752bfd93266ffa131",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/list/useShoppingList.ts",
+    "sha256": "a2a7e79eeac36cd3bf04ff5ad1bbe7b708ced41200d491216cc576877ee1a13b",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/pantry/CookScreen.tsx",
+    "sha256": "724bf49d70e31b7ffb87d48a8503f4e74c7282b313402587fe214816c6127248",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/pantry/index.ts",
+    "sha256": "b7232d60118a21eef46d5fbbab7a5c7e1dea28c90cb41da2f545bbdadfc99e93",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/pantry/MatchList.tsx",
+    "sha256": "7f6f9fa7d8b56d1c5395407c765b0d2639d05d7528ad3c61591a3f3611800e94",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/pantry/PantryChips.tsx",
+    "sha256": "f43b7452927d2193c1e39b577d1a5037efa1b70a2df432f0a3ce177264c67c3d",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/pantry/usePantry.ts",
+    "sha256": "94880a23f31222293815ddfd6b907adab2f7d30618772a3bcac380794adf7d66",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/plan/index.ts",
+    "sha256": "f3706acfbd381e2721fdf9e8a07ec113407fa743a9b5b1a268a2b77871eadf6b",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/plan/PlanScreen.tsx",
+    "sha256": "bf307855b7ca6dac36a4b284fec92e0026dd03abc7ac2494798844f463aa7b45",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/recipe/index.ts",
+    "sha256": "e3e77c98f35f61b83e6a5156b1ac54cb601cc9db8a583a1499c7b096f70a4cfc",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/recipe/IngredientList.tsx",
+    "sha256": "8b946a82f167e8f467e867cdaac03e27dce965372c67ab3d172f0374756d37bf",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/recipe/Provenance.tsx",
+    "sha256": "90202cc6562a9ce055af75764e54055069ede018d6632e957e127ea80baf5901",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/recipe/RecipeCard.tsx",
+    "sha256": "ba96cca976336f4622bf58d5a564714097094582046e8cdd2112de37ff414231",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/recipe/RecipeFacts.tsx",
+    "sha256": "2e079d6a13dc164e93f46078b3fbc64d93656698bffb2b5dfbe69bb25f9706e1",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/recipe/RecipeHeader.tsx",
+    "sha256": "18f51a0208fbe3eeb5e6e348259a7aa654a83109eb8cc838825f74aac7e78f45",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/recipe/RecipeShare.tsx",
+    "sha256": "94a64fa4ad560c847809c25894d355e2464c7d38e9e1ea66a146ab5e6ccfb1c2",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/recipe/StepList.tsx",
+    "sha256": "1e40579f53cead2bd2f6674b918bc3ebe20e0f59f819a63ef4e58b559146042a",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/recipe/useServings.ts",
+    "sha256": "8534f677bfa471e56f7e3447b2719d60e0152ab5b9af8cebd6d3e40a5d597167",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/sharing/index.ts",
+    "sha256": "d84b47e346b49b62873e55769a3f3f1aed37cb5a214607a21f4d40c4b27d44cb",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/sharing/ShareControl.tsx",
+    "sha256": "472b5f5f3065dc9ffeb8338cf75e237df129490e66fcc129818110d61b402df0",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/sharing/SharedRecipeScreen.tsx",
+    "sha256": "4cb334d3dcf05a7d60f02039df39881f4c78ffd48d664d5e4bfcda735071de5b",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/shelves/index.ts",
+    "sha256": "c9ce2476f1fcdd536d65cc38cdd171c5de3c3db98b8fbf19e76485d2b07c34c1",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/shelves/ShelfChecklist.tsx",
+    "sha256": "2b9d0652ab838550617db14b0103a1d08dd1e014e0bb488bd97912f842655825",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/shelves/ShelfControls.tsx",
+    "sha256": "075ff271bf358048d1feda7580312dd1eb1d46f1758e0d71b0902ec30854a5dc",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/shelves/StarRating.tsx",
+    "sha256": "320d04aa4ceff95053174e90ec34f2e2476db41e98e7ac8dc171d1f8e6d96be8",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/shelves/StatusPicker.tsx",
+    "sha256": "9525e2468127799ae2e0c52551347f450143a0b87c39b8780dce22b3acfcad2a",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/shelves/useShelfState.ts",
+    "sha256": "6dbf5de365a9a62a05ba62a9bde29d929aa72fe2af55146ac6b38719ebd0e73c",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/woodland/Artwork.tsx",
+    "sha256": "75425a2fb255d8ed2eb6b252c548f844107fb20d0bcada72a2b697b1b7cee325",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/woodland/KitchenIcon.tsx",
+    "sha256": "05bd752b8df5b04823d1543f0a9c29d5312f5fea63fda55dc3d7baeaf504986f",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/modules/woodland/KitchenWelcome.tsx",
+    "sha256": "31203dafa6fb425cef114f63a548fc76a8bede33e01ea35af9bd7e7329984fee",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/package.json",
+    "sha256": "07044da01fb0e57f472c438da713c266a63ac3179ab130343245a8b7c1fd6e34",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/scripts/build-android-review.ps1",
+    "sha256": "04a0df71926bc4658165f921c762ccba9990411939848743fe4a13018365b00d",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/scripts/windows-native.init.gradle",
+    "sha256": "a7618f40a2582cefe62deed8493dc229d5911e730540654f5540ca35b5e359e8",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/tsconfig.json",
+    "sha256": "593820f1f6f2fe0d597d3bc298ccc5815a868cd464a25a9d4522eb528c82f436",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/ui/Button.tsx",
+    "sha256": "b8a386b22d508f4196ce94c3a3cb603b2317590cb739d2e746e17824f87213e0",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/ui/Callout.tsx",
+    "sha256": "ee957b704ddf4afc40f4f173084394208ea2f3aa37cf1d5a091feee473761d00",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/ui/Field.tsx",
+    "sha256": "a43102aaa4a3b9ac27446e58b9b33411019e313142710a59b42e78c4b8cbff11",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/ui/index.ts",
+    "sha256": "ce16d42f16fc98fc486144563ab8831dc12ac1f34869f2b65279815e8c995a55",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/ui/Panel.tsx",
+    "sha256": "e8d1551377b714065be067ee99faf2e1537c3e9f5f9745dea98d32e76bb852d8",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/ui/theme.ts",
+    "sha256": "6c7d54e64b7fc5555e7df33af386e581abfc9e8d055c8c1971a08fa332945796",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "apps/mobile/ui/ThemeProvider.tsx",
+    "sha256": "90dd7861586189bf680574ff1c928db2f86da1f2c29beacea7a3930bb2b85e26",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "package.json",
+    "sha256": "523bccc201812067067b21179365f38d5ce844f5457141c3e456b8bb1f7e27ef",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/aisles.ts",
+    "sha256": "95a48813bb521ed8c2cd61082d09c809c2b2829b529114e0bb8fd531cb3d9968",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/api-client.ts",
+    "sha256": "75fc1e65931e7ae047b909874ca09440bf29e62a778058b0768efbb1544286da",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/billing.ts",
+    "sha256": "87fb04c815c657423942d5316370d4d78c692becddc8896259e0fccc95f440c7",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/care.ts",
+    "sha256": "f2247e78ffb654123fea0124af637d884f09fecbff203c2ff86316793fa8a8a3",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/carts-instacart.ts",
+    "sha256": "681d92e7d105490df81c1f8fc3c5bfdd55294f720f167b8917695b3dfdbd5049",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/carts-kroger.ts",
+    "sha256": "bd16f45e5a561ec28925566e00006c6f9fcff4ead2aad4c7db5111470087d5f3",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/carts.ts",
+    "sha256": "e491cd7c5915d767e4dbbfb7ca590d6726a0a28fc8bbd1743c16d1902dd54700",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/cli.ts",
+    "sha256": "38f4083843caee94f07b5e8620737d2a89ba0b2968b894b89678b7795ffbdb91",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/cook.ts",
+    "sha256": "078c73dcd58ae2ec684e94684e3123135d6f48041569f708ff82549ec18dfafd",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/credits.ts",
+    "sha256": "029bd71cf514341abd7a2182e06c69deee0717052eb27dc98e3b514a2a60c24d",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/dietary.ts",
+    "sha256": "4825fbb98c55f35c8f51c0c3d487f8bdca80c3a236e664b141142a54e7096c4d",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/editor.ts",
+    "sha256": "7aeb2f27d5debfab1fe3f31b862a291cf547e1d0ff5327f3e5703bd9835ee366",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/export.ts",
+    "sha256": "79b3dc4c2c4eb05dc9ca17b9a7a3a2ff194797cbf9a9ac159167a08c3bc63a55",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/extract.ts",
+    "sha256": "0e3e218393a7745b8e1155923b78c63c1552d27ad3dd1445267c06d9ddf45d62",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/format.ts",
+    "sha256": "31886687e7d1fff827a8b3c9fab0cdaa81be43ec8846585cbb4aa2a1c38aee7b",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/friends.ts",
+    "sha256": "6fa77ff296d83ddaafd4c3533f5dec994c8c236f72c32838d4348d20c3752454",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/ids.ts",
+    "sha256": "62dc9d0087a3ddb62d05e4b7bb733ed3e71d9ac09b15639a185c781808cc226b",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/import-client.ts",
+    "sha256": "3b8fb3173f1634edaee3415b553e473ea946b00d5dafd06144c90533406933ac",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/index.ts",
+    "sha256": "1de191909a2d5746f0c8383e9eac1caf40e60ef6fadebca4541d8f631061596c",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/ingest.ts",
+    "sha256": "2f1a7a1415616c1a3ac8e353ea56427d2bb39d1f27951a6416478e67a0110625",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/library.ts",
+    "sha256": "6caa2f790c8c0f549d17b47cb8640f1ea0ad91d14f370e4de6cb77de35589efd",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/nutrition-usda.ts",
+    "sha256": "75d56ee303db2e9a121d773055cc6a41a47aa3e5aac00f8592a7ccf19bc33210",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/nutrition.ts",
+    "sha256": "ecf10c5944299d85ddfdc72797e32c15acd149e3efb7a5ee3fa8560c0b64a972",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/pairing.ts",
+    "sha256": "fa6d05c4a888888b016620a87ed7f9c9ddd0a8c457b38990142f6e7ac4204428",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/pantry-query.ts",
+    "sha256": "9b2870114ba7e982f9f5968fc9ef0fc19a18eb05e7dce99881e2cd20c11bfce4",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/pantry.ts",
+    "sha256": "de8dac31a9dceeb956486bbffcdceba49275f48487ac18678cb3485cf80c2ffe",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/plan.ts",
+    "sha256": "1996ea0944b93e465605049b9456f4be7db67732a4cd38e05cf281396ea02ffd",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/recipe.ts",
+    "sha256": "29e246b60b1db085c624a58cb47940b7faa60edafb8ad3fb8a5faae7a544fe32",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/secret-box.ts",
+    "sha256": "a8b4991fe35478db602d4fcff065a66349954fdc620c27efc4192bdda9c4071c",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/sharing.ts",
+    "sha256": "5f439ff2de2dbf2806791df91e7654e54d16482d57eb73627a0e7612fbf0b0e1",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/shelves.ts",
+    "sha256": "199c5b40e2a0c2bae697013e985c2304b8a66b28336d109354a4f1c95e11df3c",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/shopping.ts",
+    "sha256": "1ac50aba656c1865ceb7e7b6296bee215fd3c4a2e672a6e2b9d3f0eb5fc27122",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/source-kind.ts",
+    "sha256": "144362e542c9c924a3463b92050631dec8e9455f50958330d330e735de6c8028",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/sources/article.ts",
+    "sha256": "679375476ec6da8a6e4ea71fbe9786cb03f90be522f905ea8a4dba6433e0b0da",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/sources/fetch.ts",
+    "sha256": "3dd190540cd3aaede65e0f09d380f2740ade235f5feb3e444373f4ea5ac72eb6",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/sources/index.ts",
+    "sha256": "d3852910aa5d4a1b4120ab05354fd76e3c2df713fcd90782449fdb1ce7b9a488",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/sources/jsonld.ts",
+    "sha256": "a529213a4a84444d1276bd025cbe65a05a06564e7669b8fbb07fd803386ffc8d",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/sources/social.ts",
+    "sha256": "ea772934484eadd7949b2b0f05187613ff7bf4b5c3d3176e8a54a15b5f3cc9b7",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/sources/transcribe.ts",
+    "sha256": "892a529ece7a926bc95099ec8845b6bac3562f3d41cfb7904f5466a65dab8cfb",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/sources/types.ts",
+    "sha256": "7b1a45b20829190e062ae271a43d67c1b0dc0e786158e32d44972ecae57bdf04",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/sources/url-guard.ts",
+    "sha256": "4edb55dc5e94c0049561b6120079f75f2d8d2e39e5b50cf04f410df87495281c",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/sources/youtube.ts",
+    "sha256": "aa77b738e9aebec8854f596c0b7011f5b5937843b877e06cc48e6d9142e09b0d",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/staples.ts",
+    "sha256": "735d882faaaf215cec2361d227799db72e228a6d6b54c8e22aed5f679f7bb8a3",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/step-ingredients.ts",
+    "sha256": "d928a7abb0806202ea4da38c6cd23e3594e73051783ec0e20e51aac7010b96db",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/template.ts",
+    "sha256": "07084664c15ad896fcc8b9e432a679f1c1353938be51284d72158c06bb1d8926",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/units-convert.ts",
+    "sha256": "6af7e07338ac3c751536a7d1d4a17fd94820507ee9de52df64f241e39deb6210",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "packages/core/src/units.ts",
+    "sha256": "864c1aa599e425a2fbd5f8acd48aee54fae50ed0c275f950cd91b6febf9db89c",
+    "approvedLogicalMatch": true
+  },
+  {
+    "path": "pnpm-lock.yaml",
+    "sha256": "90d8b177b1242842f2c8797c4fad9257dfec28a00a0216e0aa398f929391c6c3",
+    "approvedLogicalMatch": true
+  }
+]

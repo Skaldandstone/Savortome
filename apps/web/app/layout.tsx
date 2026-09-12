@@ -5,21 +5,45 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { AccountMenu, DevAccountBadge } from "@/modules/account";
 import { OfflineBanner, ServiceWorkerRegistration } from "@/modules/offline";
 import { clerkConfigured } from "@/lib/session";
+import { SENTRY_DSN_META_NAME, SENTRY_ENVIRONMENT_META_NAME } from "@/lib/sentry-shared";
 import "./globals.css";
 import styles from "./layout.module.css";
+import { LegalFooter } from "../ui/LegalFooter";
+import { canUseBeta } from '@/lib/beta';
+import { DecorationControl, WoodlandNavigation } from '@/modules/woodland/Woodland';
+import '../ui/woodland.css';
 
 export const metadata: Metadata = {
-  title: "Second Breakfast",
-  description: "Every recipe you find, turned into a card you can actually cook from.",
+  title: "Savortome™",
+  description: "Food is magic. Cooking shouldn’t require it.",
 };
+
+/**
+ * The browser Sentry SDK reads its DSN from these tags at request time.
+ *
+ * Rendered rather than inlined at build so the value follows the running task
+ * instead of whichever environment produced the image. The DSN is public by
+ * design: it can only send events to one project, never read them.
+ */
+function SentryMeta() {
+  const dsn = process.env.SENTRY_DSN;
+  if (!dsn) return null;
+  const environment = process.env.SENTRY_ENVIRONMENT ?? process.env.NODE_ENV;
+  return (
+    <>
+      <meta name={SENTRY_DSN_META_NAME} content={dsn} />
+      {environment ? <meta name={SENTRY_ENVIRONMENT_META_NAME} content={environment} /> : null}
+    </>
+  );
+}
 
 function Masthead({ children }: { children: ReactNode }) {
   return (
     <header className={styles.masthead} data-print="hide">
       <h1 className={styles.wordmark}>
-        <Link href="/">Second Breakfast</Link>
+        <Link href="/">Savortome<span className="tm">™</span></Link>
       </h1>
-      <span className={styles.tagline}>recipes, from anywhere</span>
+      <span className={styles.tagline}>Food is magic. Cooking shouldn’t require it.</span>
       <nav className={styles.nav}>
         <Link href="/">Library</Link>
         <Link href="/plan">Plan</Link>
@@ -29,25 +53,39 @@ function Masthead({ children }: { children: ReactNode }) {
         <Link href="/discover">Discover</Link>
         <Link href="/profile">Dietary profile</Link>
         <Link href="/plans">Plans</Link>
+        <a href="https://skaldandstone.com/savortome/">About Savortome</a>
       </nav>
       {children}
     </header>
   );
 }
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const beta = await canUseBeta();
+  if (beta) {
+    const shell = <div className="woodland-shell">
+      <a className="woodland-skip" href="#main-content">Skip to content</a>
+      <header className="woodland-masthead" data-print="hide"><Link href="/" className="woodland-brand"><img src="/icons/icon-192.png" alt="" /><span>Savortome<span className="tm">™</span><small>Food is magic. Cooking shouldn’t require it.</small></span></Link><DecorationControl />{clerkConfigured() ? <AccountMenu /> : <DevAccountBadge />}</header>
+      <WoodlandNavigation />
+      <OfflineBanner /><div id="main-content" tabIndex={-1}>{children}</div><LegalFooter />
+    </div>;
+    return <html lang="en" data-woodland="true" data-theme="dark" suppressHydrationWarning><head><SentryMeta /></head><body>{clerkConfigured() ? <ClerkProvider>{shell}</ClerkProvider> : shell}<ServiceWorkerRegistration /></body></html>;
+  }
   // Without keys the app runs on a single local account, and mounting
   // ClerkProvider would fail outright rather than degrading.
   if (!clerkConfigured()) {
     return (
       <html lang="en">
+        <head><SentryMeta /></head>
         <body>
           <div className={styles.shell}>
+            <a className={styles.skipLink} href="#main-content">Skip to content</a>
             <Masthead>
               <DevAccountBadge />
             </Masthead>
             <OfflineBanner />
-            {children}
+            <div id="main-content" tabIndex={-1}>{children}</div>
+            <LegalFooter />
           </div>
           <ServiceWorkerRegistration />
         </body>
@@ -57,14 +95,17 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
   return (
     <html lang="en">
+      <head><SentryMeta /></head>
       <body>
         <ClerkProvider>
           <div className={styles.shell}>
+            <a className={styles.skipLink} href="#main-content">Skip to content</a>
             <Masthead>
               <AccountMenu />
             </Masthead>
             <OfflineBanner />
-            {children}
+            <div id="main-content" tabIndex={-1}>{children}</div>
+            <LegalFooter />
           </div>
           <ServiceWorkerRegistration />
         </ClerkProvider>

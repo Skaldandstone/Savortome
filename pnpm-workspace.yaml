@@ -16,6 +16,22 @@ allowBuilds:
   utf-8-validate: true
   # Postinstall is only a funding banner.
   core-js: false
+  # Its postinstall downloads a release binary whose only job here would be
+  # uploading source maps, and that is deliberately disabled: the image build
+  # is fail-closed and holds no Sentry auth token. Skipping the download keeps
+  # the install hermetic.
+  '@sentry/cli': false
+
+minimumReleaseAgeExclude:
+  - '@expo/cli@57.0.23'
+  - '@expo/metro-file-map@57.0.3'
+  - '@expo/ui@57.0.17'
+  - babel-preset-expo@57.0.11
+  - expo-glass-effect@57.0.2
+  - expo-modules-core@57.0.17
+  - expo-modules-jsi@57.1.0
+  - expo-router@57.0.20
+  - expo@57.0.21
 
 # One React for the whole workspace. Expo SDK 57 pins 19.2.3, and letting the
 # web app float to a newer one invites the pair of "why is my hook null"

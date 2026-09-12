@@ -1,0 +1,57 @@
+▶ credentials
+  ✔ needs all three or none (0.9318ms)
+  ✔ asks only for the cart scope, and carries the state through (0.6127ms)
+✔ credentials (11.9902ms)
+▶ needsRefresh
+  ✔ leaves a token with time on it alone (0.522ms)
+  ✔ replaces one that's expired (0.2163ms)
+  ✔ replaces one about to expire, rather than racing it (0.23ms)
+  ✔ treats nonsense as expired (0.2143ms)
+✔ needsRefresh (1.8321ms)
+▶ bestProductMatch
+  ✔ prefers the plainest description that still contains the item (0.9192ms)
+  ✔ refuses anything that doesn't actually contain the item (0.2971ms)
+  ✔ matches whole words, not fragments (0.2383ms)
+  ✔ keeps a multi-word name together (0.3058ms)
+  ✔ ignores punctuation and case in either (0.1903ms)
+  ✔ keeps Kroger's own order when descriptions are equally plain (0.1781ms)
+  ✔ falls back to the display name when there's no canonical one (0.1429ms)
+  ✔ has nothing to match against an empty name or an empty search (0.1238ms)
+✔ bestProductMatch (3.1923ms)
+▶ toCartItems
+  ✔ asks for one of whatever the store sells (1.2383ms)
+  ✔ collapses two lines that resolved to the same product (0.1865ms)
+  ✔ can be asked for delivery instead (0.1973ms)
+✔ toCartItems (1.8504ms)
+▶ talking to the API
+  ✔ asks for a client_credentials token with basic auth (132.114ms)
+  ✔ trades a code for the shopper's own token, quoting the same redirect back (12.39ms)
+  ✔ reads stores, and drops any without an id (15.9399ms)
+  ✔ searches products at a specific store (8.41ms)
+  ✔ says so when the cart is rejected (24.49ms)
+  ✔ refuses to send an empty cart rather than calling with nothing (0.485ms)
+✔ talking to the API (194.5961ms)
+▶ sending a whole list
+  ✔ adds what it matched and names what it didn't (65.6108ms)
+  ✔ says which store when nothing matches, instead of an empty cart (7.3351ms)
+  ✔ insists on a store first (0.4598ms)
+  ✔ has nothing to do with an empty list (0.2956ms)
+✔ sending a whole list (74.2105ms)
+✔ generated offline catalogue matches current shared ranking across strict choices (442.528ms)
+✔ generated worker contains the current audited worker source (1.4131ms)
+✔ service worker never intercepts APIs, authenticated fetches, auth pages or mutations (153.1117ms)
+✔ activation removes legacy private caches, preserving unrelated origin caches (3.793ms)
+✔ precache omits credentials and validates the whole shell before storing (6.0184ms)
+✔ a private or redirected precache response fails installation without partial storage (5.4934ms)
+✔ offline document has no public HTML file and online requests never return the cached shell (1.8255ms)
+✔ static cache rejects account-shaped responses, redirects, failures, and cookie variation (9.4964ms)
+✔ valid public image is cached while query URLs and unknown static payloads are excluded (1.9108ms)
+✔ offline private-page navigation returns only the generic shell and stores no response (1.7745ms)
+ℹ tests 37
+ℹ suites 6
+ℹ pass 37
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5320.4481

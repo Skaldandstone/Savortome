@@ -74,18 +74,31 @@ export function SuggestMeal({
   const conflictAllergens = [...new Set(conflicts.map((f) => f.allergen))];
 
   return (
-    <div className={styles.suggest} data-print="hide">
+    <div className={styles.suggest} data-print="hide" aria-busy={state === "sending"}>
       <span className={styles.suggestLabel}>Suggest this to a friend's plan</span>
       <div className={styles.suggestRow}>
-        <select value={friendId} onChange={(e) => setFriendId(e.target.value)}>
+        <select
+          aria-label="Friend to suggest this meal to"
+          value={friendId}
+          onChange={(e) => setFriendId(e.target.value)}
+        >
           {friends.map((f) => (
             <option key={f.id} value={f.id}>
               {f.displayName}
             </option>
           ))}
         </select>
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        <select value={slot} onChange={(e) => setSlot(e.target.value as MealSlot)}>
+        <input
+          aria-label="Suggested meal date"
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
+        <select
+          aria-label="Suggested meal slot"
+          value={slot}
+          onChange={(e) => setSlot(e.target.value as MealSlot)}
+        >
           {MEAL_SLOTS.map((s) => (
             <option key={s} value={s}>
               {MEAL_SLOT_LABEL[s]}
@@ -111,18 +124,18 @@ export function SuggestMeal({
         </button>
       </div>
       {friendAllergens === "loading" ? (
-        <span className={styles.suggestError}>Checking their allergies…</span>
+        <span className={styles.suggestError} role="status">Checking their allergies…</span>
       ) : friendAllergens === "error" ? (
-        <span className={styles.suggestError}>
+        <span className={styles.suggestError} role="alert">
           Couldn't check their allergies just now — try picking them again.
         </span>
       ) : conflictAllergens.length > 0 ? (
-        <span className={styles.suggestError}>
+        <span className={styles.suggestError} role="alert">
           They've flagged {conflictAllergens.map((a) => ALLERGEN_LABEL[a]).join(", ")} — this recipe
           may contain it. Guessed from ingredient names, not verified.
         </span>
       ) : null}
-      {error ? <span className={styles.suggestError}>{error}</span> : null}
+      {error ? <span className={styles.suggestError} role="alert">{error}</span> : null}
     </div>
   );
 }

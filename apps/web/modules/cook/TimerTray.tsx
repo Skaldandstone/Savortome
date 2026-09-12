@@ -30,7 +30,7 @@ export function TimerTray({
   if (timers.length === 0) return null;
 
   return (
-    <div className={styles.tray}>
+    <div className={styles.tray} role="region" aria-label="Active cooking timers">
       {timers.map((timer) => {
         const state = stateOf(timer);
         const left = remaining(timer);
@@ -57,18 +57,34 @@ export function TimerTray({
 
             <div className={styles.timerActions}>
               {state === "running" ? (
-                <button type="button" onClick={() => onPause(timer.stepN)}>
+                <button
+                  type="button"
+                  aria-label={`Pause ${timer.label} timer from step ${timer.stepN}`}
+                  onClick={() => onPause(timer.stepN)}
+                >
                   Pause
                 </button>
               ) : state === "paused" ? (
-                <button type="button" onClick={() => onResume(timer.stepN)}>
+                <button
+                  type="button"
+                  aria-label={`Resume ${timer.label} timer from step ${timer.stepN}`}
+                  onClick={() => onResume(timer.stepN)}
+                >
                   Resume
                 </button>
               ) : null}
-              <button type="button" onClick={() => onReset(timer.stepN)}>
+              <button
+                type="button"
+                aria-label={`Reset ${timer.label} timer from step ${timer.stepN}`}
+                onClick={() => onReset(timer.stepN)}
+              >
                 Reset
               </button>
-              <button type="button" onClick={() => onDismiss(timer.stepN)}>
+              <button
+                type="button"
+                aria-label={`Clear ${timer.label} timer from step ${timer.stepN}`}
+                onClick={() => onDismiss(timer.stepN)}
+              >
                 Clear
               </button>
             </div>

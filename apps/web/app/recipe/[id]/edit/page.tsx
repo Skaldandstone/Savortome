@@ -1,3 +1,4 @@
+import { KitchenPageHeading } from '@/modules/woodland/KitchenPageHeading';
 import { notFound, redirect } from "next/navigation";
 import { RecipeEditor, toDraft } from "@/modules/editor";
 import { loadRecipe } from "@/lib/library";
@@ -19,7 +20,8 @@ export default async function EditRecipePage({ params }: { params: Promise<{ id:
   if (!row) notFound();
 
   return (
-    <main>
+    <main className="woodland-workspace" data-kitchen-page="recipe/[id]/edit">
+      <KitchenPageHeading title="A recipe, made yours" description="Keep the useful parts and adjust the rest." icon="book" />
       <RecipeEditor recipeId={row.id} initial={toDraft(row)} />
     </main>
   );

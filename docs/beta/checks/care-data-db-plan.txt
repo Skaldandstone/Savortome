@@ -1,0 +1,26 @@
+$ tsx scripts/check-plan.ts
+PASS  the week starts on Monday
+PASS  a recipe goes on a day
+PASS  a main and a side can share one slot
+PASS  the week reads back
+PASS  ...with the recipe's own details joined in
+PASS  ...and the date as the day it was planned for, not a timestamp
+PASS  planning the same recipe twice in one slot is a no-op, not a duplicate
+PASS  ...but the same recipe on two different days is fine
+PASS  you can't plan someone else's recipe
+PASS  ...and nothing was written
+PASS  nobody else sees your plan
+PASS  a moved meal leaves exactly one row
+PASS  ...at the new day and slot
+PASS  moving onto a slot that already has it collapses to one
+PASS  a recipe planned twice is one shopping trip
+PASS  a card can say which days it's planned for
+PASS  ...and says nothing for one that isn't
+PASS  the last day of the week is inside the week
+PASS  ...and next week's Monday is not
+PASS  removing takes just that meal
+PASS  clearing empties the week
+PASS  ...and leaves next week alone
+PASS  deleting a recipe takes it off the calendar
+
+All good.

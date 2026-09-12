@@ -1,0 +1,59 @@
+- paragraph: Second Breakfast · Offline
+- heading "Something easy, even offline." [level=1]
+- paragraph: Your account and saved restrictions are unavailable here. These general ideas use only the temporary choices you make below. Nothing is saved or sent.
+- text: Preparation
+- combobox "Preparation":
+  - option "No preference" [selected]
+  - option "Open and eat"
+  - option "Microwave or less"
+  - option "One pan or less"
+  - option "I can cook"
+- text: Time
+- combobox "Time":
+  - option "No preference" [selected]
+  - option "Two minutes"
+  - option "Ten minutes"
+  - option "Twenty minutes"
+- text: Temperature
+- combobox "Temperature":
+  - option "No preference" [selected]
+  - option "Cold"
+  - option "Warm"
+  - option "Either"
+- text: Texture
+- combobox "Texture":
+  - option "No preference" [selected]
+  - option "crunchy"
+  - option "soft"
+  - option "smooth"
+  - option "plain"
+  - option "any"
+- text: Appetite
+- combobox "Appetite":
+  - option "No preference" [selected]
+  - option "Barely there"
+  - option "Something familiar"
+  - option "Something more"
+- generic "Temporary dietary choices and allergens"
+- region "Food suggestions":
+  - article:
+    - paragraph: Right now · 1 min
+    - heading "A pot of applesauce" [level=2]
+    - list:
+      - listitem: Choose a pot whose ingredients work for you.
+      - listitem: Open it and grab a spoon.
+  - article:
+    - paragraph: A little more · 2 min
+    - heading "Apple slices" [level=2]
+    - list:
+      - listitem: Wash an apple.
+      - listitem: Slice it, or eat it whole.
+  - article:
+    - paragraph: Future me · 1 min
+    - heading "A banana, just as it is" [level=2]
+    - paragraph: "For your next shopping trip: banana. Nothing is saved while offline."
+- paragraph: Suggestions are not verified for allergens. Check ingredients and packaging, including cross-contact information. No match is a guarantee of safety.
+- link "Reconnect to Feed me gently":
+  - /url: /care
+- link "Return to Second Breakfast":
+  - /url: /

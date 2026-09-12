@@ -1,0 +1,62 @@
+[
+  {
+    "path": "apps/mobile/assets/adaptive-icon.png",
+    "prBlob": "f4e3a5d2430ada56efce0d296c4b3d9cebb0a477",
+    "currentBlob": "f4e3a5d2430ada56efce0d296c4b3d9cebb0a477",
+    "identical": true
+  },
+  {
+    "path": "apps/mobile/assets/icon.png",
+    "prBlob": "4675528f1e8b4babc89f18dc3f3cf2fe93cb0a19",
+    "currentBlob": "4675528f1e8b4babc89f18dc3f3cf2fe93cb0a19",
+    "identical": true
+  },
+  {
+    "path": "apps/mobile/assets/notification-icon.png",
+    "prBlob": "dce322f107cd39644c3dc0cddf1e6b501fdbbf89",
+    "currentBlob": "dce322f107cd39644c3dc0cddf1e6b501fdbbf89",
+    "identical": true
+  },
+  {
+    "path": "apps/mobile/assets/splash-icon.png",
+    "prBlob": "3cdc1f7e5040fe0248e8593524fa13dff3eb461b",
+    "currentBlob": "3cdc1f7e5040fe0248e8593524fa13dff3eb461b",
+    "identical": true
+  },
+  {
+    "path": "apps/web/app/apple-icon.png",
+    "prBlob": "49041f6627337a450c97adb64beca28044c5ec69",
+    "currentBlob": "49041f6627337a450c97adb64beca28044c5ec69",
+    "identical": true
+  },
+  {
+    "path": "apps/web/app/icon.png",
+    "prBlob": "2d7c707e3fd37978c425716f1859e2eab07795ed",
+    "currentBlob": "2d7c707e3fd37978c425716f1859e2eab07795ed",
+    "identical": true
+  },
+  {
+    "path": "apps/web/public/icons/icon-192.png",
+    "prBlob": "a41086af00c77106d1d47b33444ecad85a4286c9",
+    "currentBlob": "a41086af00c77106d1d47b33444ecad85a4286c9",
+    "identical": true
+  },
+  {
+    "path": "apps/web/public/icons/icon-512.png",
+    "prBlob": "8ae6217a4995acd852b96f72a45188bb44dd3295",
+    "currentBlob": "8ae6217a4995acd852b96f72a45188bb44dd3295",
+    "identical": true
+  },
+  {
+    "path": "apps/web/public/icons/icon-maskable-512.png",
+    "prBlob": "43e726724a945bd9e13307240816fffd902d843c",
+    "currentBlob": "43e726724a945bd9e13307240816fffd902d843c",
+    "identical": true
+  },
+  {
+    "path": "scripts/make-icons.mjs",
+    "prBlob": "53b4ff29ce2592d640b18b7fb1197dfc8b332503",
+    "currentBlob": "53b4ff29ce2592d640b18b7fb1197dfc8b332503",
+    "identical": true
+  }
+]

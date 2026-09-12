@@ -78,8 +78,8 @@ function Action({
 const styles = StyleSheet.create({
   actions: { flexDirection: "row", gap: space.xs },
   action: {
-    width: 34,
-    height: 34,
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,

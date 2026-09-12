@@ -3,21 +3,10 @@
 import { useEffect } from "react";
 
 /**
- * Registers the service worker — off unless explicitly switched on.
- *
- * Two gates, and the second one deserves an explanation.
- *
- * Not in development, because a worker that caches the shell makes an editing
- * loop lie to you: you change a file, the page doesn't move, and you spend
- * twenty minutes debugging code that already works.
- *
- * And not at all until `NEXT_PUBLIC_ENABLE_SW` is set, because a service
- * worker is *sticky*. A bad one keeps serving its cache to everyone who has
- * already visited, and clearing it means shipping another worker to undo the
- * first. That's a poor thing to switch on for the whole world on the strength
- * of code review alone — `sw.js` has been read and served correctly but its
- * registration has never actually been exercised in a browser, so it stays
- * behind a flag until someone has watched it work and watched it update.
+ * Opt-in production registration. The worker stores only public/static assets
+ * and the generic care shell, never account pages or API responses.
+ * Local browser installation, updates, and offline fallback were exercised
+ * on 30 August 2026; hosted cohort and device checks remain release gates.
  */
 export function ServiceWorkerRegistration() {
   useEffect(() => {

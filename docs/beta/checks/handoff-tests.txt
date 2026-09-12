@@ -1,0 +1,13 @@
+PASS src/integrations/secondBreakfast.test.ts
+  √ only broad user-selected choices cross the boundary (4 ms)
+  √ installed app opens without web navigation (2 ms)
+  √ missing app or failed app launch uses web; both failures remain non-blocking (1 ms)
+  √ absent app and failed detection can both use the web fallback (2 ms)
+  √ food return cannot bypass onboarding or carry a query payload (1 ms)
+  √ malformed and unknown preparation values never enter either link (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       6 passed, 6 total
+Snapshots:   0 total
+Time:        2.695 s
+Ran all test suites matching /src\\integrations\\secondBreakfast.test.ts/i.

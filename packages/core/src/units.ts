@@ -172,6 +172,40 @@ export function canonicalize(item: string): string {
 }
 
 /**
+ * The first comma the line itself owns, ignoring any inside brackets.
+ * Returns -1 when there is none.
+ */
+function topLevelCommaIndex(value: string): number {
+  let depth = 0;
+  for (let i = 0; i < value.length; i++) {
+    const c = value[i];
+    if (c === "(" || c === "[") depth++;
+    else if (c === ")" || c === "]") depth = Math.max(0, depth - 1);
+    else if (c === "," && depth === 0) return i;
+  }
+  return -1;
+}
+
+/**
+ * Where a balanced bracket that closes the string begins, or -1. Scans from
+ * the end so a group containing its own brackets — "(boneless (5 pieces))" —
+ * is found whole instead of being cut at the first inner one.
+ */
+function trailingBracketStart(value: string): number {
+  if (!value.endsWith(")")) return -1;
+  let depth = 0;
+  for (let i = value.length - 1; i >= 0; i--) {
+    const c = value[i];
+    if (c === ")") depth++;
+    else if (c === "(") {
+      depth--;
+      if (depth === 0) return i;
+    }
+  }
+  return -1;
+}
+
+/**
  * Deterministic parse of a single ingredient line. Used on the schema.org path
  * where sites hand us plain strings and we'd rather not pay for a model call.
  * Anything it can't confidently split stays intact in `raw` and `item`.
@@ -214,16 +248,71 @@ export function parseIngredientLine(line: string, group: string | null = null): 
       rest = rest.slice(unitMatch[0].length).trim();
     }
   }
+  // The same amount written twice in different systems: "750 g / 1.5 lb
+  // chicken thighs". Without this the second measure rides into the food's
+  // name and the pantry key becomes "5 lb chicken thigh fillet", which joins
+  // with nothing. Only dropped when a number really is followed by a unit we
+  // know, so "1 tbsp oil / butter" keeps both foods.
+  const alternate = /^[/|]\s*/.exec(rest);
+  if (alternate) {
+    const second = parseQuantity(rest.slice(alternate[0].length));
+    if (second) {
+      const afterQuantity = second.rest.trim();
+      const altUnit = /^([a-zA-Z]+\.?)\s+/.exec(afterQuantity);
+      const altCandidate = altUnit?.[1]?.toLowerCase().replace(/\.$/, "");
+      if (altUnit && altCandidate && UNIT_LOOKUP.has(altCandidate)) {
+        rest = afterQuantity.slice(altUnit[0].length).trim();
+      }
+    }
+  }
+
+  // "1/3 cup + 2 tbsp white vinegar" is one amount written in two parts. The
+  // extra is kept as a note rather than folded into the number — quietly
+  // understating an amount is worse than an awkward name — but it must come
+  // out of the food's name, or the pantry key becomes "tbsp white vinegar".
+  let extraAmount: string | null = null;
+  const plus = /^(?:\+|plus)\s*/i.exec(rest);
+  if (plus) {
+    const more = parseQuantity(rest.slice(plus[0].length));
+    if (more) {
+      const afterQuantity = more.rest.trim();
+      const moreUnit = /^([a-zA-Z]+\.?)\s+/.exec(afterQuantity);
+      const moreCandidate = moreUnit?.[1]?.toLowerCase().replace(/\.$/, "");
+      if (moreUnit && moreCandidate && UNIT_LOOKUP.has(moreCandidate)) {
+        extraAmount = `plus ${round3(more.value)} ${UNIT_LOOKUP.get(moreCandidate) as string}`;
+        rest = afterQuantity.slice(moreUnit[0].length).trim();
+      }
+    }
+  }
+
   rest = rest.replace(/^of\s+/i, "");
   // Metric equivalents often sit between the unit and the food: "1 cup (225 grams) bananas".
   rest = rest.replace(/^\([^)]*\)\s*/, "");
 
-  // Everything after the first comma is prep, not identity.
-  const commaAt = rest.indexOf(",");
+  // Everything after the first comma is prep, not identity — but only a comma
+  // the line itself owns. Splitting inside a bracket ("fillets (skinless,
+  // boneless)") leaves an unbalanced fragment in both halves.
+  const commaAt = topLevelCommaIndex(rest);
   let item = commaAt >= 0 ? rest.slice(0, commaAt) : rest;
   let notes = commaAt >= 0 ? rest.slice(commaAt + 1).trim() : null;
   item = item.replace(/\s+/g, " ").trim();
   if (notes === "") notes = null;
+
+  // A bracket at the end describes the food rather than naming it, so it
+  // belongs with the prep: "chicken thigh fillets (skinless, boneless)".
+  const bracketAt = trailingBracketStart(item);
+  if (bracketAt > 0) {
+    const detail = item
+      .slice(bracketAt + 1, -1)
+      // Sites that wrap the whole qualifier keep its leading comma inside the
+      // bracket: "fillets (, boneless and skinless)".
+      .replace(/^\s*,\s*/, "")
+      .trim();
+    item = item.slice(0, bracketAt).trim();
+    if (detail) notes = notes ? `${detail}, ${notes}` : detail;
+  }
+
+  if (extraAmount) notes = notes ? `${extraAmount}, ${notes}` : extraAmount;
 
   return {
     raw,

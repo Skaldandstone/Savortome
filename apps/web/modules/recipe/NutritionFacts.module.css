@@ -88,3 +88,9 @@
   font-size: var(--step-1);
   color: var(--text-muted);
 }
+
+:global([data-woodland='true']) .card { border:1px solid var(--border); padding:20px; }
+:global([data-woodland='true']) .header { flex-wrap:wrap; }
+:global([data-woodland='true']) .title { font:1.25rem Georgia,serif; text-transform:none; letter-spacing:0; color:var(--accent); }
+:global([data-woodland='true']) .badge { white-space:normal; border-radius:3px; }
+:global([data-woodland='true']) .grid { grid-template-columns:repeat(auto-fit,minmax(min(100%,6rem),1fr)); gap:18px; }

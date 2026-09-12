@@ -44,6 +44,7 @@ export function CookPanel() {
         >
           <FieldRow>
             <TextField
+              aria-label="Ingredients or recipe preferences"
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -86,7 +87,9 @@ export function CookPanel() {
         {showPantry ? (
           <div className={styles.pantryPanel}>
             {pantry.loading ? (
-              <p className={styles.empty}>Loading…</p>
+              <p className={styles.empty} role="status">
+                Loading pantry…
+              </p>
             ) : (
               <PantryList
                 items={pantry.items}
@@ -95,7 +98,11 @@ export function CookPanel() {
                 onClear={() => void pantry.clear()}
               />
             )}
-            {pantry.error ? <Callout tone="error">{pantry.error}</Callout> : null}
+            {pantry.error ? (
+              <Callout tone="error" role="alert">
+                {pantry.error}
+              </Callout>
+            ) : null}
           </div>
         ) : null}
 
@@ -109,7 +116,7 @@ export function CookPanel() {
       </Panel>
 
       {response ? (
-        <section className={styles.results}>
+        <section className={styles.results} aria-label="Pantry recipe results" aria-live="polite">
           <QueryReadback
             query={response.query}
             interpreted={response.interpreted}

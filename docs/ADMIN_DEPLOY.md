@@ -3,11 +3,12 @@
 This covers the staff/CS admin surface added on `claude/admin-api`: the
 `/api/admin/*` routes under `apps/web/app/api/admin/`, their `withAdmin` gate
 (`apps/web/lib/admin.ts`), the admin query module
-(`packages/db/src/queries/admin.ts`), and the Stripe refund flow. Second
-Breakfast has never been deployed to a host — see the **Deploying**
-section of `DEPLOYMENT.md` for the general host constraints (Clerk mandatory in
-prod, `yt-dlp`/`ffmpeg` on the box, `NEXT_PUBLIC_*` at build time). This doc
-adds only what the admin surface needs on top of that.
+(`packages/db/src/queries/admin.ts`), and the Stripe refund flow. The public site
+responded on 30 August 2026, but its deployed revision and admin routes have
+not been verified for this beta. See `DEPLOYMENT.md` for the host constraints
+(Clerk mandatory in production, `yt-dlp`/`ffmpeg` on the box, `NEXT_PUBLIC_*`
+at build time). The private beta is not deployed; its current gates are in
+`beta/README.md`. This document adds the admin-specific requirements.
 
 ## What ships
 
@@ -23,11 +24,13 @@ adds only what the admin surface needs on top of that.
 - **Refund guardrails** (`users/[id]/refund/route.ts`): a hard per-refund cap
   (`SB_REFUND_CAP_CENTS`, default `20000` = $200), single-use (a purchase
   already carrying `refundedAt` is refused), and clawback of the still-unspent
-  purchased credits. Because the Neon HTTP driver has no interactive
-  transactions, the flow is **claim-first**: `claimRefund` conditionally sets
+  purchased credits. The flow is **claim-first**: `claimRefund` conditionally sets
   `refunded_at` (`WHERE refunded_at IS NULL`) *before* Stripe is touched, so a
   double-click or concurrent refund can never reach Stripe twice; a Stripe
-  failure calls `releaseRefundClaim` to allow a retry.
+  failure calls `releaseRefundClaim` to allow a retry. The current node-postgres
+  driver supports transactions, and `finalizeRefund` groups its database
+  updates in one. A database transaction cannot roll back a Stripe request;
+  interrupted refund reconciliation and live behavior remain unverified.
 
 ## Two additive migrations
 
@@ -38,11 +41,12 @@ before the new code is live:
   `ratings.hidden_at`.
 - `0010` — `credit_purchases.refunded_at` and `credit_purchases.refunded_cents`.
 
-Run them against the production Neon database before first boot of the new
-build:
+Inspect the intended PostgreSQL database's migration history and backup before
+applying any missing migration. These migrations may already be present; no
+production migration was run for this private-beta implementation.
 
 ```bash
-DATABASE_URL=<production-neon-url> pnpm db:migrate
+DATABASE_URL=<reviewed-postgresql-url> pnpm db:migrate
 ```
 
 ## Environment
@@ -63,7 +67,7 @@ so its Second Breakfast proxy can authenticate:
 grok-adminhelper secret  SB_ADMIN_TOKEN = <same token>
 ```
 
-(See `ginnungagap/infra/adminhelper/DEPLOY.md`.)
+(See `Studio/workers/adminhelper/DEPLOY.md`.) On the private-beta runtime the token is injected from Secrets Manager `dev/secondbreakfast/admin` (JSON key `ADMIN_API_TOKEN`) through the `AdminSecretArn` stack parameter in `infra/secondbreakfast-private-runtime.yaml`; the portal reaches the runtime at `https://beta.secondbreakfast.skaldandstone.com/api/admin`.
 
 ## Verify
 

@@ -1,0 +1,1 @@
+All four integrated workspace typechecks passed after the final account-loading care link. Direct Node entrypoints; no dependency installation. Core, database and web rerun first, mobile rerun after the native source freeze.

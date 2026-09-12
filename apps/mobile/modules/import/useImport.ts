@@ -41,7 +41,7 @@ export function useImport(): ImportController {
         setError({
           message:
             err instanceof Error
-              ? `${err.message} (is the Second Breakfast server running at ${apiBaseUrl()}?)`
+              ? `${err.message} (is the Savortome server running at ${apiBaseUrl()}?)`
               : "The import failed.",
         });
       }

@@ -1,0 +1,46 @@
+✔ source config disables optimizer while retaining metadata/static import support (1.2484ms)
+✔ installed production handler rejects all image queries before validation/cache (4.7656ms)
+✔ installed development handler rejects all image queries before validation/cache (3.2913ms)
+✖ baseline wildcard control reaches optimizer boundary without any fetch (4.3237ms)
+✔ removed wildcard independently rejects remote hosts if optimizer were enabled (0.7378ms)
+✔ plain public image paths do not enter the optimizer handler (3.5854ms)
+✔ installed metadata sizing preserves the actual skillet icon dimensions (1.349ms)
+✔ new web image-loader imports require this exposure review to be revisited (198.6838ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 7
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 808.6808
+
+✖ failing tests:
+
+test at scripts\check-next-image-boundary.mjs:87:1
+✖ baseline wildcard control reaches optimizer boundary without any fetch (4.3237ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /OPTIMIZER_BOUNDARY/. Input:
+  
+  'ReferenceError: _routekind is not defined'
+  
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:89:3)
+      at async Test.run (node:internal/test_runner/test:1389:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:960:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: ReferenceError: _routekind is not defined
+        at evalmachine.<anonymous>:59:36
+        at Object.run (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:58:72)
+        at TestContext.<anonymous> (file:///C:/Users/James/Documents/GitHub/SecondBreakfast/scripts/check-next-image-boundary.mjs:89:26)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1382:25)
+        at Test.processPendingSubtests (node:internal/test_runner/test:960:18)
+        at Test.postRun (node:internal/test_runner/test:1522:19)
+        at Test.run (node:internal/test_runner/test:1447:12)
+        at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:960:7),
+    expected: /OPTIMIZER_BOUNDARY/,
+    operator: 'rejects',
+    diff: 'simple'
+  }

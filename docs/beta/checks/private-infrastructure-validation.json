@@ -1,0 +1,102 @@
+{
+  "checkedAt": "2026-09-01T04:09:30.6525224+00:00",
+  "account": "734702670689",
+  "region": "us-east-2",
+  "sourceChecks": {
+    "cfnLint": [
+      "database",
+      "runtime",
+      "expiry"
+    ],
+    "awsValidateTemplate": [
+      "database",
+      "runtime",
+      "expiry"
+    ],
+    "cfnGuard": {
+      "version": "3.2.1",
+      "binarySha256": "24a37ffa82f0a32ae4bc49d62947a654cb0388947e108cda328b9d575e1c5556",
+      "database": "PASS",
+      "runtime": "PASS",
+      "expiry": "PASS"
+    },
+    "expiryTests": {
+      "passed": 8,
+      "failed": 0
+    },
+    "powershellParsers": {
+      "passed": 4,
+      "failed": 0
+    },
+    "releaseMocks": {
+      "passed": 61,
+      "failed": 0
+    },
+    "stripeLifecycle": {
+      "passed": 34,
+      "failed": 0
+    },
+    "rdsOrderable": {
+      "engine": "postgres",
+      "engineVersion": "17.10",
+      "instanceClass": "db.t4g.micro",
+      "storage": "gp3",
+      "minimumGiB": 20,
+      "encrypted": true
+    }
+  },
+  "aws": {
+    "prefixList": {
+      "id": "pl-0766b29f8525ef6e0",
+      "version": 1,
+      "state": "create-complete",
+      "entries": 15,
+      "source": "https://www.cloudflare.com/ips-v4",
+      "sourceReviewed": "2026-08-31"
+    },
+    "certificate": {
+      "arn": "arn:aws:acm:us-east-2:734702670689:certificate/f746b9e6-b4f2-48f2-b5ee-36112c7c39db",
+      "domain": "beta.secondbreakfast.skaldandstone.com",
+      "status": "PENDING_VALIDATION"
+    },
+    "serviceCount": 0,
+    "managedStacks": {
+      "expiry": "ABSENT",
+      "database": "ABSENT",
+      "runtime": "ABSENT"
+    },
+    "dnsRecordsPresent": {
+      "beta.secondbreakfast.skaldandstone.com": false,
+      "origin.secondbreakfast.skaldandstone.com": false
+    },
+    "mutations": [
+      "created inert customer-managed Cloudflare IPv4 prefix list",
+      "requested single-host ACM certificate pending DNS validation"
+    ],
+    "notCreated": [
+      "ECS service",
+      "load balancer",
+      "database",
+      "runtime stack",
+      "DNS record",
+      "public endpoint",
+      "Stripe webhook",
+      "billing enablement"
+    ]
+  },
+  "files": {
+    "infra/secondbreakfast-private-database.yaml": "1fdce97984b8098f20a9f7e70fb8e6f44a9600bf33aa120ceba659a8b8b6d5cd",
+    "infra/secondbreakfast-private-database.guard": "9800fc6b4741cfd881a684af978f4329ccb003c6d5626b6b50d2b9d24413890e",
+    "infra/secondbreakfast-private-runtime.yaml": "cffa877af4f083411c3e3adf03af4a56ac5e790baa7d3ad4812f15b9c2a04ed6",
+    "infra/secondbreakfast-private-runtime.guard": "c5e5319c875e794ebb807e4aab7dc27c6019b876c4213bbd9aa5f0f101fa72cb",
+    "infra/secondbreakfast-expiry-handler.py": "cbe1c7529f08470ece078ba88f31e8df2fc9bae59966b3cd40d8d84382acc3f6",
+    "infra/secondbreakfast-session-expiry.template.yaml": "b870e1efd1a32ed8ef92da3735238e972642096f116d253e352d7c4afd9b31b6",
+    "infra/secondbreakfast-session-expiry.yaml": "97cf393acde6f726cfbbb0805eafe0dc44e1a01e47edf01f1b235a55fa2c52e6",
+    "infra/secondbreakfast-session-expiry.guard": "7bdf98f9f69db3b8c72e861b14c5f3ab3c165a28fdd1824602a1f305b0669faf",
+    "infra/cloudflare-ipv4.txt": "6b405f1bcc283166226aa544ea1cd91fd29ce9e275d117f21f75674cff67f6e2",
+    "scripts/configure-beta-database.ps1": "b7232a2ccebe817e4fcc158271462d6177ece9fd9a05228f323b4246072d6ebf",
+    "scripts/build-beta-expiry-template.ps1": "0eb9dc07d6d63f633964c0c5da1b8f2778736ddcb52c1f14ae808c2743ca1747",
+    "scripts/run-beta-database-bootstrap.ps1": "29e2564052d2b87777292f2b0713c800311f0e4d60e6a41412aa7c67411d511f",
+    "scripts/check-beta-infrastructure.ps1": "a7feae90f1490d7dec13d983dad6157e8186d62b9d3bc789c659600e1f10e116"
+  }
+}

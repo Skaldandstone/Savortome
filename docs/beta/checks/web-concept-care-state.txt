@@ -1,0 +1,12 @@
+✔ restoration validates untrusted fields and the fixed return destination (1.4807ms)
+✔ expired, future, malformed and non-finite return records cannot restore (0.1709ms)
+✔ selection and handoff survive locally without keeping a dietary profile (0.2196ms)
+✔ sign-in redirect carries only the allowlisted protocol fields (0.4092ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 434.9003

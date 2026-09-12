@@ -1,0 +1,52 @@
+[
+  {
+    "path": "apps/mobile/assets/adaptive-icon.png",
+    "exact": true,
+    "blob": "f4e3a5d2430ada56efce0d296c4b3d9cebb0a477"
+  },
+  {
+    "path": "apps/mobile/assets/icon.png",
+    "exact": true,
+    "blob": "4675528f1e8b4babc89f18dc3f3cf2fe93cb0a19"
+  },
+  {
+    "path": "apps/mobile/assets/notification-icon.png",
+    "exact": true,
+    "blob": "dce322f107cd39644c3dc0cddf1e6b501fdbbf89"
+  },
+  {
+    "path": "apps/mobile/assets/splash-icon.png",
+    "exact": true,
+    "blob": "3cdc1f7e5040fe0248e8593524fa13dff3eb461b"
+  },
+  {
+    "path": "apps/web/app/apple-icon.png",
+    "exact": true,
+    "blob": "49041f6627337a450c97adb64beca28044c5ec69"
+  },
+  {
+    "path": "apps/web/app/icon.png",
+    "exact": true,
+    "blob": "2d7c707e3fd37978c425716f1859e2eab07795ed"
+  },
+  {
+    "path": "apps/web/public/icons/icon-192.png",
+    "exact": true,
+    "blob": "a41086af00c77106d1d47b33444ecad85a4286c9"
+  },
+  {
+    "path": "apps/web/public/icons/icon-512.png",
+    "exact": true,
+    "blob": "8ae6217a4995acd852b96f72a45188bb44dd3295"
+  },
+  {
+    "path": "apps/web/public/icons/icon-maskable-512.png",
+    "exact": true,
+    "blob": "43e726724a945bd9e13307240816fffd902d843c"
+  },
+  {
+    "path": "scripts/make-icons.mjs",
+    "exact": true,
+    "blob": "53b4ff29ce2592d640b18b7fb1197dfc8b332503"
+  }
+]

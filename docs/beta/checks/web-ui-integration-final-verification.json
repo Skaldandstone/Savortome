@@ -1,0 +1,15 @@
+{
+  "recordedAt": "2026-08-31T20:56:02.221Z",
+  "buildId": "RHF3PnWQrDsVQJjkCCXDQ",
+  "sourceCount": 337,
+  "artifactCount": 476,
+  "drift": [],
+  "documents": 7,
+  "localLinks": 90,
+  "missingLinks": [],
+  "trailingWhitespace": [],
+  "previousSecurityFingerprintUnchanged": true,
+  "protectedFiles": 36,
+  "nativeSourceCount": 161,
+  "apkCount": 3
+}

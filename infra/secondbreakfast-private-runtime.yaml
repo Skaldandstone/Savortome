@@ -1,0 +1,592 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  REVIEW ONLY. Fail-closed Second Breakfast private HTTPS ECS runtime delta.
+  Creates nothing unless the explicit review gate is changed. Stripe remains absent.
+
+Metadata:
+  ReviewStatus: NOT_DEPLOY_APPROVED
+  Account: '051722405355'
+  Region: us-east-2
+  AWSToolsMetrics:
+    AWSAgentToolkit: aws-cloudformation@2
+  com.aws.cloudformation.Context:
+    arch: one private HTTPS ECS service with exact candidate and rollback images
+    must:
+      - create nothing unless the activation gate is supplied
+      - keep billing and beta access disabled by default
+      - admit beta users only after owner approval recorded in Clerk metadata
+      - accept origin traffic only from the reviewed Cloudflare prefix list
+      - use exact Secrets Manager JSON keys and immutable ECR digests
+    ref:
+      - at: docs/beta/private-runtime-infrastructure.md
+        has: session activation, identity, rollback, cleanup, and acceptance procedure
+        scope: repository
+
+Parameters:
+  ActivationGate:
+    Type: String
+    Default: NOT_APPROVED
+    AllowedValues: [NOT_APPROVED, REVIEWED_EPHEMERAL_PRIVATE_HTTPS]
+  ExistingClusterArn:
+    Type: String
+    Default: arn:aws:ecs:us-east-2:051722405355:cluster/skaldandstone-production
+    AllowedPattern: '^arn:aws:ecs:us-east-2:051722405355:cluster/skaldandstone-production$'
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+  PublicSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+  CloudflareIpv4PrefixListId:
+    Type: String
+    AllowedPattern: '^pl-[0-9a-f]+$'
+    Description: Current reviewed Cloudflare IPv4 origin ranges. Prevents direct ALB bypass.
+  ApplicationCertificateArn:
+    Type: String
+    Default: arn:aws:acm:us-east-2:051722405355:certificate/2fa45f4c-4190-418d-a135-828baf2ce6eb
+    AllowedPattern: '^arn:aws:acm:us-east-2:051722405355:certificate/[0-9a-f-]{36}$'
+    Description: >-
+      Issued account-local certificate for the ALB listener. The default covers
+      savortome.skaldandstone.com and beta.secondbreakfast.skaldandstone.com.
+  AppUrl:
+    Type: String
+    Default: 'https://savortome.skaldandstone.com'
+    AllowedPattern: '^https://[a-z0-9.-]+\.skaldandstone\.com$'
+    Description: Public origin the web app advertises (NEXT_PUBLIC_APP_URL). Must be an HTTPS skaldandstone.com host.
+  DatabaseSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: Dedicated nonpublic Second Breakfast PostgreSQL security group.
+  ClerkSecretArn:
+    Type: String
+    AllowedPattern: '^arn:aws:secretsmanager:us-east-2:051722405355:secret:dev/secondbreakfast/clerk-[A-Za-z0-9-]+$'
+    Description: >-
+      Required runtime Clerk secret in the consolidated account. No default is
+      safe. Hyphens are allowed in the name so a purpose-named secret
+      (clerk-production) is nameable, not just Secrets Manager's own suffix.
+  DatabaseSecretArn:
+    Type: String
+    AllowedPattern: '^arn:aws:secretsmanager:us-east-2:051722405355:secret:dev/secondbreakfast/database/[0-9]{10}-[A-Za-z0-9]+$'
+  AdminSecretArn:
+    Type: String
+    AllowedPattern: '^arn:aws:secretsmanager:us-east-2:051722405355:secret:dev/secondbreakfast/admin-[A-Za-z0-9]+$'
+    Description: >-
+      Required admin secret JSON containing ADMIN_API_TOKEN, the shared token the
+      grok-adminhelper staff portal presents as X-Admin-Token on /api/admin/*.
+      No default is safe; the routes refuse every call when it is unset.
+  BetaClerkUserIds:
+    Type: String
+    NoEcho: true
+    Default: ''
+    AllowedPattern: '^(|user_[A-Za-z0-9]+(,user_[A-Za-z0-9]+)*)$'
+    Description: Optional exact-ID recovery allowlist. Owner-approved Studio metadata is the primary admission path.
+  CandidateImage:
+    Type: String
+    Default: 051722405355.dkr.ecr.us-east-2.amazonaws.com/secondbreakfast-web@sha256:bfb6f728aac3f545db1616e8ea50e232234bdd6337b0198cdb64fcd302cbb5ff
+    AllowedPattern: '^051722405355\.dkr\.ecr\.us-east-2\.amazonaws\.com/secondbreakfast-web@sha256:[a-f0-9]{64}$'
+  RollbackImage:
+    Type: String
+    AllowedPattern: '^051722405355\.dkr\.ecr\.us-east-2\.amazonaws\.com/secondbreakfast-web@sha256:[a-f0-9]{64}$'
+    Description: Required independently reviewed privacy-v3 rollback digest. No image is currently approved in this account.
+  DesiredCount:
+    Type: Number
+    Default: 0
+    MinValue: 0
+    MaxValue: 1
+  BetaEnabled:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+  PublicAccess:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: >-
+      Public launch switch. Exact 'true' opens the woodland experience to every
+      visitor and skips the owner-approval cohort check. Account data still
+      requires Clerk sign-in. Default false keeps private beta admission.
+  SentryDsn:
+    Type: String
+    Default: ''
+    AllowedPattern: '^(|https://[a-z0-9]+@o[0-9]+\.ingest\.(us|de)\.sentry\.io/[0-9]+)$'
+    Description: >-
+      Error reporting endpoint. Empty leaves both SDKs inert, which is the
+      default: nothing should start reporting because a stack was updated.
+      A DSN can only send events to one project, never read them, so it is
+      configuration rather than a secret and is rendered to the browser.
+  SentryEnvironment:
+    Type: String
+    Default: production
+    AllowedValues: [production, staging, development]
+    Description: Which environment an error came from, so a test run is not mistaken for a customer.
+  ExpiresAtEpoch:
+    Type: String
+    AllowedPattern: '^[0-9]{10}$'
+    Description: Mandatory session expiry consumed by the separately reviewed cleanup controller.
+
+Rules:
+  ReviewGateKeepsServiceStopped:
+    Assertions:
+      - Assert:
+          Fn::Or:
+            - Fn::Equals: [{Ref: ActivationGate}, REVIEWED_EPHEMERAL_PRIVATE_HTTPS]
+            - Fn::Equals: [{Ref: DesiredCount}, '0']
+        AssertDescription: DesiredCount must remain zero until the explicit review gate changes.
+Conditions:
+  CreateReviewedInfrastructure: !Equals [!Ref ActivationGate, REVIEWED_EPHEMERAL_PRIVATE_HTTPS]
+
+Resources:
+  WebLogGroup:
+    Type: AWS::Logs::LogGroup
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      RetentionInDays: 30
+      Tags:
+        - {Key: Application, Value: secondbreakfast}
+        - {Key: SkaldAndStone-ExpiresAtEpoch, Value: !Ref ExpiresAtEpoch}
+
+  AlbSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      GroupDescription: Cloudflare-only HTTPS ingress for Second Breakfast private beta
+      VpcId: !Ref VpcId
+      SecurityGroupEgress: []
+      Tags:
+        - {Key: Application, Value: secondbreakfast}
+        - {Key: SkaldAndStone-ExpiresAtEpoch, Value: !Ref ExpiresAtEpoch}
+
+  TaskSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      GroupDescription: Second Breakfast task ingress only from its ALB
+      VpcId: !Ref VpcId
+      SecurityGroupEgress: []
+      Tags:
+        - {Key: Application, Value: secondbreakfast}
+        - {Key: SkaldAndStone-ExpiresAtEpoch, Value: !Ref ExpiresAtEpoch}
+
+  AlbIngressFromCloudflare:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      GroupId: !GetAtt AlbSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      SourcePrefixListId: !Ref CloudflareIpv4PrefixListId
+
+  AlbToTaskEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      GroupId: !GetAtt AlbSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: 3000
+      ToPort: 3000
+      DestinationSecurityGroupId: !GetAtt TaskSecurityGroup.GroupId
+
+  TaskIngressFromAlb:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      GroupId: !GetAtt TaskSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: 3000
+      ToPort: 3000
+      SourceSecurityGroupId: !GetAtt AlbSecurityGroup.GroupId
+
+  TaskHttpsEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      GroupId: !GetAtt TaskSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: 443
+      ToPort: 443
+      CidrIp: 0.0.0.0/0
+
+  TaskToDatabaseEgress:
+    Type: AWS::EC2::SecurityGroupEgress
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      GroupId: !GetAtt TaskSecurityGroup.GroupId
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      DestinationSecurityGroupId: !Ref DatabaseSecurityGroupId
+
+  DatabaseFromTaskIngress:
+    Type: AWS::EC2::SecurityGroupIngress
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      GroupId: !Ref DatabaseSecurityGroupId
+      IpProtocol: tcp
+      FromPort: 5432
+      ToPort: 5432
+      SourceSecurityGroupId: !GetAtt TaskSecurityGroup.GroupId
+
+  ExecutionRole:
+    Type: AWS::IAM::Role
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: ecs-tasks.amazonaws.com}
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Policies:
+        - PolicyName: ExactSecondBreakfastRuntimeSecrets
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: [!Ref ClerkSecretArn, !Ref DatabaseSecretArn, !Ref AdminSecretArn]
+
+  TaskRole:
+    Type: AWS::IAM::Role
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: ecs-tasks.amazonaws.com}
+            Action: sts:AssumeRole
+
+  LoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      Scheme: internet-facing
+      Type: application
+      IpAddressType: ipv4
+      SecurityGroups: [!Ref AlbSecurityGroup]
+      Subnets: !Ref PublicSubnetIds
+      Tags:
+        - {Key: Application, Value: secondbreakfast}
+        - {Key: SkaldAndStone-ExpiresAtEpoch, Value: !Ref ExpiresAtEpoch}
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      VpcId: !Ref VpcId
+      TargetType: ip
+      Protocol: HTTP
+      Port: 3000
+      HealthCheckPath: /
+      HealthCheckProtocol: HTTP
+      Matcher: {HttpCode: '200-399'}
+      TargetGroupAttributes:
+        - {Key: deregistration_delay.timeout_seconds, Value: '30'}
+
+  HttpsListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      LoadBalancerArn: !Ref LoadBalancer
+      Port: 443
+      Protocol: HTTPS
+      SslPolicy: ELBSecurityPolicy-TLS13-1-2-2021-06
+      Certificates:
+        - CertificateArn: !Ref ApplicationCertificateArn
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+
+  CandidateTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      Family: secondbreakfast-private-beta-candidate
+      Cpu: '512'
+      Memory: '1024'
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [FARGATE]
+      Volumes:
+        - Name: temporary-files
+        - Name: next-cache
+      RuntimePlatform: {CpuArchitecture: X86_64, OperatingSystemFamily: LINUX}
+      ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: volume-init
+          Image: !Ref CandidateImage
+          Essential: false
+          User: '0'
+          ReadonlyRootFilesystem: true
+          Command:
+            - -e
+            - "const fs=require('node:fs');for(const p of ['/tmp','/app/apps/web/.next/cache'])fs.chmodSync(p,0o777)"
+          MountPoints:
+            - {SourceVolume: temporary-files, ContainerPath: /tmp, ReadOnly: false}
+            - {SourceVolume: next-cache, ContainerPath: /app/apps/web/.next/cache, ReadOnly: false}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref WebLogGroup
+              awslogs-region: us-east-2
+              awslogs-stream-prefix: volume-init
+        - Name: web
+          Image: !Ref CandidateImage
+          Essential: true
+          User: '65532'
+          ReadonlyRootFilesystem: true
+          DependsOn:
+            - {ContainerName: volume-init, Condition: SUCCESS}
+          PortMappings:
+            - {ContainerPort: 3000, Protocol: tcp}
+          Environment:
+            - {Name: NODE_ENV, Value: production}
+            - {Name: NEXT_TELEMETRY_DISABLED, Value: '1'}
+            - {Name: HOME, Value: /tmp}
+            - {Name: TMPDIR, Value: /tmp}
+            - {Name: NEXT_PUBLIC_APP_URL, Value: !Ref AppUrl}
+            - {Name: SB_BETA_ENABLED, Value: !Ref BetaEnabled}
+            - {Name: SB_PUBLIC_ACCESS, Value: !Ref PublicAccess}
+            - {Name: SENTRY_DSN, Value: !Ref SentryDsn}
+            - {Name: SENTRY_ENVIRONMENT, Value: !Ref SentryEnvironment}
+            - {Name: SB_BETA_CLERK_USER_IDS, Value: !Ref BetaClerkUserIds}
+            - {Name: SB_BETA_LOCAL_PREVIEW, Value: 'false'}
+            - {Name: STRIPE_CHECKOUT_ENABLED, Value: 'false'}
+            - {Name: STRIPE_LIVEMODE, Value: 'false'}
+          Secrets:
+            - {Name: CLERK_SECRET_KEY, ValueFrom: !Sub '${ClerkSecretArn}:CLERK_SECRET_KEY::'}
+            - {Name: DATABASE_URL, ValueFrom: !Sub '${DatabaseSecretArn}:DATABASE_URL::'}
+            - {Name: ADMIN_API_TOKEN, ValueFrom: !Sub '${AdminSecretArn}:ADMIN_API_TOKEN::'}
+          MountPoints:
+            - {SourceVolume: temporary-files, ContainerPath: /tmp, ReadOnly: false}
+            - {SourceVolume: next-cache, ContainerPath: /app/apps/web/.next/cache, ReadOnly: false}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref WebLogGroup
+              awslogs-region: us-east-2
+              awslogs-stream-prefix: candidate
+
+  RollbackTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      Family: secondbreakfast-private-beta-rollback
+      Cpu: '512'
+      Memory: '1024'
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [FARGATE]
+      Volumes:
+        - Name: temporary-files
+        - Name: next-cache
+      RuntimePlatform: {CpuArchitecture: X86_64, OperatingSystemFamily: LINUX}
+      ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: volume-init
+          Image: !Ref RollbackImage
+          Essential: false
+          User: '0'
+          ReadonlyRootFilesystem: true
+          Command:
+            - -e
+            - "const fs=require('node:fs');for(const p of ['/tmp','/app/apps/web/.next/cache'])fs.chmodSync(p,0o777)"
+          MountPoints:
+            - {SourceVolume: temporary-files, ContainerPath: /tmp, ReadOnly: false}
+            - {SourceVolume: next-cache, ContainerPath: /app/apps/web/.next/cache, ReadOnly: false}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref WebLogGroup
+              awslogs-region: us-east-2
+              awslogs-stream-prefix: volume-init
+        - Name: web
+          Image: !Ref RollbackImage
+          Essential: true
+          User: '65532'
+          ReadonlyRootFilesystem: true
+          DependsOn:
+            - {ContainerName: volume-init, Condition: SUCCESS}
+          PortMappings:
+            - {ContainerPort: 3000, Protocol: tcp}
+          Environment:
+            - {Name: NODE_ENV, Value: production}
+            - {Name: NEXT_TELEMETRY_DISABLED, Value: '1'}
+            - {Name: HOME, Value: /tmp}
+            - {Name: TMPDIR, Value: /tmp}
+            - {Name: NEXT_PUBLIC_APP_URL, Value: !Ref AppUrl}
+            - {Name: SB_BETA_ENABLED, Value: !Ref BetaEnabled}
+            - {Name: SB_PUBLIC_ACCESS, Value: !Ref PublicAccess}
+            - {Name: SENTRY_DSN, Value: !Ref SentryDsn}
+            - {Name: SENTRY_ENVIRONMENT, Value: !Ref SentryEnvironment}
+            - {Name: SB_BETA_CLERK_USER_IDS, Value: !Ref BetaClerkUserIds}
+            - {Name: SB_BETA_LOCAL_PREVIEW, Value: 'false'}
+            - {Name: STRIPE_CHECKOUT_ENABLED, Value: 'false'}
+            - {Name: STRIPE_LIVEMODE, Value: 'false'}
+          Secrets:
+            - {Name: CLERK_SECRET_KEY, ValueFrom: !Sub '${ClerkSecretArn}:CLERK_SECRET_KEY::'}
+            - {Name: DATABASE_URL, ValueFrom: !Sub '${DatabaseSecretArn}:DATABASE_URL::'}
+            - {Name: ADMIN_API_TOKEN, ValueFrom: !Sub '${AdminSecretArn}:ADMIN_API_TOKEN::'}
+          MountPoints:
+            - {SourceVolume: temporary-files, ContainerPath: /tmp, ReadOnly: false}
+            - {SourceVolume: next-cache, ContainerPath: /app/apps/web/.next/cache, ReadOnly: false}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref WebLogGroup
+              awslogs-region: us-east-2
+              awslogs-stream-prefix: rollback
+
+  ProvisionTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      Family: secondbreakfast-private-beta-provision
+      Cpu: '512'
+      Memory: '1024'
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [FARGATE]
+      Volumes:
+        - Name: temporary-files
+      RuntimePlatform: {CpuArchitecture: X86_64, OperatingSystemFamily: LINUX}
+      ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: volume-init
+          Image: !Ref CandidateImage
+          Essential: false
+          User: '0'
+          ReadonlyRootFilesystem: true
+          Command:
+            - -e
+            - "require('node:fs').chmodSync('/tmp',0o777)"
+          MountPoints:
+            - {SourceVolume: temporary-files, ContainerPath: /tmp, ReadOnly: false}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref WebLogGroup
+              awslogs-region: us-east-2
+              awslogs-stream-prefix: volume-init
+        - Name: provision
+          Image: !Ref CandidateImage
+          Essential: true
+          User: '65532'
+          ReadonlyRootFilesystem: true
+          DependsOn:
+            - {ContainerName: volume-init, Condition: SUCCESS}
+          WorkingDirectory: /app/packages/db
+          Command: [node_modules/tsx/dist/cli.mjs, scripts/provision-rds.ts]
+          Secrets:
+            - {Name: ADMIN_DATABASE_URL, ValueFrom: !Sub '${DatabaseSecretArn}:ADMIN_DATABASE_URL::'}
+            - {Name: SB_DB_PASSWORD, ValueFrom: !Sub '${DatabaseSecretArn}:SB_DB_PASSWORD::'}
+          MountPoints:
+            - {SourceVolume: temporary-files, ContainerPath: /tmp, ReadOnly: false}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref WebLogGroup
+              awslogs-region: us-east-2
+              awslogs-stream-prefix: provision
+
+  MigrationTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Condition: CreateReviewedInfrastructure
+    Properties:
+      Family: secondbreakfast-private-beta-migrate
+      Cpu: '512'
+      Memory: '1024'
+      NetworkMode: awsvpc
+      RequiresCompatibilities: [FARGATE]
+      Volumes:
+        - Name: temporary-files
+      RuntimePlatform: {CpuArchitecture: X86_64, OperatingSystemFamily: LINUX}
+      ExecutionRoleArn: !GetAtt ExecutionRole.Arn
+      TaskRoleArn: !GetAtt TaskRole.Arn
+      ContainerDefinitions:
+        - Name: volume-init
+          Image: !Ref CandidateImage
+          Essential: false
+          User: '0'
+          ReadonlyRootFilesystem: true
+          Command:
+            - -e
+            - "require('node:fs').chmodSync('/tmp',0o777)"
+          MountPoints:
+            - {SourceVolume: temporary-files, ContainerPath: /tmp, ReadOnly: false}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref WebLogGroup
+              awslogs-region: us-east-2
+              awslogs-stream-prefix: volume-init
+        - Name: migrate
+          Image: !Ref CandidateImage
+          Essential: true
+          User: '65532'
+          ReadonlyRootFilesystem: true
+          DependsOn:
+            - {ContainerName: volume-init, Condition: SUCCESS}
+          WorkingDirectory: /app/packages/db
+          Command: [node_modules/tsx/dist/cli.mjs, src/migrate.ts]
+          Secrets:
+            - {Name: DATABASE_URL, ValueFrom: !Sub '${DatabaseSecretArn}:DATABASE_URL::'}
+          MountPoints:
+            - {SourceVolume: temporary-files, ContainerPath: /tmp, ReadOnly: false}
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref WebLogGroup
+              awslogs-region: us-east-2
+              awslogs-stream-prefix: migrate
+
+  Service:
+    Type: AWS::ECS::Service
+    Condition: CreateReviewedInfrastructure
+    DependsOn: HttpsListener
+    Properties:
+      ServiceName: secondbreakfast-web
+      Cluster: !Ref ExistingClusterArn
+      TaskDefinition: !Ref RollbackTaskDefinition
+      DesiredCount: !Ref DesiredCount
+      EnableExecuteCommand: false
+      LaunchType: FARGATE
+      DeploymentConfiguration:
+        MinimumHealthyPercent: 100
+        MaximumPercent: 200
+        DeploymentCircuitBreaker: {Enable: true, Rollback: true}
+      LoadBalancers:
+        - ContainerName: web
+          ContainerPort: 3000
+          TargetGroupArn: !Ref TargetGroup
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups: [!GetAtt TaskSecurityGroup.GroupId]
+          Subnets: !Ref PublicSubnetIds
+      PropagateTags: SERVICE
+      Tags:
+        - {Key: Application, Value: secondbreakfast}
+        - {Key: SkaldAndStone-ExpiresAtEpoch, Value: !Ref ExpiresAtEpoch}
+
+Outputs:
+  ReviewStatus:
+    Value: REVIEW_ONLY_NOT_DEPLOY_APPROVED
+  AlbDnsName:
+    Condition: CreateReviewedInfrastructure
+    Value: !GetAtt LoadBalancer.DNSName
+  CandidateTaskDefinitionArn:
+    Condition: CreateReviewedInfrastructure
+    Value: !Ref CandidateTaskDefinition
+  RollbackTaskDefinitionArn:
+    Condition: CreateReviewedInfrastructure
+    Value: !Ref RollbackTaskDefinition
+  ProvisionTaskDefinitionArn:
+    Condition: CreateReviewedInfrastructure
+    Value: !Ref ProvisionTaskDefinition
+  MigrationTaskDefinitionArn:
+    Condition: CreateReviewedInfrastructure
+    Value: !Ref MigrationTaskDefinition
+  TaskSecurityGroupId:
+    Condition: CreateReviewedInfrastructure
+    Value: !GetAtt TaskSecurityGroup.GroupId

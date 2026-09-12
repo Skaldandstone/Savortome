@@ -1,3 +1,4 @@
+import { connectionOptions } from "../src/connection.js";
 /**
  * Checks the stored grocery connection against a real database.
  *
@@ -18,7 +19,6 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, inArray } from "drizzle-orm";
 import type { KrogerToken } from "@seconds/core";
 import * as schema from "../src/schema.js";
-import { RDS_SSL_CONFIG, SCRIPT_POOL_MAX } from "../src/client.js";
 import { loadEnvLocal } from "../src/loadEnv.js";
 import {
   getConnection,
@@ -34,7 +34,7 @@ import { tokenAad } from "../src/queries/grocery.js";
 loadEnvLocal();
 
 const url = process.env.DATABASE_URL!;
-const db = drizzle(new pg.Pool({ connectionString: url, ssl: RDS_SSL_CONFIG, max: SCRIPT_POOL_MAX }), { schema });
+const db = drizzle(new pg.Pool(connectionOptions(url)), { schema });
 
 let failures = 0;
 const expect = (label: string, actual: unknown, expected: unknown) => {
