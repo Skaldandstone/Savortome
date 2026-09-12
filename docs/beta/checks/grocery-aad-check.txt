@@ -1,0 +1,61 @@
+pnpm check:grocery against the dev database — 2026-09-12
+
+Closes the one unticked item in PR #77's test plan. The author could not
+reach a database from their environment, so the AAD binding merged unproven
+against real Postgres.
+
+Where it ran, and why not locally:
+
+- apps/web/.env.local still points DATABASE_URL at
+  secondbreakfast-db.c56egeuuazpy.us-east-2.rds.amazonaws.com. That instance
+  no longer exists in account 051722405355; the name now resolves to an
+  unrelated EC2 address. That stale pointer is worth fixing separately.
+- The real dev database,
+  skaldandstone-development-secondbreakfast-database-pmifnkqzgegq, is
+  PubliclyAccessible=false and reachable only from inside the VPC, which is
+  why the PR author saw ETIMEDOUT.
+
+So the check ran as a one-off Fargate task on the same subnets and security
+group as the web service, against that database.
+
+- Image sha256:809fd372240d231f4873280a905c2a1ebefdfa44c460b92f4d77503dbaa0a38c,
+  built by CodeBuild 83974616-3c11-4aa1-af18-78b1564be7bf from sealed source
+  manifest 518e34c4c5a5453313671fd38258e2263c76036399a7c1494c8ac559da84522e
+  (commit a32ad3d, the merge of PR #77). The deployed image predates the merge
+  and still has the pre-AAD crypto, so running the check against it would have
+  proved nothing.
+- GROCERY_TOKEN_ENCRYPTION_KEY was generated fresh for the run. The check makes
+  its own fixture tokens and deletes them, so it needs a valid key rather than
+  the real one, and nothing it wrote outlives the run.
+- Task definition savortome-grocery-aad-check, registered for this run and
+  deregistered afterwards. It sets readonlyRootFilesystem=false, unlike the
+  serving task definitions: tsx needs a writable /tmp for its IPC socket and a
+  Fargate host volume mounts root-owned, which the nonroot image user cannot
+  write to. The candidate and rollback task definitions keep their read-only
+  root, which is what the guard pins.
+
+Result: exit 0, 18 of 18 assertions passed.
+
+  PASS  nobody starts connected
+  PASS  the token is stored
+  PASS  ...along with the refresh token
+  PASS  ...and no store yet
+  PASS  the access token is encrypted at rest
+  PASS  ...and so is the refresh token
+  PASS  ...and the plaintext isn't sitting in the column
+  PASS  a new token replaces the old one
+  PASS  ...and the store they picked survives it
+  PASS  there is only ever one row per person per provider
+  PASS  the store can be changed
+  PASS  ...and it stuck
+  PASS  setting a store with nothing connected is a no-op, not an error
+  PASS  connections aren't shared
+  PASS  a ciphertext swapped between rows fails to decrypt
+  PASS  disconnecting removes it
+  PASS  ...and leaves everyone else alone
+  PASS  deleting the account takes the connection with it
+  All good.
+
+"a ciphertext swapped between rows fails to decrypt" is the assertion PR #77
+exists for: without AAD, a token copied between grocery_connections rows would
+decrypt cleanly into the wrong person's still-valid OAuth token.
