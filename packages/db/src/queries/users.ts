@@ -15,6 +15,51 @@ export interface ClerkProfile {
   email: string;
   displayName: string;
   avatarUrl: string | null;
+  /**
+   * Whether Clerk has proven the person controls this address.
+   *
+   * This is the only thing standing between "link these two accounts" and
+   * "let anyone who types your address inherit your recipes", so it is
+   * required rather than optional — a caller that forgets it should fail to
+   * compile, not silently link on an unverified claim.
+   */
+  emailVerified: boolean;
+}
+
+/**
+ * Raised when an unverified address is already spoken for.
+ *
+ * Linking on a claimed-but-unproven email would be an account takeover, and
+ * creating a second row is impossible because the column is unique, so the
+ * only honest outcome is to stop.
+ */
+export class EmailAlreadyRegisteredError extends Error {
+  constructor() {
+    super("That email address already belongs to an account.");
+    this.name = "EmailAlreadyRegisteredError";
+  }
+}
+
+/** Postgres's unique-violation SQLSTATE. */
+const UNIQUE_VIOLATION = "23505";
+
+/**
+ * True when `error` is the email index rejecting a duplicate.
+ *
+ * Drizzle wraps the driver error, so the useful fields can sit on the cause
+ * rather than the error itself; both are checked. The constraint name is
+ * matched when present because a different unique index failing here would
+ * mean something else entirely and must not be swallowed.
+ */
+function isDuplicateEmail(error: unknown): boolean {
+  for (let current = error, depth = 0; current && depth < 4; depth++) {
+    const candidate = current as { code?: string; constraint?: string; cause?: unknown };
+    if (candidate.code === UNIQUE_VIOLATION && candidate.constraint === "users_email_idx") {
+      return true;
+    }
+    current = candidate.cause;
+  }
+  return false;
 }
 
 /** Handles are user-visible, so keep them short, lowercase, and URL-safe. */
@@ -39,37 +84,94 @@ export async function ensureDefaultShelves(database: Database, userId: string): 
 }
 
 /**
- * Map a Clerk identity onto a Second Breakfast user row, creating it on first sight.
+ * Map a Clerk identity onto a Savortome user row, creating it on first sight.
  * This is the only place a Clerk id becomes an internal user id.
+ *
+ * Two unique indexes can reject this write, and they mean different things.
+ * A clash on `clerk_id` is the ordinary case — a returning account — and the
+ * upsert absorbs it. A clash on `email` means a row already exists for this
+ * person under a *different* Clerk id, which is exactly what a Clerk instance
+ * migration produces: the development and production instances issue
+ * unrelated ids, so every returning user arrives looking brand new while
+ * their email is already taken. Left unhandled that is a hard 500 on first
+ * sign-in for everyone who had an account before the cutover.
+ *
+ * So a duplicate email re-binds the existing row to the new Clerk id, but
+ * only when Clerk has verified the address. An unverified claim is refused:
+ * the whole value of matching on email is that the address proves identity,
+ * and an unproven one proves nothing.
  */
 export async function upsertUserFromClerk(
   database: Database,
   profile: ClerkProfile,
 ): Promise<string> {
+  let userId: string;
+  try {
+    const [row] = await database
+      .insert(schema.users)
+      .values({
+        clerkId: profile.clerkId,
+        email: profile.email,
+        handle: handleFromProfile(profile),
+        displayName: profile.displayName,
+        avatarUrl: profile.avatarUrl,
+      })
+      .onConflictDoUpdate({
+        target: schema.users.clerkId,
+        // Name, email, and avatar are Clerk's to own; the handle stays put once
+        // issued so shared links don't rot.
+        set: {
+          email: profile.email,
+          displayName: profile.displayName,
+          avatarUrl: profile.avatarUrl,
+        },
+      })
+      .returning({ id: schema.users.id });
+    userId = row!.id;
+  } catch (error) {
+    if (!isDuplicateEmail(error)) throw error;
+    userId = await adoptExistingEmail(database, profile);
+  }
+
+  await ensureDefaultShelves(database, userId);
+  return userId;
+}
+
+/**
+ * Re-point the row that already holds this email at the Clerk id now
+ * presenting it, and hand back that row's id.
+ *
+ * The handle is deliberately left alone. It is derived from the Clerk id, so
+ * recomputing it here would issue a new one and rot every link the person has
+ * already shared — the row is the same account, and it keeps its name.
+ */
+async function adoptExistingEmail(
+  database: Database,
+  profile: ClerkProfile,
+): Promise<string> {
+  if (!profile.emailVerified) throw new EmailAlreadyRegisteredError();
+
   const [row] = await database
-    .insert(schema.users)
-    .values({
+    .update(schema.users)
+    .set({
       clerkId: profile.clerkId,
-      email: profile.email,
-      handle: handleFromProfile(profile),
       displayName: profile.displayName,
       avatarUrl: profile.avatarUrl,
     })
-    .onConflictDoUpdate({
-      target: schema.users.clerkId,
-      // Name, email, and avatar are Clerk's to own; the handle stays put once
-      // issued so shared links don't rot.
-      set: {
-        email: profile.email,
-        displayName: profile.displayName,
-        avatarUrl: profile.avatarUrl,
-      },
-    })
+    .where(eq(schema.users.email, profile.email))
     .returning({ id: schema.users.id });
 
-  const userId = row!.id;
-  await ensureDefaultShelves(database, userId);
-  return userId;
+  // The row was there a moment ago. If it is gone now, two sign-ins raced and
+  // the other one won; its insert created the account, so try once more.
+  if (!row) {
+    const existing = await database.query.users.findFirst({
+      where: eq(schema.users.email, profile.email),
+      columns: { id: true },
+    });
+    if (!existing) throw new EmailAlreadyRegisteredError();
+    return existing.id;
+  }
+  return row.id;
 }
 
 export async function findUserByClerkId(

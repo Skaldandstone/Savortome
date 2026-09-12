@@ -52,9 +52,9 @@ export async function currentUserId(database: Database = db()): Promise<string |
   if (!clerkId) return null;
 
   const user = await currentUser();
+  const address = user?.primaryEmailAddress ?? user?.emailAddresses[0] ?? null;
   const email =
-    user?.primaryEmailAddress?.emailAddress ??
-    user?.emailAddresses[0]?.emailAddress ??
+    address?.emailAddress ??
     // Phone-only and OAuth-only accounts can have no email; the column is
     // required, so synthesize a stable stand-in rather than failing sign-in.
     `${clerkId}@users.secondbreakfast.local`;
@@ -62,6 +62,12 @@ export async function currentUserId(database: Database = db()): Promise<string |
   return upsertUserFromClerk(database, {
     clerkId,
     email,
+    // Whether Clerk actually proved this address belongs to them. It decides
+    // whether an existing account with the same email may be adopted, so a
+    // missing address reads as unverified rather than as trustworthy: the
+    // synthesized stand-in above is unique per Clerk id and can never collide
+    // with a real one anyway.
+    emailVerified: address?.verification?.status === "verified",
     displayName:
       user?.fullName ?? user?.username ?? email.split("@")[0] ?? "Cook",
     avatarUrl: user?.imageUrl ?? null,

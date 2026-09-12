@@ -25,7 +25,11 @@ interface ClerkUserEvent {
   username: string | null;
   image_url: string | null;
   primary_email_address_id: string | null;
-  email_addresses: { id: string; email_address: string }[];
+  email_addresses: {
+    id: string;
+    email_address: string;
+    verification: { status: string } | null;
+  }[];
 }
 
 export async function POST(request: NextRequest) {
@@ -57,6 +61,9 @@ export async function POST(request: NextRequest) {
         await upsertUserFromClerk(database, {
           clerkId: data.id,
           email,
+          // Gates adopting an existing account that already holds this
+          // address; see upsertUserFromClerk.
+          emailVerified: primary?.verification?.status === "verified",
           displayName: name || data.username || email.split("@")[0] || "Cook",
           avatarUrl: data.image_url,
         });

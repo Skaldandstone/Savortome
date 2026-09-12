@@ -25,6 +25,7 @@
     "check:editor": "pnpm --filter @seconds/db check:editor",
     "check:grocery": "pnpm --filter @seconds/db check:grocery",
     "check:library": "pnpm --filter @seconds/db check:library",
+    "check:users": "pnpm --filter @seconds/db check:users",
     "check:plan": "pnpm --filter @seconds/db check:plan",
     "check:web-legal": "node scripts/check-web-legal.mjs",
     "kroger:stub": "node scripts/kroger-stub.mjs",

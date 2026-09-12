@@ -29,6 +29,7 @@
     "check:editor": "tsx scripts/check-editor.ts",
     "check:grocery": "tsx scripts/check-grocery.ts",
     "check:library": "tsx scripts/check-library.ts",
+    "check:users": "tsx scripts/check-users.ts",
     "check:plan": "tsx scripts/check-plan.ts",
     "check:pairings": "tsx scripts/check-pairings.ts",
     "check:templates": "tsx scripts/check-templates.ts",
