@@ -47,7 +47,9 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        # pgvector, not stock postgres: the schema declares `create extension
+        # vector`, which RDS provides and the plain image does not.
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
@@ -111,7 +113,9 @@ jobs:
       CLERK_SECRET_KEY: ${{ secrets.E2E_CLERK_SECRET_KEY }}
     services:
       postgres:
-        image: postgres:16
+        # pgvector, not stock postgres: the schema declares `create extension
+        # vector`, which RDS provides and the plain image does not.
+        image: pgvector/pgvector:pg16
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
