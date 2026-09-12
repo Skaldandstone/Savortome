@@ -1,0 +1,85 @@
+/* A plain first pass. The shape of the interaction is the part worth keeping;
+   the styling borrows the tokens the rest of the kitchen already uses. */
+
+.summary { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; justify-content: space-between; }
+.summaryText { margin: 0; font-size: var(--step-1); color: var(--text-muted); }
+.summaryText strong { color: var(--text); font-weight: 600; }
+
+.group { border: 0; margin: 0 0 22px; padding: 0; min-width: 0; }
+.legend { padding: 0 0 10px; font-size: var(--step-1); color: var(--text); }
+.optional { color: var(--text-muted); font-weight: 400; }
+.hint { display: block; color: var(--text-muted); font-size: 13px; line-height: 1.5; }
+.note { margin: 10px 0 0; color: var(--text-muted); font-size: 13px; line-height: 1.6; }
+.footnote { margin: 12px 0 0; color: var(--text-muted); font-size: 12px; line-height: 1.6; }
+
+/* ------------------------------------------------------------ the ladder */
+
+.tiers { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+
+.tier {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  font: inherit;
+  padding: 14px;
+  cursor: pointer;
+  color: var(--text);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.tier:hover:not(:disabled) { border-color: var(--accent); }
+.tier:disabled { opacity: .6; cursor: wait; }
+/* The chosen one is marked by more than colour, so it survives a colour-vision
+   difference and a high-contrast mode. */
+.tier[data-chosen='true'] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+
+.tierName { font-size: var(--step-1); font-weight: 600; }
+.tierQuote { font-style: italic; color: var(--text-muted); line-height: 1.5; font-size: 14px; }
+.tierWho { color: var(--text-muted); font-size: 12px; }
+
+/* ------------------------------------------------------------ skills */
+
+.skill { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; padding: 10px 0; border-top: 1px solid var(--border); }
+.skillLabel { min-width: 0; flex: 1 1 240px; font-size: 14px; }
+.levels { display: flex; gap: 4px; }
+
+.level {
+  font: inherit;
+  /* A comfortable tap target; these are most likely to be used on a phone. */
+  min-width: 44px;
+  min-height: 44px;
+  cursor: pointer;
+  color: var(--text-muted);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.level:hover:not(:disabled) { border-color: var(--accent); color: var(--text); }
+.level:disabled { opacity: .6; cursor: wait; }
+.level[data-chosen='true'] { color: var(--text); border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+
+/* ------------------------------------------------------------ kitchen */
+
+.stocks { display: grid; gap: 8px; }
+
+.stock {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  font: inherit;
+  padding: 12px 14px;
+  cursor: pointer;
+  color: var(--text);
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+.stock:hover:not(:disabled) { border-color: var(--accent); }
+.stock:disabled { opacity: .6; cursor: wait; }
+.stock[data-chosen='true'] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.stockName { font-size: 14px; font-weight: 600; }
+
+.done { display: flex; justify-content: flex-end; }

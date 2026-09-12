@@ -8,6 +8,7 @@ export * from "./source-kind.js";
 export * from "./staples.js";
 export * from "./dietary.js";
 export * from "./care.js";
+export * from "./cooking-skill.js";
 export * from "./aisles.js";
 export * from "./billing.js";
 export * from "./nutrition.js";
