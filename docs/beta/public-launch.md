@@ -229,3 +229,25 @@ Verified: the meta tags render on the live site with the production DSN and
 project as `SECONDBREAKFAST-WEB-1` and was resolved with a note. Not yet
 verified: an error originating inside the running app, which will be the
 first genuine fault.
+
+## Grocery token AAD deploy, 2026-09-12
+
+PR #77 (bind grocery OAuth tokens to their row with AAD) reached the running
+service. Until this deploy the fix was merged but not serving: the live image
+still carried the pre-AAD crypto.
+
+- Image `sha256:809fd372240d231f4873280a905c2a1ebefdfa44c460b92f4d77503dbaa0a38c`,
+  built from sealed manifest `518e34c4…` at commit `a32ad3d` (the PR merge).
+  BASIC scan COMPLETE, zero findings. Config verified before deploy: `pk_live_`
+  inlined, nonroot user 65532.
+- Runtime stack updated with that `CandidateImage`, every other parameter
+  previous value. Candidate task definition revision 14; the service was then
+  pointed at it and `services-stable` returned with the running container
+  reporting the same digest.
+- The image is one commit behind `main`, which has since taken only the
+  `docs/beta/checks/grocery-aad-check.txt` evidence file. No code differs.
+
+Verified signed out afterwards: `/`, `/discover` and `/terms` return 200 in the
+woodland shell with the Sentry DSN meta tag present; `/cook`, `/list`,
+`/friends` and `/care` all 307 to sign-in; `/api/recipes` returns 401; the
+inlined Clerk key is `pk_live_`.
