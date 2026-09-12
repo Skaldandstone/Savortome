@@ -12,28 +12,32 @@
       },
       "ios": {
         "simulator": false
-      }
+      },
+      "channel": "beta"
     },
     "beta-simulator": {
       "environment": "preview",
       "distribution": "internal",
       "ios": {
         "simulator": true
-      }
+      },
+      "channel": "beta-simulator"
     },
     "testflight": {
       "environment": "preview",
       "distribution": "store",
       "ios": {
         "simulator": false
-      }
+      },
+      "channel": "testflight"
     },
     "playstore": {
       "environment": "preview",
       "distribution": "store",
       "android": {
         "buildType": "app-bundle"
-      }
+      },
+      "channel": "playstore"
     }
   },
   "submit": {

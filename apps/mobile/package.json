@@ -15,7 +15,10 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "update:beta": "eas update --channel beta",
+    "update:testflight": "eas update --channel testflight",
+    "update:playstore": "eas update --channel playstore"
   },
   "dependencies": {
     "@clerk/expo": "4.5.2",
@@ -33,6 +36,7 @@
     "expo-splash-screen": "~57.0.8",
     "expo-status-bar": "~57.0.1",
     "expo-system-ui": "~57.0.3",
+    "expo-updates": "~57.0.22",
     "expo-web-browser": "~57.0.2",
     "react": "19.2.3",
     "react-native": "0.86.3",
