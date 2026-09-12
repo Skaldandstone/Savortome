@@ -2,6 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import styles from "../legal.module.css";
 
+// The root layout picks its shell from runtime configuration, so this page
+// cannot be prerendered: a build-time copy freezes whichever shell the builder
+// saw and serves it with a year-long cache header.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Terms | Savortome",
   description: "Terms for using the Savortome private beta.",

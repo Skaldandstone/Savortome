@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { Panel, PanelHeader } from "@/ui";
 
+// The root layout picks its shell from runtime configuration, so this page
+// cannot be prerendered: a build-time copy freezes whichever shell the builder
+// saw and serves it with a year-long cache header.
+export const dynamic = "force-dynamic";
+
 /**
  * Shown when a page is asked for that was never cached.
  *
