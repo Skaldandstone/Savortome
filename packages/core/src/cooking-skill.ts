@@ -342,7 +342,7 @@ export function canonicalTools(equipment: readonly string[]): string[] {
   for (const raw of equipment) {
     const text = raw.toLowerCase();
     // Optional equipment is exactly that, and must never gate a recipe.
-    if (/optional/.test(text)) continue;
+    if (/\boptional\b/.test(text)) continue;
     for (const tool of known) {
       if (text.includes(tool)) found.add(tool);
     }

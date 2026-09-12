@@ -158,7 +158,12 @@ const fit = fitForCook(
   { skills: demands.skills, tools: canonicalTools(demands.equipment) },
 );
 expect("a stretch recipe is a challenge, not a locked door", fit.verdict, "challenge");
-expect("...and it says which tool is missing", fit.missingTools, ["stand mixer"]);
+// A basic kitchen has neither, so both are named. Being told only half of
+// what is missing would send someone shopping twice.
+expect("...and it says which tools are missing", fit.missingTools, [
+  "rolling pin",
+  "stand mixer",
+]);
 expect("...and gives a reason", typeof fit.reason === "string" && fit.reason.length > 0, true);
 
 // --- cleanup ----------------------------------------------------------------
