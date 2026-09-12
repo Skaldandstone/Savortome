@@ -31,18 +31,21 @@ test('all combinations keep explicit effort and time ceilings and unique choices
   }
 });
 test('each available candidate fills the next slot, including equal-time alternatives',()=>{
-  assert.deepEqual(suggestCare({effort:'open',time:'two',appetite:'more'}).map(x=>[x.kind,x.food.id]),[['now','cereal'],['more','crackers'],['future','hummus']]);
-  assert.deepEqual(suggestCare({texture:'smooth',temperature:'cold'},{allergens:['milk']}).map(x=>x.kind),['now']);
-  assert.deepEqual(suggestCare({texture:'smooth',temperature:'cold'}).map(x=>x.kind),['now','more']);
+  assert.deepEqual(suggestCare({effort:'open',time:'two',appetite:'more'}).map(x=>[x.kind,x.food.id]),[['now','smoothie'],['more','cereal'],['future','yogurt']]);
+  // Smooth and cold used to collapse to a single option for anyone avoiding
+  // milk. The catalogue now carries enough dairy-free smooth food to fill the
+  // ladder, which is the whole point of widening it.
+  assert.deepEqual(suggestCare({texture:'smooth',temperature:'cold'},{allergens:['milk']}).map(x=>x.kind),['now','more','future']);
+  assert.deepEqual(suggestCare({texture:'smooth',temperature:'cold'}).map(x=>[x.kind,x.food.id]),[['now','applesauce'],['more','pear'],['future','yogurt']]);
   assert.deepEqual(suggestCare({temperature:'warm',time:'two'}),[]);
 });
 test('pantry priority remains intact across all slots rather than forcing a slower second choice',()=>{
   const matches=suggestCare({usePantry:true},{pantry:['egg','olive oil','banana']});
-  assert.deepEqual(matches.map(x=>x.food.id),['scramble','banana','yogurt']);
+  assert.deepEqual(matches.map(x=>x.food.id),['scramble','banana','poached_egg']);
   assert.deepEqual(matches.map(x=>x.kind),['now','more','future']);
 });
 test('pantry names use the existing canonicalizer and complete coverage precedes partial coverage',()=>{
-  assert.equal(suggestCare({usePantry:true,temperature:'warm'},{pantry:['cooked beans']})[0]?.food.id,'beans');
+  assert.equal(suggestCare({usePantry:true,temperature:'warm'},{pantry:['cooked bean']})[0]?.food.id,'beans');
   assert.equal(suggestCare({usePantry:true},{pantry:['rice','chickpea','tahini']})[0]?.food.id,'rice');
   assert.deepEqual(suggestCare({usePantry:true},{pantry:[' bananas ','YOGURT','bananas']}),suggestCare({usePantry:true},{pantry:['yogurt','banana']}));
 });
@@ -110,4 +113,30 @@ test('public access opens the experience only when enabled and set to the exact 
   assert.equal(betaAccess({ publicAccess: 'true' }), false);
   assert.equal(betaAccess({ enabled: 'false', publicAccess: 'true' }), false);
   for (const value of ['TRUE', ' true', '1', 'yes', 'on', '', undefined]) assert.equal(betaAccess({ enabled: 'true', nodeEnv: 'production', publicAccess: value }), false);
+});
+
+test('the three slots differ from each other and every stated preference has real depth',()=>{
+  // The reported problem: choosing "open and eat" plus "soft" offered a
+  // banana, applesauce, and a banana with yogurt on it. Three cards, one
+  // idea, and no sense that the preferences had been read.
+  const soft = suggestCare({effort:'open',time:'twenty',temperature:'any',texture:'soft',appetite:'regular'});
+  assert.equal(soft.length,3);
+  assert.equal(new Set(soft.map(x=>x.food.ingredients[0])).size,3,'suggestions share a main ingredient');
+
+  // Every sensible combination should have more to draw on than the three
+  // slots it fills, otherwise the page is just listing the whole catalogue.
+  for(const effort of CARE_EFFORTS) for(const texture of ['crunchy','soft','smooth','plain'] as const) {
+    const pool=CARE_FOODS.filter(food=>
+      CARE_EFFORTS.indexOf(food.effort)<=CARE_EFFORTS.indexOf(effort) &&
+      food.textures.includes(texture) && food.portions.includes('regular'));
+    assert.ok(pool.length>3,`only ${pool.length} options for ${effort}/${texture}`);
+  }
+
+  // The ladder has to climb: "Future me" should ask more of someone than
+  // "Right now", or the labels are decoration.
+  const spread=suggestCare({time:'twenty'});
+  const demand=(x:typeof spread[number])=>CARE_EFFORTS.indexOf(x.food.effort)*30+x.food.minutes;
+  assert.equal(spread.length,3);
+  assert.ok(demand(spread[2]!)>demand(spread[0]!),'the last slot asks no more than the first');
+  assert.ok(demand(spread[1]!)>=demand(spread[0]!),'the middle slot sits below the first');
 });
