@@ -57,6 +57,21 @@ export const StepSchema = z.object({
   text: z.string(),
   /** Hands-off duration the step implies, for in-app timers. */
   timerSeconds: z.number().int().nullable(),
+  /**
+   * Hands-on time this step takes at an average pace, in seconds.
+   *
+   * Kept strictly apart from `timerSeconds`: this is the part that varies with
+   * whoever is holding the knife, and the timer is a property of the pot. Only
+   * this one may be scaled to a cook's skill - stretching a simmer would ruin
+   * the food. Optional because every step written before this existed has none.
+   */
+  activeSeconds: z.number().int().nullable().optional(),
+  /**
+   * The skill this step mostly leans on, if it leans on one, so the estimate
+   * above can be paced to the person cooking. Null for steps that ask nothing
+   * in particular.
+   */
+  demands: z.enum(["knife", "stovetop", "oven", "timing"]).nullable().optional(),
   /** Seconds into the source video where this step is demonstrated. */
   sourceTimestamp: z.number().int().nullable(),
 });

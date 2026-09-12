@@ -8,6 +8,7 @@ export {
   decryptNullable,
   isEncrypted,
 } from "./crypto.js";
+export * from "./queries/cooking-skill.js";
 export * from "./queries/users.js";
 export * from "./queries/recipes.js";
 export * from "./queries/shelves.js";

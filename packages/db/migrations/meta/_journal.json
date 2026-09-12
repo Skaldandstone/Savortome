@@ -120,6 +120,13 @@
       "when": 1788516854254,
       "tag": "0016_skinny_dreadnoughts",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1788516854255,
+      "tag": "0017_cooking-skill",
+      "breakpoints": true
     }
   ]
 }

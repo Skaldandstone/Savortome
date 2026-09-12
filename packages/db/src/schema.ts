@@ -18,7 +18,15 @@ import {
   uuid,
   vector,
 } from "drizzle-orm/pg-core";
-import type { Ingredient, RecipeNutrition, RecipePhoto, Step } from "@seconds/core";
+import type {
+  CookTier,
+  Ingredient,
+  KitchenStock,
+  RecipeNutrition,
+  RecipePhoto,
+  SkillRatings,
+  Step,
+} from "@seconds/core";
 
 /**
  * The full Second Breakfast data model. Only the recipe/import path is wired up in the
@@ -107,6 +115,22 @@ export const users = pgTable(
      * suggestions, never to block anything outright the way an allergy does.
      */
     dietaryTags: text("dietary_tags").array().notNull().default([]),
+    /**
+     * How this person describes themselves in a kitchen, and what is in it.
+     *
+     * All three are nullable and stay that way: the tier is one tap on first
+     * visit to the cook section, and the skill ratings and kitchen stock are
+     * offered afterwards and can be skipped for good. Ranking has to work on
+     * partial answers, so "not said" is a real and permanent state, not a gap
+     * to be nagged about.
+     *
+     * Text rather than a Postgres enum because the ladder's rungs are a
+     * product decision that has already changed once and may change again;
+     * a migration per rename is a poor trade for the small extra safety.
+     */
+    cookTier: text("cook_tier").$type<CookTier>(),
+    cookSkills: jsonb("cook_skills").$type<SkillRatings>().notNull().default({}),
+    kitchenStock: text("kitchen_stock").$type<KitchenStock>(),
     /**
      * Hard constraints. Matched against ingredient names by keyword, which is
      * a guess, not a lab test — see `packages/core/src/dietary.ts` for why
@@ -273,6 +297,16 @@ export const recipes = pgTable(
     cuisine: text("cuisine"),
     course: text("course"),
     difficulty: text("difficulty"),
+    /**
+     * What this recipe asks of whoever cooks it, per skill, filled in at
+     * import. `difficulty` above is a single coarse word kept for the source's
+     * own claim; this is the part matching actually uses.
+     *
+     * The tools a recipe needs are NOT duplicated here - `equipment` already
+     * holds them as the source wrote them, and `canonicalTools` maps that to
+     * names the kitchen-stock levels can match.
+     */
+    skillDemands: jsonb("skill_demands").$type<SkillRatings>().notNull().default({}),
 
     sourceKind: sourceKind("source_kind").notNull(),
     sourceUrl: text("source_url"),

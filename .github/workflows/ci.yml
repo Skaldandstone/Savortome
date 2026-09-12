@@ -85,6 +85,8 @@ jobs:
       # anything that runs on its own.
       - name: Account provisioning
         run: pnpm check:users
+      - name: Cook profile and recipe demands
+        run: pnpm check:cooking
       - name: Library, plan and discovery
         run: |
           pnpm check:library
