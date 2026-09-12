@@ -102,6 +102,20 @@ Parameters:
       Public launch switch. Exact 'true' opens the woodland experience to every
       visitor and skips the owner-approval cohort check. Account data still
       requires Clerk sign-in. Default false keeps private beta admission.
+  SentryDsn:
+    Type: String
+    Default: ''
+    AllowedPattern: '^(|https://[a-z0-9]+@o[0-9]+\.ingest\.(us|de)\.sentry\.io/[0-9]+)$'
+    Description: >-
+      Error reporting endpoint. Empty leaves both SDKs inert, which is the
+      default: nothing should start reporting because a stack was updated.
+      A DSN can only send events to one project, never read them, so it is
+      configuration rather than a secret and is rendered to the browser.
+  SentryEnvironment:
+    Type: String
+    Default: production
+    AllowedValues: [production, staging, development]
+    Description: Which environment an error came from, so a test run is not mistaken for a customer.
   ExpiresAtEpoch:
     Type: String
     AllowedPattern: '^[0-9]{10}$'
@@ -333,6 +347,8 @@ Resources:
             - {Name: NEXT_PUBLIC_APP_URL, Value: !Ref AppUrl}
             - {Name: SB_BETA_ENABLED, Value: !Ref BetaEnabled}
             - {Name: SB_PUBLIC_ACCESS, Value: !Ref PublicAccess}
+            - {Name: SENTRY_DSN, Value: !Ref SentryDsn}
+            - {Name: SENTRY_ENVIRONMENT, Value: !Ref SentryEnvironment}
             - {Name: SB_BETA_CLERK_USER_IDS, Value: !Ref BetaClerkUserIds}
             - {Name: SB_BETA_LOCAL_PREVIEW, Value: 'false'}
             - {Name: STRIPE_CHECKOUT_ENABLED, Value: 'false'}
@@ -401,6 +417,8 @@ Resources:
             - {Name: NEXT_PUBLIC_APP_URL, Value: !Ref AppUrl}
             - {Name: SB_BETA_ENABLED, Value: !Ref BetaEnabled}
             - {Name: SB_PUBLIC_ACCESS, Value: !Ref PublicAccess}
+            - {Name: SENTRY_DSN, Value: !Ref SentryDsn}
+            - {Name: SENTRY_ENVIRONMENT, Value: !Ref SentryEnvironment}
             - {Name: SB_BETA_CLERK_USER_IDS, Value: !Ref BetaClerkUserIds}
             - {Name: SB_BETA_LOCAL_PREVIEW, Value: 'false'}
             - {Name: STRIPE_CHECKOUT_ENABLED, Value: 'false'}

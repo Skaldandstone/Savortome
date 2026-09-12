@@ -9,6 +9,7 @@ rule proposal_defaults_fail_closed {
     Parameters.DesiredCount.Default == 0
     Parameters.BetaEnabled.Default == 'false'
     Parameters.PublicAccess.Default == 'false'
+    Parameters.SentryDsn.Default == ''
     Parameters.BetaClerkUserIds.Default == ''
 }
 
@@ -29,6 +30,7 @@ rule containers_are_nonroot_readonly_and_billing_disabled {
     Resources.CandidateTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'SB_BETA_ENABLED' ].Value == { 'Ref': 'BetaEnabled' }
     Resources.CandidateTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'SB_PUBLIC_ACCESS' ].Value == { 'Ref': 'PublicAccess' }
     Resources.RollbackTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'SB_PUBLIC_ACCESS' ].Value == { 'Ref': 'PublicAccess' }
+    %tasks.Properties.ContainerDefinitions.*.Environment.*[ Name == 'SENTRY_DSN' ].Value == { 'Ref': 'SentryDsn' }
     Resources.RollbackTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'STRIPE_CHECKOUT_ENABLED' ].Value == 'false'
     Resources.RollbackTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'STRIPE_LIVEMODE' ].Value == 'false'
     Resources.RollbackTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'SB_BETA_ENABLED' ].Value == { 'Ref': 'BetaEnabled' }

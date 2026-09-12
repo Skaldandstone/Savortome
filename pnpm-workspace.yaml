@@ -16,6 +16,11 @@ allowBuilds:
   utf-8-validate: true
   # Postinstall is only a funding banner.
   core-js: false
+  # Its postinstall downloads a release binary whose only job here would be
+  # uploading source maps, and that is deliberately disabled: the image build
+  # is fail-closed and holds no Sentry auth token. Skipping the download keeps
+  # the install hermetic.
+  '@sentry/cli': false
 
 minimumReleaseAgeExclude:
   - '@expo/cli@57.0.23'

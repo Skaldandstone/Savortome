@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 const config: NextConfig = {
   async headers() {
@@ -40,4 +41,22 @@ const config: NextConfig = {
   },
 };
 
-export default config;
+/**
+ * withSentryConfig adds the SDK's build-time wiring: the server, edge and
+ * client instrumentation entry points, and tree-shaking of its debug code.
+ *
+ * Source-map upload is off. It would need a SENTRY_AUTH_TOKEN inside the
+ * fail-closed image build, and that build has to stay reproducible from the
+ * reviewed snapshot without holding any credential. Stack traces arrive
+ * minified; the exception type, message and route are intact, which is what
+ * the scrubbing in lib/sentry-shared.ts leaves us anyway.
+ */
+export default withSentryConfig(config, {
+  silent: true,
+  telemetry: false,
+  sourcemaps: { disable: true },
+  webpack: {
+    treeshake: { removeDebugLogging: true },
+    automaticVercelMonitors: false,
+  },
+});
