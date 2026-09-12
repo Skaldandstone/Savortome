@@ -1,8 +1,8 @@
 # Enables Sign in with Apple on the Savortome Clerk PRODUCTION instance.
 #
 # Everything Apple needs is already registered:
-#   Services ID  com.secondbreakfast.app.signin  ("Savortome Sign in with Apple")
-#   Primary App ID  BVB696HTCS.com.secondbreakfast.app
+#   Services ID  com.skaldandstone.savortome.signin  ("Savortome Sign in with Apple")
+#   Primary App ID  BVB696HTCS.com.skaldandstone.savortome
 #   Domain       clerk.savortome.skaldandstone.com
 #   Return URL   https://clerk.savortome.skaldandstone.com/v1/oauth_callback
 #   Email source clkmail.savortome.skaldandstone.com (+ the Clerk bounces address)
@@ -11,7 +11,7 @@
 # once, at creation, and it is a private key:
 #   1. https://developer.apple.com/account/resources/authkeys/list
 #   2. "+" -> name it "Savortome Sign in with Apple" -> tick Sign in with Apple
-#      -> Configure -> primary App ID com.secondbreakfast.app -> Save
+#      -> Configure -> primary App ID com.skaldandstone.savortome -> Save
 #   3. Continue -> Register -> Download. Keep the .p8 file; note the Key ID
 #      shown on that page (10 characters).
 #
@@ -33,9 +33,9 @@ $ErrorActionPreference = 'Stop'
 
 $app = 'app_3IOlw60gO26QYyAhTKUL84jVUZZ'
 $ins = 'ins_3JA04CTgisnnvlq1nMpUQpLOvnm'
-$servicesId = 'com.secondbreakfast.app.signin'
+$servicesId = 'com.skaldandstone.savortome.signin'
 $teamId = 'BVB696HTCS'
-$bundleId = 'com.secondbreakfast.app'
+$bundleId = 'com.skaldandstone.savortome'
 
 if (-not (Test-Path -LiteralPath $KeyPath)) { throw "No file at $KeyPath" }
 
