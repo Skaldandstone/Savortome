@@ -195,10 +195,37 @@ Found by James on the live site and fixed in `833d39c`.
 
 ### Still open after this pass
 
-- **No error monitoring.** Savortome has no Sentry or equivalent. A production
-  sign-in failure would be invisible unless someone reports it.
+- ~~No error monitoring.~~ Wired 2026-09-11; see below.
 - Google, Facebook and Apple SSO connections are unconfigured on the
   production instance; email and password is the only way in. Production Clerk
   will not accept Clerk's shared development OAuth credentials.
 - No authenticated flow has been exercised against the production instance: no
   real sign-up, no import while signed in, no owner acceptance.
+
+## Error monitoring, 2026-09-11
+
+A `secondbreakfast-web` Sentry project already existed in the
+`skald-and-stone` org and had never been connected to anything. It is wired
+now, in image
+`sha256:4eead811d6ea1ff7930376436bedaa62474be389f15f83f759a5125e67674dd4`
+(commit `fd4412e`, candidate task definition revision 13).
+
+What is deliberately not sent, because of what this app knows: identity,
+breadcrumbs, request bodies, headers, cookies, session replay and performance
+tracing are all off, and `beforeSend` drops the URL. A recipe path carries an
+id; a `/care` URL carries the handoff that says how much energy someone has
+and what they can keep down. Events carry the exception, the stack and the
+route name. Offline fetch failures are ignored, since the offline shell fails
+those on purpose.
+
+The DSN is a parameter rather than a secret - it can only send events to one
+project, never read them - and is rendered into a meta tag at request time so
+the value follows the running task. The template default is empty, so no
+stack update can start reporting by accident. Source-map upload is off: it
+would need a `SENTRY_AUTH_TOKEN` inside the fail-closed image build.
+
+Verified: the meta tags render on the live site with the production DSN and
+`environment=production`; a deliberately labelled test event reached the
+project as `SECONDBREAKFAST-WEB-1` and was resolved with a note. Not yet
+verified: an error originating inside the running app, which will be the
+first genuine fault.
