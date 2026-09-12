@@ -56,8 +56,11 @@ Parameters:
     Description: Dedicated nonpublic Second Breakfast PostgreSQL security group.
   ClerkSecretArn:
     Type: String
-    AllowedPattern: '^arn:aws:secretsmanager:us-east-2:051722405355:secret:dev/secondbreakfast/clerk-[A-Za-z0-9]+$'
-    Description: Required runtime Clerk secret in the consolidated account. No default is safe.
+    AllowedPattern: '^arn:aws:secretsmanager:us-east-2:051722405355:secret:dev/secondbreakfast/clerk-[A-Za-z0-9-]+$'
+    Description: >-
+      Required runtime Clerk secret in the consolidated account. No default is
+      safe. Hyphens are allowed in the name so a purpose-named secret
+      (clerk-production) is nameable, not just Secrets Manager's own suffix.
   DatabaseSecretArn:
     Type: String
     AllowedPattern: '^arn:aws:secretsmanager:us-east-2:051722405355:secret:dev/secondbreakfast/database/[0-9]{10}-[A-Za-z0-9]+$'
