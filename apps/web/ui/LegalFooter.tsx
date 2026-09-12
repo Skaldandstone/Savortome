@@ -14,7 +14,7 @@ export function LegalFooter() {
       </nav>
       <details>
         <summary>About copyright</summary>
-        <p>This notice covers original Savortome™ software and studio content. Imported recipes, source media, and user content belong to their respective owners. Existing software licenses remain unchanged.</p>
+        <p>This notice covers original Savortome<span className="tm">™</span> software and studio content. Imported recipes, source media, and user content belong to their respective owners. Existing software licenses remain unchanged.</p>
       </details>
     </footer>
   );

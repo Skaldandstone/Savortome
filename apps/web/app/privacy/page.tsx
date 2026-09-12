@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <main className={styles.page}>
-      <h1>Savortome™ privacy notice</h1>
+      <h1>Savortome<span className="tm">™</span> privacy notice</h1>
       <p className={styles.updated}>Last updated September 7, 2026</p>
       <p>
         This notice applies to the Savortome website and private beta. It does not replace

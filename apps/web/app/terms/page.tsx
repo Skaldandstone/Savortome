@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function TermsPage() {
   return (
     <main className={styles.page}>
-      <h1>Savortome™ private-beta terms</h1>
+      <h1>Savortome<span className="tm">™</span> private-beta terms</h1>
       <p className={styles.updated}>Last updated September 7, 2026</p>
       <p>
         Savortome is an invite-only beta operated by Skald and Stone LLC. By using it, you
@@ -60,7 +60,7 @@ export default function TermsPage() {
 
       <h2>Ownership and notices</h2>
       <p>
-        Savortome™ is the product name. Original Savortome software and studio
+        Savortome<span className="tm">™</span> is the product name. Original Savortome software and studio
         content are © 2026 Skald and Stone LLC. Existing licenses and third-party notices remain
         unchanged.
       </p>

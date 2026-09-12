@@ -89,3 +89,11 @@ a { color: var(--accent); }
 @page {
   margin: 18mm 16mm;
 }
+
+.tm {
+  font-size: 0.5em;
+  font-weight: 400;
+  vertical-align: super;
+  line-height: 0;
+  margin-left: 0.05em;
+}

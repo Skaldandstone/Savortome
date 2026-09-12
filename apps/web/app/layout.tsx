@@ -41,7 +41,7 @@ function Masthead({ children }: { children: ReactNode }) {
   return (
     <header className={styles.masthead} data-print="hide">
       <h1 className={styles.wordmark}>
-        <Link href="/">Savortome™</Link>
+        <Link href="/">Savortome<span className="tm">™</span></Link>
       </h1>
       <span className={styles.tagline}>Food is magic. Cooking shouldn’t require it.</span>
       <nav className={styles.nav}>
@@ -65,7 +65,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   if (beta) {
     const shell = <div className="woodland-shell">
       <a className="woodland-skip" href="#main-content">Skip to content</a>
-      <header className="woodland-masthead" data-print="hide"><Link href="/" className="woodland-brand"><img src="/icons/icon-192.png" alt="" /><span>Savortome™<small>Food is magic. Cooking shouldn’t require it.</small></span></Link><DecorationControl />{clerkConfigured() ? <AccountMenu /> : <DevAccountBadge />}</header>
+      <header className="woodland-masthead" data-print="hide"><Link href="/" className="woodland-brand"><img src="/icons/icon-192.png" alt="" /><span>Savortome<span className="tm">™</span><small>Food is magic. Cooking shouldn’t require it.</small></span></Link><DecorationControl />{clerkConfigured() ? <AccountMenu /> : <DevAccountBadge />}</header>
       <WoodlandNavigation />
       <OfflineBanner /><div id="main-content" tabIndex={-1}>{children}</div><LegalFooter />
     </div>;

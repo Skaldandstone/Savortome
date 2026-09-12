@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function AccessibilityPage() {
   return (
     <main className={styles.page}>
-      <h1>Savortome™ accessibility</h1>
+      <h1>Savortome<span className="tm">™</span> accessibility</h1>
       <p className={styles.updated}>Last updated September 7, 2026</p>
       <p>
         We are building Savortome toward WCAG 2.2 Level AA for its web surfaces and platform
