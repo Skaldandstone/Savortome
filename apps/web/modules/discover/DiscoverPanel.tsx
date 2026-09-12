@@ -3,11 +3,13 @@
 import { Button, Callout, FieldRow, Panel, PanelHeader, TextField } from "@/ui";
 import { DiscoverCards } from "./DiscoverCards";
 import { useDiscover } from "./useDiscover";
+import { WebRecipeFinder } from "./WebRecipeFinder";
 import styles from "./discover.module.css";
 
 /** Browse and search what other people have shared. */
 export function DiscoverPanel() {
-  const { data, loading, error, query, activeTags, setQuery, search, toggleTag } = useDiscover();
+  const { data, loading, error, query, searchedQuery, activeTags, setQuery, search, toggleTag } =
+    useDiscover();
 
   return (
     <>
@@ -74,11 +76,14 @@ export function DiscoverPanel() {
             Looking for shared recipes…
           </p>
         ) : data.recipes.length === 0 ? (
-          <p className={styles.empty}>
-            {data.query || activeTags.length > 0
-              ? "Nothing shared matches that yet."
-              : "No one has shared anything yet. Set one of your recipes to “Anyone with the link” and it turns up here."}
-          </p>
+          <>
+            <p className={styles.empty}>
+              {searchedQuery || activeTags.length > 0
+                ? "Nothing shared matches that yet."
+                : "No one has shared anything yet. Set one of your recipes to “Anyone with the link” and it turns up here."}
+            </p>
+            <WebRecipeFinder query={searchedQuery} />
+          </>
         ) : (
           <DiscoverCards cards={data.recipes} />
         )}

@@ -11,6 +11,13 @@ export interface DiscoverController {
   loading: boolean;
   error: string | null;
   query: string;
+  /**
+   * The last query actually searched for, as opposed to what is in the box
+   * right now. Tracked here rather than read back off the response so that a
+   * failed request still knows what was asked — the fallbacks shown on an
+   * empty result need it most exactly when the server call didn't work.
+   */
+  searchedQuery: string;
   activeTags: string[];
   setQuery: (query: string) => void;
   search: (query: string) => Promise<void>;
@@ -22,11 +29,13 @@ export function useDiscover(): DiscoverController {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [searchedQuery, setSearchedQuery] = useState("");
   const [activeTags, setActiveTags] = useState<string[]>([]);
 
   const load = useCallback(async (nextQuery: string, nextTags: string[]) => {
     setLoading(true);
     setError(null);
+    setSearchedQuery(nextQuery);
     try {
       setData(await api.discover({ query: nextQuery, tags: nextTags }));
     } catch (err) {
@@ -45,6 +54,7 @@ export function useDiscover(): DiscoverController {
     loading,
     error,
     query,
+    searchedQuery,
     activeTags,
     setQuery,
     search: (next) => {

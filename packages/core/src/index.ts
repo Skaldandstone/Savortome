@@ -19,6 +19,8 @@ export * from "./carts-kroger.js";
 export * from "./pantry-query.js";
 export * from "./units.js";
 export * from "./extract.js";
+export * from "./web-recipes.js";
+export * from "./web-search.js";
 export * from "./ingest.js";
 export {
   resolveSource,

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { librarySortOr } from '@seconds/core/format';
 import { loadLibrary } from '@/lib/library';
 import { ImportPanel } from '@/modules/import';
+import { WebRecipeFinder } from '@/modules/discover';
 import { KitchenWelcome, RecipeImportLink } from '@/modules/woodland/Woodland';
 import { KitchenIcon } from '@/modules/woodland/KitchenIcon';
 import { LibraryExport, LibraryList, LibraryNotice, LibrarySearch, LibrarySort, ShelfFilter } from './index';
@@ -27,7 +28,7 @@ export async function WoodlandLibrary({ shelfId, query, sort }: { shelfId?: stri
         {library.kind === 'unavailable' ? <LibraryNotice>{library.reason}</LibraryNotice> : <>
           <LibrarySearch query={query} shelfId={shelfId} sort={order} />
           <LibrarySort sort={order} query={query} shelfId={shelfId} />
-          {query && library.entries.length === 0 ? <LibraryNotice>Nothing in your recipes matches “{query}”. Try another search, or discover what others have shared.</LibraryNotice> : <LibraryList entries={library.entries} woodland />}
+          {query && library.entries.length === 0 ? <><LibraryNotice>Nothing in your recipes matches “{query}”. <Link href={`/discover?q=${encodeURIComponent(query)}`}>See what others have shared</Link>, or look further afield.</LibraryNotice><WebRecipeFinder query={query} /></> : <LibraryList entries={library.entries} woodland />}
           <Link href="/recipe/new" className={styles.addRecipe}><KitchenIcon name="plus" /><span>Add a recipe to your journal</span></Link>
           <LibraryExport total={library.total} />
         </>}

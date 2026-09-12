@@ -17,6 +17,7 @@ export * from "./credits.js";
 export * from "./export.js";
 export * from "./step-ingredients.js";
 export * from "./import-client.js";
+export * from "./web-recipes.js";
 export * from "./shelves.js";
 export * from "./library.js";
 export * from "./plan.js";
