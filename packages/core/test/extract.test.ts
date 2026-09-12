@@ -55,6 +55,8 @@ const modelRecipe: ExtractedRecipe = {
   cuisine: "Italian",
   course: "dinner",
   difficulty: "easy",
+  // A tomato sauce: real knife work, some heat control, no baking at all.
+  skillDemands: { knife: 3, stovetop: 2, oven: null, timing: 2 },
   confidence: 1.4, // deliberately out of range
   extractionNotes: ["Butter amount was gestured at; estimated 3 tbsp."],
   ingredientNutritionGuesses: [],

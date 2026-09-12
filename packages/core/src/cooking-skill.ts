@@ -355,3 +355,25 @@ export function canonicalTools(equipment: readonly string[]): string[] {
   }
   return [...found].sort();
 }
+
+/**
+ * Turn a recipe's stored demands into the ratings matching works with.
+ *
+ * Storage keeps a fixed object with nullable members, because a model filling
+ * a structured output is far more reliable when every key is present and it
+ * only has to choose the value. Matching wants a sparse map, where an absent
+ * skill simply is not asked for. Null and absent mean the same thing here, and
+ * a whole null object means the recipe was never analysed - neither is a gap
+ * to be filled in with a guess.
+ */
+export function skillRatingsFrom(
+  demands: { knife: number | null; stovetop: number | null; oven: number | null; timing: number | null } | null | undefined,
+): SkillRatings {
+  if (!demands) return {};
+  const out: SkillRatings = {};
+  for (const skill of KITCHEN_SKILLS) {
+    const level = demands[skill];
+    if (level !== null && SKILL_LEVELS.includes(level as SkillLevel)) out[skill] = level as SkillLevel;
+  }
+  return out;
+}

@@ -1,6 +1,7 @@
 import { eq } from "drizzle-orm";
 import {
   COOK_TIERS,
+  skillRatingsFrom,
   KITCHEN_SKILLS,
   KITCHEN_STOCKS,
   SKILL_LEVELS,
@@ -8,6 +9,7 @@ import {
   type CookTier,
   type KitchenSkill,
   type KitchenStock,
+  type SkillDemands,
   type SkillLevel,
   type SkillRatings,
 } from "@seconds/core";
@@ -125,7 +127,9 @@ export async function getRecipeDemands(
     columns: { skillDemands: true, equipment: true },
   });
   if (!row) return null;
-  return { skills: readSkills(row.skillDemands), equipment: row.equipment ?? [] };
+  // A null column means this recipe has never been analysed, which is a
+  // different thing from analysed and found to ask nothing in particular.
+  return { skills: skillRatingsFrom(row.skillDemands), equipment: row.equipment ?? [] };
 }
 
 /**
@@ -140,9 +144,17 @@ export async function saveRecipeDemands(
   recipeId: string,
   skills: SkillRatings,
 ): Promise<void> {
+  // Stored with every key present, so "not analysed" (a null column) stays
+  // distinguishable from "analysed, asks nothing of your knife work".
+  const demands: SkillDemands = {
+    knife: skills.knife ?? null,
+    stovetop: skills.stovetop ?? null,
+    oven: skills.oven ?? null,
+    timing: skills.timing ?? null,
+  };
   await database
     .update(schema.recipes)
-    .set({ skillDemands: readSkills(skills) })
+    .set({ skillDemands: demands })
     .where(eq(schema.recipes.id, recipeId));
 }
 

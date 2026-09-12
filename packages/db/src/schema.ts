@@ -24,6 +24,7 @@ import type {
   KitchenStock,
   RecipeNutrition,
   RecipePhoto,
+  SkillDemands,
   SkillRatings,
   Step,
 } from "@seconds/core";
@@ -306,7 +307,7 @@ export const recipes = pgTable(
      * holds them as the source wrote them, and `canonicalTools` maps that to
      * names the kitchen-stock levels can match.
      */
-    skillDemands: jsonb("skill_demands").$type<SkillRatings>().notNull().default({}),
+    skillDemands: jsonb("skill_demands").$type<SkillDemands>(),
 
     sourceKind: sourceKind("source_kind").notNull(),
     sourceUrl: text("source_url"),

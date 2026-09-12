@@ -79,6 +79,7 @@ export async function getSharedRecipe(
       id: row.id,
       title: row.title,
       description: row.description,
+      skillDemands: row.skillDemands ?? null,
       imageUrl: row.imageUrl,
       // The storage key is never shown to a viewer — see RecipePhotoSchema.
       // A shared recipe (or its /api/shared/[id] JSON, which serializes this

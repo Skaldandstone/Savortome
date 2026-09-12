@@ -198,6 +198,10 @@ function toImportItem(json: RawPaprikaRecipe): PaprikaImportItem | null {
   return {
     recipe: {
       title,
+      // Neither a Paprika export nor a schema.org card says anything about
+      // how much skill a recipe asks for, and guessing from a title would
+      // be inventing data. Analysis can fill this in later.
+      skillDemands: null,
       description,
       servings,
       servingsNote,

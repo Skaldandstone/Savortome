@@ -14,6 +14,7 @@ export interface RecipeRow {
   totalMinutes: number | null;
   ingredients: Recipe["ingredients"];
   steps: Recipe["steps"];
+  skillDemands: Recipe["skillDemands"];
   equipment: string[];
   tags: string[];
   cuisine: string | null;
@@ -39,6 +40,8 @@ export function toRecipe(row: RecipeRow): Recipe {
     id: row.id,
     title: row.title,
     description: row.description,
+    // Null until analysis has looked at this recipe; see cooking-skill.ts.
+    skillDemands: row.skillDemands ?? null,
     imageUrl: row.imageUrl,
     photos: row.photos,
     servings: row.servings,

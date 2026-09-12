@@ -47,6 +47,7 @@ const recipe = (over: Partial<Recipe> = {}): Recipe => ({
   cuisine: null,
   course: null,
   difficulty: null,
+  skillDemands: null,
   confidence: 1,
   extractionNotes: [],
   imageUrl: null,

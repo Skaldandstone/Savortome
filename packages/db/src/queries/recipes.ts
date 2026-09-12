@@ -51,6 +51,7 @@ async function saveRecipeAtomic(
     cuisine: recipe.cuisine,
     course: recipe.course,
     difficulty: recipe.difficulty,
+    skillDemands: recipe.skillDemands,
     sourceKind: recipe.source.kind,
     sourceUrl: recipe.source.url,
     sourceAuthor: recipe.source.author,

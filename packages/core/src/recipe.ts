@@ -128,6 +128,20 @@ export type RecipeSource = z.infer<typeof RecipeSourceSchema>;
  * What the model is asked to produce. Deliberately excludes ids, timestamps,
  * and anything the server owns — see `RecipeSchema` for the persisted shape.
  */
+/**
+ * How much a recipe asks of each broad kitchen skill, 1 (anyone) to 5 (years
+ * of practice). Kept as a fixed object with nullable members rather than an
+ * optional map: a model filling a structured output is far more reliable when
+ * every key is present and it only has to decide the value.
+ */
+export const SkillDemandsSchema = z.object({
+  knife: z.number().int().min(1).max(5).nullable(),
+  stovetop: z.number().int().min(1).max(5).nullable(),
+  oven: z.number().int().min(1).max(5).nullable(),
+  timing: z.number().int().min(1).max(5).nullable(),
+});
+export type SkillDemands = z.infer<typeof SkillDemandsSchema>;
+
 export const ExtractedRecipeSchema = z.object({
   title: z.string(),
   description: z.string().nullable(),
@@ -145,6 +159,19 @@ export const ExtractedRecipeSchema = z.object({
   /** breakfast | lunch | dinner | dessert | snack | drink | side | sauce | ... */
   course: z.string().nullable(),
   difficulty: z.enum(["easy", "medium", "hard"]).nullable(),
+  /**
+   * What this recipe asks of whoever cooks it, 1-5 per skill.
+   *
+   * `difficulty` above is the source's own single coarse word, kept as it was
+   * given. This is the part matching actually uses, because "hard" tells a
+   * confident baker with poor knife work nothing useful about whether they
+   * can manage it.
+   *
+   * Nullable throughout: null is "this recipe does not lean on that skill",
+   * and the whole object is null for recipes imported before any of this
+   * existed. Neither is a gap to be filled in with a guess.
+   */
+  skillDemands: SkillDemandsSchema.nullable(),
   /** 0-1. How much of the recipe was actually stated vs. inferred by the model. */
   confidence: z.number(),
   /** Anything guessed, ambiguous, or missing — surfaced to the user for review. */

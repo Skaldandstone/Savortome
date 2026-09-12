@@ -222,6 +222,10 @@ export function extractJsonLdRecipe(html: string): JsonLdResult | null {
   return {
     recipe: {
       title,
+      // Neither a schema.org card nor a Paprika export says anything about
+      // how much skill a recipe asks for, and guessing from a title would
+      // be inventing data. Analysis can fill this in later.
+      skillDemands: null,
       description: textOf(node.description),
       servings: servingsMatch ? Number(servingsMatch[1]) : null,
       servingsNote: yieldRaw,

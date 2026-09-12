@@ -11,4 +11,6 @@
 ALTER TABLE "users" ADD COLUMN "cook_tier" text;--> statement-breakpoint
 ALTER TABLE "users" ADD COLUMN "cook_skills" jsonb DEFAULT '{}'::jsonb NOT NULL;--> statement-breakpoint
 ALTER TABLE "users" ADD COLUMN "kitchen_stock" text;--> statement-breakpoint
-ALTER TABLE "recipes" ADD COLUMN "skill_demands" jsonb DEFAULT '{}'::jsonb NOT NULL;
+-- Nullable with no default: NULL means this recipe has never been analysed,
+-- which is a different thing from analysed and found to ask nothing.
+ALTER TABLE "recipes" ADD COLUMN "skill_demands" jsonb;

@@ -47,14 +47,17 @@ Steps
 - Each step is one coherent action or a tight cluster of actions. Merge filler; split a step that hides three distinct operations.
 - Write imperative, second-person prose. Strip sponsorships, "smash that like button", tangents, and life stories.
 - Carry over any temperature, time, visual doneness cue, or pan size that was mentioned. These are the details people actually need and they are the first thing sloppy extraction drops.
-- "timerSeconds" is the hands-off duration the step implies, or null. For a range, use the midpoint.
+- "timerSeconds" is the HANDS-OFF duration the step implies, or null. For a range, use the midpoint. This is time the cook is not working: a simmer, a rest, a proof, time in the oven.
+- "activeSeconds" is the HANDS-ON time the step takes at an average pace, or null. These are different numbers and must never be merged. "Simmer 20 minutes, stirring occasionally" is timerSeconds 1200 and activeSeconds around 120. A step that is purely waiting has activeSeconds null; a step that is purely work has timerSeconds null.
+- "demands" is the one skill the step mostly leans on, or null: "knife" for chopping, dicing, breaking down meat; "stovetop" for heat control, searing, emulsions that can split; "oven" for baking, pastry, anything that rises or must come out at the right moment; "timing" for steps that require juggling several things at once. Null when the step asks nothing in particular - stirring, waiting, putting a lid on.
 - "sourceTimestamp": when the input has [mm:ss] markers, set this to the second the step begins. Otherwise null.
 
 Times, yield, metadata
 - Only fill prepMinutes, cookMinutes, and totalMinutes from what is stated or clearly implied by the step durations. Do not invent a total.
 - "servings" is a number; put the source's own phrasing in "servingsNote" ("serves 4-6 as a side").
 - "tags" are lowercase and useful for browsing: dietary ("vegetarian", "gluten-free"), effort ("weeknight", "make-ahead"), method ("one-pan", "grilled", "no-bake"). 3-8 of them. No hashtag punctuation.
-- "equipment" only for things a normal kitchen might lack: stand mixer, food processor, Dutch oven, thermometer, air fryer.
+- "equipment" only for things a normal kitchen might lack: stand mixer, food processor, Dutch oven, thermometer, air fryer. Mark anything the source presents as optional by writing "(optional)" after it, so a missing one never stops someone cooking.
+- "skillDemands" rates what the recipe asks of the cook, 1 to 5, on each of knife, stovetop, oven and timing. 1 is "anyone can do this the first time", 3 is "a confident home cook", 5 is "years of practice". Use null for a skill the recipe genuinely does not lean on - a no-bake slice asks nothing of "oven", and a traybake asks nothing of "knife". Rate the recipe's hardest moment on each skill, not its average: one emulsion in an otherwise simple dish still makes "stovetop" a 4. Be honest rather than generous. These numbers decide whether someone is shown a recipe as an ordinary suggestion or as a challenge, so inflating them hides good recipes from people who could cook them, and deflating them sets people up to fail.
 
 Nutrition
 - "ingredientNutritionGuesses" is your best estimate of each ingredient's nutritional contribution to this recipe AS USED — at the amount actually called for, not per 100g. One entry per ingredient in the ingredients list, matched by the same "canonicalItem" string.

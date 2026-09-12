@@ -14,6 +14,7 @@ import {
   fitForCook,
   orderByFit,
   recipeMinutesFor,
+  skillRatingsFrom,
   tierRank,
   toolsAtStock,
   type CookProfile,
@@ -180,4 +181,32 @@ test('the skill and stock vocabularies stay small enough to answer quickly', () 
   // Someone doing this is tired and wants to cook, not fill in a form.
   assert.ok(KITCHEN_SKILLS.length <= 5);
   assert.equal(KITCHEN_STOCKS.length, 5);
+});
+
+test('what extraction stores converts cleanly into what matching reads', () => {
+  // Storage keeps every key present with a nullable value, because a model
+  // filling a structured output is far more reliable when it only has to
+  // choose the value. Matching wants a sparse map.
+  assert.deepEqual(
+    skillRatingsFrom({ knife: 3, stovetop: null, oven: 5, timing: null }),
+    { knife: 3, oven: 5 },
+  );
+
+  // Never analysed, and analysed-but-undemanding, both come out as "asks
+  // nothing" - but only the column tells them apart, and neither is a gap to
+  // fill in with a guess.
+  assert.deepEqual(skillRatingsFrom(null), {});
+  assert.deepEqual(skillRatingsFrom(undefined), {});
+  assert.deepEqual(skillRatingsFrom({ knife: null, stovetop: null, oven: null, timing: null }), {});
+
+  // A value outside 1-5 is dropped rather than clamped: a rating of 11 means
+  // something upstream is wrong, and inventing a 5 would hide that.
+  assert.deepEqual(
+    skillRatingsFrom({ knife: 11, stovetop: 0, oven: 2, timing: null } as never),
+    { oven: 2 },
+  );
+
+  // And it lands where it is used: an unanalysed recipe is comfortable for
+  // everyone rather than a challenge for everyone.
+  assert.equal(fitForCook({ tier: 'apprentice' }, { skills: skillRatingsFrom(null) }).verdict, 'comfortable');
 });
