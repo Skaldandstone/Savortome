@@ -122,3 +122,83 @@ Live verification, signed out, over the Cloudflare hostname:
 Not verified in this pass: a real self-service sign-up on the Clerk instance,
 authenticated flows on the new image, Clerk dashboard restriction mode, load
 behaviour, and any owner visual acceptance.
+
+## Production Clerk cutover to savortome.skaldandstone.com, 2026-09-11
+
+The 2026-09-10 launch above ran on the Clerk *development* instance at the
+old hostname. This pass moved it to a production instance on the product's
+own hostname.
+
+Identity:
+
+- Clerk application renamed to Savortome; production instance
+  `ins_3JA04CTgisnnvlq1nMpUQpLOvnm` bound to `savortome.skaldandstone.com`,
+  with its five CNAMEs in the live Cloudflare zone and DNS, SSL and mail
+  verified by Clerk.
+- Sign-up mode is `public` on both instances.
+- The production secret key was rotated after an earlier probe printed one
+  into an agent transcript; the rotated pair is stored in Secrets Manager at
+  `dev/secondbreakfast/clerk-production`. The rotate endpoint returns the
+  application, with the new key at `instances[].secret_key` - not a bare key,
+  which is what `scripts/rotate-clerk-production-secret.ps1` now reads.
+- The build takes the Clerk *publishable* key as a plain value rather than a
+  Secrets Manager reference. It is public by definition: it is inlined into
+  the browser bundle. Holding it as a secret bought nothing and required the
+  CodeBuild role to hold a grant on every new secret.
+
+Certificate and DNS: ACM `2fa45f4c-4190-418d-a135-828baf2ce6eb`, ISSUED for
+`savortome.skaldandstone.com` with `beta.secondbreakfast.skaldandstone.com`
+as a SAN, so the old hostname keeps working. Both are proxied to the ALB.
+
+Images, both from sealed snapshots, BASIC scan COMPLETE with zero findings:
+
+- `sha256:93b8ca316909368abf2889b528c310a627c2d130f8f07a872d043c1f3f9919e5`
+  from manifest `77ff6f01...` (commit `aee23ec`). Image config verified before
+  deploy: `pk_live_` inlined, user 65532, distroless node entrypoint, service
+  worker on, cache version 3, source label matching the snapshot.
+- `sha256:6a2c670d3da37e23f781a39850d4ee60e9fa89008542cd2ea6080dab4ba0d8e7`
+  from manifest `9f4cb799...` (commit `833d39c`), carrying the sign-in gating
+  fixes below. Running now, on candidate task definition revision 12.
+
+### Three things a signed-out visitor could see
+
+Found by James on the live site and fixed in `833d39c`.
+
+1. **The kitchen pages were open.** `canUseBeta()` answered two different
+   questions: which experience to render, and who may enter. Opening the beta
+   to the public made it true for everyone, so `/cook` and `/care` rendered to
+   strangers; `/list` and `/friends` had never had a check at all. `/plan`,
+   `/profile`, `/templates` and `/recipe/new` did redirect, so the behaviour
+   was inconsistent rather than designed. No account data was reachable at any
+   point - API routes answer 401 and loaders return "sign in to see this" -
+   but an empty kitchen shown to a stranger reads as broken.
+   `apps/web/lib/page-auth.ts` is now a gate of its own, asked of Clerk
+   directly. Verified signed out: `/cook`, `/list`, `/friends`, `/care`,
+   `/plan`, `/profile`, `/templates`, `/recipe/new` all 307 to sign-in with
+   the destination preserved; `/`, `/discover`, `/terms`, `/privacy`,
+   `/accessibility`, `/plans` still 200.
+2. **The legal pages froze the wrong shell.** `/terms`, `/privacy`,
+   `/accessibility` and `/offline` had no dynamic export, so they were
+   prerendered at build time when the runtime public-access flag is unset.
+   That baked the pre-rebrand masthead into them and served it under
+   `s-maxage=31536000`. A shell chosen by runtime configuration cannot be
+   prerendered. All four are `force-dynamic` now and render the woodland
+   shell; `data-woodland="true"` confirmed on the live pages.
+3. **The masthead still advertised the old beta.** It linked to
+   `skaldandstone.com/secondbreakfast/#request-access` and said "Request beta
+   access", which was both the old name and untrue once sign-ups opened. It
+   points at the Savortome page now. Separately, the Instacart handoff titled
+   every list "Second Breakfast shopping list" in a third party's UI.
+
+`second breakfast` now appears zero times in the HTML of `/`, `/terms`,
+`/privacy`, `/accessibility`, `/plans`, `/discover` and `/offline`.
+
+### Still open after this pass
+
+- **No error monitoring.** Savortome has no Sentry or equivalent. A production
+  sign-in failure would be invisible unless someone reports it.
+- Google, Facebook and Apple SSO connections are unconfigured on the
+  production instance; email and password is the only way in. Production Clerk
+  will not accept Clerk's shared development OAuth credentials.
+- No authenticated flow has been exercised against the production instance: no
+  real sign-up, no import while signed in, no owner acceptance.
