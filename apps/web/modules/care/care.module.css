@@ -27,6 +27,16 @@
 .card { position:relative; min-width:0; border:1px solid var(--border); border-radius:5px; padding:5px; background-color:var(--surface); background-image:linear-gradient(var(--grain-wash),var(--grain-wash)),var(--grain); background-size:auto,500px; box-shadow:var(--shadow); }
 .card::after { content:''; position:absolute; inset:4px; border:1px solid #ba945436; border-radius:3px; pointer-events:none; }
 .card[data-selected='true'] { outline:2px solid var(--accent); outline-offset:3px; }
+/* The option that gives back the most, when one of them genuinely does. A
+   warm surround rather than a badge shouting "best": the closing line of this
+   page is that no perfect meals are required, and someone who can only manage
+   the first card should not be told they chose wrong. */
+.card[data-nourishing='true'] { border-color:#c8a86a; box-shadow:var(--shadow),0 0 0 1px #c8a86a55,0 0 18px #c8a86a33; }
+.card[data-nourishing='true']::after { border-color:#c8a86a5c; }
+.nourishing { display:flex; align-items:center; gap:6px; color:#c8a86a; font-size:.8125rem; font-weight:600; }
+.nourishing svg { width:15px; height:17px; }
+@media (prefers-reduced-motion:no-preference) { .card[data-nourishing='true'] { transition:box-shadow .4s ease; } }
+
 .cardSummary { display:grid; grid-template-columns:1fr 24px; cursor:pointer; list-style:none; }
 .foodArt { grid-column:1/-1; width:100%; border-radius:3px 3px 0 0; border-bottom:1px solid var(--border); }
 .cardHeading { display:flex; flex-direction:column; min-width:0; gap:8px; padding:18px 13px; }

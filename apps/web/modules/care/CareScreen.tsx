@@ -113,10 +113,10 @@ function CareContent({ link, standalone = false, accountId }: CareProps & { acco
     {selectedId && <p className={styles.note} role="status">{results.some(result => result.food.id === selectedId) ? 'Your selected idea is marked below. Selecting it does not save it to your list.' : 'Your earlier selection is kept in this tab, but is not shown because these choices or restrictions changed the suggestions.'}</p>}
     <section className={styles.results} aria-label="Food suggestions" aria-live="polite">
       {results.length === 0 && <div className={styles.empty}><h2>No match for these choices yet</h2><p>We have kept your restrictions. You can change a preparation preference, or choose a familiar food you know works for you.</p></div>}
-      {results.map(({ kind, label, food, pantryMatches }) => <details className={styles.card} key={food.id} data-kind={kind} data-selected={selectedId === food.id}>
+      {results.map(({ kind, label, food, pantryMatches, mostNourishing }) => <details className={styles.card} key={food.id} data-kind={kind} data-selected={selectedId === food.id} data-nourishing={mostNourishing}>
         <summary className={styles.cardSummary}>
           <FoodIllustration foodId={food.id} className={styles.foodArt} />
-          <span className={styles.cardHeading}><span className={styles.slot}>{label}</span><span className={styles.foodTitle}>{food.title}</span><span className={styles.time}><KitchenIcon name="clock" />{food.minutes} min</span>{selectedId === food.id && <span className={styles.selected}>Selected idea</span>}</span>
+          <span className={styles.cardHeading}><span className={styles.slot}>{label}</span><span className={styles.foodTitle}>{food.title}</span><span className={styles.time}><KitchenIcon name="clock" />{food.minutes} min</span>{mostNourishing && <span className={styles.nourishing}><KitchenIcon name="sprig" />Most nourishing of these</span>}{selectedId === food.id && <span className={styles.selected}>Selected idea</span>}</span>
           <KitchenIcon name="arrow" className={styles.chevron} />
         </summary>
         <div className={styles.cardBody}>

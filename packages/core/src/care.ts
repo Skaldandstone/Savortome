@@ -42,8 +42,25 @@ export function parseCareLink(value: unknown): CareLink {
   return out;
 }
 
+/**
+ * How much a food actually gives back, in three honest steps.
+ *
+ * Authored per food, not calculated. The recipe nutrition pipeline works from
+ * measured amounts and a food database; these are "a banana" and "some
+ * crackers" with no quantity attached, so running them through it would invent
+ * a precision that does not exist. An ordinal someone can read and disagree
+ * with is the truthful shape for this.
+ *
+ * "light" is mostly water and quick carbohydrate - welcome, and not much to
+ * build on. "steady" carries real substance. "sustaining" brings protein or
+ * fat, the things that actually help someone who has not eaten properly.
+ */
+export const CARE_NOURISHMENT = ['light', 'steady', 'sustaining'] as const;
+export type CareNourishment = typeof CARE_NOURISHMENT[number];
+
 export interface CareFood {
   id: string;
+  nourishment: CareNourishment;
   title: string;
   description: string;
   effort: CareEffort;
@@ -59,11 +76,24 @@ export interface CareFood {
 const plant: DietaryTag[] = ['vegan', 'vegetarian', 'pescatarian', 'dairy-free'];
 const fruit: DietaryTag[] = [...plant, 'gluten-free'];
 const allPortions = ['small', 'regular', 'more'] as const;
-function food(id: string, title: string, description: string, effort: CareEffort, minutes: number, temperature: 'cold'|'warm', textures: string[], ingredients: string[], dietaryTags: DietaryTag[], steps: string[], shoppingItem: string, portions: CareFood['portions'] = allPortions): CareFood {
+function food(id: string, title: string, description: string, effort: CareEffort, minutes: number, temperature: 'cold'|'warm', textures: string[], ingredients: string[], dietaryTags: DietaryTag[], steps: string[], shoppingItem: string, portions: CareFood['portions'] = allPortions): Omit<CareFood, 'nourishment'> {
   return { id, title, description, effort, minutes, temperature, textures, ingredients, dietaryTags, steps, shoppingItem, portions };
 }
+
+/**
+ * What each food gives back. Kept as one readable table rather than a
+ * thirteenth positional argument, so it can be reviewed - and argued with -
+ * on its own. Anything unlisted is "light", which is the cautious answer.
+ */
+const NOURISHMENT: Partial<Record<string, CareNourishment>> = {
+  yogurt: 'sustaining', hummus: 'sustaining', beans: 'sustaining', scramble: 'sustaining',
+  peas: 'sustaining', avocado: 'sustaining', kefir: 'sustaining', cheese_crackers: 'sustaining',
+  poached_egg: 'sustaining', vegetable_soup: 'sustaining',
+  cereal: 'steady', rice: 'steady', oatmeal: 'steady', potato: 'steady', pasta: 'steady',
+  soup: 'steady', mash: 'steady', congee: 'steady', toast: 'steady', noodle_soup: 'steady',
+};
 /** Explicitly authored possibilities. No inference about what a user has eaten or needs. */
-export const CARE_FOODS: readonly CareFood[] = [
+const AUTHORED: readonly Omit<CareFood, 'nourishment'>[] = [
   food('banana', 'A banana, just as it is', 'Something simple, with no washing up.', 'open', 1, 'cold', ['soft', 'plain'], ['banana'], fruit, ['Peel a banana.', 'Have as much or as little as you want.'], 'banana', ['small', 'regular']),
   food('apple', 'Apple slices', 'A little crunch, at your pace.', 'open', 2, 'cold', ['crunchy', 'plain'], ['apple'], fruit, ['Wash an apple.', 'Slice it, or eat it whole.'], 'apple', ['small', 'regular']),
   food('applesauce', 'A pot of applesauce', 'Open the lid. That can be enough preparation.', 'open', 1, 'cold', ['smooth', 'soft', 'plain'], ['apple puree'], fruit, ['Choose a pot whose ingredients work for you.', 'Open it and grab a spoon.'], 'applesauce', ['small', 'regular']),
@@ -98,8 +128,26 @@ export const CARE_FOODS: readonly CareFood[] = [
   food('vegetable_soup', 'A pan of vegetable soup', 'Worth making when you have a little more in you.', 'cook', 20, 'warm', ['smooth', 'soft'], ['carrot', 'potato', 'vegetable broth'], [...plant, 'gluten-free'], ['Check the broth label.', 'Simmer chopped carrot and potato in broth until they give way easily.', 'Blend or mash, and let it cool enough to eat.'], 'carrot'),
 ];
 
+export const CARE_FOODS: readonly CareFood[] = AUTHORED.map(item => ({
+  ...item,
+  nourishment: NOURISHMENT[item.id] ?? 'light',
+}));
+
 export interface CareContext { allergens?: readonly Allergen[]; dietaryTags?: readonly DietaryTag[]; pantry?: readonly string[] }
-export interface CareSuggestion { kind: 'now' | 'more' | 'future'; label: string; food: CareFood; pantryMatches: number }
+export interface CareSuggestion {
+  kind: 'now' | 'more' | 'future';
+  label: string;
+  food: CareFood;
+  pantryMatches: number;
+  /**
+   * The one of these suggestions that gives back the most.
+   *
+   * Only ever set when it genuinely beats the others: when all three are
+   * equally nourishing nothing is marked, because highlighting one at random
+   * would be a recommendation the data cannot support.
+   */
+  mostNourishing: boolean;
+}
 export function suggestCare(choices: CareChoices = {}, context: CareContext = {}): CareSuggestion[] {
   const maxEffort = CARE_EFFORTS.indexOf(choices.effort ?? 'cook');
   const pantry = new Set((context.pantry ?? []).map(canonicalize).filter(Boolean));
@@ -112,11 +160,17 @@ export function suggestCare(choices: CareChoices = {}, context: CareContext = {}
     (context.dietaryTags ?? []).every(tag => item.dietaryTags.includes(tag)) &&
     flagsForRecipe(item.ingredients.map(canonicalItem => ({ canonicalItem, optional: false })), context.allergens ?? []).length === 0
   ).map(item => ({ food: item, pantryMatches: item.ingredients.filter(x => pantry.has(canonicalize(x))).length }));
+  // Nourishment breaks ties, and only ties. It sits below effort and time on
+  // purpose: the first card has to stay the easiest thing available, because
+  // someone reading this may only manage that one. Between two options that
+  // ask the same of them, the one that gives more back goes first.
   possible.sort((a, b) => (
     choices.usePantry
       ? Number(b.pantryMatches === b.food.ingredients.length) - Number(a.pantryMatches === a.food.ingredients.length) || b.pantryMatches - a.pantryMatches
       : 0
-  ) || a.food.minutes - b.food.minutes || (a.food.id < b.food.id ? -1 : a.food.id > b.food.id ? 1 : 0));
+  ) || a.food.minutes - b.food.minutes
+    || nourishmentRank(b.food) - nourishmentRank(a.food)
+    || (a.food.id < b.food.id ? -1 : a.food.id > b.food.id ? 1 : 0));
   if (possible.length === 0) return [];
 
   // Asking to use the pantry is a specific request - show me what I already
@@ -139,7 +193,20 @@ export function suggestCare(choices: CareChoices = {}, context: CareContext = {}
     { kind: 'more' as const, label: 'A little more' },
     { kind: 'future' as const, label: 'Future me' },
   ];
-  return chosen.map((entry, index) => ({ ...entry, ...labels[index]! }));
+  const best = Math.max(...chosen.map(x => nourishmentRank(x.food)));
+  const worst = Math.min(...chosen.map(x => nourishmentRank(x.food)));
+  const highlight = best > worst ? chosen.findIndex(x => nourishmentRank(x.food) === best) : -1;
+
+  return chosen.map((entry, index) => ({
+    ...entry,
+    ...labels[index]!,
+    mostNourishing: index === highlight,
+  }));
+}
+
+/** Where a food sits on the nourishment scale. Higher gives back more. */
+function nourishmentRank(food: CareFood): number {
+  return CARE_NOURISHMENT.indexOf(food.nourishment);
 }
 
 type Candidate = { food: CareFood; pantryMatches: number };
@@ -167,16 +234,27 @@ function demandOf(food: CareFood): number {
  */
 function spreadAcrossEffort(possible: Candidate[]): Candidate[] {
   const byDemand = [...possible].sort(
-    (a, b) => demandOf(a.food) - demandOf(b.food) || (a.food.id < b.food.id ? -1 : 1),
+    (a, b) => demandOf(a.food) - demandOf(b.food)
+      || nourishmentRank(b.food) - nourishmentRank(a.food)
+      || (a.food.id < b.food.id ? -1 : 1),
   );
   const lightest = byDemand[0]!;
-  const heaviest = pickDistinct(byDemand.slice(1).reverse(), [lightest]) ?? byDemand[byDemand.length - 1]!;
+  // Reversing byDemand would put the *least* nourishing of the heaviest
+  // options first, so "Future me" offered pasta where a vegetable soup costs
+  // exactly the same effort and gives more back. Sort down explicitly.
+  const byWeight = [...possible].sort(
+    (a, b) => demandOf(b.food) - demandOf(a.food)
+      || nourishmentRank(b.food) - nourishmentRank(a.food)
+      || (a.food.id < b.food.id ? -1 : 1),
+  );
+  const heaviest = pickDistinct(byWeight, [lightest]) ?? byWeight[0]!;
 
   // Nearest the midpoint of the two ends, so the ladder has an even tread.
   const midpoint = (demandOf(lightest.food) + demandOf(heaviest.food)) / 2;
   const middle = pickDistinct(
     [...byDemand].sort(
-      (a, b) => Math.abs(demandOf(a.food) - midpoint) - Math.abs(demandOf(b.food) - midpoint),
+      (a, b) => Math.abs(demandOf(a.food) - midpoint) - Math.abs(demandOf(b.food) - midpoint)
+        || nourishmentRank(b.food) - nourishmentRank(a.food),
     ),
     [lightest, heaviest],
   );
