@@ -39,7 +39,8 @@
   "submit": {
     "testflight": {
       "ios": {
-        "appleTeamId": "BVB696HTCS"
+        "appleTeamId": "BVB696HTCS",
+        "ascAppId": "6811296756"
       }
     },
     "playstore": {
