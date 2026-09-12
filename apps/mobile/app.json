@@ -34,16 +34,16 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.secondbreakfast.app",
+      "bundleIdentifier": "com.skaldandstone.savortome",
       "infoPlist": {
         "CFBundleDisplayName": "Savortome",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "2"
+      "buildNumber": "1"
     },
     "android": {
-      "package": "com.secondbreakfast.app",
-      "versionCode": 2,
+      "package": "com.skaldandstone.savortome",
+      "versionCode": 1,
       "allowBackup": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",

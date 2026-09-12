@@ -20,7 +20,7 @@ Status: working local candidate. No deployment, provider-console change, reposit
 
 - package namespace: `@seconds/*`
 - Expo slug and URL scheme: `seconds`
-- iOS and Android identifier: `com.secondbreakfast.app`
+- ~~iOS and Android identifier: `com.secondbreakfast.app`~~ — reversed 2026-09-11, see "Mobile identifier change" below.
 - Clerk access metadata key: `second-breakfast`
 - AWS, database, container, cache, and deployment resource identifiers
 - current beta and application hostnames under `secondbreakfast.skaldandstone.com`
@@ -39,3 +39,58 @@ These values have live or historical consumers. Renaming them together with mark
 8. Rebuild signed web and native candidates, then complete browser, physical-device, authentication, provider, and owner acceptance.
 
 The old marketing route and name should remain redirects or historical aliases long enough to preserve links and tester access. Deployment and remote repository changes remain explicit owner gates.
+
+## Mobile identifier change, 2026-09-11
+
+Step 6 of the cutover left this open: decide whether the mobile identifiers
+stay permanent. James decided they should not. The new identifier on both
+platforms is:
+
+```
+com.skaldandstone.savortome
+```
+
+and this is now the naming convention for every Skald and Stone app:
+`com.skaldandstone.<product>`. Kall already matches it (`com.skaldandstone.kall`,
+Services ID `com.skaldandstone.kall.signin`), so Savortome was the only
+outlier - it was named before the rebrand.
+
+`com.skaldandstone.savortome` was chosen over `com.savortome.app` because the
+convention for these identifiers is the reverse DNS of a domain you actually
+control, and `savortome.com` is not registered.
+
+### This is a new application identity, not a rename
+
+Neither store permits an identifier to change. A Google Play package name is
+permanent from the moment the app is created, and an App Store Connect record
+is bound to its bundle ID for life. So this means new records on both stores
+and abandoning the old ones:
+
+| Old | Fate |
+| --- | --- |
+| App Store Connect app `6810124754` (`com.secondbreakfast.app`) | superseded; held TestFlight builds 1 and 2, build 2 was in Beta App Review |
+| Google Play app `4974432210122251491` (`com.secondbreakfast.app`) | superseded; held one internal-testing release, one tester |
+| Apple Services ID `com.secondbreakfast.app.signin` | superseded by `com.skaldandstone.savortome.signin` |
+
+The cost of this is at its lowest now and only grows: nothing is publicly
+released, TestFlight had three testers and Play internal had one. Doing it
+after a public launch would strand every installed copy, because an installed
+app cannot follow its identifier to a new one - users would have to find and
+install a different listing by hand.
+
+### What changes
+
+- `apps/mobile/app.json`: `ios.bundleIdentifier` and `android.package`. Build
+  counters reset to 1, since the new store records start empty and the old
+  numbers referred to a different app.
+- `apps/mobile/eas.json`: the submit profile's `ascAppId` is cleared until the
+  new App Store Connect record exists and has its own id.
+- Apple: new App ID, new Services ID for Sign in with Apple, new signing key,
+  new provisioning. EAS generates fresh credentials for a new identifier.
+- Google Play: new app record, new upload keystore, new internal release, the
+  tester list re-created.
+- Clerk: the Apple connection's `bundle_id`.
+
+Evidence files under `docs/beta/` keep the old identifier on purpose. They
+record what was actually built and shipped at the time, and rewriting them
+would falsify the record.
