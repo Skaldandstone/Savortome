@@ -125,6 +125,7 @@ const [recipe] = await db
     steps: [],
     equipment: ["Stand Mixer", "rolling pin", "Food processor (optional)"],
     sourceKind: "manual",
+    extractionMethod: "manual",
   })
   .returning({ id: schema.recipes.id });
 const recipeId = recipe!.id;
