@@ -26,7 +26,8 @@ import {
   saveConnection,
   setConnectionStore,
 } from "../src/queries/grocery.js";
-import { isEncrypted } from "../src/crypto.js";
+import { isEncrypted, decryptSecret } from "../src/crypto.js";
+import { tokenAad } from "../src/queries/grocery.js";
 
 // GROCERY_TOKEN_ENCRYPTION_KEY (read by crypto.ts, not this file directly)
 // needs to actually reach process.env — DATABASE_URL alone isn't enough here.
@@ -130,6 +131,21 @@ expect(
 expect("connections aren't shared", await getConnection(db, other, "kroger"), null);
 
 await saveConnection(db, other, "kroger", token("theirs"));
+
+// A ciphertext is bound to its own row via AAD — lifting it into someone
+// else's row (a botched migration, an admin-tool bug) must not decrypt.
+const otherRaw = (await db.query.groceryConnections.findFirst({
+  where: eq(schema.groceryConnections.userId, other),
+}))!;
+let swapDecrypted = false;
+try {
+  decryptSecret(otherRaw.accessToken, tokenAad(shopper, "kroger", "accessToken"));
+  swapDecrypted = true;
+} catch {
+  // expected: AAD mismatch rejects the swapped ciphertext
+}
+expect("a ciphertext swapped between rows fails to decrypt", swapDecrypted, false);
+
 await removeConnection(db, other, "kroger");
 expect("disconnecting removes it", await getConnection(db, other, "kroger"), null);
 expect(
