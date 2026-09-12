@@ -72,6 +72,27 @@ and abandoning the old ones:
 | Google Play app `4974432210122251491` (`com.secondbreakfast.app`) | superseded; held one internal-testing release, one tester |
 | Apple Services ID `com.secondbreakfast.app.signin` | superseded by `com.skaldandstone.savortome.signin` |
 
+### New records, created 2026-09-11
+
+| What | Value |
+| --- | --- |
+| Apple App ID | `com.skaldandstone.savortome` ("Savortome"), Sign in with Apple + Push Notifications enabled |
+| Apple Services ID | `com.skaldandstone.savortome.signin`, primary App ID `BVB696HTCS.com.skaldandstone.savortome`, domain `clerk.savortome.skaldandstone.com`, return URL `https://clerk.savortome.skaldandstone.com/v1/oauth_callback` |
+| App Store Connect | app `6811296756`, SKU `savortome-ios-2026` |
+| Google Play | app `4973692325814773858`, package `com.skaldandstone.savortome`, internal testing tester list `Savortome Owner` |
+
+App Store Connect reserves an app name per record, so the old record could
+not keep "Savortome" while the new one claimed it. The old record
+`6810124754` was renamed to "Savortome Legacy Identifier" rather than
+deleted: renaming is reversible and deleting is not, and whether to remove it
+is the owner's call. The same applies to the old Play app and the old
+Services ID - both are superseded but still present.
+
+The Apple private-relay email sources registered earlier
+(`clkmail.savortome.skaldandstone.com` and the Clerk bounces address) are
+account-level and did not need recreating.
+
+
 The cost of this is at its lowest now and only grows: nothing is publicly
 released, TestFlight had three testers and Play internal had one. Doing it
 after a public launch would strand every installed copy, because an installed
