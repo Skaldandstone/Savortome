@@ -1,0 +1,158 @@
+name: CI
+
+# Nothing ran automatically before this file existed. Every typecheck, test and
+# database check was a local command someone had to remember, which is how a
+# 500 on every signed-in page reached production: the checks that would have
+# caught it were real, and simply never ran.
+#
+# Three jobs, cheapest first, so a broken build is reported in a minute rather
+# than after a browser download.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Keeps the database checks on the local-TLS path in connection.ts.
+  NODE_ENV: test
+
+jobs:
+  static:
+    name: Typecheck and unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Typecheck every workspace
+        run: pnpm typecheck
+      - name: Unit tests
+        run: pnpm test
+      - name: Legal and accessibility surfaces
+        run: pnpm check:web-legal
+
+  database:
+    name: Database checks
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: savortome_ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/savortome_ci
+      # check:grocery asserts tokens are encrypted at rest, so it needs a key.
+      # A throwaway value for a throwaway database; nothing here is a secret.
+      GROCERY_TOKEN_ENCRYPTION_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply migrations
+        run: pnpm --filter @seconds/db migrate
+      # Each of these drives real SQL against a real schema. check:users is the
+      # regression for the Clerk-instance cutover that broke every signed-in
+      # page; the rest were already written and had simply never been wired to
+      # anything that runs on its own.
+      - name: Account provisioning
+        run: pnpm check:users
+      - name: Library, plan and discovery
+        run: |
+          pnpm check:library
+          pnpm check:plan
+          pnpm check:discover
+      - name: Pantry, sharing and friends
+        run: |
+          pnpm check:pantry
+          pnpm check:sharing
+          pnpm check:friends
+      - name: Editor and grocery
+        run: |
+          pnpm check:editor
+          pnpm check:grocery
+
+  e2e:
+    name: End-to-end
+    runs-on: ubuntu-latest
+    needs: static
+    env:
+      # Signed-in coverage needs a Clerk *test* instance. Absent these, that
+      # spec skips and the signed-out sweep still runs, so a fork without
+      # secrets gets useful coverage instead of a wall of failures.
+      E2E_CLERK_PUBLISHABLE_KEY: ${{ secrets.E2E_CLERK_PUBLISHABLE_KEY }}
+      E2E_CLERK_SECRET_KEY: ${{ secrets.E2E_CLERK_SECRET_KEY }}
+      E2E_CLERK_USER_IDENTIFIER: ${{ secrets.E2E_CLERK_USER_IDENTIFIER }}
+      E2E_CLERK_USER_PASSWORD: ${{ secrets.E2E_CLERK_USER_PASSWORD }}
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.E2E_CLERK_PUBLISHABLE_KEY }}
+      CLERK_SECRET_KEY: ${{ secrets.E2E_CLERK_SECRET_KEY }}
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: savortome_e2e
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 10 }
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Apply migrations
+        run: pnpm --filter @seconds/db migrate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/savortome_e2e
+      - name: Install Playwright's browser
+        run: pnpm --filter @seconds/web exec playwright install --with-deps chromium
+      - name: Build the web app
+        run: pnpm --filter @seconds/web build
+        env:
+          NODE_ENV: production
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/savortome_e2e
+      # The server under test is this production build. NODE_ENV stays
+      # production so the local dev-account fallback cannot mask a real auth
+      # failure as a passing page.
+      - name: Run end-to-end tests
+        run: pnpm --filter @seconds/web e2e
+        env:
+          NODE_ENV: production
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/savortome_e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7

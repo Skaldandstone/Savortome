@@ -15,6 +15,7 @@
     "db:studio": "pnpm --filter @seconds/db studio",
     "ingest": "pnpm --filter @seconds/core ingest --",
     "test": "pnpm --filter @seconds/core test",
+    "e2e": "pnpm --filter @seconds/web e2e",
     "check:shelves": "node scripts/check-shelves.mjs",
     "db:generate": "pnpm --filter @seconds/db generate",
     "db:migrate": "pnpm --filter @seconds/db migrate",
