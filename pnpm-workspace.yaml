@@ -45,6 +45,12 @@ minimumReleaseAgeExclude:
 overrides:
   react: 19.2.3
   react-dom: 19.2.3
+  # Security patches for transitive build/runtime dependencies. Next 15.5.25
+  # explicitly supports sharp 0.35.4, while PostCSS and js-yaml retain their
+  # public major-version APIs.
+  sharp: 0.35.4
+  postcss: 8.5.18
+  js-yaml: 4.3.2
   # expo install wanted 57.0.15 of both, published hours earlier, and wrote a
   # minimumReleaseAge exclusion to get them past the policy. Pinning the
   # previous patch instead keeps the supply-chain guard doing its job; expo
