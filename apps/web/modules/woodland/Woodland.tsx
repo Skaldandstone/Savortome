@@ -33,7 +33,7 @@ export function WoodlandNavigation() {
   // covers the large step card and competes with its Back/Done controls.
   if (/^\/recipe\/[^/]+\/cook\/?$/.test(pathname)) return null;
   const links: [string, string, KitchenIconName][] = [['/', 'Library', 'book'], ['/cook', 'Cook', 'pot'], ['/care', 'Feed me gently', 'sprig'], ['/plan', 'Plan', 'plan'], ['/profile', 'Profile', 'person']];
-  const more = [['/list', 'Shopping list'], ['/templates', 'Saved meals'], ['/friends', 'Friends'], ['/discover', 'Discover'], ['/plans', 'Plans & account']] as const;
+  const more = [['/getting-started', 'Getting started'], ['/list', 'Shopping list'], ['/templates', 'Saved meals'], ['/friends', 'Friends'], ['/discover', 'Discover'], ['/plans', 'Plans & account']] as const;
   return <nav className="woodland-nav" aria-label="Main navigation" data-print="hide">
     {links.map(([href, label, icon]) => <Link key={href} href={href} aria-label={href === '/profile' ? 'Dietary profile' : undefined} aria-current={pathname === href || (href === '/cook' && pathname.endsWith('/cook')) ? 'page' : undefined}><KitchenIcon name={icon} /><span>{label}</span></Link>)}
     <details className="woodland-more" onKeyDown={dismissDisclosure}><summary data-active={more.some(([href]) => pathname === href)}><KitchenIcon name="more" /><span>More</span></summary><div>{more.map(([href, label]) => <Link key={href} href={href} aria-current={pathname === href ? 'page' : undefined} onClick={e => e.currentTarget.closest('details')?.removeAttribute('open')}>{label}</Link>)}</div></details>
@@ -49,7 +49,7 @@ function dismissDisclosure(event: KeyboardEvent<HTMLDetailsElement>) {
 export function KitchenWelcome() {
   return <section className="woodland-welcome" aria-labelledby="kitchen-title">
     <img src="/woodland/kitchen-scene.webp" alt="" />
-    <div className="woodland-welcome-copy"><h1 id="kitchen-title">Your woodland kitchen</h1><p>Simple food. Thoughtful moments.</p></div>
+    <div className="woodland-welcome-copy"><h1 id="kitchen-title">Your woodland kitchen</h1><p>Simple food. Thoughtful moments.</p><Link className="woodland-start-link" href="/getting-started">New here? Start with one useful thing</Link></div>
     <Link className="woodland-care-invitation" href="/care">Feed me gently <KitchenIcon name="sprig" /></Link>
   </section>;
 }

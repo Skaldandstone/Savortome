@@ -119,6 +119,27 @@ Set the keys up with:
 cd apps/web && clerk env pull
 ```
 
+### Getting started
+
+`/getting-started` is a short, resumable introduction to the product. It begins
+with one useful choice: save a recipe, plan a meal, or open Feed me gently. It
+then explains dietary and allergen boundaries before reusing the existing
+cooking-confidence control. Every screen explains why the information helps and
+allows the person to skip or leave.
+
+The first implementation stores only journey progress in local storage: schema
+version, current screen, completed screens, and finished state. Signed-in scopes
+use a one-way hash of the Clerk user id, and the raw account id is never sent to
+the client for storage naming. The record contains no dietary selections,
+allergens, pantry contents, health details, or recipe activity. Guest progress
+can move once into the first signed-in scope, then the guest record is removed.
+If local storage is unavailable, the journey remains usable and says that its
+place could not be saved.
+
+The broader pantry-memory, receipt review, grocery reconciliation, freshness
+guidance, Plan together, and opt-in reminder work is specified separately and
+will reuse the same value-first, one-decision-at-a-time approach.
+
 ---
 
 ## Shelves and ratings

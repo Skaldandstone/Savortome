@@ -22,6 +22,7 @@ const stubs = {
   '@/modules/shelves': 'export function StarRating(){};',
   '@/modules/recipe': `export function IngredientList(){};export function ServingScaler(){};export const useServings=recipe=>({servings:recipe.servings,canScale:false,increment(){},decrement(){},ingredients:recipe.ingredients});`,
   '@/modules/profile': 'export function AllergenWarning(){};',
+  '@/modules/cooking': 'export function CookingProfilePanel(){};',
   './useCookSession': 'export const useCookSession=()=>({restored:null,checked:true,save(){},clear(){}});',
   './useTimers': 'export const useTimers=()=>({timers:[],restore(){},dismiss(){},timerFor(){return null;},stateOf(){return "paused";},remaining(){return 0;},start(){},pause(){},resume(){},reset(){}});',
   './useWakeLock': 'export const useWakeLock=()=>{};',
@@ -59,6 +60,7 @@ const result = await build({
     export {ListPanel} from './apps/web/modules/list/ListPanel.tsx';
     export {CookPanel} from './apps/web/modules/pantry/CookPanel.tsx';
     export {mergeProfileUpdate} from './apps/web/modules/cooking/CookingProfilePanel.tsx';
+    export {OnboardingJourney} from './apps/web/modules/onboarding/OnboardingJourney.tsx';
     export {CARE_FOODS} from './packages/core/src/care.ts';` },
   bundle: true, write: false, platform: 'node', format: 'iife', globalName: 'tested', jsx: 'automatic',
   define: { 'process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY': '""' },
@@ -73,7 +75,9 @@ const result = await build({
 });
 function fixture(overrides = {}) {
   const state = { allowed: false, pathname: '/', cursor: 0, values: [], refs: [], effects: [], calls: [], pending: [], refreshes: 0, fail: false, ...overrides };
-  const sandbox = { state, navigator: { onLine: true }, setTimeout, clearTimeout, URLSearchParams };
+  const stored = new Map();
+  const localStorage = { getItem: key => stored.get(key) ?? null, setItem: (key, value) => stored.set(key, String(value)), removeItem: key => stored.delete(key) };
+  const sandbox = { state, navigator: { onLine: true }, localStorage, setTimeout, clearTimeout, URLSearchParams };
   runInNewContext(result.outputFiles[0].text, sandbox);
   return { state, sandbox, app: sandbox.tested, render: (fn, props = {}) => { state.cursor = 0; return fn(props); } };
 }
@@ -130,6 +134,40 @@ test('navigation includes saved meals and marks its containing disclosure active
   const tree = f.render(f.app.WoodlandNavigation);
   assert.ok(nodes(tree).some(n => n.props?.href === '/templates' && text(n) === 'Saved meals' && n.props['aria-current'] === 'page'));
   assert.ok(nodes(tree).some(n => n.type === 'summary' && n.props['data-active'] === true));
+  assert.ok(nodes(tree).some(n => n.props?.href === '/getting-started' && text(n) === 'Getting started'));
+});
+
+test('getting started gives one useful decision at a time and saves resumable progress', () => {
+  const f = fixture();
+  const render = () => f.render(f.app.OnboardingJourney, { signedIn: false, storageScope: 'guest' });
+  assert.ok(nodes(render()).some(n => n.props?.role === 'status' && text(n).includes('Opening')));
+  f.state.effects[0]();
+
+  let shell = render();
+  let step = nodes(shell).find(n => typeof n.type === 'function' && n.type.name === 'WelcomeStep');
+  let tree = f.render(step.type, step.props);
+  assert.ok(nodes(tree).some(n => n.type === 'h1' && text(n) === 'What would make food easier today?'));
+  assert.ok(nodes(tree).some(n => n.props?.href === '/care' && n.props?.title === 'Feed me gently'));
+  assert.ok(nodes(tree).some(n => n.props?.href?.startsWith('/sign-up?redirect_url=') && n.props?.title === 'Save a recipe'));
+
+  step.props.onContinue();
+  shell = render();
+  step = nodes(shell).find(n => typeof n.type === 'function' && n.type.name === 'SafetyStep');
+  tree = f.render(step.type, step.props);
+  assert.ok(nodes(tree).some(n => n.type === 'h1' && text(n) === 'Tell us only what helps'));
+  assert.match(text(tree), /cannot verify that a food is safe/);
+  assert.ok(nodes(shell).some(n => n.props?.role === 'status' && text(n).includes('Progress saved')));
+
+  step.props.onContinue();
+  shell = render();
+  step = nodes(shell).find(n => typeof n.type === 'function' && n.type.name === 'CookingStep');
+  tree = f.render(step.type, step.props);
+  assert.ok(nodes(tree).some(n => n.type === 'h1' && text(n) === 'Suggestions can meet you where you are'));
+  assert.match(text(tree), /Feed me gently always stays separate/);
+
+  step.props.onDone();
+  tree = render();
+  assert.ok(nodes(tree).some(n => n.type === 'h1' && text(n) === 'Your kitchen is ready when you are'));
 });
 
 test('focused recipe cooking removes the fixed app dock', () => {
