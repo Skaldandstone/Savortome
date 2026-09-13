@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Button, Callout, Field, Panel, PanelHeader, radius, space, type as typeScale, usePalette } from "@/ui";
 import { MatchList, QueryReadback } from "./MatchList";
 import { PantryChips } from "./PantryChips";
+import { PantryReviewQueue } from "./PantryReviewQueue";
 import { usePantry, usePantrySearch } from "./usePantry";
 
 const EXAMPLES = ["chicken thighs, rice, an onion", "something quick and vegetarian", "dinner without dairy"];
@@ -29,6 +30,8 @@ export function CookScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <KitchenWelcome />
+      <PantryReviewQueue intakes={pantry.intakes} onResolve={pantry.resolveIntake} />
+      {pantry.error ? <Callout tone="error">{pantry.error}</Callout> : null}
       <Panel>
         <PanelHeader
           title="What can I make?"
@@ -90,10 +93,10 @@ export function CookScreen() {
             <PantryChips
               items={pantry.items}
               onAdd={(text) => void pantry.add(text)}
+              onUpdate={(entry) => void pantry.update(entry)}
               onRemove={(item) => void pantry.remove(item)}
               onClear={() => void pantry.clear()}
             />
-            {pantry.error ? <Callout tone="error">{pantry.error}</Callout> : null}
           </View>
         ) : null}
 
