@@ -5,8 +5,10 @@ import { runInNewContext } from 'node:vm';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
+const careCss = readFileSync(new URL('../apps/web/modules/care/care.module.css', import.meta.url), 'utf8');
 const stubs = {
   'react/jsx-runtime': 'export const jsx=(type,props)=>({type,props}); export const jsxs=jsx; export const Fragment="fragment";',
   react: `export const useState=initial=>{const i=state.cursor++;if(!(i in state.values))state.values[i]=typeof initial==='function'?initial():initial;return [state.values[i],next=>state.values[i]=typeof next==='function'?next(state.values[i]):next];};
@@ -187,6 +189,11 @@ test('care controls expose native names, grouped restrictions, live results, and
   const returned = g.app.CareScreen({ link: { source: 'wispling', return_to: 'wispling://care-return' } });
   const returnedTree = g.render(returned.type, returned.props);
   assert.ok(nodes(returnedTree).some(node => node.props?.href === 'wispling://care-return' && text(node) === 'Back to Wispling'));
+});
+
+test('narrow care cards reserve an art column only when an illustration exists', () => {
+  assert.match(careCss, /\.cardSummary\s*\{\s*grid-template-columns:minmax\(0,1fr\) 20px;/);
+  assert.match(careCss, /\.cardSummary:has\(\.foodArt\)\s*\{\s*grid-template-columns:minmax\(96px,35%\) minmax\(0,1fr\) 20px;/);
 });
 
 test('secondary planning, pairing, and shelf controls retain explicit accessible names', () => {

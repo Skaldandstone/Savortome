@@ -45,7 +45,14 @@ const result = await build({
 });
 const entry = { id: 'fixture-recipe', title: 'Fixture', imageUrl: null, totalMinutes: 2, ingredientCount: 1, attribution: 'test', status: null, stars: null, timesCooked: 0 };
 function fixture(allowed) {
-  const sandbox = { state: { allowed, library: { kind: 'ok', entries: [entry], shelves: [], total: 1 } }, URLSearchParams };
+  // React's development entrypoint reads NODE_ENV during module evaluation.
+  // Keep the VM fixture explicit so dependency patches cannot make these
+  // component-contract checks depend on the parent process globals.
+  const sandbox = {
+    process: { env: { NODE_ENV: 'test' } },
+    state: { allowed, library: { kind: 'ok', entries: [entry], shelves: [], total: 1 } },
+    URLSearchParams,
+  };
   runInNewContext(result.outputFiles[0].text, sandbox);
   return sandbox.tested;
 }
