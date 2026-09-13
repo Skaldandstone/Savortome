@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { productById } from "@seconds/core";
 import { linkStripeCustomer, lockBillingUser } from "@seconds/db";
 import { BadRequestError, readJson, withUser } from "@/lib/api";
-import { appOrigin, priceForProduct, stripe, stripeConfigured, webhookConfigured } from "@/lib/stripe";
+import { appOrigin, priceForProduct, stripe, stripeConfigured, trustedBillingOrigin, webhookConfigured } from "@/lib/stripe";
 import { BILLING_APP, isTerminalSubscription, ownsCustomer, ownsSubscription, productForStripePrice } from "@/lib/stripe-policy";
 
 /**
@@ -20,6 +20,9 @@ export const runtime = "nodejs";
 const CHECKOUT_INTEGRATION_IDENTIFIER = "secondbreakfast-web-checkout-fpkhuarf";
 
 export async function POST(request: Request) {
+  if (!trustedBillingOrigin(request)) {
+    return NextResponse.json({ error: "Billing requests must come from Savortome." }, { status: 403 });
+  }
   if (process.env.STRIPE_CHECKOUT_ENABLED !== "true") {
     return NextResponse.json({ error: "Checkout is not enabled for this beta." }, { status: 403 });
   }

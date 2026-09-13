@@ -26,7 +26,7 @@ const compiled = await build({
     export {POST as webhook} from './apps/web/app/api/billing/webhook/route.ts';
     export {POST as checkout} from './apps/web/app/api/billing/checkout/route.ts';
     export {POST as portal} from './apps/web/app/api/billing/portal/route.ts';
-    export {appOrigin,priceForProduct} from './apps/web/lib/stripe.ts';
+    export {appOrigin,priceForProduct,trustedBillingOrigin} from './apps/web/lib/stripe.ts';
   ` },
   plugins: [{ name: 'external-boundaries', setup(api) {
     const stubs = {
@@ -109,10 +109,17 @@ test('Stripe routes enforce current product/customer ownership with atomic SQL',
       const event = (type = 'customer.subscription.updated', object = subscription(), id = 'evt_fixture') => ({ id, object: 'event', type, livemode: false, data: { object } });
       const request = (value, signature) => new Request('https://secondbreakfast.test/api/billing/webhook', { method: 'POST', body: value, headers: signature ? { 'stripe-signature': signature } : {} });
       const deliver = async value => { const body = JSON.stringify(value); return routes.webhook(request(body, signatures.generateTestHeaderString({ payload: body, secret }))); };
-      const buy = body => routes.checkout(new Request('https://secondbreakfast.test/api/billing/checkout', { method: 'POST', body: JSON.stringify(body) }));
+      const billingRequest = (path, init = {}) => {
+        const { headers = {}, ...rest } = init;
+        return new Request(`https://secondbreakfast.test/api/billing/${path}`, {
+          method: 'POST', ...rest, headers: { origin: 'https://secondbreakfast.test', ...headers },
+        });
+      };
+      const buy = (body, headers) => routes.checkout(billingRequest('checkout', { body: JSON.stringify(body), headers }));
+      const portal = headers => routes.portal(billingRequest('portal', { headers }));
       const row = async () => (await pg.query('SELECT tier,stripe_subscription_id,credits_purchased FROM users WHERE id=$1', [owner])).rows[0];
       const claims = async () => (await pg.query('SELECT * FROM stripe_events')).rows.length;
-      return { state, env, routes, event, request, deliver, buy, row, claims };
+      return { state, env, routes, event, request, deliver, buy, portal, row, claims };
     }
     await t.test('missing or altered signatures do not claim events', async () => {
       const f = await fixture(); const body = JSON.stringify(f.event());
@@ -239,12 +246,12 @@ test('Stripe routes enforce current product/customer ownership with atomic SQL',
     });
     await t.test('portal rejects deleted, foreign or wrong-environment customer links', async () => {
       const f = await fixture(); for (const value of [customer({ deleted: true }), customer({ livemode: true }), customer({ metadata: { app: 'other', userId: owner } })]) {
-        f.state.customer = value; assert.equal((await f.routes.portal()).status, 400);
+        f.state.customer = value; assert.equal((await f.portal()).status, 400);
       }
       assert.equal(f.state.calls.filter(call => call[0] === 'portal').length, 0);
     });
     await t.test('portal uses only authenticated customer and works when new Checkout is off', async () => {
-      const f = await fixture(); f.env.STRIPE_CHECKOUT_ENABLED = 'false'; assert.equal((await f.routes.portal()).status, 200);
+      const f = await fixture(); f.env.STRIPE_CHECKOUT_ENABLED = 'false'; assert.equal((await f.portal()).status, 200);
       assert.equal(f.state.calls.find(call => call[0] === 'portal')[1].customer, 'cus_owner');
     });
     await t.test('origin, prototype names and ambiguous Price configuration fail closed', async () => {
@@ -271,7 +278,7 @@ test('Stripe routes enforce current product/customer ownership with atomic SQL',
     });
     await t.test('unknown Customer owners block both Checkout and portal writes', async () => {
       const f = await fixture(); f.state.customer.metadata.userId = other;
-      assert.equal((await f.buy({productId:'plan-plus'})).status, 400); assert.equal((await f.routes.portal()).status, 400);
+      assert.equal((await f.buy({productId:'plan-plus'})).status, 400); assert.equal((await f.portal()).status, 400);
       assert.equal(f.state.calls.filter(call => ['createCheckout','portal'].includes(call[0])).length, 0);
     });
     await t.test('first customer creation uses stable private ownership and idempotency', async () => {
@@ -281,6 +288,31 @@ test('Stripe routes enforce current product/customer ownership with atomic SQL',
       assert.deepEqual(Object.keys(created[1]), ['metadata']); assert.equal(created[1].metadata.userId, owner);
       assert.match(created[2].idempotencyKey, /^secondbreakfast-customer-[0-9a-f]{64}$/);
       assert.equal((await pg.query('SELECT stripe_customer_id FROM users WHERE id=$1',[owner])).rows[0].stripe_customer_id,'cus_owner');
+    });
+    await t.test('production billing actions reject missing, malformed and cross-site origins before auth or Stripe', async () => {
+      const f = await fixture();
+      for (const headers of [
+        { origin: '' },
+        { origin: 'null' },
+        { origin: 'https://attacker.test' },
+        { origin: 'https://secondbreakfast.test.attacker.test' },
+        { origin: 'https://secondbreakfast.test', 'sec-fetch-site': 'cross-site' },
+      ]) {
+        assert.equal((await f.buy({ productId: 'plan-plus' }, headers)).status, 403);
+        assert.equal((await f.portal(headers)).status, 403);
+      }
+      assert.equal(f.state.calls.length, 0);
+    });
+    await t.test('local direct clients may omit Origin without weakening production', async () => {
+      const f = await fixture();
+      f.env.NODE_ENV = 'development';
+      const request = new Request('http://127.0.0.1:3000/api/billing/checkout', {
+        method: 'POST',
+        body: JSON.stringify({ productId: 'plan-plus' }),
+      });
+      assert.equal(f.routes.trustedBillingOrigin(request), true);
+      f.env.NODE_ENV = 'production';
+      assert.equal(f.routes.trustedBillingOrigin(request), false);
     });
   } finally { await pg.close(); }
 });

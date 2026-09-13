@@ -87,3 +87,22 @@ export function appOrigin(): string {
   }
   return url.origin;
 }
+
+/**
+ * Billing actions are initiated by this app's own browser UI. Clerk still
+ * authenticates the person, while this check prevents another site from
+ * submitting a cookie-backed Checkout or portal request on their behalf.
+ *
+ * Browsers send Origin on fetch POSTs. Local development keeps direct test
+ * clients usable when they omit it; production fails closed.
+ */
+export function trustedBillingOrigin(request: Request): boolean {
+  const origin = request.headers.get("origin");
+  if (!origin) return process.env.NODE_ENV !== "production";
+  if (request.headers.get("sec-fetch-site") === "cross-site") return false;
+  try {
+    return new URL(origin).origin === appOrigin();
+  } catch {
+    return false;
+  }
+}

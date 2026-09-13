@@ -1,5 +1,19 @@
 # Privacy and release readiness evidence
 
+> **Current open-beta checkpoint, 13 September 2026:** AWS account
+> `051722405355`, profile `skaldandstone-admin`, region `us-east-2` is the sole
+> verified target. The runtime stack is `UPDATE_COMPLETE`; ECS service
+> `secondbreakfast-web` points at candidate revision 17 and is intentionally
+> scaled to zero between midnight and 09:00 America/Los_Angeles. The immutable
+> deployed image has a complete, zero-finding BASIC ECR scan. The public-access
+> and beta flags are on, while Stripe checkout and live mode remain off and no
+> Stripe secret is mapped into the task. The Savortome hostname returned the
+> documented asleep 503 during this window. See
+> [stripe-integration-evidence.md](stripe-integration-evidence.md) for the new
+> exact-origin billing request boundary and local validation. Older account and
+> "no runtime exists" statements below are retained as historical evidence and
+> are superseded by this checkpoint and [public-launch.md](public-launch.md).
+
 > **Current account and admission correction, 7 September 2026:** AWS account
 > `051722405355` is the only target for new work. Studio invite requests require
 > James's approval, recorded as product-scoped Clerk metadata and enforced by the
