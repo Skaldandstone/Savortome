@@ -56,6 +56,7 @@ const result = await build({
     export {DiscoverPanel} from './apps/web/modules/discover/DiscoverPanel.tsx';
     export {ListPanel} from './apps/web/modules/list/ListPanel.tsx';
     export {CookPanel} from './apps/web/modules/pantry/CookPanel.tsx';
+    export {mergeProfileUpdate} from './apps/web/modules/cooking/CookingProfilePanel.tsx';
     export {CARE_FOODS} from './packages/core/src/care.ts';` },
   bundle: true, write: false, platform: 'node', format: 'iife', globalName: 'tested', jsx: 'automatic',
   define: { 'process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY': '""' },
@@ -93,6 +94,16 @@ function careFixture(online = true) {
 }
 const cards = tree => nodes(tree).filter(node => node.type === 'details' && node.props['data-kind']);
 const action = card => nodes(card).find(node => node.type === 'button' && node.props['aria-label']?.startsWith('Add '));
+
+test('cooking-profile updates retain the visible local answer while merging skill choices', () => {
+  const f = fixture();
+  const tier = f.app.mergeProfileUpdate({}, { tier: 'artisan' });
+  assert.equal(tier.tier, 'artisan');
+  const knife = f.app.mergeProfileUpdate(tier, { skills: { knife: 4 } });
+  const timing = f.app.mergeProfileUpdate(knife, { skills: { timing: 2 } });
+  assert.deepEqual({ ...timing.skills }, { knife: 4, timing: 2 });
+  assert.equal(timing.tier, 'artisan');
+});
 
 test('journal page headings remain server-gated and contain a native h1 when allowed', async () => {
   const f = fixture();
