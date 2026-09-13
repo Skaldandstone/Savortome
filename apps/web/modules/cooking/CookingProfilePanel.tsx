@@ -37,6 +37,8 @@ export function CookingProfilePanel() {
   const [expanded, setExpanded] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -45,17 +47,25 @@ export function CookingProfilePanel() {
       .then((loaded: CookProfile) => {
         if (!active) return;
         setProfile(loaded);
+        setLoadFailed(false);
         // Someone who has never answered sees the question; someone who has
         // sees a summary they can reopen.
         setExpanded(!loaded.tier);
       })
-      // A profile that will not load is not worth an error message here. The
-      // rest of the page still works, and ranking simply stays unweighted.
-      .catch(() => { if (active) setProfile({}); });
+      .catch(() => {
+        if (!active) return;
+        setProfile({});
+        setLoadFailed(true);
+        setExpanded(true);
+      });
     return () => { active = false; };
-  }, []);
+  }, [loadAttempt]);
 
   async function save(update: Partial<Record<"tier" | "stock" | "skills", unknown>>) {
+    const localProfile = mergeProfileUpdate(profile ?? {}, update);
+    // Keep the person's answer visible while the request is in flight and if
+    // the request fails. The nearby failure copy promises exactly that.
+    setProfile(localProfile);
     setSaving(true);
     setError("");
     try {
@@ -73,13 +83,21 @@ export function CookingProfilePanel() {
     }
   }
 
-  if (!profile) return null;
+  if (!profile) return (
+    <Panel className={styles.profilePanel}>
+      <PanelHeader
+        title="How do you cook?"
+        hint="So suggestions land somewhere near where you are. Nothing here is a test, and you can change it whenever."
+      />
+      <p className={styles.loading} role="status">Loading your cooking preferences…</p>
+    </Panel>
+  );
 
   const tier = profile.tier;
 
   if (tier && !expanded) {
     return (
-      <Panel>
+      <Panel className={styles.profilePanel}>
         <div className={styles.summary}>
           <p className={styles.summaryText}>
             Cooking as <strong>{COOK_TIER_LABEL[tier]}</strong>
@@ -92,13 +110,32 @@ export function CookingProfilePanel() {
   }
 
   return (
-    <Panel>
+    <Panel className={styles.profilePanel}>
       <PanelHeader
         title="How do you cook?"
         hint="So suggestions land somewhere near where you are. Nothing here is a test, and you can change it whenever."
       />
 
       {error ? <Callout tone="warn">{error}</Callout> : null}
+      {loadFailed ? (
+        <Callout tone="warn">
+          <div className={styles.loadNotice}>
+            <span>Your cooking preferences could not load. Recipe search still works, but changes may not save until the connection returns.</span>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => {
+                setProfile(null);
+                setLoadFailed(false);
+                setError("");
+                setLoadAttempt(attempt => attempt + 1);
+              }}
+            >
+              Try again
+            </Button>
+          </div>
+        </Callout>
+      ) : null}
 
       <fieldset className={styles.group}>
         <legend className={styles.legend}>Pick whichever sounds most like you</legend>
@@ -120,6 +157,7 @@ export function CookingProfilePanel() {
               <span className={styles.tierWho}>
                 — {COOK_TIER_QUOTE[candidate].character}*
               </span>
+              {candidate === tier ? <span className={styles.chosen}>Selected</span> : null}
             </button>
           ))}
         </div>
@@ -134,6 +172,7 @@ export function CookingProfilePanel() {
             <legend className={styles.legend}>
               Anything you are particularly good at, or would rather avoid? <span className={styles.optional}>Optional</span>
             </legend>
+            <p className={styles.scaleHint}>1 means “I would rather avoid it”; 5 means “very comfortable.”</p>
             {KITCHEN_SKILLS.map(skill => (
               <div key={skill} className={styles.skill}>
                 <div className={styles.skillLabel}>
@@ -193,6 +232,19 @@ export function CookingProfilePanel() {
       ) : null}
     </Panel>
   );
+}
+
+export function mergeProfileUpdate(
+  profile: CookProfile,
+  update: Partial<Record<"tier" | "stock" | "skills", unknown>>,
+): CookProfile {
+  const next = { ...profile };
+  if ("tier" in update) next.tier = update.tier as CookTier;
+  if ("stock" in update) next.stock = update.stock as KitchenStock;
+  if (update.skills && typeof update.skills === "object" && !Array.isArray(update.skills)) {
+    next.skills = { ...profile.skills, ...(update.skills as CookProfile["skills"]) };
+  }
+  return next;
 }
 
 export type { CookTier };
