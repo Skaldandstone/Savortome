@@ -20,7 +20,7 @@
     "@seconds/db": "workspace:*",
     "@sentry/nextjs": "^10.73.0",
     "drizzle-orm": "^0.45.2",
-    "next": "^15.1.4",
+    "next": "^15.5.25",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "server-only": "^0.0.1",
