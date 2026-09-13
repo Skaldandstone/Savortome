@@ -198,6 +198,11 @@ export interface SecondsClient {
   updatePantry: (update: PantryEntryUpdate) => Promise<PantryEntry[]>;
   listPantryIntakes: () => Promise<PantryIntakeView[]>;
   createPantryIntake: (input: PantryIntakeInput) => Promise<PantryIntakeView>;
+  receiptScanStatus: () => Promise<{ enabled: boolean }>;
+  scanPantryReceipt: (
+    imageBase64: string,
+    imageMediaType: PhotoMediaType,
+  ) => Promise<{ intake: PantryIntakeView; intakes: PantryIntakeView[] }>;
   resolvePantryIntake: (resolution: PantryIntakeResolution) => Promise<PantryIntakeResolutionResponse>;
   removePantry: (canonicalItems: string[]) => Promise<PantryEntry[]>;
   clearPantry: () => Promise<PantryEntry[]>;
@@ -363,6 +368,14 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
 
     createPantryIntake: (input: PantryIntakeInput) =>
       send<PantryIntakeView>("/api/pantry/intake", { method: "POST", body: body(input) }),
+
+    receiptScanStatus: () => send<{ enabled: boolean }>("/api/pantry/intake/scan"),
+
+    scanPantryReceipt: (imageBase64, imageMediaType) =>
+      send<{ intake: PantryIntakeView; intakes: PantryIntakeView[] }>("/api/pantry/intake/scan", {
+        method: "POST",
+        body: body({ imageBase64, imageMediaType }),
+      }),
 
     resolvePantryIntake: (resolution: PantryIntakeResolution) =>
       send<PantryIntakeResolutionResponse>("/api/pantry/intake", { method: "PATCH", body: body(resolution) }),

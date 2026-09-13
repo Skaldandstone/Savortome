@@ -47,6 +47,9 @@ importers:
       expo-constants:
         specifier: 57.0.14
         version: 57.0.14(expo@57.0.21)(react-native@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(bufferutil@4.1.0)(supports-color@8.1.1)(utf-8-validate@6.0.6))(@types/react@19.2.18)(bufferutil@4.1.0)(react@19.2.3)(supports-color@8.1.1)(utf-8-validate@6.0.6))(supports-color@8.1.1)
+      expo-image-picker:
+        specifier: ~57.0.17
+        version: 57.0.17(expo@57.0.21)
       expo-keep-awake:
         specifier: ~57.0.1
         version: 57.0.1(expo@57.0.21)(react@19.2.3)
@@ -3867,6 +3870,16 @@ packages:
       expo: '*'
       react: 19.2.3
       react-native: '*'
+
+  expo-image-loader@57.0.1:
+    resolution: {integrity: sha512-uhrZKLT/cTl2mXyR28kPpVkS5O+PK9N1QA/07IFM4f5T4g0lTW1JHT3NEWwEEsGFldPmVX4j7LwUVVZxE+woug==}
+    peerDependencies:
+      expo: '*'
+
+  expo-image-picker@57.0.17:
+    resolution: {integrity: sha512-qPcCkGSoqDLpmdXCLiLe09Je01gzBrwEgLd4SBI03Od/5t531vDTkzUmGemjm7vcsCTG2iqZMh2VZXBscAPO3g==}
+    peerDependencies:
+      expo: '*'
 
   expo-json-utils@57.0.2:
     resolution: {integrity: sha512-9kYZECLKE3pYZQs+kt3+ggY83Lfryog9/UEo3HJKGcHUZeKKtlFBIPFjI4LzREubsvjP7AsvG0FdEX9EquIoAQ==}
@@ -9725,6 +9738,15 @@ snapshots:
       expo: 57.0.21(d2835138b39c7e9748602e1f8c0b34fc)
       react: 19.2.3
       react-native: 0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(@react-native/metro-config@0.86.3(@babel/core@7.29.7(supports-color@8.1.1))(bufferutil@4.1.0)(supports-color@8.1.1)(utf-8-validate@6.0.6))(@types/react@19.2.18)(bufferutil@4.1.0)(react@19.2.3)(supports-color@8.1.1)(utf-8-validate@6.0.6)
+
+  expo-image-loader@57.0.1(expo@57.0.21):
+    dependencies:
+      expo: 57.0.21(d2835138b39c7e9748602e1f8c0b34fc)
+
+  expo-image-picker@57.0.17(expo@57.0.21):
+    dependencies:
+      expo: 57.0.21(d2835138b39c7e9748602e1f8c0b34fc)
+      expo-image-loader: 57.0.1(expo@57.0.21)
 
   expo-json-utils@57.0.2: {}
 

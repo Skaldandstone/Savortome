@@ -135,5 +135,9 @@ test('Android review source blocks storage and overlay permissions the beta does
     'android.permission.WRITE_EXTERNAL_STORAGE',
     'android.permission.SYSTEM_ALERT_WINDOW',
   ]);
-  assert.deepEqual(config.expo.android.permissions,['android.permission.POST_NOTIFICATIONS']);
+  assert.deepEqual(config.expo.android.permissions,['android.permission.CAMERA','android.permission.POST_NOTIFICATIONS']);
+  const picker=config.expo.plugins.find(plugin=>Array.isArray(plugin)&&plugin[0]==='expo-image-picker');
+  assert.ok(picker);assert.equal(picker[1].microphonePermission,false);
+  assert.match(picker[1].cameraPermission,/receipt photo for review/i);
+  assert.match(picker[1].photosPermission,/receipt photo for review/i);
 });

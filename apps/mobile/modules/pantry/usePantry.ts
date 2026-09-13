@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import type { PantryEntry, PantryEntryUpdate, PantryIntakeView, PantrySearchResponse } from "@seconds/core/format";
+import type { PantryEntry, PantryEntryUpdate, PantryIntakeView, PantrySearchResponse, PhotoMediaType } from "@seconds/core/format";
 import { api } from "@/lib/client";
 
 export interface PantryController {
@@ -11,6 +11,7 @@ export interface PantryController {
   update: (entry: PantryEntryUpdate) => Promise<void>;
   remove: (canonicalItem: string) => Promise<void>;
   clear: () => Promise<void>;
+  scanReceipt: (imageBase64: string, imageMediaType: PhotoMediaType) => Promise<boolean>;
   resolveIntake: (intakeId: string, action: "accept" | "dismiss", acceptedItemIds?: string[]) => Promise<boolean>;
 }
 
@@ -56,6 +57,17 @@ export function usePantry(): PantryController {
     update: (entry) => run(() => api.updatePantry(entry)),
     remove: (canonicalItem) => run(() => api.removePantry([canonicalItem])),
     clear: () => run(() => api.clearPantry()),
+    scanReceipt: async (imageBase64, imageMediaType) => {
+      setError(null);
+      try {
+        const result = await api.scanPantryReceipt(imageBase64, imageMediaType);
+        setIntakes(result.intakes);
+        return true;
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "That receipt could not be read.");
+        return false;
+      }
+    },
     resolveIntake: async (intakeId, action, acceptedItemIds = []) => {
       setError(null);
       try {

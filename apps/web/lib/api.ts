@@ -5,6 +5,7 @@ import {
   KrogerError,
   PantryIntakeValidationError,
   PantryValidationError,
+  ReceiptExtractionError,
   RecipeValidationError,
   ShelfValidationError,
 } from "@seconds/core";
@@ -41,6 +42,9 @@ export function errorResponse(err: unknown): NextResponse {
   }
   if (err instanceof PantryIntakeNotFoundError) {
     return NextResponse.json({ error: err.message }, { status: 404 });
+  }
+  if (err instanceof ReceiptExtractionError) {
+    return NextResponse.json({ error: err.message }, { status: 422 });
   }
   if (
     err instanceof BadRequestError ||

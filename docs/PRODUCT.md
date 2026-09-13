@@ -140,6 +140,23 @@ The broader pantry-memory, receipt review, grocery reconciliation, freshness
 guidance, Plan together, and opt-in reminder work is specified separately and
 will reuse the same value-first, one-decision-at-a-time approach.
 
+### Receipt review
+
+Signed-in mobile users can take or choose a grocery receipt photo when the
+server has both `RECEIPT_SCAN_ENABLED=true` and an Anthropic key. Authentication
+happens before the image body is decoded or a metered extraction begins. The
+extractor returns only grocery item names and stated package quantities, then
+the server discards the image and stores a SHA-256 digest solely to avoid
+queuing the same receipt twice. Prices, payment details, addresses, loyalty
+identifiers, and other receipt metadata are excluded.
+
+Extracted items enter the existing review queue. Nothing becomes pantry state
+until the person checks the items and confirms them. Scanning does not assign a
+purchase date because the time a receipt is photographed does not prove when
+the groceries were bought. This feature is disabled by default because each
+scan may incur model cost; metering or beta limits remain an owner decision
+before enabling it for a cohort.
+
 ---
 
 ## Shelves and ratings
