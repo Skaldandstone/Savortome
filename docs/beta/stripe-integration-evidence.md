@@ -1,5 +1,32 @@
 # Stripe integration review, 30 August 2026
 
+## Open-beta security checkpoint, 13 September 2026
+
+Checkout and portal POST routes now require the browser `Origin` to match the
+configured `NEXT_PUBLIC_APP_URL` exactly in production. Requests with no
+origin, a malformed or opaque origin, a lookalike subdomain, or an explicit
+cross-site Fetch Metadata header fail with HTTP 403 before Clerk or Stripe is
+called. Direct local test clients may omit `Origin` only when
+`NODE_ENV` is not `production`.
+
+The focused Stripe lifecycle harness passes all 36 cases, including raw-body
+signature rejection, environment and product isolation, authenticated customer
+ownership, duplicate-safe fulfillment, transaction rollback, stable server-side
+Prices, and the new request-origin boundary. All four workspace typechecks and
+the production web build also pass at this checkpoint. No Stripe API request,
+customer mutation, Checkout Session, charge, refund, tax setting, or live-mode
+change was made.
+
+Read-only AWS inspection used account `051722405355` in `us-east-2`. The active
+service points at candidate task definition revision 17 and immutable image
+`sha256:d40dc65118e609fd775bc3f7bd9a498a46a7af1be164532b4a8d6fd7205a7edf`;
+its BASIC ECR scan is complete with zero reported findings. The web container
+runs as UID 65532 with a read-only root filesystem. Runtime flags remain
+`STRIPE_CHECKOUT_ENABLED=false` and `STRIPE_LIVEMODE=false`, and the task has no
+Stripe secret mapping. The service was correctly asleep during the inspection:
+EventBridge Scheduler preserves one task from 09:00 until 00:00 America/Los_Angeles.
+This is provider configuration evidence, not hosted billing acceptance.
+
 Integrated the source changes from `27642cad8f8153a1bae30fbfae1a7f7494cd8ec0` and `001cb5a6f64c372c22f2c6cbf83bf6eac7c8976f` into the working beta branch. The original commits remain on isolated branch `codex/stripe-sandbox-hardening`. Integration used a checked patch, not a branch switch or reset. Existing woodland CSS, mobile changes, database TLS policy and recipe transactions were retained. The environment example was merged manually; no local secret files changed.
 
 Checkout remains off unless explicitly enabled server-side. Sandbox mode is the default, and wrong-environment keys and signed events are rejected. Plans displays a free-beta notice with unavailable paid controls disabled. Portal access needs the authenticated viewer's own customer record and configured portal. The client receives availability booleans and known app product IDs, not credentials or Stripe customer/Price IDs.

@@ -1,12 +1,15 @@
 import { NextResponse } from "next/server";
 import { BadRequestError, withUser } from "@/lib/api";
-import { appOrigin, stripe, stripeConfigured } from "@/lib/stripe";
+import { appOrigin, stripe, stripeConfigured, trustedBillingOrigin } from "@/lib/stripe";
 import { ownsCustomer } from "@/lib/stripe-policy";
 
 export const runtime = "nodejs";
 
 /** Only the signed-in customer's own portal session may be opened. */
-export async function POST() {
+export async function POST(request: Request) {
+  if (!trustedBillingOrigin(request)) {
+    return NextResponse.json({ error: "Billing requests must come from Savortome." }, { status: 403 });
+  }
   const configuration = process.env.STRIPE_PORTAL_CONFIGURATION_ID;
   if (!stripeConfigured() || !configuration) {
     return NextResponse.json({ error: "Billing management isn't configured." }, { status: 501 });
