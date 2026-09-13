@@ -404,6 +404,13 @@
 :global([data-woodland='true']) .finishTitle { font:1.6rem Georgia,serif; color:var(--accent); }
 :global([data-text-size='200']) .timer { grid-template-columns:1fr; }
 :global([data-text-size='200']) .timerClock { grid-column:1; grid-row:auto; }
+:global([data-text-size='200']) .stageTop { flex-direction:column; align-items:flex-start; gap:6px; }
+:global([data-text-size='200']) .actionCue { grid-template-columns:1fr; justify-items:start; }
+:global([data-text-size='200']) .actionSymbol { width:3.25rem; height:3.25rem; font-size:2.1rem; }
+:global([data-text-size='200']) .actionLabel { max-width:none; text-align:left; }
+:global([data-text-size='200']) .controls { display:grid; grid-template-columns:1fr; }
+:global([data-text-size='200']) .controls > * { width:100%; }
+:global([data-text-size='200']) .aside { text-align:center; }
 
 @media (prefers-reduced-motion: reduce) {
   .progressFill { transition: none; }
