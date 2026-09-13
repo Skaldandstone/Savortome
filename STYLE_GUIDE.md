@@ -191,3 +191,9 @@ is a safety deadline. Storage guidance belongs in a native `details` disclosure
 with its source visible. Receipt and grocery-order items must appear in a
 reviewable checklist before they become pantry records.
 
+The Plan together entrance is a brass-framed journal section followed by no
+more than three compact parchment cards. Each card leads with the recipe, then
+one plain-language reason, time when known, a labeled native meal selector, and
+the planning action. Keep pantry uncertainty and allergen limitations visible
+in the section rather than hiding them in a tooltip.
+

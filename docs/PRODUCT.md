@@ -1017,5 +1017,14 @@ source reference; payment details, delivery addresses, and unrelated order data
 are not accepted. Provider callbacks require their own raw-body signature
 verification before calling this authenticated intake boundary.
 
+The current-week planner opens with **Plan together**. It ranks up to three
+saved recipes against the signed-in person's pantry, moves produce that may be
+easy to forget toward the front, and labels recipes as pantry-complete or close
+matches. It never silently expands beyond the saved recipe library. Detected
+allergen conflicts are excluded before ranking; dietary tags influence order
+but remain incomplete metadata, so the interface retains the full ingredient
+and packaging disclaimer. A person chooses the meal slot and confirms before
+anything is written to the plan.
+
 ---
 

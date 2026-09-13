@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import { PGlite } from "@electric-sql/pglite";
 import { drizzle } from "drizzle-orm/pglite";
-import { addPantryItems, listPantry, updatePantryItem } from "../src/queries/pantry.js";
+import { addPantryItems, listPantry, searchByPantry, updatePantryItem } from "../src/queries/pantry.js";
 import { createPantryIntake, listPendingPantryIntakes, resolvePantryIntake } from "../src/queries/pantry-intake.js";
 import * as schema from "../src/schema.js";
 
@@ -25,6 +25,26 @@ test("pantry memory migration and writes preserve owner isolation and human choi
         is_staple boolean NOT NULL DEFAULT false,
         updated_at timestamptz NOT NULL DEFAULT now(),
         PRIMARY KEY(user_id, canonical_item)
+      );
+      CREATE TABLE recipes (
+        id uuid PRIMARY KEY,
+        owner_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        title text NOT NULL,
+        image_url text,
+        total_minutes integer,
+        tags text[] NOT NULL DEFAULT '{}',
+        course text
+      );
+      CREATE TABLE recipe_ingredients (
+        recipe_id uuid NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+        canonical_item text NOT NULL,
+        optional boolean NOT NULL DEFAULT false
+      );
+      CREATE TABLE ratings (
+        user_id uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        recipe_id uuid NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+        times_cooked integer NOT NULL DEFAULT 0,
+        PRIMARY KEY(user_id, recipe_id)
       );
     `);
     const migration = readFileSync(new URL("../migrations/0018_loose_switch.sql", import.meta.url), "utf8")
@@ -105,6 +125,18 @@ test("pantry memory migration and writes preserve owner isolation and human choi
     assert.equal(accepted?.quantity, 1);
     assert.equal(accepted?.source, "receipt");
     assert.equal(accepted?.confidence, "confirmed");
+
+    await pg.exec(`
+      INSERT INTO recipes(id, owner_id, title, total_minutes, tags)
+      VALUES ('00000000-0000-0000-0000-000000000010', '${A}', 'Banana toast', 10, '{vegetarian}');
+      INSERT INTO recipe_ingredients(recipe_id, canonical_item, optional) VALUES
+        ('00000000-0000-0000-0000-000000000010', 'banana', false),
+        ('00000000-0000-0000-0000-000000000010', 'bread', false),
+        ('00000000-0000-0000-0000-000000000010', 'peanut', true);
+    `);
+    const matches = await searchByPantry(database, A, { ingredients: ["banana", "bread"] });
+    assert.deepEqual(matches[0]?.ingredients, ["banana", "bread", "peanut"]);
+    assert.equal(matches[0]?.canMakeNow, true);
   } finally {
     await pg.close();
   }

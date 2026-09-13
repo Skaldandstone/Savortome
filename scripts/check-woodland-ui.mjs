@@ -61,6 +61,7 @@ const result = await build({
     export {CookPanel} from './apps/web/modules/pantry/CookPanel.tsx';
     export {PantryList} from './apps/web/modules/pantry/PantryList.tsx';
     export {PantryReviewQueue} from './apps/web/modules/pantry/PantryReviewQueue.tsx';
+    export {PlanTogether} from './apps/web/modules/plan/PlanTogether.tsx';
     export {mergeProfileUpdate} from './apps/web/modules/cooking/CookingProfilePanel.tsx';
     export {OnboardingJourney} from './apps/web/modules/onboarding/OnboardingJourney.tsx';
     export {CARE_FOODS} from './packages/core/src/care.ts';` },
@@ -225,6 +226,25 @@ test('receipt and grocery intake stays a human-reviewed queue', async () => {
   assert.deepEqual(JSON.parse(JSON.stringify(calls)), [[
     '00000000-0000-0000-0000-000000000001', 'accept', ['00000000-0000-0000-0000-000000000002'],
   ]]);
+});
+
+test('plan together states pantry uncertainty and awaits an explicit meal choice', async () => {
+  const f = fixture({ response: {
+    pantryCount: 2,
+    ideas: [{ recipeId: 'banana-muffins', title: 'Banana muffins', imageUrl: null,
+      totalMinutes: 35, have: ['banana'], missing: ['flour'], canMakeNow: false,
+      reason: 'Uses banana, which may be worth checking while you plan.', resurfaceItems: ['banana'] }],
+  } });
+  const props = { date: '2026-09-13', week: '2026-09-07', onPlanned() {} };
+  let tree = f.render(f.app.PlanTogether, props);
+  assert.match(text(tree), /Checking your pantry/);
+  f.state.effects[0]();
+  await Promise.resolve();
+  tree = f.render(f.app.PlanTogether, props);
+  assert.match(text(tree), /Pantry quantities may be out of date/);
+  assert.match(text(tree), /not verified against real allergen/);
+  assert.equal(nodes(tree).find(node => node.type === 'select').props.value, 'dinner');
+  assert.ok(nodes(tree).some(node => typeof node.type === 'function' && text(node) === 'Plan for today'));
 });
 
 test('focused recipe cooking removes the fixed app dock', () => {

@@ -1,6 +1,7 @@
 import type { RecipeRating, RecipeShelfState, ShelfSummary, StatusShelf } from "./shelves.js";
 import type { PantryEntry, PantryEntryUpdate, PantryMatch } from "./pantry.js";
 import type { PantryIntakeInput, PantryIntakeResolution, PantryIntakeView } from "./pantry-intake.js";
+import type { PlanTogetherIdea } from "./plan-together.js";
 import type { ShoppingLine } from "./shopping.js";
 import type { CartHandoff, CartProvider, CartProviderId } from "./carts.js";
 import type { Visibility } from "./shelves.js";
@@ -247,6 +248,7 @@ export interface SecondsClient {
   credits: () => Promise<CreditsResponse>;
   library: (shelfId?: string, query?: string, sort?: LibrarySort) => Promise<LibraryResponse>;
   plan: (week?: string) => Promise<PlanResponse>;
+  planTogether: () => Promise<{ ideas: PlanTogetherIdea[]; pantryCount: number }>;
   planAdd: (recipeId: string, date: string, slot: MealSlot, week?: string) => Promise<PlanResponse>;
   planRemove: (recipeId: string, date: string, slot: MealSlot, week?: string) => Promise<PlanResponse>;
   planMove: (
@@ -501,6 +503,8 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
     credits: () => send<CreditsResponse>("/api/credits"),
 
     plan: (week) => send<PlanResponse>(`/api/plan${week ? `?week=${week}` : ""}`),
+
+    planTogether: () => send<{ ideas: PlanTogetherIdea[]; pantryCount: number }>("/api/plan/together"),
 
     planAdd: (recipeId, date, slot, week) =>
       send<PlanResponse>("/api/plan", {

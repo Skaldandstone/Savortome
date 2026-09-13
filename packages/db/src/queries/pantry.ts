@@ -161,6 +161,8 @@ export interface PantrySearchRow extends PantryMatch {
   totalMinutes: number | null;
   tags: string[];
   timesCooked: number;
+  /** Every indexed ingredient, including staples and optional items, for safety checks. */
+  ingredients: string[];
 }
 
 interface RawRow {
@@ -175,6 +177,7 @@ interface RawRow {
   missing: string[] | null;
   missing_optional: string[] | null;
   have: string[] | null;
+  ingredients: string[] | null;
 }
 
 /**
@@ -222,6 +225,11 @@ export async function searchByPantry(
       r.total_minutes,
       r.tags,
       coalesce(rt.times_cooked, 0) as times_cooked,
+      coalesce((
+        select array_agg(distinct all_ingredients.canonical_item order by all_ingredients.canonical_item)
+        from ${schema.recipeIngredients} all_ingredients
+        where all_ingredients.recipe_id = r.id
+      ), '{}') as ingredients,
       count(n.canonical_item) filter (where not n.optional) as required_count,
       count(n.canonical_item) filter (
         where not n.optional and exists (select 1 from have h where h.item = n.canonical_item)
@@ -275,6 +283,7 @@ export async function searchByPantry(
       totalMinutes: row.total_minutes,
       tags: row.tags ?? [],
       timesCooked: Number(row.times_cooked ?? 0),
+      ingredients: row.ingredients ?? [],
       have,
       missing,
       missingOptional: row.missing_optional ?? [],
