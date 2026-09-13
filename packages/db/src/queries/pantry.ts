@@ -3,6 +3,7 @@ import {
   STAPLE_ITEMS,
   rankMatches,
   type PantryEntry,
+  type PantryEntryUpdate,
   type PantryMatch,
 } from "@seconds/core";
 import type { Database } from "../client.js";
@@ -33,6 +34,13 @@ export async function listPantry(database: Database, userId: string): Promise<Pa
     quantity: r.quantity,
     unit: r.unit,
     isStaple: r.isStaple,
+    isUsual: r.isUsual,
+    storageLocation: r.storageLocation as PantryEntry["storageLocation"],
+    acquiredAt: r.acquiredAt?.toISOString() ?? null,
+    lastConfirmedAt: r.lastConfirmedAt?.toISOString() ?? null,
+    source: r.source as PantryEntry["source"],
+    confidence: r.confidence as PantryEntry["confidence"],
+    updatedAt: r.updatedAt.toISOString(),
   }));
 }
 
@@ -43,6 +51,7 @@ export async function addPantryItems(
   entries: PantryEntry[],
 ): Promise<PantryEntry[]> {
   if (entries.length > 0) {
+    const now = new Date();
     await database
       .insert(schema.pantryItems)
       .values(
@@ -53,6 +62,12 @@ export async function addPantryItems(
           quantity: e.quantity,
           unit: e.unit,
           isStaple: e.isStaple,
+          isUsual: e.isUsual ?? false,
+          storageLocation: e.storageLocation ?? "unknown",
+          acquiredAt: validDate(e.acquiredAt) ?? now,
+          lastConfirmedAt: validDate(e.lastConfirmedAt) ?? now,
+          source: e.source ?? "manual",
+          confidence: e.confidence ?? "confirmed",
         })),
       )
       .onConflictDoUpdate({
@@ -61,11 +76,41 @@ export async function addPantryItems(
           displayName: sql`excluded.display_name`,
           quantity: sql`excluded.quantity`,
           unit: sql`excluded.unit`,
+          acquiredAt: sql`excluded.acquired_at`,
+          lastConfirmedAt: sql`excluded.last_confirmed_at`,
+          source: sql`excluded.source`,
+          confidence: sql`excluded.confidence`,
           updatedAt: new Date(),
         },
       });
   }
 
+  return listPantry(database, userId);
+}
+
+/** Change a person's own pantry record without letting a stale client replace the whole row. */
+export async function updatePantryItem(
+  database: Database,
+  userId: string,
+  update: PantryEntryUpdate,
+): Promise<PantryEntry[]> {
+  const set: Partial<typeof schema.pantryItems.$inferInsert> = { updatedAt: new Date() };
+  if ("quantity" in update) set.quantity = update.quantity;
+  if ("unit" in update) set.unit = update.unit;
+  if ("isUsual" in update) set.isUsual = update.isUsual;
+  if ("storageLocation" in update) set.storageLocation = update.storageLocation;
+  if (update.confirmPresent) {
+    set.lastConfirmedAt = new Date();
+    set.confidence = "confirmed";
+  }
+
+  await database
+    .update(schema.pantryItems)
+    .set(set)
+    .where(and(
+      eq(schema.pantryItems.userId, userId),
+      eq(schema.pantryItems.canonicalItem, update.canonicalItem),
+    ));
   return listPantry(database, userId);
 }
 
@@ -89,6 +134,12 @@ export async function removePantryItems(
 
 export async function clearPantry(database: Database, userId: string): Promise<void> {
   await database.delete(schema.pantryItems).where(eq(schema.pantryItems.userId, userId));
+}
+
+function validDate(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date : null;
 }
 
 // ---------------------------------------------------------------- matching

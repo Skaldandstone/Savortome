@@ -178,3 +178,16 @@ beside the stove without account chrome or promotional material.
 Direct, warm, and non-performative. Prefer "You can swap in..." and "This will take about..." over
 chef authority or lifestyle copy. Error messages should preserve the user's ingredients and effort.
 
+## Pantry memory
+
+Pantry rows use the same quiet parchment surfaces and native controls as recipe
+forms. Put the item name and observed quantity first, then correction actions.
+Use a narrow warning stripe for a produce reminder, never a red error treatment.
+
+Write reminders as questions: "Still have those bananas?" Pair the question
+with a practical next action or recipe. Do not say that the person needs a
+nutrient, that the pantry count is certainly current, or that a quality window
+is a safety deadline. Storage guidance belongs in a native `details` disclosure
+with its source visible. Receipt and grocery-order items must appear in a
+reviewable checklist before they become pantry records.
+

@@ -6,6 +6,7 @@ import { MatchList, QueryReadback } from "./MatchList";
 import { PantryList } from "./PantryList";
 import { usePantry, usePantrySearch } from "./usePantry";
 import styles from "./pantry.module.css";
+import { PantryReviewQueue } from "./PantryReviewQueue";
 
 const EXAMPLES = [
   "chicken thighs, rice, an onion",
@@ -94,10 +95,12 @@ export function CookPanel() {
               <PantryList
                 items={pantry.items}
                 onAdd={(text) => void pantry.add(text)}
+                onUpdate={(update) => void pantry.update(update)}
                 onRemove={(item) => void pantry.remove(item)}
                 onClear={() => void pantry.clear()}
               />
             )}
+            <PantryReviewQueue intakes={pantry.intakes} onResolve={pantry.resolveIntake} />
             {pantry.error ? (
               <Callout tone="error" role="alert">
                 {pantry.error}

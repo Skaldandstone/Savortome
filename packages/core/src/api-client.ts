@@ -1,5 +1,6 @@
 import type { RecipeRating, RecipeShelfState, ShelfSummary, StatusShelf } from "./shelves.js";
-import type { PantryEntry, PantryMatch } from "./pantry.js";
+import type { PantryEntry, PantryEntryUpdate, PantryMatch } from "./pantry.js";
+import type { PantryIntakeInput, PantryIntakeResolution, PantryIntakeView } from "./pantry-intake.js";
 import type { ShoppingLine } from "./shopping.js";
 import type { CartHandoff, CartProvider, CartProviderId } from "./carts.js";
 import type { Visibility } from "./shelves.js";
@@ -137,6 +138,11 @@ export interface PantrySearchResponse {
   note?: string;
 }
 
+export interface PantryIntakeResolutionResponse {
+  pantry: PantryEntry[];
+  intakes: PantryIntakeView[];
+}
+
 /** A store you can collect a Kroger order from. */
 export interface GroceryStore {
   locationId: string;
@@ -188,6 +194,10 @@ export interface SecondsClient {
   clearRating: (recipeId: string) => Promise<void>;
   listPantry: () => Promise<PantryEntry[]>;
   addPantry: (text: string) => Promise<PantryEntry[]>;
+  updatePantry: (update: PantryEntryUpdate) => Promise<PantryEntry[]>;
+  listPantryIntakes: () => Promise<PantryIntakeView[]>;
+  createPantryIntake: (input: PantryIntakeInput) => Promise<PantryIntakeView>;
+  resolvePantryIntake: (resolution: PantryIntakeResolution) => Promise<PantryIntakeResolutionResponse>;
   removePantry: (canonicalItems: string[]) => Promise<PantryEntry[]>;
   clearPantry: () => Promise<PantryEntry[]>;
   searchPantry: (query?: string) => Promise<PantrySearchResponse>;
@@ -343,6 +353,17 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
 
     addPantry: (text) =>
       send<PantryEntry[]>("/api/pantry", { method: "POST", body: body({ text }) }),
+
+    updatePantry: (update: PantryEntryUpdate) =>
+      send<PantryEntry[]>("/api/pantry", { method: "PATCH", body: body(update) }),
+
+    listPantryIntakes: () => send<PantryIntakeView[]>("/api/pantry/intake"),
+
+    createPantryIntake: (input: PantryIntakeInput) =>
+      send<PantryIntakeView>("/api/pantry/intake", { method: "POST", body: body(input) }),
+
+    resolvePantryIntake: (resolution: PantryIntakeResolution) =>
+      send<PantryIntakeResolutionResponse>("/api/pantry/intake", { method: "PATCH", body: body(resolution) }),
 
     removePantry: (canonicalItems) =>
       send<PantryEntry[]>("/api/pantry", {

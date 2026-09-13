@@ -1,6 +1,6 @@
 import type { Ingredient } from "./recipe.js";
 import { isStaple } from "./staples.js";
-import { parseIngredientLine } from "./units.js";
+import { canonicalize, parseIngredientLine } from "./units.js";
 
 /**
  * "What can I make from what's in my kitchen."
@@ -17,6 +17,97 @@ export interface PantryEntry {
   unit: string | null;
   /** Always on hand. Staples are assumed present unless explicitly marked out. */
   isStaple: boolean;
+  /** Something this household usually buys, without claiming it is always present. */
+  isUsual?: boolean;
+  /** Where the person currently keeps it. Unknown remains a valid answer. */
+  storageLocation?: PantryStorageLocation;
+  /** When this quantity entered the pantry, when known. */
+  acquiredAt?: string | null;
+  /** Last explicit confirmation that the item and displayed quantity were still present. */
+  lastConfirmedAt?: string | null;
+  /** How this record was introduced. This never implies that a provider confirmed consumption. */
+  source?: PantrySource;
+  /** Imported suggestions remain reviewable until a person confirms them. */
+  confidence?: PantryConfidence;
+  updatedAt?: string;
+}
+
+export const PANTRY_STORAGE_LOCATIONS = [
+  "unknown",
+  "countertop",
+  "pantry",
+  "refrigerator",
+  "freezer",
+] as const;
+export type PantryStorageLocation = (typeof PANTRY_STORAGE_LOCATIONS)[number];
+
+export const PANTRY_SOURCES = [
+  "manual",
+  "shopping_list",
+  "grocery_order",
+  "receipt",
+  "recipe",
+] as const;
+export type PantrySource = (typeof PANTRY_SOURCES)[number];
+
+export const PANTRY_CONFIDENCE = ["confirmed", "needs_review"] as const;
+export type PantryConfidence = (typeof PANTRY_CONFIDENCE)[number];
+
+export interface PantryEntryUpdate {
+  canonicalItem: string;
+  quantity?: number | null;
+  unit?: string | null;
+  isUsual?: boolean;
+  storageLocation?: PantryStorageLocation;
+  /** Records a fresh human confirmation without pretending the item was consumed. */
+  confirmPresent?: boolean;
+}
+
+export class PantryValidationError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "PantryValidationError";
+  }
+}
+
+/** Validate the small allowlist of fields a pantry metadata update may change. */
+export function parsePantryEntryUpdate(value: unknown): PantryEntryUpdate {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new PantryValidationError("Choose a pantry item to update.");
+  }
+  const body = value as Record<string, unknown>;
+  const canonicalItem = typeof body.canonicalItem === "string" ? canonicalize(body.canonicalItem) : "";
+  if (!canonicalItem) throw new PantryValidationError("Choose a pantry item to update.");
+
+  const update: PantryEntryUpdate = { canonicalItem };
+  if (Object.hasOwn(body, "quantity")) {
+    if (body.quantity !== null && (typeof body.quantity !== "number" || !Number.isFinite(body.quantity) || body.quantity < 0)) {
+      throw new PantryValidationError("Quantity must be zero or more.");
+    }
+    update.quantity = body.quantity as number | null;
+  }
+  if (Object.hasOwn(body, "unit")) {
+    if (body.unit !== null && (typeof body.unit !== "string" || body.unit.length > 40)) {
+      throw new PantryValidationError("Unit is too long.");
+    }
+    update.unit = typeof body.unit === "string" ? body.unit.trim() || null : null;
+  }
+  if (Object.hasOwn(body, "isUsual")) {
+    if (typeof body.isUsual !== "boolean") throw new PantryValidationError("Usual-item setting must be true or false.");
+    update.isUsual = body.isUsual;
+  }
+  if (Object.hasOwn(body, "storageLocation")) {
+    if (!PANTRY_STORAGE_LOCATIONS.includes(body.storageLocation as PantryStorageLocation)) {
+      throw new PantryValidationError("Choose a known storage location.");
+    }
+    update.storageLocation = body.storageLocation as PantryStorageLocation;
+  }
+  if (Object.hasOwn(body, "confirmPresent")) {
+    if (typeof body.confirmPresent !== "boolean") throw new PantryValidationError("Confirmation must be true or false.");
+    update.confirmPresent = body.confirmPresent;
+  }
+  if (Object.keys(update).length === 1) throw new PantryValidationError("Choose something to update.");
+  return update;
 }
 
 /** What a recipe needs, reduced to the form matching cares about. */

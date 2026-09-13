@@ -997,3 +997,25 @@ configure in the Stripe dashboard beyond the endpoint.
 
 ---
 
+## Pantry memory and grocery review
+
+Pantry entries can record whether an item is usually kept on hand, where it is
+stored, when it was acquired or last confirmed, and how confident the app is
+that it remains available. Dates support memory and planning. They are never
+expiry dates, discard instructions, or food-safety guarantees.
+
+Perishable produce may be resurfaced when it is commonly easy to forget or may
+be approaching a useful cooking window. The copy asks the person to check what
+they still have and offers relevant recipes; it does not diagnose a nutritional
+need or claim that an item has spoiled. Storage tips are limited to reviewed
+guidance with a visible source link.
+
+Receipt and grocery-order data enters a pending review queue. A person must
+select and confirm the items that actually came home before any pantry quantity
+changes. Provider payloads are reduced to item names, quantities, dates, and a
+source reference; payment details, delivery addresses, and unrelated order data
+are not accepted. Provider callbacks require their own raw-body signature
+verification before calling this authenticated intake boundary.
+
+---
+

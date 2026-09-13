@@ -127,6 +127,13 @@
       "when": 1788516854255,
       "tag": "0017_cooking-skill",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789327361392,
+      "tag": "0018_loose_switch",
+      "breakpoints": true
     }
   ]
 }

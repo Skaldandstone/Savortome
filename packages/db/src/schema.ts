@@ -550,9 +550,58 @@ export const pantryItems = pgTable(
     unit: text("unit"),
     /** Always-on-hand items the matcher can assume without the user re-adding them. */
     isStaple: boolean("is_staple").notNull().default(false),
+    /** A household default, distinct from claiming it is currently present. */
+    isUsual: boolean("is_usual").notNull().default(false),
+    storageLocation: text("storage_location").notNull().default("unknown"),
+    /** Unknown for pantry rows created before dated inventory tracking. */
+    acquiredAt: timestamp("acquired_at", { withTimezone: true }),
+    lastConfirmedAt: timestamp("last_confirmed_at", { withTimezone: true }),
+    source: text("source").notNull().default("manual"),
+    confidence: text("confidence").notNull().default("confirmed"),
+    /** Provider order, receipt, or list reference. Never displayed as pantry copy. */
+    sourceReference: text("source_reference"),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.canonicalItem] })],
+);
+
+/**
+ * Provider and receipt suggestions wait here until the person confirms what
+ * actually came home. Raw receipts, addresses, and payment data are not kept.
+ */
+export const pantryIntakes = pgTable(
+  "pantry_intakes",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    source: text("source").notNull(),
+    externalReference: text("external_reference"),
+    sourceLabel: text("source_label"),
+    acquiredAt: timestamp("acquired_at", { withTimezone: true }),
+    status: text("status").notNull().default("pending"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("pantry_intakes_owner_status_idx").on(t.userId, t.status, t.createdAt),
+    uniqueIndex("pantry_intakes_source_ref_idx").on(t.userId, t.source, t.externalReference),
+  ],
+);
+
+export const pantryIntakeItems = pgTable(
+  "pantry_intake_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    intakeId: uuid("intake_id").notNull().references(() => pantryIntakes.id, { onDelete: "cascade" }),
+    canonicalItem: text("canonical_item").notNull(),
+    displayName: text("display_name").notNull(),
+    quantity: real("quantity"),
+    unit: text("unit"),
+  },
+  (t) => [
+    index("pantry_intake_items_intake_idx").on(t.intakeId),
+    uniqueIndex("pantry_intake_items_item_idx").on(t.intakeId, t.canonicalItem),
+  ],
 );
 
 export const shoppingLists = pgTable("shopping_lists", {

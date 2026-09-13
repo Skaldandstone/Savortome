@@ -37,7 +37,7 @@ const stubs = {
   './CartButtons': 'export function CartButtons(){};',
   './KrogerConnection': 'export function KrogerConnection(){};',
   './ListItems': 'export function ListItems(){};',
-  './usePantry': 'export const usePantry=()=>state.pantry??({items:[],loading:false,error:null,add:async()=>{},remove:async()=>{},clear:async()=>{}}); export const usePantrySearch=()=>state.pantrySearch??({response:null,searching:false,error:null,search:async()=>{}});',
+  './usePantry': 'export const usePantry=()=>state.pantry??({items:[],intakes:[],loading:false,error:null,add:async()=>{},update:async()=>{},remove:async()=>{},clear:async()=>{},resolveIntake:async()=>true}); export const usePantrySearch=()=>state.pantrySearch??({response:null,searching:false,error:null,search:async()=>{}});',
   './MatchList': 'export function MatchList(){}; export function QueryReadback(){};',
   './PantryList': 'export function PantryList(){};',
 };
@@ -59,6 +59,8 @@ const result = await build({
     export {DiscoverPanel} from './apps/web/modules/discover/DiscoverPanel.tsx';
     export {ListPanel} from './apps/web/modules/list/ListPanel.tsx';
     export {CookPanel} from './apps/web/modules/pantry/CookPanel.tsx';
+    export {PantryList} from './apps/web/modules/pantry/PantryList.tsx';
+    export {PantryReviewQueue} from './apps/web/modules/pantry/PantryReviewQueue.tsx';
     export {mergeProfileUpdate} from './apps/web/modules/cooking/CookingProfilePanel.tsx';
     export {OnboardingJourney} from './apps/web/modules/onboarding/OnboardingJourney.tsx';
     export {CARE_FOODS} from './packages/core/src/care.ts';` },
@@ -168,6 +170,61 @@ test('getting started gives one useful decision at a time and saves resumable pr
   step.props.onDone();
   tree = render();
   assert.ok(nodes(tree).some(n => n.type === 'h1' && text(n) === 'Your kitchen is ready when you are'));
+});
+
+test('pantry memory shows sourced guidance and keeps every correction explicit', () => {
+  const f = fixture();
+  const updates = [];
+  const tree = f.render(f.app.PantryList, {
+    items: [{
+      canonicalItem: 'banana', displayName: '6 bananas', quantity: 6, unit: null,
+      isStaple: false, isUsual: false, storageLocation: 'unknown',
+      acquiredAt: '2020-01-01T00:00:00.000Z', lastConfirmedAt: null,
+    }],
+    onAdd() {}, onUpdate(value) { updates.push(value); }, onRemove() {}, onClear() {},
+  });
+  assert.match(text(tree), /memory aids, not expiry dates/i);
+  assert.match(text(tree), /Still have 6 bananas/i);
+  const details = nodes(tree).find(node => node.type === 'details');
+  assert.match(text(details), /Conditions vary/);
+  assert.ok(nodes(details).some(node => node.type === 'a' && node.props?.href?.startsWith('https://www.fns.usda.gov/')));
+
+  const usual = nodes(tree).find(node => node.type === 'input' && node.props?.type === 'checkbox');
+  usual.props.onChange({ target: { checked: true } });
+  const storage = nodes(tree).find(node => node.type === 'select');
+  storage.props.onChange({ target: { value: 'countertop' } });
+  const confirm = nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Still have this');
+  confirm.props.onClick();
+  assert.deepEqual(JSON.parse(JSON.stringify(updates)), [
+    { canonicalItem: 'banana', isUsual: true },
+    { canonicalItem: 'banana', storageLocation: 'countertop' },
+    { canonicalItem: 'banana', confirmPresent: true },
+  ]);
+});
+
+test('receipt and grocery intake stays a human-reviewed queue', async () => {
+  const f = fixture();
+  const calls = [];
+  const tree = f.render(f.app.PantryReviewQueue, {
+    intakes: [{
+      id: '00000000-0000-0000-0000-000000000001', source: 'receipt',
+      sourceLabel: 'Neighborhood market', acquiredAt: '2026-09-12T12:00:00.000Z',
+      status: 'pending', createdAt: '2026-09-12T12:00:00.000Z',
+      items: [{ id: '00000000-0000-0000-0000-000000000002', canonicalItem: 'banana', displayName: 'bananas', quantity: 6, unit: null }],
+    }],
+    onResolve: async (...args) => { calls.push(args); return true; },
+  });
+  assert.match(text(tree), /Nothing .* enters your pantry until you confirm/i);
+  const card = nodes(tree).find(node => typeof node.type === 'function' && node.type.name === 'PantryReviewCard');
+  const cardTree = f.render(card.type, card.props);
+  assert.match(text(cardTree), /Choose what actually came home/i);
+  assert.match(text(cardTree), /replaces its displayed quantity/i);
+  const add = nodes(cardTree).find(node => typeof node.type === 'function' && text(node) === 'Add selected items');
+  add.props.onClick();
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.deepEqual(JSON.parse(JSON.stringify(calls)), [[
+    '00000000-0000-0000-0000-000000000001', 'accept', ['00000000-0000-0000-0000-000000000002'],
+  ]]);
 });
 
 test('focused recipe cooking removes the fixed app dock', () => {
@@ -540,8 +597,8 @@ test('asynchronous collection panels announce loading, results, and failures', (
   ));
 
   const pantry = fixture({ pantry: {
-    items: [], loading: true, error: 'Fixture pantry failure',
-    add: async () => {}, remove: async () => {}, clear: async () => {},
+    items: [], intakes: [], loading: true, error: 'Fixture pantry failure',
+    add: async () => {}, update: async () => {}, remove: async () => {}, clear: async () => {}, resolveIntake: async () => true,
   } });
   const pantryTree = pantry.render(pantry.app.CookPanel);
   nodes(pantryTree).find(node => text(node) === 'My pantry' && node.props?.onClick).props.onClick();
