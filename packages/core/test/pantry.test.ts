@@ -3,6 +3,7 @@ import { describe, it } from "node:test";
 import {
   describeMatch,
   matchRecipe,
+  parsePantryEntryUpdate,
   parsePantryInput,
   rankMatches,
   requirementsFor,
@@ -233,6 +234,35 @@ describe("parsePantryInput", () => {
     const [pantryOnion] = parsePantryInput("2 diced yellow onions");
     const recipe = requirementsFor("r", [ing("yellow onion")]);
     assert.equal(recipe.required[0], pantryOnion?.canonicalItem);
+  });
+});
+
+describe("parsePantryEntryUpdate", () => {
+  it("accepts only the editable metadata allowlist and canonicalizes the item", () => {
+    assert.deepEqual(parsePantryEntryUpdate({
+      canonicalItem: "Ripe Bananas",
+      isUsual: true,
+      storageLocation: "countertop",
+      confirmPresent: true,
+      snoozeDays: 3,
+      resurfaceHidden: false,
+      diagnosis: "must not cross the boundary",
+    }), {
+      canonicalItem: "banana",
+      isUsual: true,
+      storageLocation: "countertop",
+      confirmPresent: true,
+      snoozeDays: 3,
+      resurfaceHidden: false,
+    });
+  });
+
+  it("rejects malformed quantities, locations, and empty updates", () => {
+    assert.throws(() => parsePantryEntryUpdate({ canonicalItem: "banana", quantity: -1 }), /zero or more/);
+    assert.throws(() => parsePantryEntryUpdate({ canonicalItem: "banana", storageLocation: "garage" }), /known storage/);
+    assert.throws(() => parsePantryEntryUpdate({ canonicalItem: "banana", snoozeDays: 365 }), /supported reminder/);
+    assert.throws(() => parsePantryEntryUpdate({ canonicalItem: "banana", resurfaceHidden: "no" }), /true or false/);
+    assert.throws(() => parsePantryEntryUpdate({ canonicalItem: "banana" }), /something to update/);
   });
 });
 

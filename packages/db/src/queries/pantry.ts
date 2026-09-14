@@ -3,6 +3,7 @@ import {
   STAPLE_ITEMS,
   rankMatches,
   type PantryEntry,
+  type PantryEntryUpdate,
   type PantryMatch,
 } from "@seconds/core";
 import type { Database } from "../client.js";
@@ -33,6 +34,15 @@ export async function listPantry(database: Database, userId: string): Promise<Pa
     quantity: r.quantity,
     unit: r.unit,
     isStaple: r.isStaple,
+    isUsual: r.isUsual,
+    storageLocation: r.storageLocation as PantryEntry["storageLocation"],
+    acquiredAt: r.acquiredAt?.toISOString() ?? null,
+    lastConfirmedAt: r.lastConfirmedAt?.toISOString() ?? null,
+    source: r.source as PantryEntry["source"],
+    confidence: r.confidence as PantryEntry["confidence"],
+    resurfaceAfter: r.resurfaceAfter?.toISOString() ?? null,
+    resurfaceHidden: r.resurfaceHidden,
+    updatedAt: r.updatedAt.toISOString(),
   }));
 }
 
@@ -43,6 +53,7 @@ export async function addPantryItems(
   entries: PantryEntry[],
 ): Promise<PantryEntry[]> {
   if (entries.length > 0) {
+    const now = new Date();
     await database
       .insert(schema.pantryItems)
       .values(
@@ -53,6 +64,12 @@ export async function addPantryItems(
           quantity: e.quantity,
           unit: e.unit,
           isStaple: e.isStaple,
+          isUsual: e.isUsual ?? false,
+          storageLocation: e.storageLocation ?? "unknown",
+          acquiredAt: validDate(e.acquiredAt) ?? now,
+          lastConfirmedAt: validDate(e.lastConfirmedAt) ?? now,
+          source: e.source ?? "manual",
+          confidence: e.confidence ?? "confirmed",
         })),
       )
       .onConflictDoUpdate({
@@ -61,11 +78,51 @@ export async function addPantryItems(
           displayName: sql`excluded.display_name`,
           quantity: sql`excluded.quantity`,
           unit: sql`excluded.unit`,
+          acquiredAt: sql`excluded.acquired_at`,
+          lastConfirmedAt: sql`excluded.last_confirmed_at`,
+          source: sql`excluded.source`,
+          confidence: sql`excluded.confidence`,
           updatedAt: new Date(),
         },
       });
   }
 
+  return listPantry(database, userId);
+}
+
+/** Change a person's own pantry record without letting a stale client replace the whole row. */
+export async function updatePantryItem(
+  database: Database,
+  userId: string,
+  update: PantryEntryUpdate,
+): Promise<PantryEntry[]> {
+  const set: Partial<typeof schema.pantryItems.$inferInsert> = { updatedAt: new Date() };
+  if ("quantity" in update) set.quantity = update.quantity;
+  if ("unit" in update) set.unit = update.unit;
+  if ("isUsual" in update) set.isUsual = update.isUsual;
+  if ("storageLocation" in update) set.storageLocation = update.storageLocation;
+  if (update.confirmPresent) {
+    set.lastConfirmedAt = new Date();
+    set.confidence = "confirmed";
+    set.resurfaceAfter = null;
+    set.resurfaceHidden = false;
+  }
+  if (update.snoozeDays) {
+    set.resurfaceAfter = new Date(Date.now() + update.snoozeDays * 86_400_000);
+    set.resurfaceHidden = false;
+  }
+  if ("resurfaceHidden" in update) {
+    set.resurfaceHidden = update.resurfaceHidden;
+    if (update.resurfaceHidden) set.resurfaceAfter = null;
+  }
+
+  await database
+    .update(schema.pantryItems)
+    .set(set)
+    .where(and(
+      eq(schema.pantryItems.userId, userId),
+      eq(schema.pantryItems.canonicalItem, update.canonicalItem),
+    ));
   return listPantry(database, userId);
 }
 
@@ -91,6 +148,12 @@ export async function clearPantry(database: Database, userId: string): Promise<v
   await database.delete(schema.pantryItems).where(eq(schema.pantryItems.userId, userId));
 }
 
+function validDate(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date : null;
+}
+
 // ---------------------------------------------------------------- matching
 
 export interface PantrySearchFilters {
@@ -110,6 +173,8 @@ export interface PantrySearchRow extends PantryMatch {
   totalMinutes: number | null;
   tags: string[];
   timesCooked: number;
+  /** Every indexed ingredient, including staples and optional items, for safety checks. */
+  ingredients: string[];
 }
 
 interface RawRow {
@@ -124,6 +189,7 @@ interface RawRow {
   missing: string[] | null;
   missing_optional: string[] | null;
   have: string[] | null;
+  ingredients: string[] | null;
 }
 
 /**
@@ -171,6 +237,11 @@ export async function searchByPantry(
       r.total_minutes,
       r.tags,
       coalesce(rt.times_cooked, 0) as times_cooked,
+      coalesce((
+        select array_agg(distinct all_ingredients.canonical_item order by all_ingredients.canonical_item)
+        from ${schema.recipeIngredients} all_ingredients
+        where all_ingredients.recipe_id = r.id
+      ), '{}') as ingredients,
       count(n.canonical_item) filter (where not n.optional) as required_count,
       count(n.canonical_item) filter (
         where not n.optional and exists (select 1 from have h where h.item = n.canonical_item)
@@ -224,6 +295,7 @@ export async function searchByPantry(
       totalMinutes: row.total_minutes,
       tags: row.tags ?? [],
       timesCooked: Number(row.times_cooked ?? 0),
+      ingredients: row.ingredients ?? [],
       have,
       missing,
       missingOptional: row.missing_optional ?? [],

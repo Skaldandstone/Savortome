@@ -13,6 +13,14 @@
       "expo-secure-store",
       "expo-web-browser",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Choose a grocery receipt photo for review.",
+          "cameraPermission": "Take a grocery receipt photo for review.",
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/splash-icon.png",
@@ -50,6 +58,7 @@
         "backgroundColor": "#4A423A"
       },
       "permissions": [
+        "android.permission.CAMERA",
         "android.permission.POST_NOTIFICATIONS"
       ],
       "blockedPermissions": [

@@ -10,6 +10,7 @@
   },
   "scripts": {
     "test:billing": "tsx --test test/billing-transactions.test.ts",
+    "test:pantry-memory": "tsx --test test/pantry-memory.test.ts",
     "check:beta-billing": "tsx scripts/check-beta-billing.ts",
     "typecheck": "tsc --noEmit",
     "build": "tsc --noEmit",

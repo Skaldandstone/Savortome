@@ -8,15 +8,18 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const built = await build({ absWorkingDir:root, bundle:true,write:false,platform:'node',format:'iife',globalName:'native',jsx:'automatic',
-  stdin:{resolveDir:root,contents:`export * from './apps/mobile/modules/woodland/Artwork.tsx'; export * from './apps/mobile/modules/care/CareIdeaCard.tsx'; export * from './apps/mobile/modules/woodland/KitchenWelcome.tsx'; export {CARE_FOODS} from './packages/core/src/care.ts'; export {light,dark} from './apps/mobile/ui/theme.ts';`},
+  stdin:{resolveDir:root,contents:`export * from './apps/mobile/modules/woodland/Artwork.tsx'; export * from './apps/mobile/modules/care/CareIdeaCard.tsx'; export * from './apps/mobile/modules/woodland/KitchenWelcome.tsx'; export * from './apps/mobile/modules/pantry/PantryChips.tsx'; export * from './apps/mobile/modules/pantry/PantryReviewQueue.tsx'; export * from './apps/mobile/modules/onboarding/OnboardingJourney.tsx'; export {CARE_FOODS as TEST_CARE_FOODS} from './packages/core/src/care.ts'; export {light,dark} from './apps/mobile/ui/theme.ts';`},
   plugins:[{name:'native-boundaries',setup(api){
     const stubs={
-      'react':`export const useState = initial => {const slot=state.cursor++;if(!(slot in state.values))state.values[slot]=typeof initial==='function'?initial():initial;return [state.values[slot],value=>{state.values[slot]=typeof value==='function'?value(state.values[slot]):value;}];};`,
+      'react':`export const useState = initial => {const slot=state.cursor++;if(!(slot in state.values))state.values[slot]=typeof initial==='function'?initial():initial;return [state.values[slot],value=>{state.values[slot]=typeof value==='function'?value(state.values[slot]):value;}];};export const useMemo=fn=>fn();export const useEffect=fn=>state.effects.push(fn);export const useRef=value=>{const slot=state.cursor++;return state.refs[slot]??=( {current:value} );};`,
       'react/jsx-runtime':`export const jsx = (type,props)=>({type,props});export const jsxs=jsx;export const Fragment='Fragment';`,
-      'react-native':`export const Image='Image',Text='Text',View='View',Pressable='Pressable';export const useWindowDimensions=()=>({width:state.width,fontScale:state.fontScale});export const StyleSheet={create:x=>x,absoluteFill:{position:'absolute',top:0,left:0,right:0,bottom:0}};`,
-      '@/ui':`export {light} from '${root.replaceAll('\\','/') + 'apps/mobile/ui/theme.ts'}';export const usePalette=()=>state.palette;export const Button='Button';`,
+      'react-native':`export const Image='Image',Text='Text',View='View',Pressable='Pressable',Switch='Switch',ScrollView='ScrollView';export const Linking={openURL:url=>state.links.push(url)};export const useWindowDimensions=()=>({width:state.width,fontScale:state.fontScale});export const StyleSheet={create:x=>x,absoluteFill:{position:'absolute',top:0,left:0,right:0,bottom:0}};`,
+      '@/ui':`export * from '${root.replaceAll('\\','/') + 'apps/mobile/ui/theme.ts'}';export const usePalette=()=>state.palette;export const Button='Button',Field='Field',Callout='Callout',Panel='Panel';`,
       '@/ui/ThemeProvider':`export const useDecoration=()=>({reduced:state.reduced,toggle:()=>{state.reduced=!state.reduced;}});export const PaletteScope='PaletteScope';`,
-      'expo-router':`export const useRouter=()=>({push:path=>state.navigation.push(path)});`,
+      'expo-router':`export const useRouter=()=>({push:path=>state.navigation.push(path),replace:path=>state.navigation.push(path)});`,
+      '@clerk/expo':`export const useAuth=()=>({userId:state.userId});`,
+      '@react-native-async-storage/async-storage':`export default {getItem:key=>Promise.resolve(state.storage.get(key)??null),setItem:(key,value)=>{state.storage.set(key,value);return Promise.resolve();}};`,
+      '@/lib/client':`export const createAccountClient=()=>state.accountClient;`,
     };
     api.onResolve({filter:/.*/},args=>{
       if(Object.hasOwn(stubs,args.path))return {path:args.path,namespace:'fixture'};
@@ -28,16 +31,18 @@ const built = await build({ absWorkingDir:root, bundle:true,write:false,platform
   }}],
 });
 function fixture({beta=true,reduced=false,fontScale=1}={}){
-  const state={reduced,fontScale,width:390,cursor:0,values:[],navigation:[],palette:{surface:'#191e1b',text:'#eddfc5',textMuted:'#c0af92',border:'#766347',accent:'#e1ba7d'}};
+  const state={reduced,fontScale,width:390,cursor:0,values:[],refs:[],effects:[],navigation:[],links:[],storage:new Map(),userId:'user_fixture_private',accountClient:{cookingProfile:async()=>({}),setCookingProfile:async update=>update},palette:{surface:'#191e1b',surfaceSunken:'#222620',accentSoft:'#393227',text:'#eddfc5',textMuted:'#c0af92',border:'#766347',accent:'#e1ba7d',warn:'#edc986'}};
   const context={state,process:{env:{EXPO_PUBLIC_WOODLAND_BETA:String(beta)}}};runInNewContext(built.outputFiles[0].text,context);
   state.palette=context.native.dark;
   return {state,api:context.native,render:(component,props)=>{state.cursor=0;return context.native[component](props);}};
 }
 function nodes(tree){if(!tree || typeof tree!=='object')return [];if(Array.isArray(tree))return tree.flatMap(nodes);return [tree,...nodes(tree.props?.children)];}
 function textOf(tree){if(tree==null)return '';if(typeof tree==='string'||typeof tree==='number')return String(tree);if(Array.isArray(tree))return tree.map(textOf).join(' ');return textOf(tree.props?.children);}
-test('every care catalogue ID maps to one authored food cell, never inferred recipe names',()=>{
-  const f=fixture();assert.equal(f.api.CARE_FOODS.length,14);
-  for(const food of f.api.CARE_FOODS)assert.equal(typeof f.api.FOOD_ART_CELLS[food.id],'number');
+test('authored food cells map only to catalogue IDs and missing art collapses cleanly',()=>{
+  const f=fixture();assert.ok(f.api.TEST_CARE_FOODS.length>=14);
+  const catalogue=new Set(f.api.TEST_CARE_FOODS.map(food=>food.id));
+  for(const id of Object.keys(f.api.FOOD_ART_CELLS))if(id!=='journal')assert.ok(catalogue.has(id));
+  assert.equal(f.render('FoodIllustration',{foodId:'vegetable_soup'}),null);
   assert.equal(f.render('FoodIllustration',{foodId:'tomato-soup'}),null);
   assert.equal(f.render('FoodIllustration',{foodId:'constructor'}),null);
 });
@@ -52,7 +57,7 @@ test('food atlas is decorative and a failed asset removes its occupied frame',()
   picture.props.onError();assert.equal(f.render('FoodIllustration',{foodId:'beans',size:100}),null);
 });
 test('Future me expands all exact ingredients and steps and labels only its single shopping item',()=>{
-  const f=fixture();const food=f.api.CARE_FOODS.find(x=>x.id==='beans');let writes=0;
+  const f=fixture();const food=f.api.TEST_CARE_FOODS.find(x=>x.id==='beans');let writes=0;
   const props={food,label:'Future me',pantryMatches:1,usePantry:true,selected:false,busy:false,onAdd:()=>{writes++;}};
   let tree=f.render('CareIdeaCard',props);const button=nodes(tree).find(n=>n.type==='Pressable');assert.equal(button.props.accessibilityState.expanded,false);
   assert.equal(writes,0);button.props.onPress();tree=f.render('CareIdeaCard',props);const content=textOf(tree);
@@ -60,7 +65,7 @@ test('Future me expands all exact ingredients and steps and labels only its sing
   const add=nodes(tree).find(n=>n.type==='Button');assert.equal(add.props.label,`Add ${food.shoppingItem} to my list`);add.props.onPress();assert.equal(writes,1);
 });
 test('enlarged care text removes illustration and does not clamp labels or step text',()=>{
-  const f=fixture({fontScale:2});const food=f.api.CARE_FOODS[0];const tree=f.render('CareIdeaCard',{food,label:'Right now',pantryMatches:0,usePantry:false,selected:false,busy:false,onAdd:()=>{}});
+  const f=fixture({fontScale:2});const food=f.api.TEST_CARE_FOODS[0];const tree=f.render('CareIdeaCard',{food,label:'Right now',pantryMatches:0,usePantry:false,selected:false,busy:false,onAdd:()=>{}});
   assert.equal(nodes(tree).some(n=>n.type===f.api.FoodIllustration),false);assert.equal(nodes(tree).some(n=>n.props.numberOfLines!==undefined),false);
 });
 test('paper applies readable ink while reduced decoration retains the selected palette',()=>{
@@ -72,6 +77,43 @@ test('paper applies readable ink while reduced decoration retains the selected p
 test('kitchen entry stays reachable with illustrations off',()=>{
   const f=fixture({reduced:true});const tree=f.render('KitchenWelcome',{});assert.equal(nodes(tree).some(n=>n.type==='Image'),false);
   const care=nodes(tree).find(n=>n.type==='Pressable');assert.ok(textOf(care).includes('Feed me gently'));care.props.onPress();assert.deepEqual(f.state.navigation,['/care']);
+});
+test('mobile onboarding starts with one useful choice and stores only progress under a scoped key',async()=>{
+  const f=fixture();let tree=f.render('OnboardingJourney',{});assert.match(textOf(tree),/Opening your getting-started guide/);
+  for(const effect of f.state.effects.splice(0))effect();await new Promise(resolve=>setTimeout(resolve,0));
+  tree=f.render('OnboardingJourney',{});const welcome=nodes(tree).find(n=>typeof n.type==='function'&&n.type.name==='WelcomeStep');const welcomeTree=welcome.type(welcome.props);
+  assert.match(textOf(welcomeTree),/What would make food easier today/);assert.ok(nodes(welcomeTree).some(n=>typeof n.type==='function'&&n.type.name==='Choice'&&n.props.title==='Feed me gently'));
+  nodes(welcomeTree).find(n=>n.type==='Button'&&n.props.label==='Continue').props.onPress();await new Promise(resolve=>setTimeout(resolve,0));
+  assert.equal([...f.state.storage.keys()].length,1);const [key]=f.state.storage.keys();assert.match(key,/^savortome:onboarding:v1:[0-9a-f]{32}$/);assert.equal(key.includes(f.state.userId),false);
+  tree=f.render('OnboardingJourney',{});const safety=nodes(tree).find(n=>typeof n.type==='function'&&n.type.name==='SafetyStep');assert.ok(safety);assert.match(textOf(safety.type(safety.props)),/cannot verify that a food is safe/i);
+});
+test('mobile cooking onboarding saves one tier before revealing optional details',async()=>{
+  const f=fixture();const writes=[];f.state.accountClient={cookingProfile:async()=>({}),setCookingProfile:async update=>{writes.push(update);return update;}};
+  let tree=f.render('CookingStep',{userId:f.state.userId,onDone(){}});for(const effect of f.state.effects.splice(0))effect();await new Promise(resolve=>setTimeout(resolve,0));tree=f.render('CookingStep',{userId:f.state.userId,onDone(){}});
+  assert.match(textOf(tree),/Suggestions can meet you where you are/);const tier=nodes(tree).find(n=>typeof n.type==='function'&&n.type.name==='Choice'&&n.props.title==='Curious Apprentice');tier.props.onPress();await new Promise(resolve=>setTimeout(resolve,0));
+  assert.deepEqual(JSON.parse(JSON.stringify(writes)),[{tier:'apprentice'}]);tree=f.render('CookingStep',{userId:f.state.userId,onDone(){}});assert.match(textOf(tree),/Optional details/);assert.match(textOf(tree),/Feed me gently stays separate/);
+});
+test('mobile pantry memory keeps correction actions named and guidance qualified',()=>{
+  const f=fixture();const updates=[];const removals=[];const props={items:[{canonicalItem:'banana',displayName:'bananas',quantity:6,unit:null,isStaple:false,isUsual:false,storageLocation:'unknown',acquiredAt:'2026-09-01T00:00:00.000Z',lastConfirmedAt:null,updatedAt:'2026-09-01T00:00:00.000Z'}],onAdd(){},onUpdate:value=>updates.push(value),onRemove:value=>removals.push(value),onClear(){}};let tree=f.render('PantryChips',props);
+  const content=textOf(tree);assert.match(content,/not expiry or food-safety guarantees/i);assert.match(content,/USDA produce storage guidance/);
+  const usual=nodes(tree).find(n=>n.type==='Switch');assert.match(usual.props.accessibilityLabel,/Usually keep bananas/);usual.props.onValueChange(true);
+  const fridge=nodes(tree).find(n=>n.type==='Pressable'&&n.props.accessibilityLabel==='bananas: Fridge');assert.equal(fridge.props.accessibilityRole,'radio');fridge.props.onPress();
+  const confirm=nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Still have bananas');confirm.props.onPress();
+  const promptSwitch=nodes(tree).find(n=>n.type==='Switch'&&/freshness prompts/.test(n.props.accessibilityLabel));promptSwitch.props.onValueChange(false);
+  nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Used some').props.onPress();tree=f.render('PantryChips',props);
+  nodes(tree).find(n=>n.type==='Field'&&n.props.accessibilityLabel==='Remaining amount of bananas').props.onChangeText('4');tree=f.render('PantryChips',props);
+  nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Save amount').props.onPress();
+  nodes(tree).find(n=>n.type==='Button'&&n.props.label==='All gone').props.onPress();
+  nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Remind me in 3 days').props.onPress();
+  nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Hide this suggestion').props.onPress();
+  assert.deepEqual(JSON.parse(JSON.stringify(updates)),[{canonicalItem:'banana',isUsual:true},{canonicalItem:'banana',storageLocation:'refrigerator'},{canonicalItem:'banana',confirmPresent:true},{canonicalItem:'banana',resurfaceHidden:true},{canonicalItem:'banana',quantity:4,unit:null,confirmPresent:true},{canonicalItem:'banana',snoozeDays:3},{canonicalItem:'banana',resurfaceHidden:true}]);assert.deepEqual(removals,['banana']);
+});
+test('mobile grocery review requires an explicit checked selection',async()=>{
+  const f=fixture();const calls=[];const tree=f.render('PantryReviewQueue',{intakes:[{id:'intake',source:'receipt',sourceLabel:'Neighborhood market',acquiredAt:null,status:'pending',createdAt:'2026-09-13T00:00:00.000Z',items:[{id:'item',canonicalItem:'banana',displayName:'bananas',quantity:6,unit:null}]}],onResolve:async(...args)=>{calls.push(args);return true;}});
+  assert.match(textOf(tree),/Nothing enters your pantry until you confirm/);
+  const card=nodes(tree).find(n=>typeof n.type==='function'&&n.type.name==='ReviewCard');f.state.cursor=0;const rendered=card.type(card.props);
+  const checkbox=nodes(rendered).find(n=>n.type==='Pressable');assert.equal(checkbox.props.accessibilityRole,'checkbox');assert.equal(checkbox.props.accessibilityState.checked,true);
+  const add=nodes(rendered).find(n=>n.type==='Button'&&n.props.label==='Add selected items');add.props.onPress();await new Promise(resolve=>setTimeout(resolve,0));assert.deepEqual(JSON.parse(JSON.stringify(calls)),[['intake','accept',['item']]]);
 });
 test('mobile keeps its reviewed art while web derivatives follow the current encoding report',async()=>{
   const reviewedMobile={
@@ -118,5 +160,9 @@ test('Android review source blocks storage and overlay permissions the beta does
     'android.permission.WRITE_EXTERNAL_STORAGE',
     'android.permission.SYSTEM_ALERT_WINDOW',
   ]);
-  assert.deepEqual(config.expo.android.permissions,['android.permission.POST_NOTIFICATIONS']);
+  assert.deepEqual(config.expo.android.permissions,['android.permission.CAMERA','android.permission.POST_NOTIFICATIONS']);
+  const picker=config.expo.plugins.find(plugin=>Array.isArray(plugin)&&plugin[0]==='expo-image-picker');
+  assert.ok(picker);assert.equal(picker[1].microphonePermission,false);
+  assert.match(picker[1].cameraPermission,/receipt photo for review/i);
+  assert.match(picker[1].photosPermission,/receipt photo for review/i);
 });

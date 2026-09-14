@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { computeNutrition, guessIngredientNutrition } from "@seconds/core";
 import { getRecipe, setRecipeNutrition } from "@seconds/db";
 import { withUser } from "@/lib/api";
+import { recordGenerationAudit } from "@/lib/generation-audit";
 
 /**
  * Fill in nutrition for a recipe that doesn't have one — a hand-typed recipe,
@@ -32,7 +33,9 @@ export async function POST(_request: Request, { params }: Params) {
     // Re-fetching costs nothing and saves whoever double-clicks a second call.
     if (recipe.nutrition) return { nutrition: recipe.nutrition };
 
-    const guesses = await guessIngredientNutrition(recipe.ingredients);
+    const guesses = await guessIngredientNutrition(recipe.ingredients, {
+      onGenerationAudit: recordGenerationAudit,
+    });
     const nutrition = await computeNutrition(recipe.ingredients, guesses, recipe.servings);
 
     const saved = await setRecipeNutrition(database, userId, id, nutrition);

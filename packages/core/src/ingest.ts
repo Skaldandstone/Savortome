@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { extractRecipe, type ExtractOptions } from "./extract.js";
 import { computeNutrition, type ComputeNutritionOptions } from "./nutrition-usda.js";
 import type { ExtractionMethod, Recipe, RecipeNutrition, SourceKind } from "./recipe.js";
+import { generationAuditTrace } from "./generated-content.js";
 import {
   EmptyExtractionError,
   methodForTextKind,
@@ -109,7 +110,13 @@ export async function ingestDocument(
         : "nutrition: not published on this page — available on request",
     );
   } else {
-    extracted = await extractRecipe(doc, opts);
+    extracted = await extractRecipe(doc, {
+      ...opts,
+      onGenerationAudit: (audit) => {
+        trace.push(generationAuditTrace(audit));
+        opts.onGenerationAudit?.(audit);
+      },
+    });
     method = methodForTextKind(doc.textKind);
     trace.push(`extraction: ${method} via ${opts.model ?? "claude-opus-5"}`);
     trace.push(

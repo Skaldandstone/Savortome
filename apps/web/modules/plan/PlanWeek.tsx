@@ -19,6 +19,7 @@ import {
 import { api } from "@/lib/client";
 import { Button, Callout, Panel, PanelHeader } from "@/ui";
 import { AddMealDialog } from "./AddMealDialog";
+import { PlanTogether } from "./PlanTogether";
 import styles from "./plan.module.css";
 
 /**
@@ -127,6 +128,7 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
 
   return (
     <>
+      {week === shiftWeeks(today, 0) ? <PlanTogether date={today} week={week} onPlanned={setMeals} /> : null}
       <Panel>
         <PanelHeader
           title="The week"

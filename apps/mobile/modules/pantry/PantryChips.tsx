@@ -1,95 +1,98 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { formatAmount, type PantryEntry } from "@seconds/core/format";
+import { Linking, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import {
+  formatAmount,
+  pantryAttention,
+  storageGuideFor,
+  type PantryEntry,
+  type PantryEntryUpdate,
+  type PantryStorageLocation,
+} from "@seconds/core/format";
 import { Button, Field, radius, space, type as typeScale, usePalette } from "@/ui";
 
-/** Everything the cook has said is in the kitchen, as tap-to-remove chips. */
-export function PantryChips({
-  items,
-  onAdd,
-  onRemove,
-  onClear,
-}: {
+const STORAGE: Array<{ value: PantryStorageLocation; label: string }> = [
+  { value: "unknown", label: "Not set" },
+  { value: "countertop", label: "Counter" },
+  { value: "pantry", label: "Cupboard" },
+  { value: "refrigerator", label: "Fridge" },
+  { value: "freezer", label: "Freezer" },
+];
+
+export function PantryChips({ items, onAdd, onUpdate, onRemove, onClear }: {
   items: PantryEntry[];
   onAdd: (text: string) => void;
+  onUpdate: (entry: PantryEntryUpdate) => void;
   onRemove: (canonicalItem: string) => void;
   onClear: () => void;
 }) {
   const c = usePalette();
   const [text, setText] = useState("");
-
-  const submit = () => {
-    if (!text.trim()) return;
-    onAdd(text);
-    setText("");
+  const [editingAmount, setEditingAmount] = useState<string | null>(null);
+  const [remainingAmount, setRemainingAmount] = useState("");
+  const submit = () => { if (text.trim()) { onAdd(text); setText(""); } };
+  const startAmountEdit = (item: PantryEntry) => {
+    setEditingAmount(item.canonicalItem);
+    setRemainingAmount(item.quantity === null ? "" : String(item.quantity));
+  };
+  const saveAmount = (item: PantryEntry) => {
+    const quantity = Number(remainingAmount);
+    if (!Number.isFinite(quantity) || quantity <= 0) return;
+    onUpdate({ canonicalItem: item.canonicalItem, quantity, unit: item.unit, confirmPresent: true });
+    setEditingAmount(null);
+    setRemainingAmount("");
   };
 
   return (
     <View style={styles.wrap}>
       <View style={styles.addRow}>
-        <Field
-          value={text}
-          onChangeText={setText}
-          placeholder="2 chicken thighs, rice, tomatoes"
-          accessibilityLabel="Add pantry ingredients"
-          autoCapitalize="none"
-          onSubmitEditing={submit}
-          style={styles.input}
-        />
+        <Field value={text} onChangeText={setText} placeholder="2 chicken thighs, rice, tomatoes" accessibilityLabel="Add pantry ingredients" autoCapitalize="none" onSubmitEditing={submit} style={styles.input} />
         <Button label="Add" variant="ghost" onPress={submit} />
       </View>
-
       {items.length === 0 ? (
-        <Text style={[styles.empty, { color: c.textMuted }]}>
-          Nothing here yet. Common seasonings and baking staples are already assumed; add
-          anything else you keep in.
-        </Text>
-      ) : (
-        <>
-          <View style={styles.chips}>
-            {items.map((item) => {
-              const amount = formatAmount(item);
-              return (
-                <Pressable
-                  key={item.canonicalItem}
-                  onPress={() => onRemove(item.canonicalItem)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Remove ${item.displayName}`}
-                  style={[styles.chip, { backgroundColor: c.surface, borderColor: c.border }]}
-                >
-                  {amount ? (
-                    <Text style={[styles.chipAmount, { color: c.textMuted }]}>{amount} </Text>
-                  ) : null}
-                  <Text style={{ color: c.text, fontSize: typeScale.small }}>
-                    {item.displayName}
-                  </Text>
-                  <Text style={[styles.chipX, { color: c.textMuted }]}> ×</Text>
+        <Text style={[styles.empty, { color: c.textMuted }]}>Nothing here yet. Common seasonings and baking staples are already assumed; add anything else you keep in.</Text>
+      ) : items.map(item => {
+        const amount = formatAmount(item);
+        const attention = pantryAttention(item);
+        const guide = storageGuideFor(item.canonicalItem);
+        return (
+          <View key={item.canonicalItem} style={[styles.item, { backgroundColor: c.surface, borderColor: attention?.shouldResurface ? c.warn : c.border }]}>
+            <View style={styles.itemHeading}>
+              <View style={styles.itemName}>
+                <Text style={[styles.name, { color: c.text }]}>{item.displayName}</Text>
+                {amount ? <Text style={[styles.amount, { color: c.textMuted }]}>{amount}</Text> : null}
+              </View>
+              <Button label={`Remove ${item.displayName}`} accessibilityLabel={`Remove ${item.displayName}`} variant="ghost" onPress={() => onRemove(item.canonicalItem)} />
+            </View>
+            {attention?.shouldResurface ? <><Text accessibilityRole="alert" style={[styles.reminder, { color: c.warn }]}>{attention.message}</Text><View style={styles.promptActions}><Button label="Yes, still here" variant="ghost" onPress={() => onUpdate({ canonicalItem: item.canonicalItem, confirmPresent: true })} /><Button label="Used some" variant="ghost" onPress={() => startAmountEdit(item)} /><Button label="All gone" variant="ghost" onPress={() => onRemove(item.canonicalItem)} /><Button label="Remind me in 3 days" variant="ghost" onPress={() => onUpdate({ canonicalItem: item.canonicalItem, snoozeDays: 3 })} /><Button label="Hide this suggestion" variant="ghost" onPress={() => onUpdate({ canonicalItem: item.canonicalItem, resurfaceHidden: true })} /></View></> : null}
+            {editingAmount === item.canonicalItem ? <View style={[styles.amountEditor, { backgroundColor: c.surfaceSunken, borderColor: c.border }]}><Text style={[styles.label, { color: c.text }]}>How many {item.unit ? `${item.unit} ` : ""}remain?</Text><Field value={remainingAmount} onChangeText={setRemainingAmount} keyboardType="decimal-pad" accessibilityLabel={`Remaining amount of ${item.displayName}`} style={styles.amountInput} /><View style={styles.promptActions}><Button label="Save amount" disabled={!Number.isFinite(Number(remainingAmount)) || Number(remainingAmount) <= 0} onPress={() => saveAmount(item)} /><Button label="Cancel amount change" variant="ghost" onPress={() => setEditingAmount(null)} /></View></View> : null}
+            <View style={styles.usualRow}>
+              <Text style={[styles.body, { color: c.text }]}>Usually keep this</Text>
+              <Switch accessibilityLabel={`Usually keep ${item.displayName}`} value={item.isUsual ?? false} onValueChange={isUsual => onUpdate({ canonicalItem: item.canonicalItem, isUsual })} />
+            </View>
+            <View style={styles.usualRow}>
+              <Text style={[styles.body, { color: c.text }]}>Show freshness prompts</Text>
+              <Switch accessibilityLabel={`Show freshness prompts for ${item.displayName}`} value={!(item.resurfaceHidden ?? false)} onValueChange={value => onUpdate({ canonicalItem: item.canonicalItem, resurfaceHidden: !value })} />
+            </View>
+            <Text style={[styles.label, { color: c.textMuted }]}>Stored in</Text>
+            <View accessibilityRole="radiogroup" style={styles.storage}>
+              {STORAGE.map(option => (
+                <Pressable key={option.value} accessibilityRole="radio" accessibilityState={{ selected: (item.storageLocation ?? "unknown") === option.value }} accessibilityLabel={`${item.displayName}: ${option.label}`} onPress={() => onUpdate({ canonicalItem: item.canonicalItem, storageLocation: option.value })} style={[styles.storageChoice, { borderColor: c.border, backgroundColor: (item.storageLocation ?? "unknown") === option.value ? c.accentSoft : c.surfaceSunken }]}>
+                  <Text style={{ color: c.text, fontSize: typeScale.micro }}>{option.label}</Text>
                 </Pressable>
-              );
-            })}
+              ))}
+            </View>
+            <View style={styles.confirm}><Button label={`Still have ${item.displayName}`} variant="ghost" onPress={() => onUpdate({ canonicalItem: item.canonicalItem, confirmPresent: true })} /></View>
+            {guide ? <View style={[styles.guidance, { backgroundColor: c.surfaceSunken }]}><Text style={[styles.body, { color: c.text }]}>{guide.storageAdvice}</Text>{guide.separationAdvice ? <Text style={[styles.body, { color: c.textMuted }]}>{guide.separationAdvice}</Text> : null}<Pressable accessibilityRole="link" accessibilityLabel={`Open ${guide.sourceLabel}`} onPress={() => void Linking.openURL(guide.sourceUrl)}><Text style={[styles.source, { color: c.accent }]}>{guide.sourceLabel}</Text></Pressable><Text style={[styles.source, { color: c.textMuted }]}>Check current package directions too.</Text></View> : null}
           </View>
-          <Button label="Clear pantry" variant="ghost" onPress={onClear} />
-        </>
-      )}
+        );
+      })}
+      {items.length > 0 ? <><Text style={[styles.boundary, { color: c.textMuted }]}>Dates and counts help you remember what may be around. They are not expiry or food-safety guarantees.</Text><Button label="Clear pantry" variant="ghost" onPress={onClear} /></> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { gap: space.md },
-  addRow: { flexDirection: "row", alignItems: "center", gap: space.sm },
-  input: { flex: 1 },
-  empty: { fontSize: typeScale.small, lineHeight: 19 },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  chip: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    minHeight: 44,
-    borderWidth: 1,
-    borderRadius: radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  chipAmount: { fontWeight: "600", fontSize: typeScale.small },
-  chipX: { fontSize: typeScale.small },
+  wrap: { gap: space.md }, addRow: { flexDirection: "row", alignItems: "center", gap: space.sm }, input: { flex: 1 }, empty: { fontSize: typeScale.small, lineHeight: 19 },
+  item: { gap: space.sm, borderWidth: 1, borderRadius: radius.md, padding: space.md }, itemHeading: { flexDirection: "row", alignItems: "flex-start", gap: space.sm }, itemName: { flex: 1 }, name: { fontSize: typeScale.title, fontWeight: "700" }, amount: { marginTop: 2, fontSize: typeScale.small },
+  body: { fontSize: typeScale.small, lineHeight: 19 }, label: { fontSize: typeScale.micro, fontWeight: "700" }, reminder: { fontSize: typeScale.small, lineHeight: 19, fontWeight: "600" }, promptActions: { flexDirection: "row", flexWrap: "wrap", gap: space.sm }, amountEditor: { gap: space.sm, borderWidth: 1, borderRadius: radius.sm, padding: space.sm }, amountInput: { minHeight: 44 }, usualRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 44 }, storage: { flexDirection: "row", flexWrap: "wrap", gap: 6 }, storageChoice: { minHeight: 44, justifyContent: "center", borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: 10 }, confirm: { alignSelf: "flex-start" }, guidance: { gap: 5, padding: space.sm, borderRadius: radius.sm }, source: { fontSize: typeScale.micro, lineHeight: 17 }, boundary: { fontSize: typeScale.micro, lineHeight: 17 },
 });
