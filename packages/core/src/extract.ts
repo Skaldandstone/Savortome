@@ -1,6 +1,13 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { ExtractedRecipeSchema, type ExtractedRecipe } from "./recipe.js";
+import { ExtractedRecipeSchema, MAX_PHOTO_BASE64_CHARS, type ExtractedRecipe } from "./recipe.js";
+import {
+  emitGenerationAudit,
+  generatedContentSystem,
+  generationAudit,
+  sanitizeGeneratedText,
+  type GenerationAuditSink,
+} from "./generated-content.js";
 
 /**
  * The guess schema's contribution fields are plain numbers, not the nullable
@@ -19,6 +26,8 @@ import { canonicalize } from "./units.js";
 import type { SourceDocument } from "./sources/types.js";
 
 export const EXTRACTION_MODEL = "claude-opus-5";
+export const EXTRACTION_PROMPT_VERSION = "savortome-recipe-extraction-v2";
+export const MAX_GENERATION_SOURCE_TEXT_CHARS = 250_000;
 
 /**
  * Frozen system prompt. Kept byte-stable and cached so every ingest after the
@@ -96,6 +105,7 @@ export interface ExtractOptions {
    */
   effort?: "low" | "medium" | "high" | "xhigh" | "max";
   signal?: AbortSignal;
+  onGenerationAudit?: GenerationAuditSink;
 }
 
 export class ExtractionError extends Error {
@@ -110,29 +120,60 @@ export class ExtractionError extends Error {
 
 /** Belt-and-braces: the model is asked for these invariants, but the app relies on them. */
 function normalize(recipe: ExtractedRecipe): ExtractedRecipe {
+  const ingredients = recipe.ingredients.map((ing) => ({
+    ...ing,
+    raw: sanitizeGeneratedText(ing.raw, 2_000),
+    unit: ing.unit ? sanitizeGeneratedText(ing.unit, 80) || null : null,
+    item: sanitizeGeneratedText(ing.item, 240),
+    canonicalItem: ing.canonicalItem?.trim()
+      ? canonicalize(ing.canonicalItem)
+      : canonicalize(ing.item),
+    notes: ing.notes ? sanitizeGeneratedText(ing.notes, 500) || null : null,
+    group: ing.group ? sanitizeGeneratedText(ing.group, 160) || null : null,
+  }));
   return {
     ...recipe,
-    ingredients: recipe.ingredients.map((ing) => ({
-      ...ing,
-      canonicalItem: ing.canonicalItem?.trim()
-        ? canonicalize(ing.canonicalItem)
-        : canonicalize(ing.item),
-    })),
-    steps: recipe.steps.map((s, i) => ({ ...s, n: i + 1 })),
+    title: sanitizeGeneratedText(recipe.title, 240),
+    description: recipe.description ? sanitizeGeneratedText(recipe.description, 2_000) || null : null,
+    servingsNote: recipe.servingsNote ? sanitizeGeneratedText(recipe.servingsNote, 240) || null : null,
+    ingredients,
+    steps: recipe.steps.map((s, i) => ({ ...s, n: i + 1, text: sanitizeGeneratedText(s.text, 4_000) })),
+    equipment: recipe.equipment.map((item) => sanitizeGeneratedText(item, 160)).filter(Boolean),
     tags: [
       ...new Set(recipe.tags.map((t) => t.toLowerCase().replace(/^#/, "").trim())),
     ].filter(Boolean),
+    cuisine: recipe.cuisine ? sanitizeGeneratedText(recipe.cuisine, 120) || null : null,
+    course: recipe.course ? sanitizeGeneratedText(recipe.course, 120) || null : null,
     confidence: Math.min(1, Math.max(0, recipe.confidence)),
+    extractionNotes: recipe.extractionNotes
+      .map((note) => sanitizeGeneratedText(note, 1_000))
+      .filter(Boolean),
     // Belt-and-braces, same as canonicalItem above: the model is asked for one
     // guess per ingredient, but a missing row shouldn't be a missing lookup
     // fallback later — it becomes a zero-contribution guess instead.
-    ingredientNutritionGuesses: recipe.ingredients.map((ing) => {
+    ingredientNutritionGuesses: ingredients.map((ing) => {
       const existing = recipe.ingredientNutritionGuesses.find(
-        (g) => g.canonicalItem === ing.canonicalItem,
+        (g) => canonicalize(g.canonicalItem) === ing.canonicalItem,
       );
-      return existing ?? { canonicalItem: ing.canonicalItem, contribution: { ...ZERO_CONTRIBUTION } };
+      return existing
+        ? { ...existing, canonicalItem: ing.canonicalItem }
+        : { canonicalItem: ing.canonicalItem, contribution: { ...ZERO_CONTRIBUTION } };
     }),
   };
+}
+
+function generatedRecipeIsUsable(recipe: ExtractedRecipe): boolean {
+  const nonnegative = (value: number | null | undefined) =>
+    value === null || value === undefined || (Number.isFinite(value) && value >= 0);
+  if (!recipe.title || recipe.ingredients.length > 200 || recipe.steps.length > 200) return false;
+  if (recipe.equipment.length > 100 || recipe.tags.length > 100 || recipe.extractionNotes.length > 100) return false;
+  if (![recipe.servings, recipe.prepMinutes, recipe.cookMinutes, recipe.totalMinutes].every(nonnegative)) return false;
+  if (recipe.ingredients.some((item) =>
+    !item.item || !item.canonicalItem || !nonnegative(item.quantity) || !nonnegative(item.quantityMax))) return false;
+  if (recipe.steps.some((step) =>
+    !step.text || !nonnegative(step.timerSeconds) || !nonnegative(step.activeSeconds) || !nonnegative(step.sourceTimestamp))) return false;
+  return recipe.ingredientNutritionGuesses.every((guess) =>
+    Object.values(guess.contribution).every((value) => Number.isFinite(value) && value >= 0));
 }
 
 export async function extractRecipe(
@@ -140,6 +181,14 @@ export async function extractRecipe(
   opts: ExtractOptions = {},
 ): Promise<ExtractedRecipe> {
   const client = opts.client ?? new Anthropic();
+  const model = opts.model ?? EXTRACTION_MODEL;
+  const sourceReference = `recipe-${doc.textKind}-v1`;
+  if (doc.text.length > MAX_GENERATION_SOURCE_TEXT_CHARS) {
+    throw new ExtractionError("This source is too large to extract safely. Use a shorter page or paste the recipe text directly.");
+  }
+  if (doc.image && doc.image.base64.length > MAX_PHOTO_BASE64_CHARS) {
+    throw new ExtractionError("This photo is too large to extract safely. Use a smaller image.");
+  }
 
   const header = [
     doc.title ? `Title: ${doc.title}` : null,
@@ -152,12 +201,16 @@ export async function extractRecipe(
 
   const response = await client.messages.parse(
     {
-      model: opts.model ?? EXTRACTION_MODEL,
+      model,
       max_tokens: 16_000,
       // 1h TTL: imports across the whole app arrive scattered, rarely two
       // within the default 5-minute window. A longer-lived cache is what
       // actually gets hit in practice, not a hypothetical burst.
-      system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral", ttl: "1h" } }],
+      system: [{
+        type: "text",
+        text: generatedContentSystem(SYSTEM, EXTRACTION_PROMPT_VERSION),
+        cache_control: { type: "ephemeral", ttl: "1h" },
+      }],
       thinking: { type: "adaptive" },
       output_config: {
         effort: opts.effort ?? "medium",
@@ -187,16 +240,32 @@ export async function extractRecipe(
   );
 
   if (response.stop_reason === "refusal") {
+    emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+      EXTRACTION_PROMPT_VERSION, model, sourceReference, "rejected", response,
+    ));
     throw new ExtractionError(
       `The model declined to process this content (${response.stop_details?.category ?? "unspecified"}). ` +
         `If this is an ordinary recipe, try pasting the text directly.`,
     );
   }
   if (!response.parsed_output) {
+    emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+      EXTRACTION_PROMPT_VERSION, model, sourceReference, "rejected", response,
+    ));
     throw new ExtractionError(
       "The model did not return a parseable recipe. Try re-running the import.",
     );
   }
 
-  return normalize(response.parsed_output);
+  const validated = ExtractedRecipeSchema.safeParse(normalize(response.parsed_output));
+  if (!validated.success || !generatedRecipeIsUsable(validated.data)) {
+    emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+      EXTRACTION_PROMPT_VERSION, model, sourceReference, "rejected", response,
+    ));
+    throw new ExtractionError("The model returned a recipe that failed validation. Try re-running the import.");
+  }
+  emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+    EXTRACTION_PROMPT_VERSION, model, sourceReference, "passed", response,
+  ));
+  return validated.data;
 }

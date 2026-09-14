@@ -3,6 +3,14 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { ZERO_NUTRIENTS, gramsFor, perServingNutrients, tidyNutrients } from "./nutrition.js";
 import type { Ingredient, IngredientNutrition, Nutrients, RecipeNutrition } from "./recipe.js";
+import { canonicalize } from "./units.js";
+import {
+  emitGenerationAudit,
+  generatedContentSystem,
+  generationAudit,
+  sanitizeGeneratedText,
+  type GenerationAuditSink,
+} from "./generated-content.js";
 
 /**
  * Real nutrient data, for the ingredients a public food database actually
@@ -187,16 +195,20 @@ export function rescaleNutrition(nutrition: RecipeNutrition, servings: number | 
 const GuessSchema = z.object({
   guesses: z.array(
     z.object({
-      canonicalItem: z.string(),
-      calories: z.number(),
-      proteinGrams: z.number(),
-      carbGrams: z.number(),
-      fatGrams: z.number(),
-      fiberGrams: z.number(),
-      sodiumMg: z.number(),
+      canonicalItem: z.string().trim().min(1).max(120),
+      calories: z.number().finite().nonnegative(),
+      proteinGrams: z.number().finite().nonnegative(),
+      carbGrams: z.number().finite().nonnegative(),
+      fatGrams: z.number().finite().nonnegative(),
+      fiberGrams: z.number().finite().nonnegative(),
+      sodiumMg: z.number().finite().nonnegative(),
     }),
-  ),
+  ).max(100),
 });
+
+export const NUTRITION_GUESS_PROMPT_VERSION = "savortome-nutrition-guess-v2";
+
+const NUTRITION_GUESS_SYSTEM = `Estimate only the requested ingredients' nutritional contribution at the stated recipe amount. These values are an explicitly labelled estimate used only when the USDA database has no usable match. Match canonicalItem exactly to an input item. Do not add foods, infer health needs, claim dietary safety, or imply the estimate was measured or verified. Use reasonable food-data precision rather than spurious decimal detail.`;
 
 /**
  * Ask the model for the same per-ingredient fallback guesses that ride along
@@ -212,42 +224,78 @@ const GuessSchema = z.object({
  */
 export async function guessIngredientNutrition(
   ingredients: readonly Ingredient[],
-  opts: { client?: Anthropic; model?: string } = {},
+  opts: { client?: Anthropic; model?: string; onGenerationAudit?: GenerationAuditSink } = {},
 ): Promise<{ canonicalItem: string; contribution: Nutrients }[]> {
   if (ingredients.length === 0) return [];
+  if (ingredients.length > 100) {
+    throw new RangeError("Nutrition generation supports at most 100 ingredients at a time.");
+  }
 
   const client = opts.client ?? new Anthropic();
+  const model = opts.model ?? "claude-opus-5";
   const lines = ingredients
-    .map((i) => `- ${i.canonicalItem}: ${i.raw || `${i.quantity ?? ""} ${i.unit ?? ""} ${i.item}`.trim()}`)
+    .map((i) => sanitizeGeneratedText(
+      `- ${i.canonicalItem}: ${i.raw || `${i.quantity ?? ""} ${i.unit ?? ""} ${i.item}`.trim()}`,
+      500,
+    ))
     .join("\n");
 
-  const response = await client.messages.parse({
-    model: opts.model ?? "claude-opus-5",
-    max_tokens: 4_000,
-    thinking: { type: "adaptive" },
-    output_config: { effort: "low", format: zodOutputFormat(GuessSchema) },
-    messages: [
-      {
-        role: "user",
-        content:
-          `For each ingredient below, estimate its nutritional contribution to the recipe AT THE STATED AMOUNT ` +
-          `(not per 100g) — calories, protein, carbs, fat, fiber in grams, sodium in mg. Give 0 for anything ` +
-          `genuinely negligible rather than skipping it. One entry per ingredient, matched by "canonicalItem" exactly ` +
-          `as given.\n\n${lines}`,
-      },
-    ],
-  });
+  try {
+    const response = await client.messages.parse({
+      model,
+      max_tokens: 4_000,
+      system: generatedContentSystem(NUTRITION_GUESS_SYSTEM, NUTRITION_GUESS_PROMPT_VERSION),
+      thinking: { type: "adaptive" },
+      output_config: { effort: "low", format: zodOutputFormat(GuessSchema) },
+      messages: [
+        {
+          role: "user",
+          content:
+            `For each ingredient below, estimate its nutritional contribution to the recipe AT THE STATED AMOUNT ` +
+            `(not per 100g) — calories, protein, carbs, fat, fiber in grams, sodium in mg. Give 0 for anything ` +
+            `genuinely negligible rather than skipping it. One entry per ingredient, matched by "canonicalItem" exactly ` +
+            `as given.\n\n${lines}`,
+        },
+      ],
+    });
 
-  if (!response.parsed_output) return [];
-  return response.parsed_output.guesses.map((g) => ({
-    canonicalItem: g.canonicalItem,
-    contribution: {
-      calories: g.calories,
-      proteinGrams: g.proteinGrams,
-      carbGrams: g.carbGrams,
-      fatGrams: g.fatGrams,
-      fiberGrams: g.fiberGrams,
-      sodiumMg: g.sodiumMg,
-    },
-  }));
+    if (!response.parsed_output) {
+      emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+        NUTRITION_GUESS_PROMPT_VERSION, model, "recipe-ingredients-v1", "rejected", response,
+      ));
+      return [];
+    }
+    const allowed = new Set(ingredients.map((ingredient) => canonicalize(ingredient.canonicalItem)));
+    const seen = new Set<string>();
+    const rounded = (value: number) => Math.round(value * 10) / 10;
+    const guesses = response.parsed_output.guesses.flatMap((guess) => {
+      const canonicalItem = canonicalize(guess.canonicalItem);
+      if (!allowed.has(canonicalItem) || seen.has(canonicalItem)) return [];
+      seen.add(canonicalItem);
+      return [{
+        canonicalItem,
+        contribution: {
+          calories: rounded(guess.calories),
+          proteinGrams: rounded(guess.proteinGrams),
+          carbGrams: rounded(guess.carbGrams),
+          fatGrams: rounded(guess.fatGrams),
+          fiberGrams: rounded(guess.fiberGrams),
+          sodiumMg: rounded(guess.sodiumMg),
+        },
+      }];
+    });
+    emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+      NUTRITION_GUESS_PROMPT_VERSION,
+      model,
+      "recipe-ingredients-v1",
+      guesses.length > 0 ? "passed" : "rejected",
+      response,
+    ));
+    return guesses;
+  } catch (error) {
+    emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+      NUTRITION_GUESS_PROMPT_VERSION, model, "recipe-ingredients-v1", "rejected",
+    ));
+    throw error;
+  }
 }

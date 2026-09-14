@@ -2,6 +2,32 @@
 
 Feature-by-feature documentation. For layout and getting started, see the [README](../README.md); for deploying, see [DEPLOYMENT.md](DEPLOYMENT.md).
 
+## Generated content policy
+
+Every model-backed path sends the Skald & Stone runtime standard from the
+Savortome backend. The current policy is `sands-generated-content-v1`; product
+prompts are separately versioned for recipe extraction, pantry-query parsing,
+receipt review, nutrition estimates, and web recipe search. Source text,
+transcripts, photos, search results, and user requests are treated as untrusted
+data rather than instructions.
+
+Provider output is accepted only through a structured schema or a narrower
+validated boundary. The backend records policy version, product prompt version,
+provider model and response identifier, token usage when supplied, generation
+time, a non-content source reference, and the validation result. Prompts,
+uploaded images, account data, API keys, and generated answers are never written
+to this telemetry.
+
+Generated recipe and receipt content remains subject to human review. Nutrition
+guesses are visibly estimates and only fill gaps left by USDA. Allergen matching
+is a keyword warning and never a safety certification. Pantry-query generation
+falls back to the deterministic ingredient parser, and web search falls back to
+validated search-index order when the model supplies no usable ranking. ASR
+providers do not accept developer instructions; their bounded, sanitized text is
+never rendered directly and enters the recipe extractor as untrusted source
+material. The detailed audit and known limits are in
+[GENERATED-CONTENT-REVIEW.md](GENERATED-CONTENT-REVIEW.md).
+
 ## How an import actually runs
 
 The pipeline tries the cheapest path that can work, and tells you which one it

@@ -5,6 +5,7 @@ import type {
   RecipeNutrition,
   SourceKind,
 } from "../recipe.js";
+import type { GenerationAuditSink } from "../generated-content.js";
 
 /**
  * Whatever we managed to pull out of a URL before any model is involved.
@@ -64,6 +65,7 @@ export interface ResolveOptions {
    */
   forceTranscript?: boolean;
   signal?: AbortSignal;
+  onGenerationAudit?: GenerationAuditSink;
 }
 
 export class ResolveError extends Error {

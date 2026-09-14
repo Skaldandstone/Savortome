@@ -1,6 +1,7 @@
 import { interpretPantryQuery, type PantryQuery } from "@seconds/core";
 import { listPantry, searchByPantry } from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
+import { recordGenerationAudit } from "@/lib/generation-audit";
 
 // Interpreting a query can call the model, so this needs the Node runtime.
 export const runtime = "nodejs";
@@ -23,7 +24,9 @@ export async function POST(request: Request) {
     let note: string | undefined;
 
     if (text) {
-      ({ query, interpreted, note } = await interpretPantryQuery(text));
+      ({ query, interpreted, note } = await interpretPantryQuery(text, {
+        onGenerationAudit: recordGenerationAudit,
+      }));
     } else {
       query = {
         ingredients: [],

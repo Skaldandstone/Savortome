@@ -3,8 +3,16 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { canonicalize } from "./units.js";
 import type { PhotoMediaType } from "./recipe.js";
+import {
+  emitGenerationAudit,
+  generatedContentSystem,
+  generationAudit,
+  sanitizeGeneratedText,
+  type GenerationAuditSink,
+} from "./generated-content.js";
 
 export const RECEIPT_EXTRACTION_MODEL = "claude-opus-5";
+export const RECEIPT_EXTRACTION_PROMPT_VERSION = "savortome-receipt-extraction-v2";
 
 const ReceiptSchema = z.object({
   store: z.string().trim().max(120).nullable(),
@@ -34,31 +42,62 @@ Exclude prices, subtotals, taxes, discounts, loyalty identifiers, payment detail
 export async function extractReceiptPhoto(
   base64: string,
   mediaType: PhotoMediaType,
-  opts: { client?: Anthropic; model?: string; signal?: AbortSignal } = {},
+  opts: {
+    client?: Anthropic;
+    model?: string;
+    signal?: AbortSignal;
+    onGenerationAudit?: GenerationAuditSink;
+  } = {},
 ): Promise<ReceiptExtraction> {
   const client = opts.client ?? new Anthropic();
+  const model = opts.model ?? RECEIPT_EXTRACTION_MODEL;
   try {
     const response = await client.messages.parse({
-      model: opts.model ?? RECEIPT_EXTRACTION_MODEL,
+      model,
       max_tokens: 4_000,
-      system: SYSTEM,
+      system: generatedContentSystem(SYSTEM, RECEIPT_EXTRACTION_PROMPT_VERSION),
       output_config: { format: zodOutputFormat(ReceiptSchema), effort: "low" },
       messages: [{ role: "user", content: [
         { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
         { type: "text", text: "Extract the grocery items for a mandatory human review. Do not include any other receipt data." },
       ] }],
     }, { signal: opts.signal });
-    if (response.stop_reason === "refusal") throw new ReceiptExtractionError("The receipt could not be processed. You can add the items manually.");
-    if (!response.parsed_output || response.parsed_output.items.length === 0) throw new ReceiptExtractionError("No grocery items were found. Try a clearer photo or add them manually.");
+    if (response.stop_reason === "refusal") {
+      emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+        RECEIPT_EXTRACTION_PROMPT_VERSION, model, "receipt-photo-v1", "rejected", response,
+      ));
+      throw new ReceiptExtractionError("The receipt could not be processed. You can add the items manually.");
+    }
+    if (!response.parsed_output || response.parsed_output.items.length === 0) {
+      emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+        RECEIPT_EXTRACTION_PROMPT_VERSION, model, "receipt-photo-v1", "rejected", response,
+      ));
+      throw new ReceiptExtractionError("No grocery items were found. Try a clearer photo or add them manually.");
+    }
+    const seen = new Set<string>();
     const items = response.parsed_output.items.map(item => ({
-      canonicalItem: canonicalize(item.displayName),
-      displayName: item.displayName.trim(),
+      canonicalItem: canonicalize(sanitizeGeneratedText(item.displayName, 120)),
+      displayName: sanitizeGeneratedText(item.displayName, 120),
       quantity: item.quantity,
-      unit: item.unit?.trim() || null,
-    })).filter(item => item.canonicalItem.length > 0);
-    if (items.length === 0) throw new ReceiptExtractionError("No grocery items were found. Try a clearer photo or add them manually.");
+      unit: item.unit ? sanitizeGeneratedText(item.unit, 40) || null : null,
+    })).filter(item => {
+      if (!item.canonicalItem || seen.has(item.canonicalItem)) return false;
+      seen.add(item.canonicalItem);
+      return true;
+    });
+    if (items.length === 0) {
+      emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+        RECEIPT_EXTRACTION_PROMPT_VERSION, model, "receipt-photo-v1", "rejected", response,
+      ));
+      throw new ReceiptExtractionError("No grocery items were found. Try a clearer photo or add them manually.");
+    }
+    emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+      RECEIPT_EXTRACTION_PROMPT_VERSION, model, "receipt-photo-v1", "passed", response,
+    ));
     return {
-      sourceLabel: response.parsed_output.store?.trim() || null,
+      sourceLabel: response.parsed_output.store
+        ? sanitizeGeneratedText(response.parsed_output.store, 120) || null
+        : null,
       items,
     };
   } catch (error) {

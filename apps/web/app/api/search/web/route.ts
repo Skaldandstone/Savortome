@@ -8,6 +8,7 @@ import {
 import { db } from "@seconds/db";
 import { errorResponse } from "@/lib/api";
 import { databaseConfigured, requireUserId } from "@/lib/session";
+import { recordGenerationAudit } from "@/lib/generation-audit";
 
 /**
  * Recipe pages from the open web, for the moment your collection and the
@@ -56,7 +57,7 @@ export async function GET(request: Request) {
   try {
     return NextResponse.json<WebRecipeSearchResponse>({
       query,
-      hits: await searchWebRecipes(query),
+      hits: await searchWebRecipes(query, { onGenerationAudit: recordGenerationAudit }),
     });
   } catch (err) {
     if (err instanceof WebSearchError) {

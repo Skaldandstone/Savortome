@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { needsInterpretation, parseQueryLocally } from "../src/pantry-query.js";
+import type Anthropic from "@anthropic-ai/sdk";
+import { interpretPantryQuery, needsInterpretation, parseQueryLocally } from "../src/pantry-query.js";
 
 describe("needsInterpretation", () => {
   it("treats a comma-separated list as a plain ingredient list", () => {
@@ -33,6 +34,60 @@ describe("needsInterpretation", () => {
     assert.equal(needsInterpretation(""), false);
     assert.equal(needsInterpretation("   "), false);
   });
+});
+
+it("sends the product standard and validates model filters before use", async () => {
+  let body: Record<string, unknown> = {};
+  const audits: { validation: string }[] = [];
+  const client = {
+    messages: {
+      parse: async (request: Record<string, unknown>) => {
+        body = request;
+        return {
+          id: "msg_pantry",
+          model: "claude-opus-5",
+          usage: { input_tokens: 10, output_tokens: 5 },
+          stop_reason: "end_turn",
+          parsed_output: {
+            ingredients: ["Chicken Thighs"],
+            excludeIngredients: [],
+            tags: ["#Quick"],
+            maxMinutes: 30,
+            course: "dinner",
+          },
+        };
+      },
+    },
+  } as unknown as Anthropic;
+
+  const result = await interpretPantryQuery("quick dinner with chicken thighs", {
+    client,
+    onGenerationAudit: (audit) => audits.push(audit),
+  });
+  const system = body.system as { text: string }[];
+  assert.match(system[0]!.text, /sands-generated-content-v1/);
+  assert.deepEqual(result.query.ingredients, ["chicken thigh"]);
+  assert.equal(result.interpreted, true);
+  assert.equal(audits[0]?.validation, "passed");
+});
+
+it("falls back deterministically when a generated filter is outside the allowlist", async () => {
+  const client = {
+    messages: {
+      parse: async () => ({
+        id: "msg_bad",
+        model: "claude-opus-5",
+        usage: { input_tokens: 1, output_tokens: 1 },
+        stop_reason: "end_turn",
+        parsed_output: {
+          ingredients: ["chicken"], excludeIngredients: [], tags: [], maxMinutes: 30, course: "brunch",
+        },
+      }),
+    },
+  } as unknown as Anthropic;
+  const result = await interpretPantryQuery("quick brunch with chicken", { client });
+  assert.equal(result.interpreted, false);
+  assert.ok(result.query.ingredients.length > 0);
 });
 
 describe("parseQueryLocally", () => {

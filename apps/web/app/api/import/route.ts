@@ -21,6 +21,7 @@ import {
 import { canSpendCredit, creditsFor, db, ensureInitialStatus, saveRecipe, spendCredit } from "@seconds/db";
 import { errorResponse } from "@/lib/api";
 import { databaseConfigured, requireUserId } from "@/lib/session";
+import { recordGenerationAudit } from "@/lib/generation-audit";
 
 // yt-dlp, cheerio, and DNS lookups all need the Node runtime, not Edge.
 export const runtime = "nodejs";
@@ -100,7 +101,7 @@ export async function POST(request: Request) {
     }
 
     const doc = url
-      ? await resolveSource(url)
+      ? await resolveSource(url, { onGenerationAudit: recordGenerationAudit })
       : imageBase64
         ? photoSource(imageBase64, body.imageMediaType as PhotoMediaType, body.title)
         : textSource(text as string, body.title);
@@ -125,6 +126,7 @@ export async function POST(request: Request) {
     result = await ingestDocument(doc, {
       forceModel: body.forceModel,
       ...(url ? {} : { title: body.title }),
+      onGenerationAudit: recordGenerationAudit,
     });
   } catch (err) {
     return NextResponse.json(errorPayload(err), { status: statusFor(err) });

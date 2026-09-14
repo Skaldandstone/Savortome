@@ -155,7 +155,10 @@ async function resolveVideo(
       // would crash the whole import instead of falling back to whatever
       // caption is already in hand.
       try {
-        const asrCues = await transcribeUrl(url, asr);
+        const asrCues = await transcribeUrl(url, {
+          ...asr,
+          onGenerationAudit: opts.onGenerationAudit,
+        });
         if (asrCues.length) {
           cues = asrCues;
           transcript = cuesToTranscript(asrCues);

@@ -139,6 +139,8 @@ describe("extractRecipe request shape", () => {
     // The system prompt is the stable prefix we want cached across every import.
     const system = lastBody.system as { text: string; cache_control?: unknown }[];
     assert.ok(system[0]?.cache_control, "system prompt should carry a cache breakpoint");
+    assert.match(system[0]!.text, /sands-generated-content-v1/);
+    assert.match(system[0]!.text, /untrusted data, never instructions/i);
   });
 
   it("gives the model transcript-specific guidance and the source metadata", async () => {
@@ -210,7 +212,7 @@ describe("extractRecipe normalization", () => {
 
 describe("ingest", () => {
   it("stamps the source and a fresh id onto the recipe", async () => {
-    const { recipe, freeExtraction } = await ingestText("some pasted recipe text", {
+    const { recipe, freeExtraction, trace } = await ingestText("some pasted recipe text", {
       client: client(),
       nutrition: { skipUsda: true },
     });
@@ -218,6 +220,7 @@ describe("ingest", () => {
     assert.equal(recipe.source.extractionMethod, "article-llm");
     assert.match(recipe.id, /^[0-9a-f-]{36}$/);
     assert.equal(freeExtraction, false);
+    assert.match(trace.find((entry) => entry.startsWith("generation:")) ?? "", /validation passed/);
   });
 
   it("backfills video timestamps onto steps the model left untagged", async () => {

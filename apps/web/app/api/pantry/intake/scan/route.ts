@@ -10,6 +10,7 @@ import {
 import { createPantryIntake, listPendingPantryIntakes } from "@seconds/db";
 import { BadRequestError, readJson, withUser } from "@/lib/api";
 import { NotConfiguredError } from "@/lib/session";
+import { recordGenerationAudit } from "@/lib/generation-audit";
 
 export const runtime = "nodejs";
 
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
     const extraction = await extractReceiptPhoto(
       body.imageBase64,
       body.imageMediaType as PhotoMediaType,
+      { onGenerationAudit: recordGenerationAudit },
     );
     const intake = await createPantryIntake(database, userId, parsePantryIntake({
       source: "receipt",
