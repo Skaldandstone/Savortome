@@ -4,6 +4,7 @@ import {
   ONBOARDING_STEPS,
   completeOnboardingStep,
   emptyOnboardingProgress,
+  onboardingStorageScope,
   readOnboardingProgress,
   revisitOnboardingStep,
 } from "../src/onboarding.js";
@@ -15,6 +16,14 @@ test("onboarding starts with one clear welcome step", () => {
     completed: [],
     finished: false,
   });
+});
+
+test("device onboarding scopes are stable without containing provider account ids", () => {
+  const first = onboardingStorageScope("user_alpha_private");
+  assert.equal(first, onboardingStorageScope("user_alpha_private"));
+  assert.notEqual(first, onboardingStorageScope("user_beta_private"));
+  assert.match(first, /^[0-9a-f]{32}$/);
+  assert.equal(first.includes("user_alpha_private"), false);
 });
 
 test("onboarding advances deterministically and completes only every known step", () => {

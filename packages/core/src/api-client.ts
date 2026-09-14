@@ -77,6 +77,7 @@ import type { SharedRecipeView } from "./sharing.js";
 import type { PairingSuggestions } from "./pairing.js";
 import type { MealTemplate, TemplateRole } from "./template.js";
 import type { Allergen, DietaryProfile } from "./dietary.js";
+import type { CookProfile, CookTier, KitchenStock, SkillRatings } from "./cooking-skill.js";
 
 /**
  * One typed client for the Second Breakfast HTTP API, shared by both apps.
@@ -238,6 +239,8 @@ export interface SecondsClient {
   friends: () => Promise<FriendsOverview>;
   dietaryProfile: () => Promise<DietaryProfile>;
   setDietaryProfile: (profile: DietaryProfile) => Promise<DietaryProfile>;
+  cookingProfile: () => Promise<CookProfile>;
+  setCookingProfile: (profile: { tier?: CookTier; stock?: KitchenStock; skills?: SkillRatings }) => Promise<CookProfile>;
   friendAllergens: (friendId: string) => Promise<{ allergens: Allergen[] } | null>;
   addFriend: (handle: string) => Promise<FriendsOverview>;
   updateFriendship: (
@@ -465,6 +468,11 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
 
     setDietaryProfile: (profile) =>
       send<DietaryProfile>("/api/profile/dietary", { method: "PUT", body: body(profile) }),
+
+    cookingProfile: () => send<CookProfile>("/api/profile/cooking"),
+
+    setCookingProfile: (profile) =>
+      send<CookProfile>("/api/profile/cooking", { method: "PATCH", body: body(profile) }),
 
     friendAllergens: async (friendId) => {
       try {

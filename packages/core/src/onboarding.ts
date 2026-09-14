@@ -61,6 +61,20 @@ export function revisitOnboardingStep(progress: OnboardingProgress, step: Onboar
   return { ...progress, current: step, finished: false };
 }
 
+/** Stable device-local account scope without writing a raw provider user ID. */
+export function onboardingStorageScope(accountId: string): string {
+  const seeds = [0x811c9dc5, 0x9e3779b9, 0x85ebca6b, 0xc2b2ae35];
+  return seeds.map((seed, lane) => {
+    let hash = seed;
+    for (let index = 0; index < accountId.length; index++) {
+      hash ^= accountId.charCodeAt(index) + lane * 131;
+      hash = Math.imul(hash, 0x01000193);
+      hash ^= hash >>> 13;
+    }
+    return (hash >>> 0).toString(16).padStart(8, "0");
+  }).join("");
+}
+
 function firstIncomplete(completed: readonly OnboardingStep[]): OnboardingStep {
   return ONBOARDING_STEPS.find(step => !completed.includes(step)) ?? "cooking";
 }

@@ -1048,5 +1048,14 @@ but remain incomplete metadata, so the interface retains the full ingredient
 and packaging disclaimer. A person chooses the meal slot and confirms before
 anything is written to the plan.
 
+The native app exposes the progressive getting-started guide from its woodland
+welcome surface. Its three sections mirror web: begin with one useful task,
+understand the dietary and allergen boundary, then optionally describe how
+cooking feels. The cooking section saves the approved one-tap tier before
+revealing optional skill and kitchen questions. It uses the authenticated,
+account-pinned API client. Device progress stores only onboarding navigation
+under a derived account scope, never a raw provider ID, food choice, pantry
+item, dietary value, allergen, or health detail.
+
 ---
 

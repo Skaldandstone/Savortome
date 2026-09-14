@@ -8,15 +8,18 @@ import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const built = await build({ absWorkingDir:root, bundle:true,write:false,platform:'node',format:'iife',globalName:'native',jsx:'automatic',
-  stdin:{resolveDir:root,contents:`export * from './apps/mobile/modules/woodland/Artwork.tsx'; export * from './apps/mobile/modules/care/CareIdeaCard.tsx'; export * from './apps/mobile/modules/woodland/KitchenWelcome.tsx'; export * from './apps/mobile/modules/pantry/PantryChips.tsx'; export * from './apps/mobile/modules/pantry/PantryReviewQueue.tsx'; export {CARE_FOODS as TEST_CARE_FOODS} from './packages/core/src/care.ts'; export {light,dark} from './apps/mobile/ui/theme.ts';`},
+  stdin:{resolveDir:root,contents:`export * from './apps/mobile/modules/woodland/Artwork.tsx'; export * from './apps/mobile/modules/care/CareIdeaCard.tsx'; export * from './apps/mobile/modules/woodland/KitchenWelcome.tsx'; export * from './apps/mobile/modules/pantry/PantryChips.tsx'; export * from './apps/mobile/modules/pantry/PantryReviewQueue.tsx'; export * from './apps/mobile/modules/onboarding/OnboardingJourney.tsx'; export {CARE_FOODS as TEST_CARE_FOODS} from './packages/core/src/care.ts'; export {light,dark} from './apps/mobile/ui/theme.ts';`},
   plugins:[{name:'native-boundaries',setup(api){
     const stubs={
-      'react':`export const useState = initial => {const slot=state.cursor++;if(!(slot in state.values))state.values[slot]=typeof initial==='function'?initial():initial;return [state.values[slot],value=>{state.values[slot]=typeof value==='function'?value(state.values[slot]):value;}];};`,
+      'react':`export const useState = initial => {const slot=state.cursor++;if(!(slot in state.values))state.values[slot]=typeof initial==='function'?initial():initial;return [state.values[slot],value=>{state.values[slot]=typeof value==='function'?value(state.values[slot]):value;}];};export const useMemo=fn=>fn();export const useEffect=fn=>state.effects.push(fn);export const useRef=value=>{const slot=state.cursor++;return state.refs[slot]??=( {current:value} );};`,
       'react/jsx-runtime':`export const jsx = (type,props)=>({type,props});export const jsxs=jsx;export const Fragment='Fragment';`,
-      'react-native':`export const Image='Image',Text='Text',View='View',Pressable='Pressable',Switch='Switch';export const Linking={openURL:url=>state.links.push(url)};export const useWindowDimensions=()=>({width:state.width,fontScale:state.fontScale});export const StyleSheet={create:x=>x,absoluteFill:{position:'absolute',top:0,left:0,right:0,bottom:0}};`,
-      '@/ui':`export * from '${root.replaceAll('\\','/') + 'apps/mobile/ui/theme.ts'}';export const usePalette=()=>state.palette;export const Button='Button',Field='Field';`,
+      'react-native':`export const Image='Image',Text='Text',View='View',Pressable='Pressable',Switch='Switch',ScrollView='ScrollView';export const Linking={openURL:url=>state.links.push(url)};export const useWindowDimensions=()=>({width:state.width,fontScale:state.fontScale});export const StyleSheet={create:x=>x,absoluteFill:{position:'absolute',top:0,left:0,right:0,bottom:0}};`,
+      '@/ui':`export * from '${root.replaceAll('\\','/') + 'apps/mobile/ui/theme.ts'}';export const usePalette=()=>state.palette;export const Button='Button',Field='Field',Callout='Callout',Panel='Panel';`,
       '@/ui/ThemeProvider':`export const useDecoration=()=>({reduced:state.reduced,toggle:()=>{state.reduced=!state.reduced;}});export const PaletteScope='PaletteScope';`,
-      'expo-router':`export const useRouter=()=>({push:path=>state.navigation.push(path)});`,
+      'expo-router':`export const useRouter=()=>({push:path=>state.navigation.push(path),replace:path=>state.navigation.push(path)});`,
+      '@clerk/expo':`export const useAuth=()=>({userId:state.userId});`,
+      '@react-native-async-storage/async-storage':`export default {getItem:key=>Promise.resolve(state.storage.get(key)??null),setItem:(key,value)=>{state.storage.set(key,value);return Promise.resolve();}};`,
+      '@/lib/client':`export const createAccountClient=()=>state.accountClient;`,
     };
     api.onResolve({filter:/.*/},args=>{
       if(Object.hasOwn(stubs,args.path))return {path:args.path,namespace:'fixture'};
@@ -28,7 +31,7 @@ const built = await build({ absWorkingDir:root, bundle:true,write:false,platform
   }}],
 });
 function fixture({beta=true,reduced=false,fontScale=1}={}){
-  const state={reduced,fontScale,width:390,cursor:0,values:[],navigation:[],links:[],palette:{surface:'#191e1b',surfaceSunken:'#222620',accentSoft:'#393227',text:'#eddfc5',textMuted:'#c0af92',border:'#766347',accent:'#e1ba7d',warn:'#edc986'}};
+  const state={reduced,fontScale,width:390,cursor:0,values:[],refs:[],effects:[],navigation:[],links:[],storage:new Map(),userId:'user_fixture_private',accountClient:{cookingProfile:async()=>({}),setCookingProfile:async update=>update},palette:{surface:'#191e1b',surfaceSunken:'#222620',accentSoft:'#393227',text:'#eddfc5',textMuted:'#c0af92',border:'#766347',accent:'#e1ba7d',warn:'#edc986'}};
   const context={state,process:{env:{EXPO_PUBLIC_WOODLAND_BETA:String(beta)}}};runInNewContext(built.outputFiles[0].text,context);
   state.palette=context.native.dark;
   return {state,api:context.native,render:(component,props)=>{state.cursor=0;return context.native[component](props);}};
@@ -74,6 +77,21 @@ test('paper applies readable ink while reduced decoration retains the selected p
 test('kitchen entry stays reachable with illustrations off',()=>{
   const f=fixture({reduced:true});const tree=f.render('KitchenWelcome',{});assert.equal(nodes(tree).some(n=>n.type==='Image'),false);
   const care=nodes(tree).find(n=>n.type==='Pressable');assert.ok(textOf(care).includes('Feed me gently'));care.props.onPress();assert.deepEqual(f.state.navigation,['/care']);
+});
+test('mobile onboarding starts with one useful choice and stores only progress under a scoped key',async()=>{
+  const f=fixture();let tree=f.render('OnboardingJourney',{});assert.match(textOf(tree),/Opening your getting-started guide/);
+  for(const effect of f.state.effects.splice(0))effect();await new Promise(resolve=>setTimeout(resolve,0));
+  tree=f.render('OnboardingJourney',{});const welcome=nodes(tree).find(n=>typeof n.type==='function'&&n.type.name==='WelcomeStep');const welcomeTree=welcome.type(welcome.props);
+  assert.match(textOf(welcomeTree),/What would make food easier today/);assert.ok(nodes(welcomeTree).some(n=>typeof n.type==='function'&&n.type.name==='Choice'&&n.props.title==='Feed me gently'));
+  nodes(welcomeTree).find(n=>n.type==='Button'&&n.props.label==='Continue').props.onPress();await new Promise(resolve=>setTimeout(resolve,0));
+  assert.equal([...f.state.storage.keys()].length,1);const [key]=f.state.storage.keys();assert.match(key,/^savortome:onboarding:v1:[0-9a-f]{32}$/);assert.equal(key.includes(f.state.userId),false);
+  tree=f.render('OnboardingJourney',{});const safety=nodes(tree).find(n=>typeof n.type==='function'&&n.type.name==='SafetyStep');assert.ok(safety);assert.match(textOf(safety.type(safety.props)),/cannot verify that a food is safe/i);
+});
+test('mobile cooking onboarding saves one tier before revealing optional details',async()=>{
+  const f=fixture();const writes=[];f.state.accountClient={cookingProfile:async()=>({}),setCookingProfile:async update=>{writes.push(update);return update;}};
+  let tree=f.render('CookingStep',{userId:f.state.userId,onDone(){}});for(const effect of f.state.effects.splice(0))effect();await new Promise(resolve=>setTimeout(resolve,0));tree=f.render('CookingStep',{userId:f.state.userId,onDone(){}});
+  assert.match(textOf(tree),/Suggestions can meet you where you are/);const tier=nodes(tree).find(n=>typeof n.type==='function'&&n.type.name==='Choice'&&n.props.title==='Curious Apprentice');tier.props.onPress();await new Promise(resolve=>setTimeout(resolve,0));
+  assert.deepEqual(JSON.parse(JSON.stringify(writes)),[{tier:'apprentice'}]);tree=f.render('CookingStep',{userId:f.state.userId,onDone(){}});assert.match(textOf(tree),/Optional details/);assert.match(textOf(tree),/Feed me gently stays separate/);
 });
 test('mobile pantry memory keeps correction actions named and guidance qualified',()=>{
   const f=fixture();const updates=[];const removals=[];const props={items:[{canonicalItem:'banana',displayName:'bananas',quantity:6,unit:null,isStaple:false,isUsual:false,storageLocation:'unknown',acquiredAt:'2026-09-01T00:00:00.000Z',lastConfirmedAt:null,updatedAt:'2026-09-01T00:00:00.000Z'}],onAdd(){},onUpdate:value=>updates.push(value),onRemove:value=>removals.push(value),onClear(){}};let tree=f.render('PantryChips',props);
