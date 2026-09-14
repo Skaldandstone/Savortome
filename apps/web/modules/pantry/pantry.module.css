@@ -155,5 +155,9 @@
 :global([data-woodland='true']) .coverage { white-space:normal; }
 @media(max-width:560px) { :global([data-woodland='true']) .matchRow { flex-wrap:wrap; } :global([data-woodland='true']) .match { flex-wrap:wrap; flex-basis:100%; } :global([data-woodland='true']) .thumb { width:54px; height:54px; } }
 @media(max-width:560px) { .pantryControls { align-items:stretch; } .pantryControls label { width:100%; justify-content:space-between; } .pantryControls select { flex:1; } }
+.promptActions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.amountEditor { display:flex; flex-wrap:wrap; align-items:flex-end; gap:.55rem; margin-top:.75rem; padding:.75rem; border:1px solid var(--border); background:var(--surface-sunken); }
+.amountEditor label { flex-basis:100%; font-weight:600; }
+.amountEditor input { width:9rem; min-height:44px; }
 :global([data-text-size='200']) :is(.matchRow,.match) { flex-wrap:wrap; }
 :global([data-text-size='200']) :is(.pantryItemHeading,.pantryControls) { align-items:stretch; flex-direction:column; }

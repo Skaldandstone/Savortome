@@ -560,6 +560,8 @@ export const pantryItems = pgTable(
     confidence: text("confidence").notNull().default("confirmed"),
     /** Provider order, receipt, or list reference. Never displayed as pantry copy. */
     sourceReference: text("source_reference"),
+    resurfaceAfter: timestamp("resurface_after", { withTimezone: true }),
+    resurfaceHidden: boolean("resurface_hidden").notNull().default(false),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.canonicalItem] })],

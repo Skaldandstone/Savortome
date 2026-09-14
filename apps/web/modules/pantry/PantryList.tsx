@@ -26,6 +26,21 @@ export function PantryList({
   onClear: () => void;
 }) {
   const [text, setText] = useState("");
+  const [editingAmount, setEditingAmount] = useState<string | null>(null);
+  const [remainingAmount, setRemainingAmount] = useState("");
+
+  const startAmountEdit = (item: PantryEntry) => {
+    setEditingAmount(item.canonicalItem);
+    setRemainingAmount(item.quantity === null ? "" : String(item.quantity));
+  };
+
+  const saveAmount = (item: PantryEntry) => {
+    const quantity = Number(remainingAmount);
+    if (!Number.isFinite(quantity) || quantity <= 0) return;
+    onUpdate({ canonicalItem: item.canonicalItem, quantity, unit: item.unit, confirmPresent: true });
+    setEditingAmount(null);
+    setRemainingAmount("");
+  };
 
   return (
     <>
@@ -75,6 +90,34 @@ export function PantryList({
 
                   {attention?.shouldResurface ? <p className={styles.attentionCopy}>{attention.message}</p> : null}
 
+                  {attention?.shouldResurface ? (
+                    <div className={styles.promptActions} aria-label={`Freshness prompt actions for ${item.displayName}`}>
+                      <Button type="button" variant="ghost" onClick={() => onUpdate({ canonicalItem: item.canonicalItem, confirmPresent: true })}>Yes, still here</Button>
+                      <Button type="button" variant="ghost" onClick={() => startAmountEdit(item)}>Used some</Button>
+                      <Button type="button" variant="ghost" onClick={() => onRemove(item.canonicalItem)}>All gone</Button>
+                      <Button type="button" variant="ghost" onClick={() => onUpdate({ canonicalItem: item.canonicalItem, snoozeDays: 3 })}>Remind me in 3 days</Button>
+                      <Button type="button" variant="ghost" onClick={() => onUpdate({ canonicalItem: item.canonicalItem, resurfaceHidden: true })}>Hide this suggestion</Button>
+                    </div>
+                  ) : null}
+
+                  {editingAmount === item.canonicalItem ? (
+                    <form className={styles.amountEditor} onSubmit={event => { event.preventDefault(); saveAmount(item); }}>
+                      <label htmlFor={`remaining-${item.canonicalItem}`}>How many {item.unit ? `${item.unit} ` : ""}remain?</label>
+                      <TextField
+                        id={`remaining-${item.canonicalItem}`}
+                        type="number"
+                        min="0.01"
+                        step="any"
+                        inputMode="decimal"
+                        value={remainingAmount}
+                        onChange={event => setRemainingAmount(event.target.value)}
+                        required
+                      />
+                      <Button type="submit" disabled={!Number.isFinite(Number(remainingAmount)) || Number(remainingAmount) <= 0}>Save amount</Button>
+                      <Button type="button" variant="ghost" onClick={() => setEditingAmount(null)}>Cancel</Button>
+                    </form>
+                  ) : null}
+
                   <div className={styles.pantryControls}>
                     <label>
                       <input
@@ -83,6 +126,14 @@ export function PantryList({
                         onChange={event => onUpdate({ canonicalItem: item.canonicalItem, isUsual: event.target.checked })}
                       />
                       I usually buy this
+                    </label>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={!(item.resurfaceHidden ?? false)}
+                        onChange={event => onUpdate({ canonicalItem: item.canonicalItem, resurfaceHidden: !event.target.checked })}
+                      />
+                      Show freshness prompts
                     </label>
                     <label>
                       Store in
@@ -100,9 +151,11 @@ export function PantryList({
                         <option value="freezer">Freezer</option>
                       </select>
                     </label>
-                    <Button type="button" variant="ghost" onClick={() => onUpdate({ canonicalItem: item.canonicalItem, confirmPresent: true })}>
-                      Still have this
-                    </Button>
+                    {!attention?.shouldResurface ? (
+                      <Button type="button" variant="ghost" onClick={() => onUpdate({ canonicalItem: item.canonicalItem, confirmPresent: true })}>
+                        Still have this
+                      </Button>
+                    ) : null}
                     <Button type="button" variant="ghost" onClick={() => onRemove(item.canonicalItem)} aria-label={`Remove ${item.displayName} from pantry`}>
                       Remove
                     </Button>

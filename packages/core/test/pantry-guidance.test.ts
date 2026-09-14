@@ -51,4 +51,18 @@ describe("pantryAttention", () => {
     assert.equal(result?.daysSinceKnown, null);
     assert.equal(result?.shouldResurface, false);
   });
+
+  it("honors a person's snooze and hidden preference without changing the quality estimate", () => {
+    const base = {
+      canonicalItem: "banana",
+      displayName: "bananas",
+      acquiredAt: "2026-09-01T12:00:00.000Z",
+    };
+    const snoozed = pantryAttention({ ...base, resurfaceAfter: "2026-09-16T12:00:00.000Z" }, now);
+    const hidden = pantryAttention({ ...base, resurfaceHidden: true }, now);
+    assert.equal(snoozed?.daysSinceKnown, 12);
+    assert.equal(snoozed?.shouldResurface, false);
+    assert.equal(hidden?.daysSinceKnown, 12);
+    assert.equal(hidden?.shouldResurface, false);
+  });
 });

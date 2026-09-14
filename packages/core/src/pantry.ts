@@ -29,6 +29,10 @@ export interface PantryEntry {
   source?: PantrySource;
   /** Imported suggestions remain reviewable until a person confirms them. */
   confidence?: PantryConfidence;
+  /** Earliest time an in-app quality prompt may reappear after a snooze. */
+  resurfaceAfter?: string | null;
+  /** Person-level dismissal of in-app quality prompts for this item. */
+  resurfaceHidden?: boolean;
   updatedAt?: string;
 }
 
@@ -61,6 +65,10 @@ export interface PantryEntryUpdate {
   storageLocation?: PantryStorageLocation;
   /** Records a fresh human confirmation without pretending the item was consumed. */
   confirmPresent?: boolean;
+  /** A bounded in-app snooze. This does not schedule a notification. */
+  snoozeDays?: 3 | 7 | 14;
+  /** Hide or restore in-app quality prompts for this item. */
+  resurfaceHidden?: boolean;
 }
 
 export class PantryValidationError extends Error {
@@ -105,6 +113,16 @@ export function parsePantryEntryUpdate(value: unknown): PantryEntryUpdate {
   if (Object.hasOwn(body, "confirmPresent")) {
     if (typeof body.confirmPresent !== "boolean") throw new PantryValidationError("Confirmation must be true or false.");
     update.confirmPresent = body.confirmPresent;
+  }
+  if (Object.hasOwn(body, "snoozeDays")) {
+    if (body.snoozeDays !== 3 && body.snoozeDays !== 7 && body.snoozeDays !== 14) {
+      throw new PantryValidationError("Choose a supported reminder delay.");
+    }
+    update.snoozeDays = body.snoozeDays;
+  }
+  if (Object.hasOwn(body, "resurfaceHidden")) {
+    if (typeof body.resurfaceHidden !== "boolean") throw new PantryValidationError("Freshness prompt setting must be true or false.");
+    update.resurfaceHidden = body.resurfaceHidden;
   }
   if (Object.keys(update).length === 1) throw new PantryValidationError("Choose something to update.");
   return update;

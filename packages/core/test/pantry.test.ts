@@ -244,18 +244,24 @@ describe("parsePantryEntryUpdate", () => {
       isUsual: true,
       storageLocation: "countertop",
       confirmPresent: true,
+      snoozeDays: 3,
+      resurfaceHidden: false,
       diagnosis: "must not cross the boundary",
     }), {
       canonicalItem: "banana",
       isUsual: true,
       storageLocation: "countertop",
       confirmPresent: true,
+      snoozeDays: 3,
+      resurfaceHidden: false,
     });
   });
 
   it("rejects malformed quantities, locations, and empty updates", () => {
     assert.throws(() => parsePantryEntryUpdate({ canonicalItem: "banana", quantity: -1 }), /zero or more/);
     assert.throws(() => parsePantryEntryUpdate({ canonicalItem: "banana", storageLocation: "garage" }), /known storage/);
+    assert.throws(() => parsePantryEntryUpdate({ canonicalItem: "banana", snoozeDays: 365 }), /supported reminder/);
+    assert.throws(() => parsePantryEntryUpdate({ canonicalItem: "banana", resurfaceHidden: "no" }), /true or false/);
     assert.throws(() => parsePantryEntryUpdate({ canonicalItem: "banana" }), /something to update/);
   });
 });

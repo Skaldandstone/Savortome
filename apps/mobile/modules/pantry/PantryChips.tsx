@@ -27,7 +27,20 @@ export function PantryChips({ items, onAdd, onUpdate, onRemove, onClear }: {
 }) {
   const c = usePalette();
   const [text, setText] = useState("");
+  const [editingAmount, setEditingAmount] = useState<string | null>(null);
+  const [remainingAmount, setRemainingAmount] = useState("");
   const submit = () => { if (text.trim()) { onAdd(text); setText(""); } };
+  const startAmountEdit = (item: PantryEntry) => {
+    setEditingAmount(item.canonicalItem);
+    setRemainingAmount(item.quantity === null ? "" : String(item.quantity));
+  };
+  const saveAmount = (item: PantryEntry) => {
+    const quantity = Number(remainingAmount);
+    if (!Number.isFinite(quantity) || quantity <= 0) return;
+    onUpdate({ canonicalItem: item.canonicalItem, quantity, unit: item.unit, confirmPresent: true });
+    setEditingAmount(null);
+    setRemainingAmount("");
+  };
 
   return (
     <View style={styles.wrap}>
@@ -50,10 +63,15 @@ export function PantryChips({ items, onAdd, onUpdate, onRemove, onClear }: {
               </View>
               <Button label={`Remove ${item.displayName}`} accessibilityLabel={`Remove ${item.displayName}`} variant="ghost" onPress={() => onRemove(item.canonicalItem)} />
             </View>
-            {attention?.shouldResurface ? <Text accessibilityRole="alert" style={[styles.reminder, { color: c.warn }]}>{attention.message}</Text> : null}
+            {attention?.shouldResurface ? <><Text accessibilityRole="alert" style={[styles.reminder, { color: c.warn }]}>{attention.message}</Text><View style={styles.promptActions}><Button label="Yes, still here" variant="ghost" onPress={() => onUpdate({ canonicalItem: item.canonicalItem, confirmPresent: true })} /><Button label="Used some" variant="ghost" onPress={() => startAmountEdit(item)} /><Button label="All gone" variant="ghost" onPress={() => onRemove(item.canonicalItem)} /><Button label="Remind me in 3 days" variant="ghost" onPress={() => onUpdate({ canonicalItem: item.canonicalItem, snoozeDays: 3 })} /><Button label="Hide this suggestion" variant="ghost" onPress={() => onUpdate({ canonicalItem: item.canonicalItem, resurfaceHidden: true })} /></View></> : null}
+            {editingAmount === item.canonicalItem ? <View style={[styles.amountEditor, { backgroundColor: c.surfaceSunken, borderColor: c.border }]}><Text style={[styles.label, { color: c.text }]}>How many {item.unit ? `${item.unit} ` : ""}remain?</Text><Field value={remainingAmount} onChangeText={setRemainingAmount} keyboardType="decimal-pad" accessibilityLabel={`Remaining amount of ${item.displayName}`} style={styles.amountInput} /><View style={styles.promptActions}><Button label="Save amount" disabled={!Number.isFinite(Number(remainingAmount)) || Number(remainingAmount) <= 0} onPress={() => saveAmount(item)} /><Button label="Cancel amount change" variant="ghost" onPress={() => setEditingAmount(null)} /></View></View> : null}
             <View style={styles.usualRow}>
               <Text style={[styles.body, { color: c.text }]}>Usually keep this</Text>
               <Switch accessibilityLabel={`Usually keep ${item.displayName}`} value={item.isUsual ?? false} onValueChange={isUsual => onUpdate({ canonicalItem: item.canonicalItem, isUsual })} />
+            </View>
+            <View style={styles.usualRow}>
+              <Text style={[styles.body, { color: c.text }]}>Show freshness prompts</Text>
+              <Switch accessibilityLabel={`Show freshness prompts for ${item.displayName}`} value={!(item.resurfaceHidden ?? false)} onValueChange={value => onUpdate({ canonicalItem: item.canonicalItem, resurfaceHidden: !value })} />
             </View>
             <Text style={[styles.label, { color: c.textMuted }]}>Stored in</Text>
             <View accessibilityRole="radiogroup" style={styles.storage}>
@@ -76,5 +94,5 @@ export function PantryChips({ items, onAdd, onUpdate, onRemove, onClear }: {
 const styles = StyleSheet.create({
   wrap: { gap: space.md }, addRow: { flexDirection: "row", alignItems: "center", gap: space.sm }, input: { flex: 1 }, empty: { fontSize: typeScale.small, lineHeight: 19 },
   item: { gap: space.sm, borderWidth: 1, borderRadius: radius.md, padding: space.md }, itemHeading: { flexDirection: "row", alignItems: "flex-start", gap: space.sm }, itemName: { flex: 1 }, name: { fontSize: typeScale.title, fontWeight: "700" }, amount: { marginTop: 2, fontSize: typeScale.small },
-  body: { fontSize: typeScale.small, lineHeight: 19 }, label: { fontSize: typeScale.micro, fontWeight: "700" }, reminder: { fontSize: typeScale.small, lineHeight: 19, fontWeight: "600" }, usualRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 44 }, storage: { flexDirection: "row", flexWrap: "wrap", gap: 6 }, storageChoice: { minHeight: 44, justifyContent: "center", borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: 10 }, confirm: { alignSelf: "flex-start" }, guidance: { gap: 5, padding: space.sm, borderRadius: radius.sm }, source: { fontSize: typeScale.micro, lineHeight: 17 }, boundary: { fontSize: typeScale.micro, lineHeight: 17 },
+  body: { fontSize: typeScale.small, lineHeight: 19 }, label: { fontSize: typeScale.micro, fontWeight: "700" }, reminder: { fontSize: typeScale.small, lineHeight: 19, fontWeight: "600" }, promptActions: { flexDirection: "row", flexWrap: "wrap", gap: space.sm }, amountEditor: { gap: space.sm, borderWidth: 1, borderRadius: radius.sm, padding: space.sm }, amountInput: { minHeight: 44 }, usualRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 44 }, storage: { flexDirection: "row", flexWrap: "wrap", gap: 6 }, storageChoice: { minHeight: 44, justifyContent: "center", borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: 10 }, confirm: { alignSelf: "flex-start" }, guidance: { gap: 5, padding: space.sm, borderRadius: radius.sm }, source: { fontSize: typeScale.micro, lineHeight: 17 }, boundary: { fontSize: typeScale.micro, lineHeight: 17 },
 });

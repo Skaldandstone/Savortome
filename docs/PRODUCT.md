@@ -1025,7 +1025,12 @@ Perishable produce may be resurfaced when it is commonly easy to forget or may
 be approaching a useful cooking window. The copy asks the person to check what
 they still have and offers relevant recipes; it does not diagnose a nutritional
 need or claim that an item has spoiled. Storage tips are limited to reviewed
-guidance with a visible source link.
+guidance with a visible source link. Every in-app freshness prompt can be
+answered with **Yes, still here**, **Used some**, **All gone**, **Remind me in
+3 days**, or **Hide this suggestion**. A reduced amount is reviewed and saved
+explicitly, while confirmation, snooze, and hidden state are account scoped.
+Confirming an item clears an old snooze or dismissal. These controls do not
+schedule a notification or request notification permission.
 
 Receipt and grocery-order data enters a pending review queue. A person must
 select and confirm the items that actually came home before any pantry quantity

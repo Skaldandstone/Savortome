@@ -50,6 +50,9 @@ test("pantry memory migration and writes preserve owner isolation and human choi
     const migration = readFileSync(new URL("../migrations/0018_loose_switch.sql", import.meta.url), "utf8")
       .replaceAll("--> statement-breakpoint", "");
     await pg.exec(migration);
+    const reminderMigration = readFileSync(new URL("../migrations/0019_nosy_warstar.sql", import.meta.url), "utf8")
+      .replaceAll("--> statement-breakpoint", "");
+    await pg.exec(reminderMigration);
 
     const database = drizzle(pg, { schema }) as unknown as Parameters<typeof addPantryItems>[0];
     await addPantryItems(database, A, [{
@@ -77,6 +80,19 @@ test("pantry memory migration and writes preserve owner isolation and human choi
     assert.equal(mine[0]?.quantity, 4);
     assert.equal(mine[0]?.isUsual, true);
     assert.equal(mine[0]?.storageLocation, "countertop");
+
+    await updatePantryItem(database, A, { canonicalItem: "banana", snoozeDays: 3 });
+    mine = await listPantry(database, A);
+    assert.ok(Date.parse(mine[0]?.resurfaceAfter ?? "") > Date.now());
+    assert.equal(mine[0]?.resurfaceHidden, false);
+    await updatePantryItem(database, A, { canonicalItem: "banana", resurfaceHidden: true });
+    mine = await listPantry(database, A);
+    assert.equal(mine[0]?.resurfaceAfter, null);
+    assert.equal(mine[0]?.resurfaceHidden, true);
+    await updatePantryItem(database, A, { canonicalItem: "banana", confirmPresent: true });
+    mine = await listPantry(database, A);
+    assert.equal(mine[0]?.resurfaceHidden, false);
+    assert.equal(mine[0]?.resurfaceAfter, null);
 
     const theirs = await listPantry(database, B);
     assert.equal(theirs[0]?.quantity, 2);

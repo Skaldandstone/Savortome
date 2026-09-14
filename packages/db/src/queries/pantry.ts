@@ -40,6 +40,8 @@ export async function listPantry(database: Database, userId: string): Promise<Pa
     lastConfirmedAt: r.lastConfirmedAt?.toISOString() ?? null,
     source: r.source as PantryEntry["source"],
     confidence: r.confidence as PantryEntry["confidence"],
+    resurfaceAfter: r.resurfaceAfter?.toISOString() ?? null,
+    resurfaceHidden: r.resurfaceHidden,
     updatedAt: r.updatedAt.toISOString(),
   }));
 }
@@ -102,6 +104,16 @@ export async function updatePantryItem(
   if (update.confirmPresent) {
     set.lastConfirmedAt = new Date();
     set.confidence = "confirmed";
+    set.resurfaceAfter = null;
+    set.resurfaceHidden = false;
+  }
+  if (update.snoozeDays) {
+    set.resurfaceAfter = new Date(Date.now() + update.snoozeDays * 86_400_000);
+    set.resurfaceHidden = false;
+  }
+  if ("resurfaceHidden" in update) {
+    set.resurfaceHidden = update.resurfaceHidden;
+    if (update.resurfaceHidden) set.resurfaceAfter = null;
   }
 
   await database

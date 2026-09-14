@@ -134,6 +134,13 @@
       "when": 1789327361392,
       "tag": "0018_loose_switch",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789329694317,
+      "tag": "0019_nosy_warstar",
+      "breakpoints": true
     }
   ]
 }

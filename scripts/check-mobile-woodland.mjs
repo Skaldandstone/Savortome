@@ -76,12 +76,19 @@ test('kitchen entry stays reachable with illustrations off',()=>{
   const care=nodes(tree).find(n=>n.type==='Pressable');assert.ok(textOf(care).includes('Feed me gently'));care.props.onPress();assert.deepEqual(f.state.navigation,['/care']);
 });
 test('mobile pantry memory keeps correction actions named and guidance qualified',()=>{
-  const f=fixture();const updates=[];const tree=f.render('PantryChips',{items:[{canonicalItem:'banana',displayName:'bananas',quantity:6,unit:null,isStaple:false,isUsual:false,storageLocation:'unknown',acquiredAt:'2026-09-01T00:00:00.000Z',lastConfirmedAt:null,updatedAt:'2026-09-01T00:00:00.000Z'}],onAdd(){},onUpdate:value=>updates.push(value),onRemove(){},onClear(){}});
+  const f=fixture();const updates=[];const removals=[];const props={items:[{canonicalItem:'banana',displayName:'bananas',quantity:6,unit:null,isStaple:false,isUsual:false,storageLocation:'unknown',acquiredAt:'2026-09-01T00:00:00.000Z',lastConfirmedAt:null,updatedAt:'2026-09-01T00:00:00.000Z'}],onAdd(){},onUpdate:value=>updates.push(value),onRemove:value=>removals.push(value),onClear(){}};let tree=f.render('PantryChips',props);
   const content=textOf(tree);assert.match(content,/not expiry or food-safety guarantees/i);assert.match(content,/USDA produce storage guidance/);
   const usual=nodes(tree).find(n=>n.type==='Switch');assert.match(usual.props.accessibilityLabel,/Usually keep bananas/);usual.props.onValueChange(true);
   const fridge=nodes(tree).find(n=>n.type==='Pressable'&&n.props.accessibilityLabel==='bananas: Fridge');assert.equal(fridge.props.accessibilityRole,'radio');fridge.props.onPress();
   const confirm=nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Still have bananas');confirm.props.onPress();
-  assert.deepEqual(JSON.parse(JSON.stringify(updates)),[{canonicalItem:'banana',isUsual:true},{canonicalItem:'banana',storageLocation:'refrigerator'},{canonicalItem:'banana',confirmPresent:true}]);
+  const promptSwitch=nodes(tree).find(n=>n.type==='Switch'&&/freshness prompts/.test(n.props.accessibilityLabel));promptSwitch.props.onValueChange(false);
+  nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Used some').props.onPress();tree=f.render('PantryChips',props);
+  nodes(tree).find(n=>n.type==='Field'&&n.props.accessibilityLabel==='Remaining amount of bananas').props.onChangeText('4');tree=f.render('PantryChips',props);
+  nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Save amount').props.onPress();
+  nodes(tree).find(n=>n.type==='Button'&&n.props.label==='All gone').props.onPress();
+  nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Remind me in 3 days').props.onPress();
+  nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Hide this suggestion').props.onPress();
+  assert.deepEqual(JSON.parse(JSON.stringify(updates)),[{canonicalItem:'banana',isUsual:true},{canonicalItem:'banana',storageLocation:'refrigerator'},{canonicalItem:'banana',confirmPresent:true},{canonicalItem:'banana',resurfaceHidden:true},{canonicalItem:'banana',quantity:4,unit:null,confirmPresent:true},{canonicalItem:'banana',snoozeDays:3},{canonicalItem:'banana',resurfaceHidden:true}]);assert.deepEqual(removals,['banana']);
 });
 test('mobile grocery review requires an explicit checked selection',async()=>{
   const f=fixture();const calls=[];const tree=f.render('PantryReviewQueue',{intakes:[{id:'intake',source:'receipt',sourceLabel:'Neighborhood market',acquiredAt:null,status:'pending',createdAt:'2026-09-13T00:00:00.000Z',items:[{id:'item',canonicalItem:'banana',displayName:'bananas',quantity:6,unit:null}]}],onResolve:async(...args)=>{calls.push(args);return true;}});

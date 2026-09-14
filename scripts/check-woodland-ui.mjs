@@ -176,31 +176,51 @@ test('getting started gives one useful decision at a time and saves resumable pr
 test('pantry memory shows sourced guidance and keeps every correction explicit', () => {
   const f = fixture();
   const updates = [];
-  const tree = f.render(f.app.PantryList, {
+  const removals = [];
+  const props = {
     items: [{
       canonicalItem: 'banana', displayName: '6 bananas', quantity: 6, unit: null,
       isStaple: false, isUsual: false, storageLocation: 'unknown',
       acquiredAt: '2020-01-01T00:00:00.000Z', lastConfirmedAt: null,
     }],
-    onAdd() {}, onUpdate(value) { updates.push(value); }, onRemove() {}, onClear() {},
-  });
+    onAdd() {}, onUpdate(value) { updates.push(value); }, onRemove(value) { removals.push(value); }, onClear() {},
+  };
+  let tree = f.render(f.app.PantryList, props);
   assert.match(text(tree), /memory aids, not expiry dates/i);
   assert.match(text(tree), /Still have 6 bananas/i);
   const details = nodes(tree).find(node => node.type === 'details');
   assert.match(text(details), /Conditions vary/);
   assert.ok(nodes(details).some(node => node.type === 'a' && node.props?.href?.startsWith('https://www.fns.usda.gov/')));
 
-  const usual = nodes(tree).find(node => node.type === 'input' && node.props?.type === 'checkbox');
+  const checkboxes = nodes(tree).filter(node => node.type === 'input' && node.props?.type === 'checkbox');
+  const usual = checkboxes[0];
   usual.props.onChange({ target: { checked: true } });
+  checkboxes[1].props.onChange({ target: { checked: false } });
   const storage = nodes(tree).find(node => node.type === 'select');
   storage.props.onChange({ target: { value: 'countertop' } });
-  const confirm = nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Still have this');
+  const confirm = nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Yes, still here');
   confirm.props.onClick();
+  nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Used some').props.onClick();
+  tree = f.render(f.app.PantryList, props);
+  const remaining = nodes(tree).find(node => typeof node.type === 'function' && node.props?.['aria-label'] === undefined && node.props?.id === 'remaining-banana');
+  remaining.props.onChange({ target: { value: '4' } });
+  tree = f.render(f.app.PantryList, props);
+  nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Save amount').props.onClick?.();
+  const amountForm = nodes(tree).find(node => node.type === 'form' && text(node).includes('How many'));
+  amountForm.props.onSubmit({ preventDefault() {} });
+  nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'All gone').props.onClick();
+  nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Remind me in 3 days').props.onClick();
+  nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Hide this suggestion').props.onClick();
   assert.deepEqual(JSON.parse(JSON.stringify(updates)), [
     { canonicalItem: 'banana', isUsual: true },
+    { canonicalItem: 'banana', resurfaceHidden: true },
     { canonicalItem: 'banana', storageLocation: 'countertop' },
     { canonicalItem: 'banana', confirmPresent: true },
+    { canonicalItem: 'banana', quantity: 4, unit: null, confirmPresent: true },
+    { canonicalItem: 'banana', snoozeDays: 3 },
+    { canonicalItem: 'banana', resurfaceHidden: true },
   ]);
+  assert.deepEqual(removals, ['banana']);
 });
 
 test('receipt and grocery intake stays a human-reviewed queue', async () => {

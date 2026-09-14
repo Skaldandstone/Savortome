@@ -97,7 +97,7 @@ export function storageGuideFor(canonicalItem: string): FoodStorageGuide | null 
 }
 
 export function pantryAttention(
-  entry: Pick<PantryEntry, "canonicalItem" | "displayName" | "acquiredAt" | "lastConfirmedAt" | "updatedAt">,
+  entry: Pick<PantryEntry, "canonicalItem" | "displayName" | "acquiredAt" | "lastConfirmedAt" | "resurfaceAfter" | "resurfaceHidden" | "updatedAt">,
   now: Date = new Date(),
 ): PantryAttention | null {
   const guide = storageGuideFor(entry.canonicalItem);
@@ -105,7 +105,9 @@ export function pantryAttention(
 
   const knownAt = newestValidDate(entry.lastConfirmedAt, entry.acquiredAt, entry.updatedAt);
   const daysSinceKnown = knownAt === null ? null : Math.max(0, Math.floor((now.getTime() - knownAt) / 86_400_000));
-  const shouldResurface = guide.checkAfterDays !== undefined && daysSinceKnown !== null && daysSinceKnown >= guide.checkAfterDays;
+  const snoozedUntil = entry.resurfaceAfter ? Date.parse(entry.resurfaceAfter) : Number.NaN;
+  const promptAllowed = !entry.resurfaceHidden && (!Number.isFinite(snoozedUntil) || snoozedUntil <= now.getTime());
+  const shouldResurface = promptAllowed && guide.checkAfterDays !== undefined && daysSinceKnown !== null && daysSinceKnown >= guide.checkAfterDays;
   const name = entry.displayName || entry.canonicalItem;
 
   return {
