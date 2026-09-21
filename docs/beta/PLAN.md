@@ -4,7 +4,7 @@ Deliver web and Android beta for a small invited cohort. Canonical repo is `C:\U
 
 ## Visual system
 
-Translate approved Tomte woodland field-guide and newer Wispling illustrated direction into hearth light, dark timber, parchment recipe journals, botanical details, kettles, jars and worn brass. Retain Second Breakfast and recognizable skillet mark; preserve useful PR #38 icon work. Produce polished raster concepts for library, recipe/cook, care, and desktop, plus one optional existing Wispling-visitor comparison. Default beta has no character. Scene art, props and icons are separate; text and controls are native. Apply system across features, richer on entry surfaces, quiet on ingredients, timers, lists and forms. Preserve light/dark, reduced decoration, reduced motion, readable body type, labeled navigation, and updated style guide.
+Translate approved Vordling woodland field-guide and newer Wispling illustrated direction into hearth light, dark timber, parchment recipe journals, botanical details, kettles, jars and worn brass. Retain Second Breakfast and recognizable skillet mark; preserve useful PR #38 icon work. Produce polished raster concepts for library, recipe/cook, care, and desktop, plus one optional existing Wispling-visitor comparison. Default beta has no character. Scene art, props and icons are separate; text and controls are native. Apply system across features, richer on entry surfaces, quiet on ingredients, timers, lists and forms. Preserve light/dark, reduced decoration, reduced motion, readable body type, labeled navigation, and updated style guide.
 
 ## Care and handoff
 
