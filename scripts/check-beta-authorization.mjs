@@ -49,7 +49,7 @@ test('Studio-approved Clerk metadata grants beta access without a static user-ID
   assert.equal(await f.access(),true);assert.equal(f.state.authCalls,1);assert.equal(f.state.userCalls,1);
 });
 test('unapproved, wrong-product, and mismatched Clerk users fail closed',async()=>{
-  for(const publicMetadata of [{},{studio_access:{'second-breakfast':{approved:false}}},{studio_access:{tomte:{approved:true}}}]){
+  for(const publicMetadata of [{},{studio_access:{'second-breakfast':{approved:false}}},{studio_access:{vordling:{approved:true}}}]){
     const f=fixture({userId:'user_requested',publicMetadata},{SB_BETA_CLERK_USER_IDS:''});assert.equal(await f.access(),false);
   }
   const mismatch=fixture({userId:'user_requested',returnedUserId:'user_other',publicMetadata:{studio_access:{'second-breakfast':{approved:true}}}},{SB_BETA_CLERK_USER_IDS:''});assert.equal(await mismatch.access(),false);
