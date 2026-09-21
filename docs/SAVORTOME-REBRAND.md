@@ -1,6 +1,12 @@
 # Savortome rebrand migration
 
-Status: working local candidate. No deployment, provider-console change, repository rename, store-listing change, or public release has been performed.
+Status: public product identity and repository rename implemented. Compatibility identifiers and live infrastructure remain intentionally retained until a separately reviewed migration is approved.
+
+## Coordination decision, 2026-09-12
+
+A Claude scratch conversation recorded an AWS, Clerk, and other-service inventory discussion and the product-direction decision that **Savortome is the current public product identity** and **Second Breakfast is a retired public name**.
+
+This is a coordination record, not authorization to deactivate or rename anything. The AWS `secondbreakfast-web` service, the `secondbreakfast` database, and other `secondbreakfast-*` resources are the live Savortome backend under compatibility names. The Savortome load balancer routes to that service. They are not cleanup candidates or abandoned resources. Any future identifier migration must first identify all dependencies and consumers, preserve recovery evidence and rollback paths, define data retention or export handling, receive owner approval, and prove the replacement before changing a provider or deleting data.
 
 ## Brand decision
 
