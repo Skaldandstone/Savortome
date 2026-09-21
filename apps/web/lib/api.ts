@@ -3,11 +3,14 @@ import { NextResponse } from "next/server";
 import {
   InstacartError,
   KrogerError,
+  PantryIntakeValidationError,
+  PantryValidationError,
+  ReceiptExtractionError,
   RecipeValidationError,
   ShelfValidationError,
 } from "@seconds/core";
 import { FriendshipError } from "@seconds/core";
-import { SaveRecipeError, SaveTemplateError, SuggestionError } from "@seconds/db";
+import { PantryIntakeNotFoundError, SaveRecipeError, SaveTemplateError, SuggestionError } from "@seconds/db";
 import { db, type Database } from "@seconds/db";
 import {
   NotConfiguredError,
@@ -37,6 +40,12 @@ export function errorResponse(err: unknown): NextResponse {
   if (err instanceof NotSignedInError) {
     return NextResponse.json({ error: err.message }, { status: 401 });
   }
+  if (err instanceof PantryIntakeNotFoundError) {
+    return NextResponse.json({ error: err.message }, { status: 404 });
+  }
+  if (err instanceof ReceiptExtractionError) {
+    return NextResponse.json({ error: err.message }, { status: 422 });
+  }
   if (
     err instanceof BadRequestError ||
     err instanceof ShelfValidationError ||
@@ -44,7 +53,9 @@ export function errorResponse(err: unknown): NextResponse {
     err instanceof SaveTemplateError ||
     err instanceof SuggestionError ||
     err instanceof FriendshipError ||
-    err instanceof RecipeValidationError
+    err instanceof RecipeValidationError ||
+    err instanceof PantryValidationError ||
+    err instanceof PantryIntakeValidationError
   ) {
     return NextResponse.json({ error: err.message }, { status: 400 });
   }

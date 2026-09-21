@@ -22,6 +22,7 @@ const stubs = {
   '@/modules/shelves': 'export function StarRating(){};',
   '@/modules/recipe': `export function IngredientList(){};export function ServingScaler(){};export const useServings=recipe=>({servings:recipe.servings,canScale:false,increment(){},decrement(){},ingredients:recipe.ingredients});`,
   '@/modules/profile': 'export function AllergenWarning(){};',
+  '@/modules/cooking': 'export function CookingProfilePanel(){};',
   './useCookSession': 'export const useCookSession=()=>({restored:null,checked:true,save(){},clear(){}});',
   './useTimers': 'export const useTimers=()=>({timers:[],restore(){},dismiss(){},timerFor(){return null;},stateOf(){return "paused";},remaining(){return 0;},start(){},pause(){},resume(){},reset(){}});',
   './useWakeLock': 'export const useWakeLock=()=>{};',
@@ -36,7 +37,7 @@ const stubs = {
   './CartButtons': 'export function CartButtons(){};',
   './KrogerConnection': 'export function KrogerConnection(){};',
   './ListItems': 'export function ListItems(){};',
-  './usePantry': 'export const usePantry=()=>state.pantry??({items:[],loading:false,error:null,add:async()=>{},remove:async()=>{},clear:async()=>{}}); export const usePantrySearch=()=>state.pantrySearch??({response:null,searching:false,error:null,search:async()=>{}});',
+  './usePantry': 'export const usePantry=()=>state.pantry??({items:[],intakes:[],loading:false,error:null,add:async()=>{},update:async()=>{},remove:async()=>{},clear:async()=>{},resolveIntake:async()=>true}); export const usePantrySearch=()=>state.pantrySearch??({response:null,searching:false,error:null,search:async()=>{}});',
   './MatchList': 'export function MatchList(){}; export function QueryReadback(){};',
   './PantryList': 'export function PantryList(){};',
 };
@@ -58,7 +59,11 @@ const result = await build({
     export {DiscoverPanel} from './apps/web/modules/discover/DiscoverPanel.tsx';
     export {ListPanel} from './apps/web/modules/list/ListPanel.tsx';
     export {CookPanel} from './apps/web/modules/pantry/CookPanel.tsx';
+    export {PantryList} from './apps/web/modules/pantry/PantryList.tsx';
+    export {PantryReviewQueue} from './apps/web/modules/pantry/PantryReviewQueue.tsx';
+    export {PlanTogether} from './apps/web/modules/plan/PlanTogether.tsx';
     export {mergeProfileUpdate} from './apps/web/modules/cooking/CookingProfilePanel.tsx';
+    export {OnboardingJourney} from './apps/web/modules/onboarding/OnboardingJourney.tsx';
     export {CARE_FOODS} from './packages/core/src/care.ts';` },
   bundle: true, write: false, platform: 'node', format: 'iife', globalName: 'tested', jsx: 'automatic',
   define: { 'process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY': '""' },
@@ -73,7 +78,9 @@ const result = await build({
 });
 function fixture(overrides = {}) {
   const state = { allowed: false, pathname: '/', cursor: 0, values: [], refs: [], effects: [], calls: [], pending: [], refreshes: 0, fail: false, ...overrides };
-  const sandbox = { state, navigator: { onLine: true }, setTimeout, clearTimeout, URLSearchParams };
+  const stored = new Map();
+  const localStorage = { getItem: key => stored.get(key) ?? null, setItem: (key, value) => stored.set(key, String(value)), removeItem: key => stored.delete(key) };
+  const sandbox = { state, navigator: { onLine: true }, localStorage, setTimeout, clearTimeout, URLSearchParams };
   runInNewContext(result.outputFiles[0].text, sandbox);
   return { state, sandbox, app: sandbox.tested, render: (fn, props = {}) => { state.cursor = 0; return fn(props); } };
 }
@@ -130,6 +137,134 @@ test('navigation includes saved meals and marks its containing disclosure active
   const tree = f.render(f.app.WoodlandNavigation);
   assert.ok(nodes(tree).some(n => n.props?.href === '/templates' && text(n) === 'Saved meals' && n.props['aria-current'] === 'page'));
   assert.ok(nodes(tree).some(n => n.type === 'summary' && n.props['data-active'] === true));
+  assert.ok(nodes(tree).some(n => n.props?.href === '/getting-started' && text(n) === 'Getting started'));
+});
+
+test('getting started gives one useful decision at a time and saves resumable progress', () => {
+  const f = fixture();
+  const render = () => f.render(f.app.OnboardingJourney, { signedIn: false, storageScope: 'guest' });
+  assert.ok(nodes(render()).some(n => n.props?.role === 'status' && text(n).includes('Opening')));
+  f.state.effects[0]();
+
+  let shell = render();
+  let step = nodes(shell).find(n => typeof n.type === 'function' && n.type.name === 'WelcomeStep');
+  let tree = f.render(step.type, step.props);
+  assert.ok(nodes(tree).some(n => n.type === 'h1' && text(n) === 'What would make food easier today?'));
+  assert.ok(nodes(tree).some(n => n.props?.href === '/care' && n.props?.title === 'Feed me gently'));
+  assert.ok(nodes(tree).some(n => n.props?.href?.startsWith('/sign-up?redirect_url=') && n.props?.title === 'Save a recipe'));
+
+  step.props.onContinue();
+  shell = render();
+  step = nodes(shell).find(n => typeof n.type === 'function' && n.type.name === 'SafetyStep');
+  tree = f.render(step.type, step.props);
+  assert.ok(nodes(tree).some(n => n.type === 'h1' && text(n) === 'Tell us only what helps'));
+  assert.match(text(tree), /cannot verify that a food is safe/);
+  assert.ok(nodes(shell).some(n => n.props?.role === 'status' && text(n).includes('Progress saved')));
+
+  step.props.onContinue();
+  shell = render();
+  step = nodes(shell).find(n => typeof n.type === 'function' && n.type.name === 'CookingStep');
+  tree = f.render(step.type, step.props);
+  assert.ok(nodes(tree).some(n => n.type === 'h1' && text(n) === 'Suggestions can meet you where you are'));
+  assert.match(text(tree), /Feed me gently always stays separate/);
+
+  step.props.onDone();
+  tree = render();
+  assert.ok(nodes(tree).some(n => n.type === 'h1' && text(n) === 'Your kitchen is ready when you are'));
+});
+
+test('pantry memory shows sourced guidance and keeps every correction explicit', () => {
+  const f = fixture();
+  const updates = [];
+  const removals = [];
+  const props = {
+    items: [{
+      canonicalItem: 'banana', displayName: '6 bananas', quantity: 6, unit: null,
+      isStaple: false, isUsual: false, storageLocation: 'unknown',
+      acquiredAt: '2020-01-01T00:00:00.000Z', lastConfirmedAt: null,
+    }],
+    onAdd() {}, onUpdate(value) { updates.push(value); }, onRemove(value) { removals.push(value); }, onClear() {},
+  };
+  let tree = f.render(f.app.PantryList, props);
+  assert.match(text(tree), /memory aids, not expiry dates/i);
+  assert.match(text(tree), /Still have 6 bananas/i);
+  const details = nodes(tree).find(node => node.type === 'details');
+  assert.match(text(details), /Conditions vary/);
+  assert.ok(nodes(details).some(node => node.type === 'a' && node.props?.href?.startsWith('https://www.fns.usda.gov/')));
+
+  const checkboxes = nodes(tree).filter(node => node.type === 'input' && node.props?.type === 'checkbox');
+  const usual = checkboxes[0];
+  usual.props.onChange({ target: { checked: true } });
+  checkboxes[1].props.onChange({ target: { checked: false } });
+  const storage = nodes(tree).find(node => node.type === 'select');
+  storage.props.onChange({ target: { value: 'countertop' } });
+  const confirm = nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Yes, still here');
+  confirm.props.onClick();
+  nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Used some').props.onClick();
+  tree = f.render(f.app.PantryList, props);
+  const remaining = nodes(tree).find(node => typeof node.type === 'function' && node.props?.['aria-label'] === undefined && node.props?.id === 'remaining-banana');
+  remaining.props.onChange({ target: { value: '4' } });
+  tree = f.render(f.app.PantryList, props);
+  nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Save amount').props.onClick?.();
+  const amountForm = nodes(tree).find(node => node.type === 'form' && text(node).includes('How many'));
+  amountForm.props.onSubmit({ preventDefault() {} });
+  nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'All gone').props.onClick();
+  nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Remind me in 3 days').props.onClick();
+  nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Hide this suggestion').props.onClick();
+  assert.deepEqual(JSON.parse(JSON.stringify(updates)), [
+    { canonicalItem: 'banana', isUsual: true },
+    { canonicalItem: 'banana', resurfaceHidden: true },
+    { canonicalItem: 'banana', storageLocation: 'countertop' },
+    { canonicalItem: 'banana', confirmPresent: true },
+    { canonicalItem: 'banana', quantity: 4, unit: null, confirmPresent: true },
+    { canonicalItem: 'banana', snoozeDays: 3 },
+    { canonicalItem: 'banana', resurfaceHidden: true },
+  ]);
+  assert.deepEqual(removals, ['banana']);
+});
+
+test('receipt and grocery intake stays a human-reviewed queue', async () => {
+  const f = fixture();
+  const calls = [];
+  const tree = f.render(f.app.PantryReviewQueue, {
+    intakes: [{
+      id: '00000000-0000-0000-0000-000000000001', source: 'receipt',
+      sourceLabel: 'Neighborhood market', acquiredAt: '2026-09-12T12:00:00.000Z',
+      status: 'pending', createdAt: '2026-09-12T12:00:00.000Z',
+      items: [{ id: '00000000-0000-0000-0000-000000000002', canonicalItem: 'banana', displayName: 'bananas', quantity: 6, unit: null }],
+    }],
+    onResolve: async (...args) => { calls.push(args); return true; },
+  });
+  assert.match(text(tree), /Nothing .* enters your pantry until you confirm/i);
+  const card = nodes(tree).find(node => typeof node.type === 'function' && node.type.name === 'PantryReviewCard');
+  const cardTree = f.render(card.type, card.props);
+  assert.match(text(cardTree), /Choose what actually came home/i);
+  assert.match(text(cardTree), /replaces its displayed quantity/i);
+  const add = nodes(cardTree).find(node => typeof node.type === 'function' && text(node) === 'Add selected items');
+  add.props.onClick();
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.deepEqual(JSON.parse(JSON.stringify(calls)), [[
+    '00000000-0000-0000-0000-000000000001', 'accept', ['00000000-0000-0000-0000-000000000002'],
+  ]]);
+});
+
+test('plan together states pantry uncertainty and awaits an explicit meal choice', async () => {
+  const f = fixture({ response: {
+    pantryCount: 2,
+    ideas: [{ recipeId: 'banana-muffins', title: 'Banana muffins', imageUrl: null,
+      totalMinutes: 35, have: ['banana'], missing: ['flour'], canMakeNow: false,
+      reason: 'Uses banana, which may be worth checking while you plan.', resurfaceItems: ['banana'] }],
+  } });
+  const props = { date: '2026-09-13', week: '2026-09-07', onPlanned() {} };
+  let tree = f.render(f.app.PlanTogether, props);
+  assert.match(text(tree), /Checking your pantry/);
+  f.state.effects[0]();
+  await Promise.resolve();
+  tree = f.render(f.app.PlanTogether, props);
+  assert.match(text(tree), /Pantry quantities may be out of date/);
+  assert.match(text(tree), /not verified against real allergen/);
+  assert.equal(nodes(tree).find(node => node.type === 'select').props.value, 'dinner');
+  assert.ok(nodes(tree).some(node => typeof node.type === 'function' && text(node) === 'Plan for today'));
 });
 
 test('focused recipe cooking removes the fixed app dock', () => {
@@ -502,8 +637,8 @@ test('asynchronous collection panels announce loading, results, and failures', (
   ));
 
   const pantry = fixture({ pantry: {
-    items: [], loading: true, error: 'Fixture pantry failure',
-    add: async () => {}, remove: async () => {}, clear: async () => {},
+    items: [], intakes: [], loading: true, error: 'Fixture pantry failure',
+    add: async () => {}, update: async () => {}, remove: async () => {}, clear: async () => {}, resolveIntake: async () => true,
   } });
   const pantryTree = pantry.render(pantry.app.CookPanel);
   nodes(pantryTree).find(node => text(node) === 'My pantry' && node.props?.onClick).props.onClick();

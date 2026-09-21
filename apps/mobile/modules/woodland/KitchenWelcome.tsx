@@ -17,6 +17,9 @@ export function KitchenWelcome() {
         <Pressable accessibilityRole="button" onPress={() => router.push('/care')} style={[styles.invitation,{borderColor:c.border,backgroundColor:c.actionSurface}]}>
           <Text style={[styles.invitationText,{color:c.actionText}]}>Feed me gently</Text>
         </Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel="Open getting started guide" onPress={() => router.push('/getting-started')} style={[styles.guideLink,{borderColor:c.border}]}>
+          <Text style={[styles.guideText,{color:c.accent}]}>New here? Let’s get your kitchen ready</Text>
+        </Pressable>
       </View>
     </View>
     <Button variant="ghost" label={reduced ? 'Show illustrations' : 'Reduce decoration'} onPress={toggle} />
@@ -26,4 +29,5 @@ const styles=StyleSheet.create({
   wrap:{marginBottom:20,gap:8},frame:{borderWidth:1,borderTopLeftRadius:18,borderTopRightRadius:18,borderBottomLeftRadius:5,borderBottomRightRadius:5,overflow:'hidden'},
   copy:{padding:18,alignItems:'stretch'},title:{fontFamily:'serif',fontSize:27,textAlign:'center'},subtitle:{fontFamily:'serif',fontSize:16,textAlign:'center',marginTop:6,marginBottom:18,lineHeight:24},
   invitation:{borderWidth:1,borderRadius:4,padding:14,minHeight:50,alignItems:'center'},invitationText:{fontFamily:'serif',fontSize:20,textAlign:'center'},
+  guideLink:{borderWidth:1,borderRadius:4,padding:12,minHeight:48,alignItems:'center',justifyContent:'center',marginTop:10},guideText:{fontSize:16,textAlign:'center'},
 });

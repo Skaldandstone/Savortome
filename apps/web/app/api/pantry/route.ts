@@ -1,5 +1,5 @@
-import { parsePantryInput } from "@seconds/core";
-import { addPantryItems, clearPantry, listPantry, removePantryItems } from "@seconds/db";
+import { parsePantryEntryUpdate, parsePantryInput } from "@seconds/core";
+import { addPantryItems, clearPantry, listPantry, removePantryItems, updatePantryItem } from "@seconds/db";
 import { readJson, withUser } from "@/lib/api";
 
 export const runtime = "nodejs";
@@ -33,4 +33,9 @@ export async function DELETE(request: Request) {
     }
     return removePantryItems(database, userId, body.items ?? []);
   });
+}
+
+export async function PATCH(request: Request) {
+  const body = await readJson<Record<string, unknown>>(request);
+  return withUser((userId, database) => updatePantryItem(database, userId, parsePantryEntryUpdate(body)));
 }

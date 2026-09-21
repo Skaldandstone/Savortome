@@ -4,6 +4,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { TranscriptCue } from "./types.js";
 import { parseJson3Cues } from "./youtube.js";
+import {
+  emitGenerationAudit,
+  providerGenerationAudit,
+  sanitizeGeneratedText,
+  type GenerationAuditSink,
+} from "../generated-content.js";
 
 /**
  * Last-resort path for videos with no captions and no useful caption text:
@@ -36,7 +42,10 @@ export interface TranscribeConfig {
   apiKey: string;
   /** Cap on media length; long streams are expensive and rarely recipes. */
   maxDurationSeconds?: number;
+  onGenerationAudit?: GenerationAuditSink;
 }
+
+export const ASR_ADAPTER_PROMPT_VERSION = "savortome-asr-adapter-v1";
 
 /**
  * Long streams are expensive to run through ASR and are rarely recipes — a
@@ -44,6 +53,25 @@ export interface TranscribeConfig {
  * video with room to spare. Overridable since "rarely" isn't "never".
  */
 const DEFAULT_MAX_TRANSCRIBE_SECONDS = 20 * 60;
+export const MAX_TRANSCRIPT_CUES = 500;
+export const MAX_TRANSCRIPT_CHARS = 120_000;
+
+/** Bound and clean provider-produced text before it becomes prompt input. */
+export function normalizeTranscriptCues(cues: readonly TranscriptCue[]): TranscriptCue[] {
+  const normalized: TranscriptCue[] = [];
+  let totalChars = 0;
+  for (const cue of cues) {
+    if (normalized.length >= MAX_TRANSCRIPT_CUES) break;
+    if (!Number.isFinite(cue.start) || cue.start < 0 || typeof cue.text !== "string") continue;
+    const remaining = MAX_TRANSCRIPT_CHARS - totalChars;
+    if (remaining <= 0) break;
+    const text = sanitizeGeneratedText(cue.text, Math.min(1_000, remaining));
+    if (!text) continue;
+    normalized.push({ start: Math.round(cue.start), text });
+    totalChars += text.length;
+  }
+  return normalized;
+}
 
 export function asrConfigFromEnv(env: NodeJS.ProcessEnv = process.env): TranscribeConfig | null {
   const maxDurationSeconds = env.MAX_TRANSCRIBE_SECONDS
@@ -222,7 +250,13 @@ async function downloadAudio(url: string): Promise<{ path: string; cleanup: () =
   return { path, cleanup: () => rm(dir, { recursive: true, force: true }) };
 }
 
-async function deepgram(audio: Buffer, apiKey: string): Promise<TranscriptCue[]> {
+interface AsrResult {
+  cues: TranscriptCue[];
+  responseId: string | null;
+  model: string;
+}
+
+async function deepgram(audio: Buffer, apiKey: string): Promise<AsrResult> {
   const res = await fetch(
     "https://api.deepgram.com/v1/listen?model=nova-3&smart_format=true&paragraphs=true",
     {
@@ -233,6 +267,7 @@ async function deepgram(audio: Buffer, apiKey: string): Promise<TranscriptCue[]>
   );
   if (!res.ok) throw new Error(`Deepgram ${res.status}: ${(await res.text()).slice(0, 300)}`);
   const json = (await res.json()) as {
+    metadata?: { request_id?: string; model_info?: Record<string, unknown> };
     results?: {
       channels?: {
         alternatives?: {
@@ -245,12 +280,20 @@ async function deepgram(audio: Buffer, apiKey: string): Promise<TranscriptCue[]>
   const alt = json.results?.channels?.[0]?.alternatives?.[0];
   const sentences = alt?.paragraphs?.paragraphs?.flatMap((p) => p.sentences ?? []) ?? [];
   if (sentences.length) {
-    return sentences.map((s) => ({ start: Math.round(s.start), text: s.text }));
+    return {
+      cues: sentences.map((s) => ({ start: Math.round(s.start), text: s.text })),
+      responseId: json.metadata?.request_id ?? null,
+      model: "nova-3",
+    };
   }
-  return alt?.transcript ? [{ start: 0, text: alt.transcript }] : [];
+  return {
+    cues: alt?.transcript ? [{ start: 0, text: alt.transcript }] : [],
+    responseId: json.metadata?.request_id ?? null,
+    model: "nova-3",
+  };
 }
 
-async function groqWhisper(audio: Buffer, apiKey: string): Promise<TranscriptCue[]> {
+async function groqWhisper(audio: Buffer, apiKey: string): Promise<AsrResult> {
   const form = new FormData();
   form.append("file", new Blob([new Uint8Array(audio)], { type: "audio/m4a" }), "audio.m4a");
   form.append("model", "whisper-large-v3");
@@ -264,9 +307,17 @@ async function groqWhisper(audio: Buffer, apiKey: string): Promise<TranscriptCue
   if (!res.ok) throw new Error(`Groq ${res.status}: ${(await res.text()).slice(0, 300)}`);
   const json = (await res.json()) as { segments?: { start: number; text: string }[]; text?: string };
   if (json.segments?.length) {
-    return json.segments.map((s) => ({ start: Math.round(s.start), text: s.text.trim() }));
+    return {
+      cues: json.segments.map((s) => ({ start: Math.round(s.start), text: s.text.trim() })),
+      responseId: res.headers.get("x-request-id"),
+      model: "whisper-large-v3",
+    };
   }
-  return json.text ? [{ start: 0, text: json.text }] : [];
+  return {
+    cues: json.text ? [{ start: 0, text: json.text }] : [],
+    responseId: res.headers.get("x-request-id"),
+    model: "whisper-large-v3",
+  };
 }
 
 export async function transcribeUrl(
@@ -288,9 +339,28 @@ export async function transcribeUrl(
   const { path, cleanup } = await downloadAudio(url);
   try {
     const audio = await readFile(path);
-    return config.provider === "deepgram"
+    const result = config.provider === "deepgram"
       ? await deepgram(audio, config.apiKey)
       : await groqWhisper(audio, config.apiKey);
+    const cues = normalizeTranscriptCues(result.cues);
+    emitGenerationAudit(config.onGenerationAudit, providerGenerationAudit(
+      config.provider,
+      ASR_ADAPTER_PROMPT_VERSION,
+      result.model,
+      "video-audio-v1",
+      cues.length > 0 ? "passed" : "rejected",
+      { id: result.responseId, model: result.model },
+    ));
+    return cues;
+  } catch (error) {
+    emitGenerationAudit(config.onGenerationAudit, providerGenerationAudit(
+      config.provider,
+      ASR_ADAPTER_PROMPT_VERSION,
+      config.provider === "deepgram" ? "nova-3" : "whisper-large-v3",
+      "video-audio-v1",
+      "rejected",
+    ));
+    throw error;
   } finally {
     await cleanup();
   }

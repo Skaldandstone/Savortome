@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { computeNutrition, guessIngredientNutrition, rescaleNutrition, searchFood } from "../src/nutrition-usda.js";
 import type { Ingredient } from "../src/recipe.js";
+import type Anthropic from "@anthropic-ai/sdk";
 
 /**
  * A stand-in for the FoodData Central API, same spirit as extract.test.ts's
@@ -193,6 +194,38 @@ describe("rescaleNutrition", () => {
 });
 
 describe("guessIngredientNutrition", () => {
+  it("sends the product standard and discards invented or duplicate ingredient rows", async () => {
+    let request: any;
+    const audits: { validation: string }[] = [];
+    const client = {
+      messages: {
+        parse: async (body: unknown) => {
+          request = body;
+          return {
+            id: "msg_nutrition",
+            model: "claude-opus-5",
+            usage: { input_tokens: 10, output_tokens: 10 },
+            parsed_output: {
+              guesses: [
+                { canonicalItem: "flour", calories: 100.14, proteinGrams: 2.22, carbGrams: 20, fatGrams: 1, fiberGrams: 1, sodiumMg: 2 },
+                { canonicalItem: "flour", calories: 999, proteinGrams: 0, carbGrams: 0, fatGrams: 0, fiberGrams: 0, sodiumMg: 0 },
+                { canonicalItem: "invented supplement", calories: 50, proteinGrams: 0, carbGrams: 0, fatGrams: 0, fiberGrams: 0, sodiumMg: 0 },
+              ],
+            },
+          };
+        },
+      },
+    } as unknown as Anthropic;
+    const guesses = await guessIngredientNutrition([ing({ canonicalItem: "flour" })], {
+      client,
+      onGenerationAudit: (audit) => audits.push(audit),
+    });
+    assert.match(String(request.system), /sands-generated-content-v1/);
+    assert.deepEqual(guesses.map((guess) => guess.canonicalItem), ["flour"]);
+    assert.equal(guesses[0]!.contribution.calories, 100.1);
+    assert.equal(audits[0]?.validation, "passed");
+  });
+
   it("returns null-free guesses for every ingredient, via the real SDK against a stand-in", async () => {
     const { createServer } = await import("node:http");
     const AnthropicSdk = (await import("@anthropic-ai/sdk")).default;

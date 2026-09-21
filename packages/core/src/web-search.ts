@@ -1,5 +1,11 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { normalizeRecipeQuery, rankHits, type WebRecipeHit } from "./web-recipes.js";
+import {
+  emitGenerationAudit,
+  generatedContentSystem,
+  generationAudit,
+  type GenerationAuditSink,
+} from "./generated-content.js";
 
 /**
  * The web half of "find me a recipe".
@@ -20,6 +26,7 @@ import { normalizeRecipeQuery, rankHits, type WebRecipeHit } from "./web-recipes
  */
 
 export const RECIPE_SEARCH_MODEL = "claude-opus-5";
+export const RECIPE_SEARCH_PROMPT_VERSION = "savortome-web-recipe-search-v2";
 
 /** Each search is billed, so the ceiling is part of the contract, not a tuning knob. */
 export const MAX_SEARCHES = 3;
@@ -61,6 +68,7 @@ export interface WebRecipeSearchOptions {
   /** Most hits from any one site. */
   perHost?: number;
   signal?: AbortSignal;
+  onGenerationAudit?: GenerationAuditSink;
 }
 
 /** A raw index result, before ranking. Exported for the tests that drive the reader. */
@@ -161,16 +169,21 @@ export async function searchWebRecipes(
   if (!query) return [];
 
   const client = options.client ?? new Anthropic();
+  const model = options.model ?? RECIPE_SEARCH_MODEL;
 
   let response;
   try {
     response = await client.messages.create(
       {
-        model: options.model ?? RECIPE_SEARCH_MODEL,
+        model,
         // The prose reply is a short list of links. The ceiling is for the
         // thinking and the tool round trips, not the answer.
         max_tokens: 4_000,
-        system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral", ttl: "1h" } }],
+        system: [{
+          type: "text",
+          text: generatedContentSystem(SYSTEM, RECIPE_SEARCH_PROMPT_VERSION),
+          cache_control: { type: "ephemeral", ttl: "1h" },
+        }],
         // Picking good search terms is not hard reasoning, and this call sits
         // directly in front of someone waiting at a search box.
         output_config: { effort: "low" },
@@ -180,6 +193,9 @@ export async function searchWebRecipes(
       { signal: options.signal },
     );
   } catch (err) {
+    emitGenerationAudit(options.onGenerationAudit, generationAudit(
+      RECIPE_SEARCH_PROMPT_VERSION, model, "recipe-search-query-v1", "rejected",
+    ));
     throw new WebSearchError(
       err instanceof Error ? err.message : "The web search could not be run.",
       err,
@@ -188,9 +204,20 @@ export async function searchWebRecipes(
 
   const { results, errors } = readSearchResults(response.content);
   if (results.length === 0 && errors.length > 0) {
+    emitGenerationAudit(options.onGenerationAudit, generationAudit(
+      RECIPE_SEARCH_PROMPT_VERSION, model, "recipe-search-query-v1", "rejected", response,
+    ));
     throw new WebSearchError(`The search provider refused the request (${errors.join(", ")}).`);
   }
 
   const ordered = orderByEndorsement(results, readEndorsedUrls(response.content));
-  return rankHits(ordered, { limit: options.limit, perHost: options.perHost });
+  const hits = rankHits(ordered, { limit: options.limit, perHost: options.perHost });
+  emitGenerationAudit(options.onGenerationAudit, generationAudit(
+    RECIPE_SEARCH_PROMPT_VERSION,
+    model,
+    "recipe-search-query-v1",
+    readEndorsedUrls(response.content).length > 0 ? "passed" : "fallback",
+    response,
+  ));
+  return hits;
 }

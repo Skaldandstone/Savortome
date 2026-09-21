@@ -3,6 +3,12 @@ import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { parsePantryInput } from "./pantry.js";
 import { canonicalize } from "./units.js";
+import {
+  emitGenerationAudit,
+  generatedContentSystem,
+  generationAudit,
+  type GenerationAuditSink,
+} from "./generated-content.js";
 
 /**
  * Turning "what can I make?" into something the matcher can run.
@@ -15,15 +21,15 @@ import { canonicalize } from "./units.js";
 
 export const PantryQuerySchema = z.object({
   /** Foods the cook has, lowercase singular: "chicken thigh", "yellow onion". */
-  ingredients: z.array(z.string()),
+  ingredients: z.array(z.string().trim().min(1).max(120)).max(50),
   /** Foods to steer away from — allergies, dislikes, "no dairy". */
-  excludeIngredients: z.array(z.string()),
+  excludeIngredients: z.array(z.string().trim().min(1).max(120)).max(50),
   /** Descriptors to prefer: "vegetarian", "one-pan", "make-ahead". */
-  tags: z.array(z.string()),
+  tags: z.array(z.string().trim().min(1).max(80)).max(30),
   /** Upper bound on total time, when one is implied. "quick" is 30. */
-  maxMinutes: z.number().int().nullable(),
+  maxMinutes: z.number().int().min(1).max(24 * 60).nullable(),
   /** breakfast | lunch | dinner | dessert | snack | drink | side, or null. */
-  course: z.string().nullable(),
+  course: z.enum(["breakfast", "lunch", "dinner", "dessert", "snack", "drink", "side"]).nullable(),
 });
 
 export type PantryQuery = z.infer<typeof PantryQuerySchema>;
@@ -38,6 +44,7 @@ export const EMPTY_QUERY: PantryQuery = {
 
 const CONSTRAINT_HINTS =
   /\b(quick|fast|easy|slow|healthy|light|hearty|vegetarian|vegan|gluten|dairy|keto|low[- ]carb|without|no |avoid|under|less than|minutes?|mins?|hours?|breakfast|lunch|dinner|dessert|snack|side|one[- ](pan|pot)|make[- ]ahead|freezer|kid|leftover)\b/i;
+export const MAX_PANTRY_QUERY_CHARS = 1_000;
 
 /**
  * Does this read like a sentence with conditions, or just a list of food?
@@ -68,10 +75,13 @@ Extract only what the request actually says. This drives a database query, so an
 
 If the request is nothing but a list of foods, put them all in "ingredients" and leave everything else empty.`;
 
+export const PANTRY_QUERY_PROMPT_VERSION = "savortome-pantry-query-v2";
+
 export interface InterpretOptions {
   client?: Anthropic;
   model?: string;
   signal?: AbortSignal;
+  onGenerationAudit?: GenerationAuditSink;
 }
 
 /**
@@ -83,17 +93,29 @@ export async function interpretPantryQuery(
   text: string,
   opts: InterpretOptions = {},
 ): Promise<{ query: PantryQuery; interpreted: boolean; note?: string }> {
+  if (text.length > MAX_PANTRY_QUERY_CHARS) {
+    return {
+      query: parseQueryLocally(text.slice(0, MAX_PANTRY_QUERY_CHARS)),
+      interpreted: false,
+      note: "That request was too long for smart search, so its first part was matched as an ingredient list.",
+    };
+  }
   if (!needsInterpretation(text)) {
     return { query: parseQueryLocally(text), interpreted: false };
   }
 
   try {
     const client = opts.client ?? new Anthropic();
+    const model = opts.model ?? "claude-opus-5";
     const response = await client.messages.parse(
       {
-        model: opts.model ?? "claude-opus-5",
+        model,
         max_tokens: 2_000,
-        system: [{ type: "text", text: SYSTEM, cache_control: { type: "ephemeral" } }],
+        system: [{
+          type: "text",
+          text: generatedContentSystem(SYSTEM, PANTRY_QUERY_PROMPT_VERSION),
+          cache_control: { type: "ephemeral" },
+        }],
         thinking: { type: "adaptive" },
         output_config: { effort: "low", format: zodOutputFormat(PantryQuerySchema) },
         messages: [{ role: "user", content: text }],
@@ -102,6 +124,9 @@ export async function interpretPantryQuery(
     );
 
     if (response.stop_reason === "refusal" || !response.parsed_output) {
+      emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+        PANTRY_QUERY_PROMPT_VERSION, model, "pantry-query-v1", "fallback", response,
+      ));
       return {
         query: parseQueryLocally(text),
         interpreted: false,
@@ -109,8 +134,28 @@ export async function interpretPantryQuery(
       };
     }
 
-    return { query: normalize(response.parsed_output), interpreted: true };
+    const validated = PantryQuerySchema.safeParse(normalize(response.parsed_output));
+    if (!validated.success) {
+      emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+        PANTRY_QUERY_PROMPT_VERSION, model, "pantry-query-v1", "fallback", response,
+      ));
+      return {
+        query: parseQueryLocally(text),
+        interpreted: false,
+        note: "Smart search returned unsupported filters, so this was matched as a plain ingredient list.",
+      };
+    }
+    emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+      PANTRY_QUERY_PROMPT_VERSION, model, "pantry-query-v1", "passed", response,
+    ));
+    return { query: validated.data, interpreted: true };
   } catch (err) {
+    emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+      PANTRY_QUERY_PROMPT_VERSION,
+      opts.model ?? "claude-opus-5",
+      "pantry-query-v1",
+      "fallback",
+    ));
     // No key, no network, rate limited — none of that should break search.
     return {
       query: parseQueryLocally(text),
@@ -135,6 +180,6 @@ function normalize(query: PantryQuery): PantryQuery {
       Boolean,
     ),
     maxMinutes: query.maxMinutes && query.maxMinutes > 0 ? query.maxMinutes : null,
-    course: query.course?.toLowerCase().trim() || null,
+    course: query.course,
   };
 }

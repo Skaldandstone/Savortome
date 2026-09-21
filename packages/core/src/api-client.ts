@@ -1,5 +1,7 @@
 import type { RecipeRating, RecipeShelfState, ShelfSummary, StatusShelf } from "./shelves.js";
-import type { PantryEntry, PantryMatch } from "./pantry.js";
+import type { PantryEntry, PantryEntryUpdate, PantryMatch } from "./pantry.js";
+import type { PantryIntakeInput, PantryIntakeResolution, PantryIntakeView } from "./pantry-intake.js";
+import type { PlanTogetherIdea } from "./plan-together.js";
 import type { ShoppingLine } from "./shopping.js";
 import type { CartHandoff, CartProvider, CartProviderId } from "./carts.js";
 import type { Visibility } from "./shelves.js";
@@ -75,6 +77,7 @@ import type { SharedRecipeView } from "./sharing.js";
 import type { PairingSuggestions } from "./pairing.js";
 import type { MealTemplate, TemplateRole } from "./template.js";
 import type { Allergen, DietaryProfile } from "./dietary.js";
+import type { CookProfile, CookTier, KitchenStock, SkillRatings } from "./cooking-skill.js";
 
 /**
  * One typed client for the Second Breakfast HTTP API, shared by both apps.
@@ -137,6 +140,11 @@ export interface PantrySearchResponse {
   note?: string;
 }
 
+export interface PantryIntakeResolutionResponse {
+  pantry: PantryEntry[];
+  intakes: PantryIntakeView[];
+}
+
 /** A store you can collect a Kroger order from. */
 export interface GroceryStore {
   locationId: string;
@@ -188,6 +196,15 @@ export interface SecondsClient {
   clearRating: (recipeId: string) => Promise<void>;
   listPantry: () => Promise<PantryEntry[]>;
   addPantry: (text: string) => Promise<PantryEntry[]>;
+  updatePantry: (update: PantryEntryUpdate) => Promise<PantryEntry[]>;
+  listPantryIntakes: () => Promise<PantryIntakeView[]>;
+  createPantryIntake: (input: PantryIntakeInput) => Promise<PantryIntakeView>;
+  receiptScanStatus: () => Promise<{ enabled: boolean }>;
+  scanPantryReceipt: (
+    imageBase64: string,
+    imageMediaType: PhotoMediaType,
+  ) => Promise<{ intake: PantryIntakeView; intakes: PantryIntakeView[] }>;
+  resolvePantryIntake: (resolution: PantryIntakeResolution) => Promise<PantryIntakeResolutionResponse>;
   removePantry: (canonicalItems: string[]) => Promise<PantryEntry[]>;
   clearPantry: () => Promise<PantryEntry[]>;
   searchPantry: (query?: string) => Promise<PantrySearchResponse>;
@@ -222,6 +239,8 @@ export interface SecondsClient {
   friends: () => Promise<FriendsOverview>;
   dietaryProfile: () => Promise<DietaryProfile>;
   setDietaryProfile: (profile: DietaryProfile) => Promise<DietaryProfile>;
+  cookingProfile: () => Promise<CookProfile>;
+  setCookingProfile: (profile: { tier?: CookTier; stock?: KitchenStock; skills?: SkillRatings }) => Promise<CookProfile>;
   friendAllergens: (friendId: string) => Promise<{ allergens: Allergen[] } | null>;
   addFriend: (handle: string) => Promise<FriendsOverview>;
   updateFriendship: (
@@ -237,6 +256,7 @@ export interface SecondsClient {
   credits: () => Promise<CreditsResponse>;
   library: (shelfId?: string, query?: string, sort?: LibrarySort) => Promise<LibraryResponse>;
   plan: (week?: string) => Promise<PlanResponse>;
+  planTogether: () => Promise<{ ideas: PlanTogetherIdea[]; pantryCount: number }>;
   planAdd: (recipeId: string, date: string, slot: MealSlot, week?: string) => Promise<PlanResponse>;
   planRemove: (recipeId: string, date: string, slot: MealSlot, week?: string) => Promise<PlanResponse>;
   planMove: (
@@ -344,6 +364,25 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
     addPantry: (text) =>
       send<PantryEntry[]>("/api/pantry", { method: "POST", body: body({ text }) }),
 
+    updatePantry: (update: PantryEntryUpdate) =>
+      send<PantryEntry[]>("/api/pantry", { method: "PATCH", body: body(update) }),
+
+    listPantryIntakes: () => send<PantryIntakeView[]>("/api/pantry/intake"),
+
+    createPantryIntake: (input: PantryIntakeInput) =>
+      send<PantryIntakeView>("/api/pantry/intake", { method: "POST", body: body(input) }),
+
+    receiptScanStatus: () => send<{ enabled: boolean }>("/api/pantry/intake/scan"),
+
+    scanPantryReceipt: (imageBase64, imageMediaType) =>
+      send<{ intake: PantryIntakeView; intakes: PantryIntakeView[] }>("/api/pantry/intake/scan", {
+        method: "POST",
+        body: body({ imageBase64, imageMediaType }),
+      }),
+
+    resolvePantryIntake: (resolution: PantryIntakeResolution) =>
+      send<PantryIntakeResolutionResponse>("/api/pantry/intake", { method: "PATCH", body: body(resolution) }),
+
     removePantry: (canonicalItems) =>
       send<PantryEntry[]>("/api/pantry", {
         method: "DELETE",
@@ -430,6 +469,11 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
     setDietaryProfile: (profile) =>
       send<DietaryProfile>("/api/profile/dietary", { method: "PUT", body: body(profile) }),
 
+    cookingProfile: () => send<CookProfile>("/api/profile/cooking"),
+
+    setCookingProfile: (profile) =>
+      send<CookProfile>("/api/profile/cooking", { method: "PATCH", body: body(profile) }),
+
     friendAllergens: async (friendId) => {
       try {
         return await send<{ allergens: Allergen[] }>(`/api/friends/${friendId}/allergens`);
@@ -480,6 +524,8 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
     credits: () => send<CreditsResponse>("/api/credits"),
 
     plan: (week) => send<PlanResponse>(`/api/plan${week ? `?week=${week}` : ""}`),
+
+    planTogether: () => send<{ ideas: PlanTogetherIdea[]; pantryCount: number }>("/api/plan/together"),
 
     planAdd: (recipeId, date, slot, week) =>
       send<PlanResponse>("/api/plan", {

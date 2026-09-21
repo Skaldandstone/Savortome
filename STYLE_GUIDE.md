@@ -75,6 +75,30 @@ language definition from the bundled offline glossary. Keep those diagrams
 decorative and repeat their meaning in text. Do not generate technique media or
 contact a model while someone is cooking.
 
+## Progressive onboarding
+
+Onboarding begins with a useful choice instead of an account questionnaire.
+Each screen asks for one decision, explains why it helps, and offers a visible
+way to skip or leave. Progress language stays neutral: no streaks, scores,
+urgency, confetti, or claims that a person's setup is incomplete.
+
+The first screen routes directly to saving a recipe, planning a meal, or Feed
+me gently. The safety screen explains that dietary preferences and allergens
+filter suggestions but cannot verify that a food is safe. Cooking confidence
+uses the existing profile control so the app can tune detail without describing
+the user as a beginner or expert.
+
+Progress is stored locally under an account-scoped, non-reversible identifier.
+It contains only the onboarding version, current screen, completed screens, and
+finished state. Dietary choices, allergens, pantry contents, health information,
+and recipe activity do not belong in onboarding storage. A storage failure must
+be stated plainly and must not prevent the person from continuing.
+
+The journey must resume after reload, remain keyboard and screen-reader
+operable, fit at 200 percent text without horizontal scrolling, respect reduced
+motion and reduced decoration, and keep the same woodland kitchen surfaces,
+type hierarchy, brass boundaries, and native controls as the rest of the app.
+
 ## Existing public baseline
 
 The private Android build retains the reviewed woodland scene, food atlas and
@@ -153,4 +177,23 @@ beside the stove without account chrome or promotional material.
 
 Direct, warm, and non-performative. Prefer "You can swap in..." and "This will take about..." over
 chef authority or lifestyle copy. Error messages should preserve the user's ingredients and effort.
+
+## Pantry memory
+
+Pantry rows use the same quiet parchment surfaces and native controls as recipe
+forms. Put the item name and observed quantity first, then correction actions.
+Use a narrow warning stripe for a produce reminder, never a red error treatment.
+
+Write reminders as questions: "Still have those bananas?" Pair the question
+with a practical next action or recipe. Do not say that the person needs a
+nutrient, that the pantry count is certainly current, or that a quality window
+is a safety deadline. Storage guidance belongs in a native `details` disclosure
+with its source visible. Receipt and grocery-order items must appear in a
+reviewable checklist before they become pantry records.
+
+The Plan together entrance is a brass-framed journal section followed by no
+more than three compact parchment cards. Each card leads with the recipe, then
+one plain-language reason, time when known, a labeled native meal selector, and
+the planning action. Keep pantry uncertainty and allergen limitations visible
+in the section rather than hiding them in a tooltip.
 

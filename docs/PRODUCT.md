@@ -2,6 +2,32 @@
 
 Feature-by-feature documentation. For layout and getting started, see the [README](../README.md); for deploying, see [DEPLOYMENT.md](DEPLOYMENT.md).
 
+## Generated content policy
+
+Every model-backed path sends the Skald & Stone runtime standard from the
+Savortome backend. The current policy is `sands-generated-content-v1`; product
+prompts are separately versioned for recipe extraction, pantry-query parsing,
+receipt review, nutrition estimates, and web recipe search. Source text,
+transcripts, photos, search results, and user requests are treated as untrusted
+data rather than instructions.
+
+Provider output is accepted only through a structured schema or a narrower
+validated boundary. The backend records policy version, product prompt version,
+provider model and response identifier, token usage when supplied, generation
+time, a non-content source reference, and the validation result. Prompts,
+uploaded images, account data, API keys, and generated answers are never written
+to this telemetry.
+
+Generated recipe and receipt content remains subject to human review. Nutrition
+guesses are visibly estimates and only fill gaps left by USDA. Allergen matching
+is a keyword warning and never a safety certification. Pantry-query generation
+falls back to the deterministic ingredient parser, and web search falls back to
+validated search-index order when the model supplies no usable ranking. ASR
+providers do not accept developer instructions; their bounded, sanitized text is
+never rendered directly and enters the recipe extractor as untrusted source
+material. The detailed audit and known limits are in
+[GENERATED-CONTENT-REVIEW.md](GENERATED-CONTENT-REVIEW.md).
+
 ## How an import actually runs
 
 The pipeline tries the cheapest path that can work, and tells you which one it
@@ -118,6 +144,44 @@ Set the keys up with:
 ```bash
 cd apps/web && clerk env pull
 ```
+
+### Getting started
+
+`/getting-started` is a short, resumable introduction to the product. It begins
+with one useful choice: save a recipe, plan a meal, or open Feed me gently. It
+then explains dietary and allergen boundaries before reusing the existing
+cooking-confidence control. Every screen explains why the information helps and
+allows the person to skip or leave.
+
+The first implementation stores only journey progress in local storage: schema
+version, current screen, completed screens, and finished state. Signed-in scopes
+use a one-way hash of the Clerk user id, and the raw account id is never sent to
+the client for storage naming. The record contains no dietary selections,
+allergens, pantry contents, health details, or recipe activity. Guest progress
+can move once into the first signed-in scope, then the guest record is removed.
+If local storage is unavailable, the journey remains usable and says that its
+place could not be saved.
+
+The broader pantry-memory, receipt review, grocery reconciliation, freshness
+guidance, Plan together, and opt-in reminder work is specified separately and
+will reuse the same value-first, one-decision-at-a-time approach.
+
+### Receipt review
+
+Signed-in mobile users can take or choose a grocery receipt photo when the
+server has both `RECEIPT_SCAN_ENABLED=true` and an Anthropic key. Authentication
+happens before the image body is decoded or a metered extraction begins. The
+extractor returns only grocery item names and stated package quantities, then
+the server discards the image and stores a SHA-256 digest solely to avoid
+queuing the same receipt twice. Prices, payment details, addresses, loyalty
+identifiers, and other receipt metadata are excluded.
+
+Extracted items enter the existing review queue. Nothing becomes pantry state
+until the person checks the items and confirms them. Scanning does not assign a
+purchase date because the time a receipt is photographed does not prove when
+the groceries were bought. This feature is disabled by default because each
+scan may incur model cost; metering or beta limits remain an owner decision
+before enabling it for a cohort.
 
 ---
 
@@ -973,6 +1037,51 @@ synthesised, because what's being tested is what this app does with one.
 `customer.subscription.updated` and `customer.subscription.deleted`. Products
 and prices are created inline from `billing.ts`, so there is nothing to
 configure in the Stripe dashboard beyond the endpoint.
+
+---
+
+## Pantry memory and grocery review
+
+Pantry entries can record whether an item is usually kept on hand, where it is
+stored, when it was acquired or last confirmed, and how confident the app is
+that it remains available. Dates support memory and planning. They are never
+expiry dates, discard instructions, or food-safety guarantees.
+
+Perishable produce may be resurfaced when it is commonly easy to forget or may
+be approaching a useful cooking window. The copy asks the person to check what
+they still have and offers relevant recipes; it does not diagnose a nutritional
+need or claim that an item has spoiled. Storage tips are limited to reviewed
+guidance with a visible source link. Every in-app freshness prompt can be
+answered with **Yes, still here**, **Used some**, **All gone**, **Remind me in
+3 days**, or **Hide this suggestion**. A reduced amount is reviewed and saved
+explicitly, while confirmation, snooze, and hidden state are account scoped.
+Confirming an item clears an old snooze or dismissal. These controls do not
+schedule a notification or request notification permission.
+
+Receipt and grocery-order data enters a pending review queue. A person must
+select and confirm the items that actually came home before any pantry quantity
+changes. Provider payloads are reduced to item names, quantities, dates, and a
+source reference; payment details, delivery addresses, and unrelated order data
+are not accepted. Provider callbacks require their own raw-body signature
+verification before calling this authenticated intake boundary.
+
+The current-week planner opens with **Plan together**. It ranks up to three
+saved recipes against the signed-in person's pantry, moves produce that may be
+easy to forget toward the front, and labels recipes as pantry-complete or close
+matches. It never silently expands beyond the saved recipe library. Detected
+allergen conflicts are excluded before ranking; dietary tags influence order
+but remain incomplete metadata, so the interface retains the full ingredient
+and packaging disclaimer. A person chooses the meal slot and confirms before
+anything is written to the plan.
+
+The native app exposes the progressive getting-started guide from its woodland
+welcome surface. Its three sections mirror web: begin with one useful task,
+understand the dietary and allergen boundary, then optionally describe how
+cooking feels. The cooking section saves the approved one-tap tier before
+revealing optional skill and kitchen questions. It uses the authenticated,
+account-pinned API client. Device progress stores only onboarding navigation
+under a derived account scope, never a raw provider ID, food choice, pantry
+item, dietary value, allergen, or health detail.
 
 ---
 

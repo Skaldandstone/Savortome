@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { asrConfigFromEnv, ffmpegBin, ytDlpBin } from "../src/sources/transcribe.js";
+import { asrConfigFromEnv, ffmpegBin, normalizeTranscriptCues, ytDlpBin } from "../src/sources/transcribe.js";
 
 describe("ytDlpBin", () => {
   it("defaults to the bare command name", () => {
@@ -9,6 +9,17 @@ describe("ytDlpBin", () => {
 
   it("prefers an explicit path — winget installs it without adding it to PATH", () => {
     assert.equal(ytDlpBin({ YT_DLP_PATH: "C:\\tools\\yt-dlp.exe" }), "C:\\tools\\yt-dlp.exe");
+  });
+});
+
+describe("normalizeTranscriptCues", () => {
+  it("rejects malformed timestamps and cleans provider text before extraction", () => {
+    assert.deepEqual(normalizeTranscriptCues([
+      { start: -1, text: "bad" },
+      { start: Number.NaN, text: "bad" },
+      { start: 1.6, text: "  add\u0000 the flour\u202e  " },
+      { start: 3, text: "   " },
+    ]), [{ start: 2, text: "add the flour" }]);
   });
 });
 
