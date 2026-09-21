@@ -29,3 +29,4 @@ apps/web/next-env.d.ts
 # Python-generated caches
 __pycache__/
 *.py[cod]
+.local/
