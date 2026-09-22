@@ -1,5 +1,16 @@
 # Privacy and release readiness evidence
 
+> **Physical Android refresh, 22 September 2026:** the connected Samsung
+> SM-T970 had the exact retained Savortome APK installed, verified by pulling
+> the installed package and matching its SHA-256 byte for byte. Guest Care
+> passed a cold direct-link launch, exact ingredient and step expansion, honest
+> signed-out shopping behavior, a Wi-Fi-off cold launch, malformed-link privacy,
+> light and dark themes, 150% system text and zero animation scales. Network,
+> theme, font and animation settings were restored. The captured log contained
+> no fatal Android or React Native match. Signed-in writes, receipt capture and
+> TalkBack traversal remain open and are not inferred from this pass. See
+> [physical-device-evidence.md](physical-device-evidence.md).
+
 > **Pantry input-recovery continuation, 22 September 2026:** the local
 > candidate keeps typed pantry additions and remaining-amount corrections when
 > a write is rejected, clears them only after server confirmation, and keeps

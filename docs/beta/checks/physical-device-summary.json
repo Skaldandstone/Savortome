@@ -1,5 +1,5 @@
 {
-  "testedAt": "2026-09-21T20:55:00-07:00",
+  "testedAt": "2026-09-22T01:10:00-07:00",
   "device": {
     "model": "Samsung SM-T970",
     "androidVersion": "13",
@@ -25,17 +25,22 @@
   },
   "verified": {
     "installedAndColdStarted": true,
+    "installedApkMatchesRetainedArtifact": true,
     "guestCareDirectEntry": true,
     "guestSuggestionsOffline": true,
     "exactIngredientsAndStepsExpand": true,
     "guestShoppingWriteReportsNotSaved": true,
     "guestSelectionPreservedForSignIn": true,
     "untrustedCareReturnIgnored": true,
+    "diagnosisAndMedicationFieldsIgnored": true,
+    "lightAndDarkThemes": true,
     "fontScale150Percent": true,
+    "systemAnimationScaleZero": true,
     "reducedDecoration": true,
     "portraitLock": true,
     "allowBackupFalse": true,
-    "unexpectedAppCrashInCapturedLog": false
+    "unexpectedAppCrashInCapturedLog": false,
+    "fatalRuntimeMatchesInCapturedLog": 0
   },
   "screenReader": {
     "talkBackInstalled": true,
@@ -44,6 +49,10 @@
   },
   "restoredDeviceSettings": {
     "fontScale": "1.0",
+    "nightMode": "yes",
+    "animatorDurationScale": "null",
+    "transitionAnimationScale": "1.0",
+    "windowAnimationScale": "1.0",
     "accessibilityEnabled": "0",
     "accelerometerRotation": "1",
     "userRotation": "0",
