@@ -46,6 +46,13 @@ change AWS resources or prove a running ECS task.
   plain language without requiring a person to disclose a diagnosis.
 - The meal-plan clear control has an explicit keyboard focus treatment consistent with the woodland
   theme.
+- Protected editor, plan, pantry, search, and shopping-list actions now recognize a 401 as a likely
+  ended session, explain the recovery step without blame, and provide an app-local sign-in return
+  link. Recipe text remains in the tab recovery draft while the person signs in again.
+- A failed shopping-list checkbox write now rolls the optimistic checkmark back. The screen no
+  longer claims an item reached the basket when the server rejected the change.
+- A plan sign-in return keeps the selected week through a validated local `week` parameter. Unknown,
+  malformed, or external return destinations are rejected.
 
 ## Product parity observations
 

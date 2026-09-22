@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { RecipeDraft } from "@seconds/core/format";
 import { api } from "@/lib/client";
+import { actionFailure, signInReturnHref, type ActionFailure } from "@/lib/action-failure";
 import { Button, Callout, Panel, PanelHeader } from "@/ui";
 import { Basics, Details } from "./DetailFields";
 import { IngredientRows } from "./IngredientRows";
@@ -33,7 +34,7 @@ export function RecipeEditor({
   storageScope: string;
 }) {
   const { draft, dirty, restore, set, ingredients, steps } = useDraft(initial);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ActionFailure | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [leaving, setLeaving] = useState(false);
@@ -93,7 +94,7 @@ export function RecipeEditor({
       // The recipe page renders on the server, so it has to be told the row moved.
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't save that.");
+      setError(actionFailure(err, "Couldn't save that."));
       setSaving(false);
     }
   };
@@ -108,7 +109,7 @@ export function RecipeEditor({
       router.push("/");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't delete that.");
+      setError(actionFailure(err, "Couldn't delete that."));
       setSaving(false);
     }
   };
@@ -184,7 +185,8 @@ export function RecipeEditor({
 
       {error ? (
         <Callout tone="error" role="alert">
-          {error}
+          {error.message}
+          {error.signInRequired ? <> <Link href={signInReturnHref(recipeId ? `/recipe/${recipeId}/edit` : "/recipe/new")}>Sign in again</Link>. Your recovery draft will remain in this tab.</> : null}
         </Callout>
       ) : null}
 

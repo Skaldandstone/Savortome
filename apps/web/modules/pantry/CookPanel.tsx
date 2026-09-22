@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { signInReturnHref } from "@/lib/action-failure";
 import { Button, Callout, FieldRow, Panel, PanelHeader, TextField } from "@/ui";
 import { MatchList, QueryReadback } from "./MatchList";
 import { PantryList } from "./PantryList";
@@ -103,7 +105,8 @@ export function CookPanel() {
             <PantryReviewQueue intakes={pantry.intakes} onResolve={pantry.resolveIntake} />
             {pantry.error ? (
               <Callout tone="error" role="alert">
-                {pantry.error}
+                {pantry.error.message}
+                {pantry.error.signInRequired ? <> <Link href={signInReturnHref("/")}>Sign in again</Link>.</> : null}
               </Callout>
             ) : null}
           </div>
@@ -111,7 +114,8 @@ export function CookPanel() {
 
         {error ? (
           <Callout tone="error" title="Search failed" role="alert">
-            {error}
+            {error.message}
+            {error.signInRequired ? <> <Link href={signInReturnHref("/")}>Sign in again</Link>.</> : null}
           </Callout>
         ) : null}
 
