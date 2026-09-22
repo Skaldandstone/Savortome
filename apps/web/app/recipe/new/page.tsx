@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { KitchenPageHeading } from '@/modules/woodland/KitchenPageHeading';
 import { redirect } from "next/navigation";
 import { emptyDraft } from "@seconds/core/format";
@@ -20,14 +21,16 @@ export default async function NewRecipePage() {
     );
   }
 
-  if (clerkConfigured() && !(await currentUserId())) {
+  const userId = await currentUserId();
+  if (clerkConfigured() && !userId) {
     redirect("/sign-in?redirect_url=/recipe/new");
   }
+  const storageScope = createHash("sha256").update(userId ?? "local-development").digest("hex").slice(0, 16);
 
   return (
     <main className="woodland-workspace" data-kitchen-page="recipe/new">
       <KitchenPageHeading title="A new page in your journal" description="Write down a recipe in your own words." icon="book" />
-      <RecipeEditor initial={emptyDraft()} />
+      <RecipeEditor initial={emptyDraft()} storageScope={storageScope} />
     </main>
   );
 }

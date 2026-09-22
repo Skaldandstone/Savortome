@@ -1,5 +1,21 @@
 # Privacy and release readiness evidence
 
+> **Neurodivergent-first web usability checkpoint, 22 September 2026:** the
+> local candidate adds per-account tab-scoped recipe draft recovery, explicit
+> confirmation before clearing a whole week, pantry, or shopping list, truthful
+> unsaved-change error copy, and an expanded public accessibility explanation.
+> Seven focused care/recovery tests, all four workspace typechecks, the web
+> production build, 688 core tests, 27 woodland UI contracts, and 10 web legal,
+> focus, and Clerk contracts pass. Signed-out wide and narrow production checks
+> were completed before the overnight scale-down window. At 00:03 Pacific, the
+> hostname returned the documented asleep 503 and ECS showed desired/running
+> count 0/0 on candidate revision 25. The immutable web digest and cache-policy
+> version 3 were rechecked read-only; no AWS resource changed. Authenticated
+> browser acceptance remains open because the Chrome bridge stopped returning
+> page state despite a running browser and correct native-host registration.
+> This candidate is not deployed. See
+> [neurodivergent-usability-audit.md](neurodivergent-usability-audit.md).
+
 > **Current device and guest-Care checkpoint, 21 September 2026:** the live
 > AWS service is healthy at desired/running count 1 in account `051722405355`,
 > region `us-east-2`, with public access enabled and Stripe checkout/live mode

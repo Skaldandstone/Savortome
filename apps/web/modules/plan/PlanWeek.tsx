@@ -40,6 +40,7 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
   const [dragOver, setDragOver] = useState<{ date: string; slot: MealSlot } | null>(null);
   const [suggestions, setSuggestions] = useState<PlanSuggestion[]>([]);
   const [respondingTo, setRespondingTo] = useState<string | null>(null);
+  const [confirmingClear, setConfirmingClear] = useState(false);
 
   const today = todayISO();
 
@@ -54,6 +55,7 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
   }, []);
 
   useEffect(() => {
+    setConfirmingClear(false);
     void load(week);
   }, [load, week]);
 
@@ -157,14 +159,27 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
             Add this week to the shopping list
           </Button>
           {planned > 0 ? (
-            <button
-              type="button"
-              className={styles.clearWeek}
-              disabled={busy}
-              onClick={() => void run(() => api.planClearWeek(week))}
-            >
-              Clear the week
-            </button>
+            <>
+              <button
+                type="button"
+                className={styles.clearWeek}
+                disabled={busy}
+                aria-expanded={confirmingClear}
+                onClick={() => setConfirmingClear(true)}
+              >
+                Clear the week
+              </button>
+              {confirmingClear ? (
+                <div className={styles.clearConfirm} role="group" aria-label="Confirm clearing meal plan">
+                  <span>Remove every planned meal from {weekLabel(week)}?</span>
+                  <Button type="button" variant="danger" disabled={busy} onClick={() => {
+                    setConfirmingClear(false);
+                    void run(() => api.planClearWeek(week));
+                  }}>Clear every meal</Button>
+                  <Button type="button" variant="ghost" disabled={busy} onClick={() => setConfirmingClear(false)}>Keep this week</Button>
+                </div>
+              ) : null}
+            </>
           ) : null}
         </div>
 

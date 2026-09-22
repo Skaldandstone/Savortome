@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { RecipeDraft } from "@seconds/core/format";
@@ -9,6 +9,7 @@ import { Button, Callout, Panel, PanelHeader } from "@/ui";
 import { Basics, Details } from "./DetailFields";
 import { IngredientRows } from "./IngredientRows";
 import { StepRows } from "./StepRows";
+import { readRecipeDraftRecovery, recipeDraftStorageKey } from "./draft-recovery";
 import { useDraft } from "./useDraft";
 import styles from "./editor.module.css";
 
@@ -23,17 +24,52 @@ import styles from "./editor.module.css";
 export function RecipeEditor({
   initial,
   recipeId = null,
+  storageScope,
 }: {
   initial: RecipeDraft;
   /** Null when writing a new recipe. */
   recipeId?: string | null;
+  /** Opaque per-account scope. Never use a Clerk id or email here. */
+  storageScope: string;
 }) {
-  const { draft, dirty, set, ingredients, steps } = useDraft(initial);
+  const { draft, dirty, restore, set, ingredients, steps } = useDraft(initial);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [leaving, setLeaving] = useState(false);
+  const [recoverable, setRecoverable] = useState<RecipeDraft | null>(null);
+  const [draftStatus, setDraftStatus] = useState("");
   const router = useRouter();
+  const storageKey = useMemo(
+    () => recipeDraftStorageKey(storageScope, recipeId),
+    [recipeId, storageScope],
+  );
+
+  useEffect(() => {
+    setRecoverable(null);
+    try {
+      const stored = sessionStorage.getItem(storageKey);
+      if (!stored) return;
+      const recovered = readRecipeDraftRecovery(stored);
+      if (recovered) setRecoverable(recovered);
+      else sessionStorage.removeItem(storageKey);
+    } catch {
+      // A blocked or malformed session store must never block the editor.
+    }
+  }, [storageKey]);
+
+  useEffect(() => {
+    if (!dirty || leaving) return;
+    const timer = window.setTimeout(() => {
+      try {
+        sessionStorage.setItem(storageKey, JSON.stringify({ draft, savedAt: Date.now() }));
+        setDraftStatus("Draft kept in this tab.");
+      } catch {
+        setDraftStatus("This browser could not keep a recovery draft. Save the recipe before leaving.");
+      }
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [dirty, draft, leaving, storageKey]);
 
   // Losing a recipe you just typed out is unforgivable, and the browser's own
   // prompt is the only thing that can interrupt a tab close.
@@ -51,6 +87,7 @@ export function RecipeEditor({
       const savedId = recipeId ?? (await api.createRecipe(draft)).recipeId;
       if (recipeId) await api.updateRecipe(recipeId, draft);
 
+      try { sessionStorage.removeItem(storageKey); } catch { /* Saving still succeeded. */ }
       setLeaving(true);
       router.push(`/recipe/${savedId}`);
       // The recipe page renders on the server, so it has to be told the row moved.
@@ -66,6 +103,7 @@ export function RecipeEditor({
     setSaving(true);
     try {
       await api.deleteRecipe(recipeId);
+      try { sessionStorage.removeItem(storageKey); } catch { /* Deleting still succeeded. */ }
       setLeaving(true);
       router.push("/");
       router.refresh();
@@ -83,6 +121,24 @@ export function RecipeEditor({
         void save();
       }}
     >
+      {recoverable ? (
+        <Callout tone="info" title="You have unfinished changes from this tab" role="status">
+          <p>Bring them back, or discard them and keep the saved version shown here.</p>
+          <div className={styles.recoveryActions}>
+            <Button type="button" onClick={() => {
+              restore(recoverable);
+              setRecoverable(null);
+              setDraftStatus("Recovery draft restored.");
+            }}>Restore my changes</Button>
+            <Button type="button" variant="ghost" onClick={() => {
+              try { sessionStorage.removeItem(storageKey); } catch { /* The editor remains usable. */ }
+              setRecoverable(null);
+              setDraftStatus("Recovery draft discarded.");
+            }}>Use the saved version</Button>
+          </div>
+        </Callout>
+      ) : null}
+
       <Panel>
         <PanelHeader
           title={recipeId ? "Edit recipe" : "Write a recipe"}
@@ -132,13 +188,15 @@ export function RecipeEditor({
         </Callout>
       ) : null}
 
+      {draftStatus ? <p className={styles.draftStatus} role="status">{draftStatus}</p> : null}
+
       <div className={styles.actions}>
         <Button type="submit" disabled={saving}>
           {saving ? "Saving…" : recipeId ? "Save changes" : "Save recipe"}
         </Button>
 
         <Link className={styles.cancel} href={recipeId ? `/recipe/${recipeId}` : "/"}>
-          Cancel
+          Leave and keep draft
         </Link>
 
         {recipeId ? (

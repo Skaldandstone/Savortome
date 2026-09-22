@@ -28,6 +28,7 @@ export function PantryList({
   const [text, setText] = useState("");
   const [editingAmount, setEditingAmount] = useState<string | null>(null);
   const [remainingAmount, setRemainingAmount] = useState("");
+  const [confirmingClear, setConfirmingClear] = useState(false);
 
   const startAmountEdit = (item: PantryEntry) => {
     setEditingAmount(item.canonicalItem);
@@ -174,9 +175,16 @@ export function PantryList({
               );
             })}
           </ul>
-          <Button variant="ghost" type="button" onClick={onClear}>
+          <Button variant="ghost" type="button" aria-expanded={confirmingClear} onClick={() => setConfirmingClear(true)}>
             Clear pantry
           </Button>
+          {confirmingClear ? (
+            <div className={styles.clearConfirm} role="group" aria-label="Confirm clearing pantry">
+              <span>This removes every pantry item and its freshness history.</span>
+              <Button type="button" variant="danger" onClick={() => { setConfirmingClear(false); onClear(); }}>Clear every item</Button>
+              <Button type="button" variant="ghost" onClick={() => setConfirmingClear(false)}>Keep my pantry</Button>
+            </div>
+          ) : null}
         </>
       )}
     </>
