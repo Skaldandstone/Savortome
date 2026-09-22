@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { signInReturnHref } from "@/lib/action-failure";
 import { Button, Callout, Panel, PanelHeader } from "@/ui";
 import { CartButtons } from "./CartButtons";
 import { KrogerConnection } from "./KrogerConnection";
@@ -65,7 +67,8 @@ export function ListPanel() {
 
         {error ? (
           <Callout tone="error" role="alert">
-            {error}
+            {error.message}
+            {error.signInRequired ? <> <Link href={signInReturnHref("/list")}>Sign in again</Link>.</> : null}
           </Callout>
         ) : null}
       </Panel>

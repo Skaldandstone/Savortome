@@ -637,12 +637,23 @@ test('asynchronous collection panels announce loading, results, and failures', (
   ));
 
   const pantry = fixture({ pantry: {
-    items: [], intakes: [], loading: true, error: 'Fixture pantry failure',
+    items: [], intakes: [], loading: true,
+    error: { message: 'Fixture pantry failure', signInRequired: false },
     add: async () => {}, update: async () => {}, remove: async () => {}, clear: async () => {}, resolveIntake: async () => true,
   } });
   const pantryTree = pantry.render(pantry.app.CookPanel);
   nodes(pantryTree).find(node => text(node) === 'My pantry' && node.props?.onClick).props.onClick();
   const openPantry = pantry.render(pantry.app.CookPanel);
   assert.ok(nodes(openPantry).some(node => node.props?.role === 'status' && text(node) === 'Loading pantry…'));
-  assert.ok(nodes(openPantry).some(node => node.props?.role === 'alert' && text(node) === 'Fixture pantry failure'));
+  assert.ok(nodes(openPantry).some(node => node.props?.role === 'alert' && text(node).includes('Fixture pantry failure')));
+
+  const expiredList = fixture({ shopping: {
+    list: null, providers: [], loading: false, busy: false,
+    error: { message: 'Your sign-in may have ended.', signInRequired: true }, handoff: null,
+    toggle: async () => {}, remove: async () => {}, clear: async () => {}, sendToCart: async () => {},
+  } });
+  const signInLink = nodes(expiredList.render(expiredList.app.ListPanel)).find(
+    node => node.props?.href === '/sign-in?redirect_url=%2Flist' && text(node) === 'Sign in again',
+  );
+  assert.equal(signInLink.props.href, '/sign-in?redirect_url=%2Flist');
 });

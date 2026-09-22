@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import type { CartHandoff, CartProvider, CartProviderId, ShoppingListView } from "@seconds/core/format";
 import { api } from "@/lib/client";
+import { actionFailure, type ActionFailure } from "@/lib/action-failure";
+import { listWithItemChecked } from "./list-state";
 
 export interface ListController {
   list: ShoppingListView | null;
   providers: CartProvider[];
   loading: boolean;
   busy: boolean;
-  error: string | null;
+  error: ActionFailure | null;
   handoff: CartHandoff | null;
   toggle: (itemId: string, checked: boolean) => Promise<void>;
   remove: (itemId: string) => Promise<void>;
@@ -24,7 +26,7 @@ export function useShoppingList(): ListController {
   const [providers, setProviders] = useState<CartProvider[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ActionFailure | null>(null);
   const [handoff, setHandoff] = useState<CartHandoff | null>(null);
 
   useEffect(() => {
@@ -36,7 +38,7 @@ export function useShoppingList(): ListController {
         setList(nextList);
         setProviders(nextProviders);
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Couldn't load your list.");
+        if (!cancelled) setError(actionFailure(err, "Couldn't load your list."));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -46,13 +48,15 @@ export function useShoppingList(): ListController {
     };
   }, []);
 
-  const run = useCallback(async (write: () => Promise<ShoppingListView>) => {
+  const run = useCallback(async (write: () => Promise<ShoppingListView>): Promise<boolean> => {
     setBusy(true);
     setError(null);
     try {
       setList(await write());
+      return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That didn't save.");
+      setError(actionFailure(err, "That didn't save."));
+      return false;
     } finally {
       setBusy(false);
     }
@@ -61,15 +65,13 @@ export function useShoppingList(): ListController {
   /** Ticking a box should feel instant; the server confirms after. */
   const toggle = useCallback(
     async (itemId: string, checked: boolean) => {
-      setList((current) =>
-        current
-          ? {
-              ...current,
-              items: current.items.map((i) => (i.id === itemId ? { ...i, checked } : i)),
-            }
-          : current,
-      );
-      await run(() => api.setListItemChecked(itemId, checked));
+      setList((current) => listWithItemChecked(current, itemId, checked));
+      const saved = await run(() => api.setListItemChecked(itemId, checked));
+      if (!saved) {
+        // The screen must not claim something reached the basket when the
+        // server rejected the write, especially after a session expires.
+        setList((current) => listWithItemChecked(current, itemId, !checked));
+      }
     },
     [run],
   );
@@ -89,7 +91,7 @@ export function useShoppingList(): ListController {
       }
       if (result.url) window.open(result.url, "_blank", "noopener,noreferrer");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't send that list.");
+      setError(actionFailure(err, "Couldn't send that list."));
     } finally {
       setBusy(false);
     }
@@ -103,10 +105,10 @@ export function useShoppingList(): ListController {
     error,
     handoff,
     toggle,
-    remove: (itemId) => run(() => api.removeListItem(itemId)),
-    clear: () => run(() => api.clearList()),
-    addRecipes: (recipeIds) => run(() => api.addRecipesToList(recipeIds)),
-    addItems: (items) => run(() => api.addItemsToList(items)),
+    remove: async (itemId) => { await run(() => api.removeListItem(itemId)); },
+    clear: async () => { await run(() => api.clearList()); },
+    addRecipes: async (recipeIds) => { await run(() => api.addRecipesToList(recipeIds)); },
+    addItems: async (items) => { await run(() => api.addItemsToList(items)); },
     sendToCart,
   };
 }

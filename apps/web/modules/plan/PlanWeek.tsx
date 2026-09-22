@@ -17,6 +17,7 @@ import {
   type PlanSuggestion,
 } from "@seconds/core/format";
 import { api } from "@/lib/client";
+import { actionFailure, signInReturnHref, type ActionFailure } from "@/lib/action-failure";
 import { Button, Callout, Panel, PanelHeader } from "@/ui";
 import { AddMealDialog } from "./AddMealDialog";
 import { PlanTogether } from "./PlanTogether";
@@ -35,7 +36,7 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
   const [library, setLibrary] = useState<LibraryRecipe[]>([]);
   const [adding, setAdding] = useState<{ date: string; slot: MealSlot } | null>(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ActionFailure | null>(null);
   const [sentToList, setSentToList] = useState<number | null>(null);
   const [dragOver, setDragOver] = useState<{ date: string; slot: MealSlot } | null>(null);
   const [suggestions, setSuggestions] = useState<PlanSuggestion[]>([]);
@@ -50,7 +51,7 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
       const data = await api.plan(forWeek);
       setMeals(data.meals);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't load your plan.");
+      setError(actionFailure(err, "Couldn't load your plan."));
     }
   }, []);
 
@@ -86,7 +87,7 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
       // for, which may not be the one currently on screen — reload either way.
       if (action === "accept") void load(week);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That didn't work.");
+      setError(actionFailure(err, "That didn't work."));
     } finally {
       setRespondingTo(null);
     }
@@ -100,7 +101,7 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
       setMeals(data.meals);
       if (data.addedToList !== undefined && data.addedToList > 0) setSentToList(data.addedToList);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That didn't work.");
+      setError(actionFailure(err, "That didn't work."));
     } finally {
       setBusy(false);
     }
@@ -192,7 +193,8 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
 
         {error ? (
           <Callout tone="error" role="alert">
-            {error}
+            {error.message}
+            {error.signInRequired ? <> <Link href={signInReturnHref(`/plan?week=${week}`)}>Sign in again</Link>.</> : null}
           </Callout>
         ) : null}
 

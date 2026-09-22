@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import type { PantryEntry, PantryEntryUpdate, PantryIntakeView, PantrySearchResponse } from "@seconds/core/format";
 import { api } from "@/lib/client";
+import { actionFailure, type ActionFailure } from "@/lib/action-failure";
 
 export interface PantryController {
   items: PantryEntry[];
   loading: boolean;
-  error: string | null;
+  error: ActionFailure | null;
   intakes: PantryIntakeView[];
   add: (text: string) => Promise<void>;
   update: (update: PantryEntryUpdate) => Promise<void>;
@@ -20,7 +21,7 @@ export interface PantryController {
 export function usePantry(): PantryController {
   const [items, setItems] = useState<PantryEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ActionFailure | null>(null);
   const [intakes, setIntakes] = useState<PantryIntakeView[]>([]);
 
   useEffect(() => {
@@ -33,7 +34,7 @@ export function usePantry(): PantryController {
           setIntakes(pending);
         }
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Couldn't load your pantry.");
+        if (!cancelled) setError(actionFailure(err, "Couldn't load your pantry."));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -55,7 +56,7 @@ export function usePantry(): PantryController {
       setIntakes(next.intakes);
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That pantry review did not save.");
+      setError(actionFailure(err, "That pantry review did not save."));
       return false;
     }
   }, []);
@@ -65,7 +66,7 @@ export function usePantry(): PantryController {
     try {
       setItems(await write());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That didn't save.");
+      setError(actionFailure(err, "That didn't save."));
     }
   }, []);
 
@@ -85,7 +86,7 @@ export function usePantry(): PantryController {
 export interface SearchController {
   response: PantrySearchResponse | null;
   searching: boolean;
-  error: string | null;
+  error: ActionFailure | null;
   search: (query: string) => Promise<void>;
 }
 
@@ -93,7 +94,7 @@ export interface SearchController {
 export function usePantrySearch(): SearchController {
   const [response, setResponse] = useState<PantrySearchResponse | null>(null);
   const [searching, setSearching] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ActionFailure | null>(null);
 
   const search = useCallback(async (query: string) => {
     setSearching(true);
@@ -101,7 +102,7 @@ export function usePantrySearch(): SearchController {
     try {
       setResponse(await api.searchPantry(query));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That search didn't work.");
+      setError(actionFailure(err, "That search didn't work."));
     } finally {
       setSearching(false);
     }

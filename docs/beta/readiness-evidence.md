@@ -1,5 +1,17 @@
 # Privacy and release readiness evidence
 
+> **Session-recovery continuation, 22 September 2026:** after PR #99 merged,
+> a second local candidate added consistent expired-session recovery to the
+> recipe editor, plan, pantry, pantry search, and shopping list. Sign-in links
+> accept only app-local return paths; the meal plan preserves a validated week.
+> Rejected shopping-list checkbox writes now roll the optimistic state back.
+> Twelve focused care, recovery, session, and list-state tests, all four
+> workspace typechecks, 27 woodland UI contracts, 10 web legal contracts, and
+> the web production build pass locally. The production hostname remained in
+> its documented overnight 503 sleep window, so authenticated browser
+> acceptance is still open. No AWS, provider, billing, grocery-order, database,
+> or deployment mutation occurred.
+
 > **Neurodivergent-first web usability checkpoint, 22 September 2026:** the
 > local candidate adds per-account tab-scoped recipe draft recovery, explicit
 > confirmation before clearing a whole week, pantry, or shopping list, truthful
