@@ -1,70 +1,56 @@
-# Wispling handoff evidence and integration notes
+# Wispling handoff evidence
 
-Date: 2026-08-30. Changes are isolated at `C:\Users\James\Documents\GitHub\.worktrees\wispling-second-breakfast`, branch `codex/second-breakfast-handoff`, based on `e9bf7f3`. Canonical Wispling and its unrelated alpha work were not edited. Integration belongs to the parent/alpha owner after review.
+Current status: implemented in Wispling's active app, merged through [Wispling PR #9](https://github.com/Skaldandstone/Wispling/pull/9) on 2026-09-21, and exercised with Savortome on a physical Android device.
 
-**Current-alpha blocker:** the parent inspected the active `wispling-alpha` entry point: `App.tsx` exports `src/alpha/AlphaApp`. This patch's legacy `RootNavigator` and `TalkConversationScreen` are not reachable from that alpha entry point. The alpha milestone explicitly excludes Second Breakfast. The implementation, tests and export below apply to the isolated legacy baseline only. They do not establish a working current-alpha or OS-validated handoff. Current alpha needs a separately reviewed, narrow adaptation; do not reintroduce the legacy emotional-support shell or replace alpha files with this checkout.
+## Privacy and navigation contract
 
-## Scope and privacy contract
+Wispling's current Food and water screen offers a separate, user-initiated button for Savortome food ideas. Wispling's own reminder support remains available whether the handoff succeeds or fails.
 
-The optional card appears only in the existing `basics` support conversation when `EXPO_PUBLIC_SECOND_BREAKFAST_BETA=true`. It is off by default, dismissible, and leaves Wispling's standalone support conversation intact. It reports failure without blocking the user. No notifications or proactive reminders were added.
+The outbound app and web links contain only fixed navigation context:
 
-The builder constructs matching `seconds://care` and `https://secondbreakfast.skaldandstone.com/care` links from an explicit allowlist. It accepts only user-selected effort, time, temperature and texture, plus fixed `source=wispling`, `intent=eat_now` and `return_to=wispling://care-return`. It does not read the Wispling store, health history, diagnosis, medication, notes, dietary profile or food selection. Nothing reports eating completion. Unknown and invalid values are discarded.
+- `source=wispling`
+- `intent=eat_now`
+- `return_to=wispling://care-return`
 
-Installed-app detection uses `Linking.canOpenURL`. A failed check or failed app launch attempts the web link. A failed web launch retains standalone support. The web card explicitly warns that the hosted beta needs an invitation. The Android manifest query for the `seconds` scheme is present after prebuild; the plugin also declares that query for iOS metadata, but there is no iOS release or iOS validation in this work.
+Wispling sends no health history, check-in answer, diagnosis, medication, dietary profile, reminder setting, food choice, or eating-completion information. The return link carries no payload and writes no completion state. Wispling accepts only the exact `wispling://care-return` route after onboarding. Query strings, fragments, extra paths, arbitrary return destinations, and pre-onboarding attempts are rejected.
 
-The only return maps `wispling://care-return` to Home after store hydration and onboarding. Query, fragment and extra path payloads are rejected. Before onboarding, the return cannot bypass onboarding. Return navigation emits no event and writes no state.
+Installed-app detection uses `Linking.canOpenURL` for `seconds://care`. Detection or launch failure falls back to `https://savortome.skaldandstone.com/care` with the same fixed fields. Failure of both destinations leaves Wispling support available and reports no false success.
 
-## Validation
+## Source validation
 
-| Check | Result | Limit |
-| --- | --- | --- |
-| Wispling TypeScript | Passed | Source check only |
-| Focused handoff Jest tests | 6 passed | Mocked app detection/opening, not real OS dispatch |
-| Existing native prebuild | Passed; generated manifest inspected | No interaction implied |
-| Android Metro/Hermes export | Passed with handoff flag enabled | A JS/assets export, not an APK or device run |
-| Installed/absent-app, bidirectional return | Pure helper cases pass | Actual two-app Android test still required |
-| Android emulator | Unavailable on this host | Hypervisor missing; software attempt exposed no adb device |
-| Physical devices | Not tested | Must be recorded separately |
+The merged Wispling implementation passed:
 
-Focused tests verify the exact link allowlist, private-field rejection, successful installed-app launch without web navigation, missing app and failed detection/launch fallback, both launches failing, malformed preference values, fixed return rejection and onboarding protection.
+- TypeScript with no errors.
+- 28 Jest suites and 317 tests.
+- A focused 35-test group covering handoff privacy, installed-app launch, web fallback, unavailable destinations, onboarding, exact return handling, malformed return rejection, and the existing Weather link.
+- ARM64 Android release assembly with 853 Gradle tasks completed successfully.
 
-From the isolated Wispling worktree:
+Two Wispling repository release-policy guards remain unrelated baseline failures: the GitHub workflow is no longer manual-only, and the private-alpha audit detects OTA enabled. The Savortome handoff does not alter either policy.
 
-```powershell
-node ./node_modules/typescript/bin/tsc --noEmit
-node ./node_modules/jest/bin/jest.js src/integrations/secondBreakfast.test.ts --runInBand
-```
+## Physical Android evidence
 
-Evidence copies are under `checks/handoff-tests.txt` and `checks/handoff-typecheck.txt`. Do not describe these checks as physical-device or live integration success.
+Device: Samsung SM-T970, Android 13, connected through ADB.
 
-The successful Android export is in the isolated worktree at `.expo/handoff-export`. Its Hermes bundle is `_expo/static/js/android/index-79104d2f311b4a71fabe41b405cc952e.hbc` (2,220,183 bytes), SHA-256 `5462f83fa65669f217f71497b399218285efc15bafb183038e050caa91bddb5d`. It was built with `EXPO_PUBLIC_SECOND_BREAKFAST_BETA=true` and `NODE_ENV=production` using `node ./node_modules/expo/bin/cli export --platform android --output-dir .expo/handoff-export`; see `checks/handoff-export.txt`. TypeScript and all six focused tests were rerun successfully after export using direct Node entrypoints.
+The current app completed normal onboarding, opened Support circle and Food and water, displayed the themed Savortome card and privacy copy, and launched the installed native Savortome app. Savortome displayed Feed me gently with its normal suggestions and returned through Back to Wispling. Wispling resumed at Home. No completion payload was sent.
 
-## Alpha integration package
+A crafted `wispling://care-return?completed=true` link was rejected while Wispling stayed on Food and water. After clearing Wispling app data, an exact cold return link still showed onboarding and did not bypass it. Inspected logs contained no fatal React Native or application error for these interactions.
 
-The handoff patch is limited to `app.json`, `plugins/withSecondBreakfastQueries.js`, `src/integrations/FoodHandoffCard.tsx`, `src/integrations/secondBreakfast.ts`, `src/integrations/secondBreakfast.test.ts`, `src/navigation/RootNavigator.tsx`, and the single card import/render in `src/screens/TalkConversationScreen.tsx`. No package/lockfile changes are required. Do not replace the alpha checkout with this older worktree.
+The final source was also bundled into a self-contained ARM64 review build. The protected release output remained unsigned by design; a separate copy was signed only with the Android debug certificate for local installation.
 
-`handoff-integration.patch` was generated using a temporary Git index, leaving the real index untouched. Its seven-file scope and reverse-apply check against the isolated worktree passed. SHA-256: `3d02781dbd2ee419ef1d8445786c2b4b4be7e04fd195a900329fa6185e7c9cfb`. This is a portable review patch, not evidence that it applies cleanly to the concurrently changing alpha branch.
+- Local review APK: `C:\Users\James\Documents\GitHub\.worktrees\wispling-savortome-care-handoff\artifacts\savortome-handoff\wispling-savortome-arm64-physical-review.apk`
+- Size: 53,602,225 bytes
+- SHA-256: `e8f8debe2c330c354c02424908273aded8ce0f5769782007b9b6f24f575bae28`
+- Package: `com.skaldandstone.wispling`, version `0.2.1` / code `3`
+- Platform: ARM64, minimum SDK 26, target SDK 36
+- Signature: debug certificate, APK Signature Schemes v2 and v3
+- Certificate SHA-256: `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c`
+- Bundled Hermes source SHA-256: `af9de2a8cd26168ddec4c3e068520ffd32714e89bfac9c6ca2f46202516d1e45`
+- Manifest: `android:allowBackup=false`; `seconds` installed-app query present
 
-Before applying, review the current-alpha blocker above and obtain an integration decision from the alpha owner. The pure link helpers/tests and manifest query can be ported independently; the legacy screen/navigation hunks must not be applied as if they wire the active alpha. Keep the new card flag off until the alpha owner enables a reviewed private build. Run TypeScript, focused tests and a fresh Android prebuild after adaptation, then rebuild the native application so installed-app visibility is present. Do not send invitations automatically.
+After installation and app-data clearing, this bundled candidate cold-started without Metro to Wispling's expected first onboarding screen. It was the resumed Android activity and logs contained no fatal React Native or Android application error.
 
-A read-only inspection of the active alpha informed `docs/second-breakfast-alpha-adaptation.md` in the isolated handoff worktree. That proposal identifies the existing food branch in `CareScreens.tsx`, an exact return mapping in `model.ts`, and the existing hydration/onboarding-aware `HandoffQueue`. It proposes using alpha's native controls while preserving standalone support. It is not an applied or validated alpha patch; the current alpha milestone remains unchanged.
+## Remaining acceptance
 
-## Repeatable device checklist
+The physical pass proves the Android app-to-app handoff, exact return behavior, and cold packaged launch on the named device. It does not prove TalkBack traversal, iOS physical behavior, store signing, TestFlight or Play distribution, absent-app behavior on a separate physical profile, or owner visual acceptance. Helper tests cover absent-app and failed-launch fallback, but those remain mocked rather than physical.
 
-Use disposable test devices/accounts. Confirm `adb devices -l` and target every command with `-s SERIAL`. Install reviewed, appropriately signed builds of both apps with `adb install -r`; stop on a signing mismatch rather than erasing user data. Export/save needed app data before any separately approved uninstall.
-
-1. With both apps installed and Wispling onboarded, enter the existing food/water support conversation. Confirm the standalone support remains available. Tap each optional food handoff. Check selected effort/time on Second Breakfast care and that care works signed out.
-2. Open the native link directly, then tap Back to Wispling:
-
-```powershell
-adb -s SERIAL shell am start -W -a android.intent.action.VIEW -d "'seconds://care?source=wispling&intent=eat_now&effort=open&time=two&return_to=wispling%3A%2F%2Fcare-return'" com.secondbreakfast.app
-adb -s SERIAL shell am start -W -a android.intent.action.VIEW -d 'wispling://care-return' com.skaldandstone.wispling
-```
-
-3. Repeat return before Wispling onboarding using a fresh disposable profile. It must remain in onboarding. Reject `wispling://care-return?completed=true`, extra path and arbitrary return destinations; inspect logs/network for absence of a completion write. Do not attach private logs to feedback.
-4. Use a separate disposable device/profile without Second Breakfast installed. The card must attempt the matching web fallback and explain invited-account access. Do not uninstall someone's existing app just to test absence.
-5. Test failed app launch, no browser/offline fallback, and return with Wispling absent. Both apps must remain usable, with no success/completion assertion and no punitive state.
-6. Turn on airplane mode after install. Basic Second Breakfast ideas must remain available. Saved settings must be honestly unavailable, with temporary restrictions; shopping writes must not report success. Reconnect and check the actual list before retrying an ambiguous request.
-7. Verify both themes where supported, enlarged text, TalkBack names/order, hardware keyboard if available, reduced decoration, and system reduced motion. Record screenshots as Android captures with actual device/emulator identity.
-
-The URL scheme itself is not proof of another app's identity and is never an authorization channel. The payload deliberately contains no sensitive user state. Hosted access remains governed by Second Breakfast's server allowlist.
+The older 2026-08-30 legacy-shell patch and its `Second Breakfast` naming are superseded. They did not reach Wispling's active app and should not be applied.
