@@ -42,6 +42,8 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
   const [suggestions, setSuggestions] = useState<PlanSuggestion[]>([]);
   const [respondingTo, setRespondingTo] = useState<string | null>(null);
   const [confirmingClear, setConfirmingClear] = useState(false);
+  const [recentlyRemoved, setRecentlyRemoved] = useState<PlannedMeal | null>(null);
+  const [planStatus, setPlanStatus] = useState("");
 
   const today = todayISO();
 
@@ -57,6 +59,8 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
 
   useEffect(() => {
     setConfirmingClear(false);
+    setRecentlyRemoved(null);
+    setPlanStatus("");
     void load(week);
   }, [load, week]);
 
@@ -100,10 +104,37 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
       const data = await work();
       setMeals(data.meals);
       if (data.addedToList !== undefined && data.addedToList > 0) setSentToList(data.addedToList);
+      return true;
     } catch (err) {
       setError(actionFailure(err, "That didn't work."));
+      return false;
     } finally {
       setBusy(false);
+    }
+  };
+
+  const removeMeal = async (meal: PlannedMeal) => {
+    setPlanStatus("");
+    if (await run(() => api.planRemove(meal.recipeId, meal.date, meal.slot, week))) {
+      setRecentlyRemoved(meal);
+    }
+  };
+
+  const undoRemoval = async () => {
+    const meal = recentlyRemoved;
+    if (!meal) return;
+    if (await run(() => api.planAdd(meal.recipeId, meal.date, meal.slot, week))) {
+      setRecentlyRemoved(null);
+      setPlanStatus(`${meal.title} is back on ${dayLabel(meal.date)}.`);
+    }
+  };
+
+  const clearWeek = async () => {
+    setPlanStatus("");
+    if (await run(() => api.planClearWeek(week))) {
+      setConfirmingClear(false);
+      setRecentlyRemoved(null);
+      setPlanStatus("The week is clear.");
     }
   };
 
@@ -166,17 +197,19 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
                 className={styles.clearWeek}
                 disabled={busy}
                 aria-expanded={confirmingClear}
-                onClick={() => setConfirmingClear(true)}
+                onClick={() => {
+                  setPlanStatus("");
+                  setConfirmingClear(true);
+                }}
               >
                 Clear the week
               </button>
               {confirmingClear ? (
                 <div className={styles.clearConfirm} role="group" aria-label="Confirm clearing meal plan">
                   <span>Remove every planned meal from {weekLabel(week)}?</span>
-                  <Button type="button" variant="danger" disabled={busy} onClick={() => {
-                    setConfirmingClear(false);
-                    void run(() => api.planClearWeek(week));
-                  }}>Clear every meal</Button>
+                  <Button type="button" variant="danger" disabled={busy} onClick={() => void clearWeek()}>
+                    {busy ? "Clearing…" : "Clear every meal"}
+                  </Button>
                   <Button type="button" variant="ghost" disabled={busy} onClick={() => setConfirmingClear(false)}>Keep this week</Button>
                 </div>
               ) : null}
@@ -189,6 +222,25 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
             {sentToList} {sentToList === 1 ? "recipe" : "recipes"} added — duplicates merged and
             anything already in your pantry left off. <Link href="/list">See the list</Link>.
           </Callout>
+        ) : null}
+
+        {recentlyRemoved ? (
+          <Callout tone="info" role="status">
+            <span>
+              Removed {recentlyRemoved.title} from {MEAL_SLOT_LABEL[recentlyRemoved.slot].toLowerCase()} on {dayLabel(recentlyRemoved.date)}.
+            </span>{" "}
+            <button
+              type="button"
+              className={styles.undoRemoval}
+              disabled={busy}
+              autoFocus
+              onClick={() => void undoRemoval()}
+            >
+              {busy ? "Restoring…" : "Undo"}
+            </button>
+          </Callout>
+        ) : planStatus ? (
+          <Callout tone="info" role="status">{planStatus}</Callout>
         ) : null}
 
         {error ? (
@@ -277,9 +329,7 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
                       className={styles.removeMeal}
                       disabled={busy}
                       aria-label={`Remove ${planned.title} from ${dayLabel(day.date)}`}
-                      onClick={() =>
-                        void run(() => api.planRemove(planned.recipeId, day.date, slot, week))
-                      }
+                      onClick={() => void removeMeal(planned)}
                     >
                       ×
                     </button>

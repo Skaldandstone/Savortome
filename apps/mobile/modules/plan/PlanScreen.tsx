@@ -45,6 +45,9 @@ export function PlanScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sentToList, setSentToList] = useState<number | null>(null);
+  const [confirmingClear, setConfirmingClear] = useState(false);
+  const [recentlyRemoved, setRecentlyRemoved] = useState<PlannedMeal | null>(null);
+  const [planStatus, setPlanStatus] = useState("");
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = usePalette();
@@ -78,10 +81,44 @@ export function PlanScreen() {
       const data = await work();
       setMeals(data.meals);
       if (data.addedToList) setSentToList(data.addedToList);
+      return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "That didn't work.");
+      return false;
     } finally {
       setBusy(false);
+    }
+  };
+
+  const chooseWeek = (next: string) => {
+    setConfirmingClear(false);
+    setRecentlyRemoved(null);
+    setPlanStatus("");
+    setWeek(next);
+  };
+
+  const removeMeal = async (meal: PlannedMeal) => {
+    setPlanStatus("");
+    if (await run(() => api.planRemove(meal.recipeId, meal.date, meal.slot, week))) {
+      setRecentlyRemoved(meal);
+    }
+  };
+
+  const undoRemoval = async () => {
+    const meal = recentlyRemoved;
+    if (!meal) return;
+    if (await run(() => api.planAdd(meal.recipeId, meal.date, meal.slot, week))) {
+      setRecentlyRemoved(null);
+      setPlanStatus(`${meal.title} is back on ${dayLabel(meal.date)}.`);
+    }
+  };
+
+  const clearWeek = async () => {
+    setPlanStatus("");
+    if (await run(() => api.planClearWeek(week))) {
+      setConfirmingClear(false);
+      setRecentlyRemoved(null);
+      setPlanStatus("The week is clear.");
     }
   };
 
@@ -103,9 +140,9 @@ export function PlanScreen() {
         />
 
         <View style={styles.weekBar}>
-          <Button label="←" variant="ghost" onPress={() => setWeek(shiftWeeks(week, -1))} />
+          <Button label="←" accessibilityLabel="Previous week" variant="ghost" onPress={() => chooseWeek(shiftWeeks(week, -1))} />
           <Text style={[styles.weekLabel, { color: c.text }]}>{weekLabel(week)}</Text>
-          <Button label="→" variant="ghost" onPress={() => setWeek(shiftWeeks(week, 1))} />
+          <Button label="→" accessibilityLabel="Next week" variant="ghost" onPress={() => chooseWeek(shiftWeeks(week, 1))} />
         </View>
 
         <View style={styles.weekActions}>
@@ -119,10 +156,29 @@ export function PlanScreen() {
               label="Clear week"
               variant="ghost"
               disabled={busy}
-              onPress={() => void run(() => api.planClearWeek(week))}
+              selected={confirmingClear}
+              onPress={() => {
+                setPlanStatus("");
+                setConfirmingClear(true);
+              }}
             />
           ) : null}
         </View>
+
+        {confirmingClear ? (
+          <Callout tone="warn" title="Clear this week?">
+            <Text style={[styles.calloutText, { color: c.textMuted }]}>Remove every planned meal from {weekLabel(week)}?</Text>
+            <View style={styles.recoveryActions}>
+              <Button
+                label={busy ? "Clearing…" : "Clear every meal"}
+                variant="danger"
+                disabled={busy}
+                onPress={() => void clearWeek()}
+              />
+              <Button label="Keep this week" variant="ghost" disabled={busy} onPress={() => setConfirmingClear(false)} />
+            </View>
+          </Callout>
+        ) : null}
 
         {sentToList ? (
           <Callout tone="info">
@@ -130,6 +186,18 @@ export function PlanScreen() {
             anything already in your pantry left off.
           </Callout>
         ) : null}
+        {recentlyRemoved ? (
+          <Callout tone="info" title={`${recentlyRemoved.title} removed`}>
+            <Text style={[styles.calloutText, { color: c.textMuted }]}>From {MEAL_SLOT_LABEL[recentlyRemoved.slot].toLowerCase()} on {dayLabel(recentlyRemoved.date)}.</Text>
+            <View style={styles.recoveryActions}>
+              <Button
+                label={busy ? "Restoring…" : "Undo"}
+                disabled={busy}
+                onPress={() => void undoRemoval()}
+              />
+            </View>
+          </Callout>
+        ) : planStatus ? <Callout tone="info">{planStatus}</Callout> : null}
         {error ? <Callout tone="error">{error}</Callout> : null}
       </Panel>
 
@@ -175,7 +243,7 @@ export function PlanScreen() {
                     accessibilityLabel={`Remove ${meal.title} from ${dayLabel(day.date)}`}
                     style={styles.remove}
                     disabled={busy}
-                    onPress={() => void run(() => api.planRemove(meal.recipeId, day.date, slot, week))}
+                    onPress={() => void removeMeal(meal)}
                   >
                     <Text style={{ color: c.textMuted, fontSize: typeScale.title }}>×</Text>
                   </Pressable>
@@ -257,6 +325,8 @@ const styles = StyleSheet.create({
   weekBar: { flexDirection: "row", alignItems: "center", gap: space.sm, marginTop: space.xs },
   weekLabel: { flex: 1, textAlign: "center", fontWeight: "700", fontSize: typeScale.title },
   weekActions: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: space.md },
+  calloutText: { fontSize: typeScale.small, lineHeight: 20 },
+  recoveryActions: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: space.sm },
   day: { padding: space.md + 2, borderWidth: 1, borderRadius: radius.md, gap: space.sm },
   dayHead: { flexDirection: "row", alignItems: "baseline", gap: space.sm },
   slot: { gap: 4 },

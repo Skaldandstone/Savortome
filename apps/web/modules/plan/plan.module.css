@@ -44,6 +44,20 @@
 .clearWeek:hover:not(:disabled) { color: var(--accent); border-color: var(--accent); }
 .clearWeek:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .clearConfirm { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; width:100%; color:var(--text-muted); }
+.undoRemoval {
+  min-height: 44px;
+  margin-left: 6px;
+  padding: 6px 12px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.undoRemoval:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.undoRemoval:disabled { cursor: progress; opacity: .65; }
 
 /* --- the week ------------------------------------------------------------ */
 

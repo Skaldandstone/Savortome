@@ -15,10 +15,14 @@ const stubs = {
     export const useEffect=fn=>state.effects.push(fn),useMemo=fn=>fn(),useCallback=fn=>fn,useRef=value=>{const i=state.cursor++;return state.refs[i]??=({current:state.refCurrent??value});},useId=()=>"fixture-id";`,
   'next/link': 'export default function Link(){}',
   'next/navigation': 'export const usePathname=()=>state.pathname; export const useRouter=()=>({refresh:()=>state.refreshes++});',
+  'expo-router': 'export const useFocusEffect=fn=>state.focusEffects.push(fn); export const useRouter=()=>({push:path=>state.routes.push(path)});',
+  'react-native-safe-area-context': 'export const useSafeAreaInsets=()=>({top:0,right:0,bottom:0,left:0});',
+  'react-native': `export const Modal='Modal',Pressable='Pressable',ScrollView='ScrollView',Text='Text',View='View'; export const StyleSheet={create:value=>value};`,
   '@clerk/nextjs': 'export const useAuth=()=>({userId:null});',
   '@/lib/beta': 'export const canUseBeta=async()=>state.allowed;',
-  '@/lib/client': `export const api=new Proxy({}, {get:(_,name)=>async(...args)=>{state.calls.push({name,args});if((state.defer&&name==='dietaryProfile')||(state.deferSave&&name==='setDietaryProfile'))return new Promise((resolve,reject)=>state.pending.push({resolve,reject}));if(state.fail)throw Error('Fixture write failed');return state.response??{};}});`,
-  '@/ui': 'export function Button(){};export function Callout(){};export function FieldRow(){};export function Panel(){};export function PanelHeader(){};export function TextArea(){};export function TextField(){};',
+  '@/lib/client': `export const api=new Proxy({}, {get:(_,name)=>async(...args)=>{state.calls.push({name,args});if((state.defer&&name==='dietaryProfile')||(state.deferSave&&name==='setDietaryProfile'))return new Promise((resolve,reject)=>state.pending.push({resolve,reject}));if(state.fail||state.failMethods?.has(name))throw Error('Fixture write failed');const response=state.responses?.[name]??state.response??{};return typeof response==='function'?response(...args):response;}});`,
+  '@/lib/action-failure': `export const actionFailure=(error,fallback)=>({message:error instanceof Error?error.message:fallback,signInRequired:false}); export const signInReturnHref=path=>'/sign-in?redirect_url='+encodeURIComponent(path);`,
+  '@/ui': `export function Button(){};export function Callout(){};export function Field(){};export function FieldRow(){};export function Panel(){};export function PanelHeader(){};export function TextArea(){};export function TextField(){};export const radius={sm:4,md:8};export const space={xs:4,sm:8,md:12,lg:16,xl:24,xxl:32};export const type={micro:12,small:14,body:16,title:20};export const usePalette=()=>({bg:'#fff',surface:'#fff',surfaceSunken:'#eee',text:'#111',textMuted:'#555',accent:'#765',border:'#aaa'});`,
   '@/modules/shelves': 'export function StarRating(){};',
   '@/modules/recipe': `export function IngredientList(){};export function ServingScaler(){};export const useServings=recipe=>({servings:recipe.servings,canScale:false,increment(){},decrement(){},ingredients:recipe.ingredients});`,
   '@/modules/profile': 'export function AllergenWarning(){};',
@@ -62,6 +66,8 @@ const result = await build({
     export {PantryList} from './apps/web/modules/pantry/PantryList.tsx';
     export {PantryReviewQueue} from './apps/web/modules/pantry/PantryReviewQueue.tsx';
     export {PlanTogether} from './apps/web/modules/plan/PlanTogether.tsx';
+    export {PlanWeek} from './apps/web/modules/plan/PlanWeek.tsx';
+    export {PlanScreen as MobilePlanScreen} from './apps/mobile/modules/plan/PlanScreen.tsx';
     export {mergeProfileUpdate} from './apps/web/modules/cooking/CookingProfilePanel.tsx';
     export {OnboardingJourney} from './apps/web/modules/onboarding/OnboardingJourney.tsx';
     export {CARE_FOODS} from './packages/core/src/care.ts';` },
@@ -77,7 +83,7 @@ const result = await build({
   } }],
 });
 function fixture(overrides = {}) {
-  const state = { allowed: false, pathname: '/', cursor: 0, values: [], refs: [], effects: [], calls: [], pending: [], refreshes: 0, fail: false, ...overrides };
+  const state = { allowed: false, pathname: '/', cursor: 0, values: [], refs: [], effects: [], focusEffects: [], routes: [], calls: [], pending: [], refreshes: 0, fail: false, ...overrides };
   const stored = new Map();
   const localStorage = { getItem: key => stored.get(key) ?? null, setItem: (key, value) => stored.set(key, String(value)), removeItem: key => stored.delete(key) };
   const sandbox = { state, navigator: { onLine: true }, localStorage, setTimeout, clearTimeout, URLSearchParams };
@@ -171,6 +177,96 @@ test('getting started gives one useful decision at a time and saves resumable pr
   step.props.onDone();
   tree = render();
   assert.ok(nodes(tree).some(n => n.type === 'h1' && text(n) === 'Your kitchen is ready when you are'));
+});
+
+test('web meal removal offers focused undo and keeps it available after a failed restore', async () => {
+  const week = '2026-09-21';
+  const meal = { recipeId: 'recipe-1', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
+  const values = [];
+  values[0] = week;
+  values[1] = [meal];
+  const f = fixture({ values, responses: { planRemove: { meals: [] }, planAdd: { meals: [meal] } } });
+  const render = () => f.render(f.app.PlanWeek, { initialWeek: week });
+
+  nodes(render()).find(n => n.props?.['aria-label'] === 'Remove Bean soup from Tue 22 Sep').props.onClick();
+  await new Promise(resolve => setImmediate(resolve));
+  let tree = render();
+  assert.match(text(tree).replace(/\s+/g, ' '), /Removed Bean soup from dinner on Tue 22 Sep/);
+  let undo = nodes(tree).find(n => n.type === 'button' && text(n) === 'Undo');
+  assert.equal(undo.props.autoFocus, true);
+
+  f.state.failMethods = new Set(['planAdd']);
+  undo.props.onClick();
+  await new Promise(resolve => setImmediate(resolve));
+  tree = render();
+  assert.ok(nodes(tree).some(n => n.props?.role === 'alert'));
+  assert.ok(nodes(tree).some(n => n.type === 'button' && text(n) === 'Undo'));
+
+  f.state.failMethods.delete('planAdd');
+  nodes(tree).find(n => n.type === 'button' && text(n) === 'Undo').props.onClick();
+  await new Promise(resolve => setImmediate(resolve));
+  tree = render();
+  assert.match(text(tree).replace(/\s+/g, ' '), /Bean soup is back on Tue 22 Sep/);
+  assert.equal(nodes(tree).some(n => n.type === 'button' && text(n) === 'Undo'), false);
+  nodes(tree).find(n => n.type === 'button' && text(n) === 'Clear the week').props.onClick();
+  tree = render();
+  assert.doesNotMatch(text(tree).replace(/\s+/g, ' '), /Bean soup is back on Tue 22 Sep/);
+  assert.deepEqual(JSON.parse(JSON.stringify(f.state.calls.filter(call => call.name.startsWith('plan')))), [
+    { name: 'planRemove', args: ['recipe-1', '2026-09-22', 'dinner', week] },
+    { name: 'planAdd', args: ['recipe-1', '2026-09-22', 'dinner', week] },
+    { name: 'planAdd', args: ['recipe-1', '2026-09-22', 'dinner', week] },
+  ]);
+});
+
+test('web week-clear confirmation remains open when the write is rejected', async () => {
+  const week = '2026-09-21';
+  const meal = { recipeId: 'recipe-1', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
+  const values = [];
+  values[0] = week;
+  values[1] = [meal];
+  const f = fixture({ values, responses: { planClearWeek: { meals: [] } }, failMethods: new Set(['planClearWeek']) });
+  const render = () => f.render(f.app.PlanWeek, { initialWeek: week });
+  nodes(render()).find(n => n.type === 'button' && text(n) === 'Clear the week').props.onClick();
+  let tree = render();
+  assert.equal(f.state.calls.length, 0);
+  nodes(tree).find(n => typeof n.type === 'function' && text(n) === 'Clear every meal').props.onClick();
+  await new Promise(resolve => setImmediate(resolve));
+  tree = render();
+  assert.ok(nodes(tree).some(n => typeof n.type === 'function' && text(n) === 'Clear every meal'));
+  assert.ok(nodes(tree).some(n => n.props?.role === 'alert'));
+});
+
+test('mobile plan removal offers undo and clear-week requires confirmation', async () => {
+  const week = '2026-09-21';
+  const meal = { recipeId: 'recipe-1', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
+  const values = [];
+  values[0] = week;
+  values[1] = [meal];
+  const f = fixture({ values, responses: { planRemove: { meals: [] }, planAdd: { meals: [meal] }, planClearWeek: { meals: [] } } });
+  const render = () => f.render(f.app.MobilePlanScreen);
+
+  nodes(render()).find(n => n.props?.accessibilityLabel === 'Remove Bean soup from Tue 22 Sep').props.onPress();
+  await new Promise(resolve => setImmediate(resolve));
+  let tree = render();
+  assert.match(text(tree).replace(/\s+/g, ' '), /From dinner on Tue 22 Sep/);
+  nodes(tree).find(n => n.props?.label === 'Undo').props.onPress();
+  await new Promise(resolve => setImmediate(resolve));
+  tree = render();
+  assert.match(text(tree).replace(/\s+/g, ' '), /Bean soup is back on Tue 22 Sep/);
+
+  nodes(tree).find(n => n.props?.label === 'Clear week').props.onPress();
+  tree = render();
+  assert.doesNotMatch(text(tree).replace(/\s+/g, ' '), /Bean soup is back on Tue 22 Sep/);
+  assert.equal(f.state.calls.some(call => call.name === 'planClearWeek'), false);
+  assert.ok(nodes(tree).some(n => n.props?.label === 'Clear every meal'));
+  assert.ok(nodes(tree).some(n => n.props?.label === 'Keep this week'));
+
+  f.state.failMethods = new Set(['planClearWeek']);
+  nodes(tree).find(n => n.props?.label === 'Clear every meal').props.onPress();
+  await new Promise(resolve => setImmediate(resolve));
+  tree = render();
+  assert.ok(nodes(tree).some(n => n.props?.label === 'Clear every meal'));
+  assert.ok(nodes(tree).some(n => typeof n.type === 'function' && n.props?.tone === 'error'));
 });
 
 test('pantry memory shows sourced guidance and keeps every correction explicit', () => {

@@ -15,8 +15,8 @@ No billing, grocery ordering, reminders, dietary inference, or diagnostic behavi
 pass.
 
 The read-only AWS check used account `051722405355` in `us-east-2`. The preserved compatibility
-service is still named `secondbreakfast-web`; it is healthy as a definition but intentionally scaled
-to zero (`desired=0`, `running=0`). Its task definition points to immutable image digest
+service is still named `secondbreakfast-web`; it was healthy and running at the time of this
+read-only recheck (`desired=1`, `running=1`, `pending=0`). Its task definition points to immutable image digest
 `sha256:4fb60cc81481edea8386655ad1f8ee8bb82e29f63b4c1f55e024753a929da76a`, runs as UID 65532 with a
 read-only root filesystem, and carries public-cache policy label version 3. Its source tree matches
 the current main application source; only release-evidence documents differ. This check did not
@@ -57,30 +57,39 @@ change AWS resources or prove a running ECS task.
   closing the correction form. A rejected bulk clear keeps its confirmation and context visible.
   Pending writes disable only the relevant controls and use explicit “Adding,” “Saving,” or
   “Clearing” labels, reducing duplicate actions without freezing unrelated pantry choices.
+- Removing one planned meal now presents a clearly focused Undo action on web and an equally visible
+  recovery callout on mobile. Undo restores the same recipe, day, and meal slot. A failed restore
+  keeps the action available and reports the current failure instead of claiming success.
+- Mobile now confirms before clearing an entire week, matching the existing web safeguard. Both
+  confirmations remain open after a rejected write, so a network interruption does not erase the
+  person's context. Old success messages are cleared when a new plan action begins.
 
 ## Product parity observations
 
 Official product documentation was used for feature-shape comparison, not for claims of clinical
 effectiveness:
 
-- [Paprika](https://www.paprikaapp.com/) combines recipe import, interactive cooking progress,
-  scaling, timers, lists, and meal planning.
-- [AnyList](https://www.anylist.com/features) connects recipes, a meal calendar, cooking mode,
-  shared lists, and recipe scaling.
+- [Paprika's Android guide](https://www.paprikaapp.com/help/android/) documents reversible grocery
+  purchase state, selective clearing, pantry tracking, and meal planning. Those recovery patterns
+  informed keeping Undo and clear-week context available until Savortome confirms a write.
+- [AnyList's getting-started guide](https://help.anylist.com/articles/getting-started/) documents
+  checking off cooking steps and moving meals within a plan. It reinforces visible progress and
+  reversible planning actions without requiring a complex history screen.
 - [Samsung Food](https://support.samsungfood.com/hc/en-us/articles/35369657798548-Getting-Started-with-Meal-Planner)
   connects saved recipes to weekly planning and shopping lists; its food-list guidance also uses
   pantry state and use-by timing for suggestions.
 - [Tiimo](https://www.tiimoapp.com/) demonstrates the value of a visible timeline and restrained
   focus tools for neurodivergent routines.
 
-Savortome already has the main recipe-to-plan-to-list loop and a calmer Care entrance. The next
-highest-value usability work is validated re-entry across devices, notification controls that remain
-opt-in, and hands-on assistive-technology testing of the signed-in workflows.
+Savortome already has the main recipe-to-plan-to-list loop, a calmer Care entrance, cooking-session
+re-entry, and bounded meal-plan recovery. The next highest-value usability work is validated re-entry
+across devices, notification controls that remain opt-in, and hands-on assistive-technology testing
+of the signed-in workflows.
 
 ## Remaining acceptance gates
 
-1. Sign into the production Clerk test account and exercise recipe draft restore/discard, the three
-   bulk confirmations, account switching, and session expiry.
+1. Sign into the production Clerk test account and exercise recipe draft restore/discard, meal-plan
+   undo, the three bulk confirmations, account switching, and session expiry.
 2. Run keyboard-only and screen-reader passes on the signed-in editor, plan, pantry, and list.
 3. Repeat narrow-layout and enlarged-text checks on a physical phone or tablet.
 4. Complete owner visual and copy acceptance. Successful compilation or automated checks do not

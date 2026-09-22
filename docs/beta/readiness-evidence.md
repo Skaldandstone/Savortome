@@ -1,5 +1,17 @@
 # Privacy and release readiness evidence
 
+> **Meal-plan recovery continuation, 22 September 2026:** the local web and
+> mobile candidate now offers an explicit Undo after removing one planned meal,
+> restores the exact recipe/day/slot only after a confirmed write, and keeps the
+> retry available after failure. Mobile clear-week now requires the same inline
+> confirmation as web, and both surfaces retain confirmation after a rejected
+> write. An actual web component render at a 390-pixel viewport, 200% text, and
+> reduced-motion preference verified no horizontal overflow, focus moved to
+> Undo, a failed restore remained actionable, and a retry restored the meal.
+> The actual mobile component is covered by the shared interaction harness;
+> physical-device validation of this new source remains open. No customer data,
+> grocery order, provider configuration, AWS resource, or deployment changed.
+
 > **Physical Android refresh, 22 September 2026:** the connected Samsung
 > SM-T970 had the exact retained Savortome APK installed, verified by pulling
 > the installed package and matching its SHA-256 byte for byte. Guest Care
