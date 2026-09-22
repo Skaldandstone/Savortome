@@ -1,5 +1,15 @@
 # Privacy and release readiness evidence
 
+> **Pantry input-recovery continuation, 22 September 2026:** the local
+> candidate keeps typed pantry additions and remaining-amount corrections when
+> a write is rejected, clears them only after server confirmation, and keeps
+> bulk-clear context open after failure. Pending controls use explicit labels
+> and block duplicate submissions without disabling unrelated pantry choices.
+> Twenty-nine woodland UI contracts and the direct web typecheck pass. This is
+> local source evidence only; signed-in browser and provider acceptance remain
+> open, and no infrastructure, database, billing, grocery-order, or deployment
+> mutation occurred.
+
 > **Session-recovery continuation, 22 September 2026:** after PR #99 merged,
 > a second local candidate added consistent expired-session recovery to the
 > recipe editor, plan, pantry, pantry search, and shopping list. Sign-in links

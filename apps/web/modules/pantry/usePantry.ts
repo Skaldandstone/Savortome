@@ -10,10 +10,10 @@ export interface PantryController {
   loading: boolean;
   error: ActionFailure | null;
   intakes: PantryIntakeView[];
-  add: (text: string) => Promise<void>;
-  update: (update: PantryEntryUpdate) => Promise<void>;
-  remove: (canonicalItem: string) => Promise<void>;
-  clear: () => Promise<void>;
+  add: (text: string) => Promise<boolean>;
+  update: (update: PantryEntryUpdate) => Promise<boolean>;
+  remove: (canonicalItem: string) => Promise<boolean>;
+  clear: () => Promise<boolean>;
   resolveIntake: (intakeId: string, action: "accept" | "dismiss", acceptedItemIds?: string[]) => Promise<boolean>;
 }
 
@@ -61,12 +61,14 @@ export function usePantry(): PantryController {
     }
   }, []);
 
-  const run = useCallback(async (write: () => Promise<PantryEntry[]>) => {
+  const run = useCallback(async (write: () => Promise<PantryEntry[]>): Promise<boolean> => {
     setError(null);
     try {
       setItems(await write());
+      return true;
     } catch (err) {
       setError(actionFailure(err, "That didn't save."));
+      return false;
     }
   }, []);
 
