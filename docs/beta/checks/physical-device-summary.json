@@ -1,0 +1,52 @@
+{
+  "testedAt": "2026-09-21T20:55:00-07:00",
+  "device": {
+    "model": "Samsung SM-T970",
+    "androidVersion": "13",
+    "abi": "arm64-v8a",
+    "physicalResolution": "1752x2800"
+  },
+  "artifact": {
+    "path": "apps/mobile/.expo-export/account-preview/savortome-arm64-physical-review.apk",
+    "sizeBytes": 63003296,
+    "sha256": "9920afc086271d575b7c0618f1531fb7e3fbde7487af24d24c4cacb9907b47c3",
+    "apiOrigin": "https://savortome.skaldandstone.com",
+    "package": "com.skaldandstone.savortome",
+    "versionName": "0.1.0",
+    "versionCode": 1,
+    "minSdk": 24,
+    "targetSdk": 36,
+    "architectures": ["arm64-v8a"],
+    "signature": {
+      "scheme": "v2",
+      "certificate": "Android Debug",
+      "certificateSha256": "fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c"
+    }
+  },
+  "verified": {
+    "installedAndColdStarted": true,
+    "guestCareDirectEntry": true,
+    "guestSuggestionsOffline": true,
+    "exactIngredientsAndStepsExpand": true,
+    "guestShoppingWriteReportsNotSaved": true,
+    "guestSelectionPreservedForSignIn": true,
+    "untrustedCareReturnIgnored": true,
+    "fontScale150Percent": true,
+    "reducedDecoration": true,
+    "portraitLock": true,
+    "allowBackupFalse": true,
+    "unexpectedAppCrashInCapturedLog": false
+  },
+  "screenReader": {
+    "talkBackInstalled": true,
+    "appTraversalCompleted": false,
+    "blocker": "Samsung TalkBack opened its first-run five-page tutorial before the app. Accessibility service settings were restored without bypassing the device tutorial."
+  },
+  "restoredDeviceSettings": {
+    "fontScale": "1.0",
+    "accessibilityEnabled": "0",
+    "accelerometerRotation": "1",
+    "userRotation": "0",
+    "wifiEnabled": true
+  }
+}

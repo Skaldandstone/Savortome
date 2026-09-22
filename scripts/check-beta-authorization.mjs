@@ -24,49 +24,51 @@ const result=await build({absWorkingDir:root,stdin:{contents:"export {default as
 }}]});
 function fixture(overrides={}, envOverrides={}) {
   const state={configured:true,userId:null,authCalls:0,userCalls:0,...overrides};
-  const sandbox={state,URL,URLSearchParams,process:{env:{NODE_ENV:'production',SB_BETA_ENABLED:'true',SB_BETA_CLERK_USER_IDS:'user_invited',SB_BETA_LOCAL_PREVIEW:'true',...envOverrides}}};
+  const sandbox={state,URL,URLSearchParams,process:{env:{NODE_ENV:'production',SB_BETA_ENABLED:'true',SB_PUBLIC_ACCESS:'true',SB_BETA_CLERK_USER_IDS:'user_invited',SB_BETA_LOCAL_PREVIEW:'true',...envOverrides}}};
   runInNewContext(result.outputFiles[0].text,sandbox);
   return {state,run:params=>sandbox.tested.page({searchParams:Promise.resolve(params??{})}),access:()=>sandbox.tested.canUseBeta()};
 }
 test('disabled server gate ignores invited identity and frontend flags without reading auth',async()=>{
   const f=fixture({userId:'user_invited'},{SB_BETA_ENABLED:'false',NEXT_PUBLIC_BETA:'true'});assert.equal(await f.access(),false);assert.equal(f.state.authCalls,0);assert.equal(f.state.userCalls,0);await assert.rejects(f.run(),/NOT_FOUND/);
 });
-test('signed-out redirect contains only validated handoff fields',async()=>{
-  const f=fixture();let message='';try{await f.run({source:'wispling',return_to:'wispling://care-return',effort:'open',diagnosis:'private',userId:'user_invited',completed:'true'});}catch(e){message=e.message;}
-  assert.ok(message.startsWith('REDIRECT:/sign-in?'));const target=new URL('https://test'+message.slice(9));const care=new URL(target.searchParams.get('redirect_url'),'https://test');
-  assert.equal(care.pathname,'/care');assert.equal(care.searchParams.get('return_to'),'wispling://care-return');assert.equal(care.searchParams.has('diagnosis'),false);assert.equal(care.searchParams.has('userId'),false);assert.equal(care.searchParams.has('completed'),false);
+test('public guest receives only validated handoff fields without an auth read',async()=>{
+  const f=fixture();const output=await f.run({source:'wispling',return_to:'wispling://care-return',effort:'open',diagnosis:'private',userId:'user_invited',completed:'true'});
+  assert.equal(output.props.link.return_to,'wispling://care-return');assert.equal(output.props.link.effort,'open');assert.equal(output.props.link.diagnosis,undefined);assert.equal(output.props.link.userId,undefined);assert.equal(output.props.link.completed,undefined);
+  assert.equal(f.state.authCalls,0);assert.equal(f.state.userCalls,0);
 });
 test('non-invited user cannot forge access or redirect through query fields',async()=>{
-  const f=fixture({userId:'user_other'});await assert.rejects(f.run({userId:'user_invited',return_to:'https://evil.test',SB_BETA_ENABLED:'true'}),/NOT_FOUND/);
+  const f=fixture({userId:'user_other'},{SB_PUBLIC_ACCESS:'false'});await assert.rejects(f.run({userId:'user_invited',return_to:'https://evil.test',SB_BETA_ENABLED:'true'}),/NOT_FOUND/);
 });
 test('invited user receives only validated care props; arbitrary return rejected',async()=>{
-  const f=fixture({userId:'user_invited'});const output=await f.run({source:'wispling',temperature:'warm',return_to:'https://evil.test',food:'private'});
+  const f=fixture({userId:'user_invited'},{SB_PUBLIC_ACCESS:'false'});const output=await f.run({source:'wispling',temperature:'warm',return_to:'https://evil.test',food:'private'});
   assert.equal(output.props.link.temperature,'warm');assert.equal(output.props.link.return_to,undefined);assert.equal(output.props.link.food,undefined);
   assert.equal(f.state.userCalls,0);
 });
 test('Studio-approved Clerk metadata grants beta access without a static user-ID entry',async()=>{
-  const f=fixture({userId:'user_requested',publicMetadata:{studio_access:{'second-breakfast':{approved:true,request_id:'request_1'}}}},{SB_BETA_CLERK_USER_IDS:''});
+  const f=fixture({userId:'user_requested',publicMetadata:{studio_access:{'second-breakfast':{approved:true,request_id:'request_1'}}}},{SB_PUBLIC_ACCESS:'false',SB_BETA_CLERK_USER_IDS:''});
   assert.equal(await f.access(),true);assert.equal(f.state.authCalls,1);assert.equal(f.state.userCalls,1);
 });
 test('unapproved, wrong-product, and mismatched Clerk users fail closed',async()=>{
   for(const publicMetadata of [{},{studio_access:{'second-breakfast':{approved:false}}},{studio_access:{vordling:{approved:true}}}]){
-    const f=fixture({userId:'user_requested',publicMetadata},{SB_BETA_CLERK_USER_IDS:''});assert.equal(await f.access(),false);
+    const f=fixture({userId:'user_requested',publicMetadata},{SB_PUBLIC_ACCESS:'false',SB_BETA_CLERK_USER_IDS:''});assert.equal(await f.access(),false);
   }
-  const mismatch=fixture({userId:'user_requested',returnedUserId:'user_other',publicMetadata:{studio_access:{'second-breakfast':{approved:true}}}},{SB_BETA_CLERK_USER_IDS:''});assert.equal(await mismatch.access(),false);
-  const unavailable=fixture({userId:'user_requested',userError:true},{SB_BETA_CLERK_USER_IDS:''});assert.equal(await unavailable.access(),false);
+  const mismatch=fixture({userId:'user_requested',returnedUserId:'user_other',publicMetadata:{studio_access:{'second-breakfast':{approved:true}}}},{SB_PUBLIC_ACCESS:'false',SB_BETA_CLERK_USER_IDS:''});assert.equal(await mismatch.access(),false);
+  const unavailable=fixture({userId:'user_requested',userError:true},{SB_PUBLIC_ACCESS:'false',SB_BETA_CLERK_USER_IDS:''});assert.equal(await unavailable.access(),false);
 });
-test('missing Clerk configuration cannot enable local preview in production',async()=>{
-  const f=fixture({configured:false});await assert.rejects(f.run(),/NOT_FOUND/);assert.equal(f.state.authCalls,0);assert.equal(f.state.userCalls,0);
+test('public Care works without Clerk while a closed production beta still fails closed',async()=>{
+  const publicCare=fixture({configured:false});assert.ok((await publicCare.run()).props.link);assert.equal(publicCare.state.authCalls,0);assert.equal(publicCare.state.userCalls,0);
+  const closed=fixture({configured:false},{SB_PUBLIC_ACCESS:'false'});await assert.rejects(closed.run(),/NOT_FOUND/);assert.equal(closed.state.authCalls,0);assert.equal(closed.state.userCalls,0);
 });
 test('local development preview remains usable without an account',async()=>{
   const f=fixture({configured:false},{NODE_ENV:'development'});assert.ok((await f.run()).props.link);
 });
-test('unavailable/expired auth fails closed and never renders care',async()=>{
-  const f=fixture({authError:true,userId:'user_invited'});await assert.rejects(f.run(),/session unavailable/);
-  const expired=fixture({userId:null});await assert.rejects(expired.run(),/REDIRECT:\/sign-in/);
+test('closed beta fails closed when auth is unavailable or expired',async()=>{
+  const f=fixture({authError:true,userId:'user_invited'},{SB_PUBLIC_ACCESS:'false'});await assert.rejects(f.run(),/session unavailable/);
+  const expired=fixture({userId:null},{SB_PUBLIC_ACCESS:'false'});await assert.rejects(expired.run(),/NOT_FOUND/);
 });
-test('non-beta navigation points prospective users to the product-scoped Studio request form',()=>{
+test('non-beta navigation points prospective users to the Savortome product page',()=>{
   const layout=readFileSync(new URL('../apps/web/app/layout.tsx',import.meta.url),'utf8');
-  assert.match(layout,/href="https:\/\/skaldandstone\.com\/secondbreakfast\/#request-access">Request beta access<\/a>/);
+  assert.match(layout,/href="https:\/\/skaldandstone\.com\/savortome\/">About Savortome<\/a>/);
+  assert.doesNotMatch(layout,/skaldandstone\.com\/vordling/);
   assert.doesNotMatch(layout,/@skaldandstone\.com/);
 });
