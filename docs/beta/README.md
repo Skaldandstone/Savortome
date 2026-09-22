@@ -9,8 +9,11 @@
 > installed and exercised on a physical Samsung tablet; see
 > [physical-device-evidence.md](physical-device-evidence.md). The production
 > Clerk new-device email is now a custom Savortome woodland template whose
-> checked-in body matches the provider. A new sealed web image and live route
-> verification are still required before this candidate is called deployed.
+> checked-in body matches the provider. PR #96 is merged and its sealed image
+> is deployed as ECS candidate revision 25. The service is stable, the target is
+> healthy, guest Care and protected-route probes pass, and a fresh browser run
+> confirms privacy-v3 cache boundaries plus the offline Care fallback. See the
+> 21 September record in [public-launch.md](public-launch.md).
 
 The documents below retain older **Second Breakfast** names where they describe
 historical resources, compatibility hosts, or evidence from before the

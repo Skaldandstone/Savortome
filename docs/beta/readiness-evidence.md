@@ -11,8 +11,11 @@
 > [physical-device-evidence.md](physical-device-evidence.md). Browser checks at
 > 200% text in both themes found no horizontal overflow and retained keyboard
 > focus visibility. The Clerk new-device security email now matches the
-> checked-in Savortome template. A sealed image rollout and post-deploy live
-> probes remain required for this source candidate. TalkBack traversal,
+> checked-in Savortome template. PR #96 was merged and the sealed image was
+> deployed as task definition revision 25. ECS stabilized with the exact
+> candidate digest and a healthy target. Signed-out live probes and a fresh
+> service-worker browser run passed; see
+> [public-launch.md](public-launch.md). TalkBack traversal,
 > signed-in device flows, camera/gallery receipt capture, email-client visual
 > acceptance, and grocery-provider integration remain separate open evidence.
 

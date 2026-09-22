@@ -1,5 +1,73 @@
 # Public launch switch and production readiness
 
+## Guest Care and physical-device release, 21 September 2026
+
+PR [#96](https://github.com/Skaldandstone/Savortome/pull/96) restored immediate
+signed-out Care while leaving account pages, account APIs, saved settings, and
+shopping writes behind their existing authentication boundaries. All three CI
+jobs passed before merge. `main` and `origin/main` advanced to merge commit
+`ec0fc45f26890d008893e6cb0baaf943074a2beb`.
+
+The merged source was sealed without changing the real Git index:
+
+- snapshot commit `1d218d45a54590c7740aaf24a6c8d29555ae9988`
+- source tree `f580ba329e13e7088310f1ac6932d67651fda69d`
+- 1,002 source files
+- manifest SHA-256
+  `2f1d3cea805dbcef63b7d0c52a4ec5c2943ae1c3ffefa07e80455e4ba84e06af`
+- archive SHA-256
+  `9b028a8b54a738479045d867b000f0bd1dc153c81011fd5d0ec9baa67e92e00e`
+- versioned S3 source
+  `sources/secondbreakfast/savortome-guest-care-20260921/2f1d3cea805dbcef63b7d0c52a4ec5c2943ae1c3ffefa07e80455e4ba84e06af.zip`,
+  version `g0sarHvkSLe9h3bnDRd69y7WnwDtJ3HH`, AES256 encrypted and still marked
+  `release-approved=false`
+
+CodeBuild `secondbreakfast-web-build:f097ab50-ae8f-4f45-a1bd-279ebe7107dc`
+built the exact pinned object. A preceding invocation
+`15e2ee47-6a4e-4a89-9469-d1f309b44ed5` received the literal string
+`$manifest` because of PowerShell argument quoting; the trusted pre-build guard
+rejected it before Docker. The successful invocation changed only the quoted
+environment override.
+
+The resulting image is
+`051722405355.dkr.ecr.us-east-2.amazonaws.com/secondbreakfast-web@sha256:4fb60cc81481edea8386655ad1f8ee8bb82e29f63b4c1f55e024753a929da76a`,
+config digest
+`sha256:2c1dca2e700a5870484e754956a3e87981fb3e7e2566a96bea222b214fd86663`.
+The release verifier confirmed the exact CodeBuild source, S3 checksum, inline
+buildspec, nonroot distroless runtime, live Clerk public key, service worker,
+privacy cache version 3, OCI source labels, and a COMPLETE zero-finding BASIC
+ECR scan. The previously running web image `sha256:fbd81644...7fbaa` was
+independently reverified and pinned as the technical rollback.
+
+The reviewed release packet registered candidate revision 25 without changing
+desired count, networking, roles, sidecars, schedule, billing flags, or secret
+references. ECS stabilized at desired/running count 1 with one completed
+deployment. The running web container reports the exact candidate digest and
+the ALB target is healthy. `SB_BETA_ENABLED` and `SB_PUBLIC_ACCESS` remain true;
+`STRIPE_CHECKOUT_ENABLED` and `STRIPE_LIVEMODE` remain false.
+
+Fresh signed-out probes against `https://savortome.skaldandstone.com` verified:
+
+- `/care?source=direct&effort=open&time=ten` returns 200 and renders **Feed me
+  gently** in the woodland shell.
+- `/cook`, `/list`, `/friends`, `/plan`, `/profile`, `/templates`, and
+  `/recipe/new` return 307 to sign-in with their destination preserved.
+- `/api/recipes` returns 401 with private, no-store caching.
+- `/`, `/discover`, `/privacy`, `/terms`, and `/accessibility` return 200 with
+  the Savortome woodland shell and no **Second Breakfast** text.
+- The compatibility beta hostname also returns guest Care 200.
+- A fresh Chromium context installed and controlled privacy-v3 `sw.js`. Its
+  only cache was `seconds-public-v3`; no `/care` response or API entered it.
+  Offline Care rendered the generic fallback, and the online
+  `/care-offline.html` URL remained 404 even though the worker uses that path as
+  an internal synthetic cache key.
+
+The matching ARM64 review APK and physical Samsung tablet results are in
+[physical-device-evidence.md](physical-device-evidence.md). This rollout does
+not close signed-in account/device testing, TalkBack traversal, receipt camera
+and gallery capture, grocery-provider connectivity, email-client rendering, or
+owner visual acceptance.
+
 Status: 2026-09-10. James directed that the hosted web experience be opened to
 everyone and treated as a production launch. This document records the switch
 that opens access, what was launched on the existing host, and the owner-only
