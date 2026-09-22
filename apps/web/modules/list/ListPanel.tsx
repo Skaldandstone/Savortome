@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Button, Callout, Panel, PanelHeader } from "@/ui";
 import { CartButtons } from "./CartButtons";
 import { KrogerConnection } from "./KrogerConnection";
@@ -8,6 +9,7 @@ import { useShoppingList } from "./useShoppingList";
 import styles from "./list.module.css";
 
 export function ListPanel() {
+  const [confirmingClear, setConfirmingClear] = useState(false);
   const { list, providers, loading, busy, error, handoff, toggle, remove, clear, sendToCart } =
     useShoppingList();
 
@@ -43,9 +45,19 @@ export function ListPanel() {
 
             {list && list.itemCount > 0 ? (
               <div className={styles.actions}>
-                <Button variant="ghost" type="button" disabled={busy} onClick={() => void clear()}>
+                <Button variant="ghost" type="button" disabled={busy} aria-expanded={confirmingClear} onClick={() => setConfirmingClear(true)}>
                   Clear list
                 </Button>
+                {confirmingClear ? (
+                  <div className={styles.clearConfirm} role="group" aria-label="Confirm clearing shopping list">
+                    <span>This removes every item from this list.</span>
+                    <Button type="button" variant="danger" disabled={busy} onClick={() => {
+                      setConfirmingClear(false);
+                      void clear();
+                    }}>Clear every item</Button>
+                    <Button type="button" variant="ghost" disabled={busy} onClick={() => setConfirmingClear(false)}>Keep my list</Button>
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </>

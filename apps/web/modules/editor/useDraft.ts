@@ -34,6 +34,11 @@ export function useDraft(initial: RecipeDraft) {
     [edit],
   );
 
+  const restore = useCallback((next: RecipeDraft) => {
+    setDraft(next);
+    setDirty(true);
+  }, []);
+
   const ingredients = {
     replace: (index: number, ingredient: Ingredient) =>
       edit((current) => ({
@@ -79,7 +84,7 @@ export function useDraft(initial: RecipeDraft) {
       })),
   };
 
-  return { draft, dirty, set, ingredients, steps };
+  return { draft, dirty, restore, set, ingredients, steps };
 }
 
 export type DraftList = ReturnType<typeof useDraft>["ingredients"];

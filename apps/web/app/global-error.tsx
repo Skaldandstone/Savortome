@@ -49,8 +49,9 @@ export default function GlobalError({
         <main style={{ maxWidth: '32rem', padding: '2rem', textAlign: 'center' }}>
           <h1 style={{ fontSize: '1.5rem', marginBottom: '0.75rem' }}>The kitchen went dark</h1>
           <p style={{ lineHeight: 1.6, marginBottom: '1.5rem' }}>
-            Savortome hit an error it couldn’t recover from, and it has been recorded. Your recipes
-            are safe. Try again, and if it keeps happening, write to support@skaldandstone.com.
+            Savortome hit an error it couldn’t recover from, and it has been recorded. Anything
+            already saved is still there. Unsaved changes on this page may need to be entered again.
+            Try again, and if it keeps happening, write to support@skaldandstone.com.
           </p>
           <button
             type="button"
