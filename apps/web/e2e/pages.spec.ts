@@ -40,6 +40,7 @@ async function expectRenders(page: Page, path: string): Promise<void> {
 const PUBLIC_PATHS = [
   "/",
   "/discover",
+  "/care?source=direct&effort=open&time=ten",
   "/accessibility",
   "/privacy",
   "/terms",
@@ -52,7 +53,7 @@ const PUBLIC_PATHS = [
  * render — a gated page that quietly renders to a stranger is a leak, and
  * one that 500s instead of redirecting is the bug this suite was written for.
  */
-const GATED_PATHS = ["/care", "/cook", "/friends", "/list", "/plan", "/profile"];
+const GATED_PATHS = ["/cook", "/friends", "/list", "/plan", "/profile"];
 
 test.describe("public pages", () => {
   for (const path of PUBLIC_PATHS) {
@@ -66,6 +67,21 @@ test.describe("public pages", () => {
     // The rebrand once survived in a prerendered shell behind a one-year
     // cache header, so assert the live HTML rather than trusting the source.
     await expect(page.locator("body")).not.toContainText("Second Breakfast");
+  });
+
+  test("guest Care offers suggestions without loading account APIs", async ({ page }) => {
+    const accountRequests: string[] = [];
+    page.on("request", request => {
+      if (/\/api\/(profile|pantry|shopping)/.test(new URL(request.url()).pathname)) {
+        accountRequests.push(request.url());
+      }
+    });
+
+    await page.goto("/care?source=direct&effort=open&time=ten", { waitUntil: "networkidle" });
+    await expect(page.getByRole("heading", { name: "Feed me gently" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Food suggestions" })).toBeVisible();
+    expect(page.url()).not.toContain("/sign-in");
+    expect(accountRequests).toEqual([]);
   });
 });
 

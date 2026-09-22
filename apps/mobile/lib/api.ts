@@ -1,9 +1,8 @@
 import Constants from "expo-constants";
 
 /**
- * Where the Second Breakfast server lives. On a simulator "localhost" reaches the host
- * machine; on a physical device it does not, so this falls back to the LAN
- * address Expo already knows it is being served from.
+ * Where the Savortome server lives. Explicit development configuration may use
+ * localhost; on a physical device that resolves through Expo's LAN host.
  */
 export function apiBaseUrl(): string {
   const configured =

@@ -1,5 +1,21 @@
 # Privacy and release readiness evidence
 
+> **Current device and guest-Care checkpoint, 21 September 2026:** the live
+> AWS service is healthy at desired/running count 1 in account `051722405355`,
+> region `us-east-2`, with public access enabled and Stripe checkout/live mode
+> disabled. The candidate in this working branch makes `/care` useful while
+> signed out, without reading profile or pantry APIs and without allowing a
+> shopping write. The web production build, all four workspace typechecks, 688
+> core tests, 15 Playwright route tests, and 58 focused checks pass. A current
+> debug-signed ARM64 APK passed the physical Samsung tablet checks recorded in
+> [physical-device-evidence.md](physical-device-evidence.md). Browser checks at
+> 200% text in both themes found no horizontal overflow and retained keyboard
+> focus visibility. The Clerk new-device security email now matches the
+> checked-in Savortome template. A sealed image rollout and post-deploy live
+> probes remain required for this source candidate. TalkBack traversal,
+> signed-in device flows, camera/gallery receipt capture, email-client visual
+> acceptance, and grocery-provider integration remain separate open evidence.
+
 > **Current open-beta checkpoint, 13 September 2026:** AWS account
 > `051722405355`, profile `skaldandstone-admin`, region `us-east-2` is the sole
 > verified target. The runtime stack is `UPDATE_COMPLETE`; ECS service

@@ -1,7 +1,7 @@
 param(
     [ValidateSet('account-preview', 'guest-preview')]
     [string]$Configuration = 'account-preview',
-    [string]$ApiBaseUrl = 'https://secondbreakfast.skaldandstone.com',
+    [string]$ApiBaseUrl = 'https://savortome.skaldandstone.com',
     [string]$JavaHome = $env:JAVA_HOME,
     [string]$AndroidHome = $env:ANDROID_HOME,
     [string]$NativeStaging = (Join-Path ([Environment]::GetFolderPath('UserProfile')) '.sb-native'),
@@ -60,7 +60,7 @@ try {
     }
     Push-Location -LiteralPath (Join-Path $mobileRoot 'android')
     try {
-        & .\gradlew.bat :app:assembleRelease --no-daemon --max-workers=1 -I '../scripts/windows-native.init.gradle' '-Pkotlin.compiler.execution.strategy=in-process' "-PreactNativeArchitectures=$Architecture" '-Dorg.gradle.jvmargs=-Xmx1536m -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8'
+        & .\gradlew.bat :app:assembleRelease --no-daemon --max-workers=1 -I '../scripts/windows-native.init.gradle' '-Pkotlin.compiler.execution.strategy=in-process' "-PreactNativeArchitectures=$Architecture" '-Dorg.gradle.jvmargs=-Xmx2048m -XX:MaxMetaspaceSize=1024m -Dfile.encoding=UTF-8'
         if ($LASTEXITCODE -ne 0) { throw 'Android APK build failed.' }
     } finally { Pop-Location }
     $artifactRoot = Join-Path $mobileRoot ".expo-export/$Configuration"

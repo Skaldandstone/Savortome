@@ -1,6 +1,24 @@
-# Second Breakfast private beta packet
+# Savortome beta and release evidence
 
-This is a review packet, not a released beta. Work is in `C:\Users\James\Documents\GitHub\SecondBreakfast`, branch `codex/whimsical-private-beta`. The app project folder under `Documents\ChatGPT` is not the source repository. Integration owns the final commit, combined build, release decision and any cloud changes.
+> **Current checkpoint, 21 September 2026:** Savortome is running on the
+> existing production web service. This source candidate restores useful guest
+> access to **Feed me gently** while keeping account pages and APIs protected.
+> The web production build, all four workspace typechecks, 688 core tests, 15
+> route-level browser tests, and 58 focused authorization, offline, receipt,
+> mobile, and woodland checks pass. The current ARM64 account-preview APK was
+> installed and exercised on a physical Samsung tablet; see
+> [physical-device-evidence.md](physical-device-evidence.md). The production
+> Clerk new-device email is now a custom Savortome woodland template whose
+> checked-in body matches the provider. A new sealed web image and live route
+> verification are still required before this candidate is called deployed.
+
+The documents below retain older **Second Breakfast** names where they describe
+historical resources, compatibility hosts, or evidence from before the
+Savortome rename. Those names are not the current product identity.
+
+The canonical repository is `C:\Users\James\Documents\GitHub\Savortome`.
+Current source, runtime, and provider evidence supersede historical references
+to the retired repository path.
 
 The web concept rebuild passed its [integration checks](web-concept-integration.md). The [31 August follow-up](overnight-integration.md) adds secure Stripe lifecycle handling and Android concept parity with separately named review APKs. Running-UI visual acceptance is still pending. Earlier screenshots and the original Android APK remain prior-revision evidence; see [the current integration status](INTEGRATION.md).
 

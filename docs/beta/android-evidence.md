@@ -1,5 +1,33 @@
 # Android beta lane evidence
 
+## Physical-device follow-up, 21 September 2026
+
+The current account-capable ARM64 review APK was installed and exercised on a
+Samsung SM-T970 running Android 13. Cold launch, direct and deep-linked guest
+Care, offline deterministic suggestions, exact ingredients and ordered steps,
+honest signed-out shopping behavior, 150% font scaling, reduced decoration,
+portrait lock, and rejection of an untrusted return destination all passed on
+the device. The captured app log contained no fatal app exception or React
+Native runtime error.
+
+The exact artifact is
+`apps/mobile/.expo-export/account-preview/savortome-arm64-physical-review.apk`,
+63,003,296 bytes, SHA-256
+`9920afc086271d575b7c0618f1531fb7e3fbde7487af24d24c4cacb9907b47c3`.
+It is ARM64-only, package `com.skaldandstone.savortome`, and remains signed by
+the Android Debug certificate. The final rebuild uses the canonical
+`https://savortome.skaldandstone.com` API origin and was reinstalled before a
+fresh cold guest-Care launch. Full package, permission, backup, device-state,
+and screenshot evidence is in
+[physical-device-evidence.md](physical-device-evidence.md).
+
+TalkBack is installed, but its first-run tutorial intercepted traversal. The
+device was restored without bypassing that tutorial, so a completed physical
+screen-reader pass remains open. Signed-in writes and receipt camera/gallery
+capture also remain open because no Savortome account was entered on the test
+device. This section supersedes older statements that no physical device was
+available, while leaving those dated records intact.
+
 ## Accessibility-final ARM64 guest build
 
 The later mobile accessibility continuation is documented in

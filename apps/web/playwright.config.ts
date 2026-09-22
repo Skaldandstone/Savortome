@@ -40,6 +40,13 @@ export default defineConfig({
     : {
         command: `pnpm start --port ${port}`,
         url: baseURL,
+        // The hosted product is currently public. Exercise that runtime shape
+        // locally so guest Care cannot regress behind the account gate again.
+        env: {
+          ...process.env,
+          SB_BETA_ENABLED: "true",
+          SB_PUBLIC_ACCESS: "true",
+        },
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
         stdout: "pipe",
