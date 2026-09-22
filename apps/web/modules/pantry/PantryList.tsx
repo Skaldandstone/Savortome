@@ -20,37 +20,47 @@ export function PantryList({
   onClear,
 }: {
   items: PantryEntry[];
-  onAdd: (text: string) => void;
-  onUpdate: (update: PantryEntryUpdate) => void;
-  onRemove: (canonicalItem: string) => void;
-  onClear: () => void;
+  onAdd: (text: string) => Promise<boolean>;
+  onUpdate: (update: PantryEntryUpdate) => Promise<boolean>;
+  onRemove: (canonicalItem: string) => Promise<boolean>;
+  onClear: () => Promise<boolean>;
 }) {
   const [text, setText] = useState("");
   const [editingAmount, setEditingAmount] = useState<string | null>(null);
   const [remainingAmount, setRemainingAmount] = useState("");
   const [confirmingClear, setConfirmingClear] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [savingAmount, setSavingAmount] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   const startAmountEdit = (item: PantryEntry) => {
     setEditingAmount(item.canonicalItem);
     setRemainingAmount(item.quantity === null ? "" : String(item.quantity));
   };
 
-  const saveAmount = (item: PantryEntry) => {
+  const saveAmount = async (item: PantryEntry) => {
     const quantity = Number(remainingAmount);
     if (!Number.isFinite(quantity) || quantity <= 0) return;
-    onUpdate({ canonicalItem: item.canonicalItem, quantity, unit: item.unit, confirmPresent: true });
-    setEditingAmount(null);
-    setRemainingAmount("");
+    setSavingAmount(true);
+    const saved = await onUpdate({ canonicalItem: item.canonicalItem, quantity, unit: item.unit, confirmPresent: true });
+    setSavingAmount(false);
+    if (saved) {
+      setEditingAmount(null);
+      setRemainingAmount("");
+    }
   };
 
   return (
     <>
       <form
-        onSubmit={(e) => {
+        onSubmit={async (e) => {
           e.preventDefault();
-          if (!text.trim()) return;
-          onAdd(text);
-          setText("");
+          const pending = text.trim();
+          if (!pending || adding) return;
+          setAdding(true);
+          const saved = await onAdd(pending);
+          setAdding(false);
+          if (saved) setText("");
         }}
       >
         <FieldRow>
@@ -60,8 +70,9 @@ export function PantryList({
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="2 chicken thighs, rice, a can of chopped tomatoes"
+            disabled={adding}
           />
-          <Button type="submit">Add</Button>
+          <Button type="submit" disabled={adding || !text.trim()}>{adding ? "Adding…" : "Add"}</Button>
         </FieldRow>
       </form>
 
@@ -102,7 +113,7 @@ export function PantryList({
                   ) : null}
 
                   {editingAmount === item.canonicalItem ? (
-                    <form className={styles.amountEditor} onSubmit={event => { event.preventDefault(); saveAmount(item); }}>
+                    <form className={styles.amountEditor} onSubmit={async event => { event.preventDefault(); await saveAmount(item); }}>
                       <label htmlFor={`remaining-${item.canonicalItem}`}>How many {item.unit ? `${item.unit} ` : ""}remain?</label>
                       <TextField
                         id={`remaining-${item.canonicalItem}`}
@@ -112,10 +123,11 @@ export function PantryList({
                         inputMode="decimal"
                         value={remainingAmount}
                         onChange={event => setRemainingAmount(event.target.value)}
+                        disabled={savingAmount}
                         required
                       />
-                      <Button type="submit" disabled={!Number.isFinite(Number(remainingAmount)) || Number(remainingAmount) <= 0}>Save amount</Button>
-                      <Button type="button" variant="ghost" onClick={() => setEditingAmount(null)}>Cancel</Button>
+                      <Button type="submit" disabled={savingAmount || !Number.isFinite(Number(remainingAmount)) || Number(remainingAmount) <= 0}>{savingAmount ? "Saving…" : "Save amount"}</Button>
+                      <Button type="button" variant="ghost" disabled={savingAmount} onClick={() => setEditingAmount(null)}>Cancel</Button>
                     </form>
                   ) : null}
 
@@ -181,8 +193,13 @@ export function PantryList({
           {confirmingClear ? (
             <div className={styles.clearConfirm} role="group" aria-label="Confirm clearing pantry">
               <span>This removes every pantry item and its freshness history.</span>
-              <Button type="button" variant="danger" onClick={() => { setConfirmingClear(false); onClear(); }}>Clear every item</Button>
-              <Button type="button" variant="ghost" onClick={() => setConfirmingClear(false)}>Keep my pantry</Button>
+              <Button type="button" variant="danger" disabled={clearing} onClick={async () => {
+                setClearing(true);
+                const saved = await onClear();
+                setClearing(false);
+                if (saved) setConfirmingClear(false);
+              }}>{clearing ? "Clearing…" : "Clear every item"}</Button>
+              <Button type="button" variant="ghost" disabled={clearing} onClick={() => setConfirmingClear(false)}>Keep my pantry</Button>
             </div>
           ) : null}
         </>

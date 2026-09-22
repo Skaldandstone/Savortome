@@ -96,10 +96,10 @@ export function CookPanel() {
             ) : (
               <PantryList
                 items={pantry.items}
-                onAdd={(text) => void pantry.add(text)}
-                onUpdate={(update) => void pantry.update(update)}
-                onRemove={(item) => void pantry.remove(item)}
-                onClear={() => void pantry.clear()}
+                onAdd={pantry.add}
+                onUpdate={pantry.update}
+                onRemove={pantry.remove}
+                onClear={pantry.clear}
               />
             )}
             <PantryReviewQueue intakes={pantry.intakes} onResolve={pantry.resolveIntake} />

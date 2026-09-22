@@ -183,7 +183,8 @@ test('pantry memory shows sourced guidance and keeps every correction explicit',
       isStaple: false, isUsual: false, storageLocation: 'unknown',
       acquiredAt: '2020-01-01T00:00:00.000Z', lastConfirmedAt: null,
     }],
-    onAdd() {}, onUpdate(value) { updates.push(value); }, onRemove(value) { removals.push(value); }, onClear() {},
+    async onAdd() { return true; }, async onUpdate(value) { updates.push(value); return true; },
+    async onRemove(value) { removals.push(value); return true; }, async onClear() { return true; },
   };
   let tree = f.render(f.app.PantryList, props);
   assert.match(text(tree), /memory aids, not expiry dates/i);
@@ -221,6 +222,66 @@ test('pantry memory shows sourced guidance and keeps every correction explicit',
     { canonicalItem: 'banana', resurfaceHidden: true },
   ]);
   assert.deepEqual(removals, ['banana']);
+});
+
+test('pantry forms keep typed work until a write is confirmed', async () => {
+  const f = fixture();
+  let shouldSave = false;
+  const props = {
+    items: [],
+    async onAdd() { return shouldSave; },
+    async onUpdate() { return shouldSave; },
+    async onRemove() { return shouldSave; },
+    async onClear() { return shouldSave; },
+  };
+  const render = () => f.render(f.app.PantryList, props);
+  let tree = render();
+  let input = nodes(tree).find(node => node.props?.['aria-label'] === 'Ingredients to add to your pantry');
+  input.props.onChange({ target: { value: 'bananas and yogurt' } });
+  tree = render();
+  let form = nodes(tree).find(node => node.type === 'form');
+  await form.props.onSubmit({ preventDefault() {} });
+  tree = render();
+  input = nodes(tree).find(node => node.props?.['aria-label'] === 'Ingredients to add to your pantry');
+  assert.equal(input.props.value, 'bananas and yogurt');
+
+  shouldSave = true;
+  form = nodes(tree).find(node => node.type === 'form');
+  await form.props.onSubmit({ preventDefault() {} });
+  tree = render();
+  input = nodes(tree).find(node => node.props?.['aria-label'] === 'Ingredients to add to your pantry');
+  assert.equal(input.props.value, '');
+});
+
+test('pantry amount correction and bulk clear stay open after rejected writes', async () => {
+  const f = fixture();
+  const props = {
+    items: [{
+      canonicalItem: 'banana', displayName: 'bananas', quantity: 6, unit: null,
+      isStaple: false, isUsual: false, storageLocation: 'countertop',
+      acquiredAt: '2020-01-01T00:00:00.000Z', lastConfirmedAt: null,
+    }],
+    async onAdd() { return false; }, async onUpdate() { return false; },
+    async onRemove() { return false; }, async onClear() { return false; },
+  };
+  const render = () => f.render(f.app.PantryList, props);
+  let tree = render();
+  nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Used some').props.onClick();
+  tree = render();
+  let amount = nodes(tree).find(node => node.props?.id === 'remaining-banana');
+  amount.props.onChange({ target: { value: '4' } });
+  tree = render();
+  const amountForm = nodes(tree).find(node => node.type === 'form' && text(node).includes('How many'));
+  await amountForm.props.onSubmit({ preventDefault() {} });
+  tree = render();
+  amount = nodes(tree).find(node => node.props?.id === 'remaining-banana');
+  assert.equal(amount.props.value, '4');
+
+  nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Clear pantry').props.onClick();
+  tree = render();
+  await nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Clear every item').props.onClick();
+  tree = render();
+  assert.ok(nodes(tree).some(node => text(node) === 'Keep my pantry'));
 });
 
 test('receipt and grocery intake stays a human-reviewed queue', async () => {

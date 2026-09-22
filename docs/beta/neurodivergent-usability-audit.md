@@ -53,6 +53,10 @@ change AWS resources or prove a running ECS task.
   longer claims an item reached the basket when the server rejected the change.
 - A plan sign-in return keeps the selected week through a validated local `week` parameter. Unknown,
   malformed, or external return destinations are rejected.
+- Pantry add and remaining-amount forms now wait for a confirmed write before clearing typed text or
+  closing the correction form. A rejected bulk clear keeps its confirmation and context visible.
+  Pending writes disable only the relevant controls and use explicit “Adding,” “Saving,” or
+  “Clearing” labels, reducing duplicate actions without freezing unrelated pantry choices.
 
 ## Product parity observations
 
