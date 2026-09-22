@@ -1,5 +1,43 @@
 # Android physical-device evidence
 
+## Current verification, 22 September 2026
+
+The same installed APK was rechecked after the web pantry recovery work merged.
+The installed package was pulled back from the Samsung tablet and its SHA-256
+matched the retained review APK byte for byte. The APK v2 signature, package,
+version, ARM64 ABI, SDK bounds and Android Debug certificate also matched the
+values below.
+
+This pass cold-launched `seconds://care` on the physical device and confirmed
+the three deterministic suggestions, native control labels, exact ingredients,
+ordered steps and the single-item shopping action. Pressing that action while
+signed out kept the selected idea, stated that nothing was added and exposed a
+named sign-in return action.
+
+Wi-Fi was disabled before a separate cold launch. The bundled suggestions still
+rendered. A malformed link containing an arbitrary HTTPS return, diagnosis and
+medication fields displayed none of those values and exposed no return action.
+Wi-Fi was restored and Android reported the original network connected again.
+
+The same flow remained readable in the light theme at Android font scale 1.5
+with system animation scales set to zero. All three cards and the allergen
+warning remained present in the accessibility hierarchy. Theme, font and
+animation settings were restored to their original dark, 1.0 and normal values.
+The captured app log contained zero fatal app, Android runtime or React Native
+matches.
+
+Current screenshots retained for review:
+
+- `checks/physical-device-current-care.png`
+- `checks/physical-device-save-response.png`
+- `checks/physical-device-offline-malformed.png`
+- `checks/physical-device-large-light.png`
+
+This refresh does not add signed-in pantry, receipt-camera, TalkBack traversal,
+store signing or owner visual acceptance evidence. The device still has no
+Savortome account session, and the Samsung TalkBack first-run tutorial remains
+an owner-controlled prerequisite.
+
 The current account-capable ARM64 review build was installed and exercised on a connected Samsung SM-T970 running Android 13. This is physical-device validation for the specific debug-signed artifact below. It is not store-signing, cohort-distribution, iOS, or owner acceptance evidence.
 
 ## Artifact
