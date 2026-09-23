@@ -80,7 +80,7 @@ import type { Allergen, DietaryProfile } from "./dietary.js";
 import type { CookProfile, CookTier, KitchenStock, SkillRatings } from "./cooking-skill.js";
 
 /**
- * One typed client for the Second Breakfast HTTP API, shared by both apps.
+ * One typed client for the Savortome HTTP API, shared by both apps.
  *
  * The web app talks to its own origin with a session cookie; the mobile app
  * talks to a host over the network with a bearer token. That difference is the

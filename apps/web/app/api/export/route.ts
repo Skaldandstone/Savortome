@@ -23,7 +23,7 @@ export async function GET() {
     return new Response(JSON.stringify(archive, null, 2), {
       headers: {
         "content-type": "application/json; charset=utf-8",
-        "content-disposition": `attachment; filename="second-breakfast-${stamp}.json"`,
+        "content-disposition": `attachment; filename="savortome-${stamp}.json"`,
         // An archive is a snapshot of the moment it was asked for.
         "cache-control": "no-store",
       },

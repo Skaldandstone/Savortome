@@ -45,14 +45,18 @@ test('invited user receives only validated care props; arbitrary return rejected
   assert.equal(f.state.userCalls,0);
 });
 test('Studio-approved Clerk metadata grants beta access without a static user-ID entry',async()=>{
-  const f=fixture({userId:'user_requested',publicMetadata:{studio_access:{'second-breakfast':{approved:true,request_id:'request_1'}}}},{SB_PUBLIC_ACCESS:'false',SB_BETA_CLERK_USER_IDS:''});
+  const f=fixture({userId:'user_requested',publicMetadata:{studio_access:{savortome:{approved:true,request_id:'request_1'}}}},{SB_PUBLIC_ACCESS:'false',SB_BETA_CLERK_USER_IDS:''});
   assert.equal(await f.access(),true);assert.equal(f.state.authCalls,1);assert.equal(f.state.userCalls,1);
 });
+test('historical Second Breakfast approval metadata remains readable during migration',async()=>{
+  const f=fixture({userId:'user_legacy',publicMetadata:{studio_access:{'second-breakfast':{approved:true}}}},{SB_PUBLIC_ACCESS:'false',SB_BETA_CLERK_USER_IDS:''});
+  assert.equal(await f.access(),true);
+});
 test('unapproved, wrong-product, and mismatched Clerk users fail closed',async()=>{
-  for(const publicMetadata of [{},{studio_access:{'second-breakfast':{approved:false}}},{studio_access:{vordling:{approved:true}}}]){
+  for(const publicMetadata of [{},{studio_access:{savortome:{approved:false}}},{studio_access:{vordling:{approved:true}}}]){
     const f=fixture({userId:'user_requested',publicMetadata},{SB_PUBLIC_ACCESS:'false',SB_BETA_CLERK_USER_IDS:''});assert.equal(await f.access(),false);
   }
-  const mismatch=fixture({userId:'user_requested',returnedUserId:'user_other',publicMetadata:{studio_access:{'second-breakfast':{approved:true}}}},{SB_PUBLIC_ACCESS:'false',SB_BETA_CLERK_USER_IDS:''});assert.equal(await mismatch.access(),false);
+  const mismatch=fixture({userId:'user_requested',returnedUserId:'user_other',publicMetadata:{studio_access:{savortome:{approved:true}}}},{SB_PUBLIC_ACCESS:'false',SB_BETA_CLERK_USER_IDS:''});assert.equal(await mismatch.access(),false);
   const unavailable=fixture({userId:'user_requested',userError:true},{SB_PUBLIC_ACCESS:'false',SB_BETA_CLERK_USER_IDS:''});assert.equal(await unavailable.access(),false);
 });
 test('public Care works without Clerk while a closed production beta still fails closed',async()=>{

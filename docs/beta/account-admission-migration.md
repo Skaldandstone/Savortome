@@ -4,25 +4,25 @@ Status: reviewed local source and read-only cloud evidence, 7 September 2026. No
 
 ## Admission contract
 
-Prospective testers request access from the existing [Studio Second Breakfast page](https://skaldandstone.com/secondbreakfast/#request-access). The current non-beta navigation links to that form. James reviews each request in the Studio owner queue. Approval creates or updates the matching Clerk user and records this public metadata:
+Prospective testers request Savortome access from the Studio owner queue. James reviews each request. Approval creates or updates the matching Clerk user and records this public metadata:
 
 ```json
 {
   "studio_access": {
-    "second-breakfast": {
+    "savortome": {
       "approved": true
     }
   }
 }
 ```
 
-The web gate now accepts that exact server-read metadata only when `SB_BETA_ENABLED=true`. It verifies that the Clerk user returned by the Backend API has the same ID as the authenticated session. Missing, malformed, false, wrong-product, mismatched-user, or unavailable Clerk results deny access. A comma-separated `SB_BETA_CLERK_USER_IDS` list remains an optional recovery override for exact user IDs. It is not the normal enrollment workflow. Email domain, email text, display name, client state, and arbitrary metadata do not grant access.
+The web gate accepts the canonical server-read `savortome` metadata only when `SB_BETA_ENABLED=true`. During migration it also reads the historical `second-breakfast` key so an existing approval is not revoked by a label change. New approvals must write `savortome`. It verifies that the Clerk user returned by the Backend API has the same ID as the authenticated session. Missing, malformed, false, wrong-product, mismatched-user, or unavailable Clerk results deny access. A comma-separated `SB_BETA_CLERK_USER_IDS` list remains an optional recovery override for exact user IDs. It is not the normal enrollment workflow. Email domain, email text, display name, client state, and arbitrary metadata do not grant access.
 
-The request form and owner approval queue live in the Studio access-request service. Second Breakfast does not send invitations itself and does not broaden Clerk sign-up. Hosted acceptance must still prove request, approval, sign-in, denial before approval, revocation, account switching, session expiry, and Backend API failure against the correct Clerk instance.
+The request form and owner approval queue live in the Studio access-request service. Savortome does not send invitations itself and does not broaden Clerk sign-up. Hosted acceptance must still prove request, approval, sign-in, denial before approval, revocation, account switching, session expiry, and Backend API failure against the correct Clerk instance.
 
 ## Sole AWS target
 
-All new Second Breakfast AWS work targets account `051722405355`, region `us-east-2`, through profile `skaldandstone-admin`. Accounts `734702670689` and `574921529762` are historical evidence only and are retired for new work.
+All new Savortome AWS work targets account `051722405355`, region `us-east-2`, through profile `skaldandstone-admin`. Accounts `734702670689` and `574921529762` are historical evidence only and are retired for new work. Existing `secondbreakfast-*` names below are legacy infrastructure identifiers, not the product name; they must remain mapped until replacement resources and rollback are proven.
 
 Read-only inspection in `051722405355` established:
 

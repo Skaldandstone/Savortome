@@ -20,9 +20,12 @@ import type { Ingredient, Recipe, Step } from "./recipe.js";
  * still say what it is, rather than being guessed at by its keys.
  */
 export const EXPORT_VERSION = 1;
+export const SAVORTOME_ARCHIVE_FORMAT = "savortome-recipes" as const;
+/** Historical archive marker. Keep this mapped so old exports remain identifiable. */
+export const LEGACY_RECIPE_ARCHIVE_FORMAT = "second-breakfast-recipes" as const;
 
 export interface RecipeArchive {
-  format: "second-breakfast-recipes";
+  format: typeof SAVORTOME_ARCHIVE_FORMAT;
   version: number;
   exportedAt: string;
   count: number;
@@ -31,7 +34,7 @@ export interface RecipeArchive {
 
 export function buildArchive(recipes: readonly Recipe[], now: Date = new Date()): RecipeArchive {
   return {
-    format: "second-breakfast-recipes",
+    format: SAVORTOME_ARCHIVE_FORMAT,
     version: EXPORT_VERSION,
     exportedAt: now.toISOString(),
     count: recipes.length,

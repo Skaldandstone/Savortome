@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
         const primary =
           data.email_addresses.find((e) => e.id === data.primary_email_address_id) ??
           data.email_addresses[0];
-        const email = primary?.email_address ?? `${data.id}@users.secondbreakfast.local`;
+        const email = primary?.email_address ?? `${data.id}@users.savortome.local`;
         const name = [data.first_name, data.last_name].filter(Boolean).join(" ");
 
         await upsertUserFromClerk(database, {

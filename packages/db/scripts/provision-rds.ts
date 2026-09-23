@@ -1,5 +1,5 @@
 /**
- * One-off provisioning for a dedicated Second Breakfast database on a shared
+ * One-off provisioning for the legacy Savortome database on a shared
  * RDS instance. Idempotent - safe to re-run.
  *
  * Env:

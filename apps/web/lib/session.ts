@@ -57,7 +57,7 @@ export async function currentUserId(database: Database = db()): Promise<string |
     address?.emailAddress ??
     // Phone-only and OAuth-only accounts can have no email; the column is
     // required, so synthesize a stable stand-in rather than failing sign-in.
-    `${clerkId}@users.secondbreakfast.local`;
+    `${clerkId}@users.savortome.local`;
 
   return upsertUserFromClerk(database, {
     clerkId,

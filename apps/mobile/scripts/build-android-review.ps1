@@ -9,7 +9,7 @@ param(
     [ValidateSet('arm64-v8a', 'x86_64')]
     [string]$Architecture = 'arm64-v8a',
     [ValidatePattern('^[A-Za-z0-9][A-Za-z0-9._-]*\.apk$')]
-    [string]$ArtifactName = 'second-breakfast-arm64-review.apk',
+    [string]$ArtifactName = 'savortome-arm64-review.apk',
     [switch]$SkipPrebuild
 )
 $ErrorActionPreference = 'Stop'

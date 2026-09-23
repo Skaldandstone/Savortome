@@ -1,5 +1,34 @@
 # Privacy and release readiness evidence
 
+> **Official-name and Android build checkpoint, 22 September 2026:** Savortome
+> is now the canonical source, export, local-artifact, and new Clerk approval
+> name. The server reads the historical `studio_access.second-breakfast`
+> approval only as a migration fallback; new approvals use
+> `studio_access.savortome`. Existing EAS, deep-link, AWS, OCI, Stripe, database,
+> workspace-package, and historical-host identifiers remain explicitly mapped
+> compatibility dependencies in
+> [official-name-migration.md](official-name-migration.md); none were renamed or
+> deleted without provider and rollback proof. The current account-preview
+> ARM64 APK built successfully in 4m50s. It is 63,006,736 bytes with SHA-256
+> `654cd9f0668741414fc189d6cb81222321745f3f9cf4e7fa005e095f7488dfa4`,
+> package `com.skaldandstone.savortome`, version `0.1.0`/code `1`, minimum SDK
+> 24, target SDK 36, ARM64 only, backup disabled, and contains the current
+> Savortome, clear-week, removal, and Undo bundle markers. APK Signature Scheme
+> v2 verifies with the local Android debug certificate
+> `fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c`.
+> This is a local review artifact, not cohort signing or physical-device proof.
+> ADB listed no connected device at this checkpoint, so no install or device
+> interaction was claimed. The 688 core tests, 11 authorization tests, 10 web
+> legal/focus/Clerk contracts, all four typechecks, public Expo configuration,
+> and web production build passed. A read-only Apple provider audit also
+> confirmed App Store Connect app `Savortome` (Apple app ID `6811296756`) and
+> validated TestFlight build `0.1.0` (`1`) use
+> `com.skaldandstone.savortome`; this is metadata evidence, not tester or device
+> acceptance. The historical `com.secondbreakfast.app` bundle and Sign in with
+> Apple Services ID remain mapped compatibility dependencies and were not
+> deleted, revoked, or changed for signing. The EAS/Google, AWS, Stripe,
+> authenticated-browser, and device migration gates remain open.
+
 > **Meal-plan recovery continuation, 22 September 2026:** the local web and
 > mobile candidate now offers an explicit Undo after removing one planned meal,
 > restores the exact recipe/day/slot only after a confirmed write, and keeps the
