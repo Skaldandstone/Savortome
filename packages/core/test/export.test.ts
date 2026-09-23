@@ -225,7 +225,7 @@ describe("exportFilename", () => {
 describe("buildArchive", () => {
   it("stamps the file with what it is, so it can be read back later", () => {
     const archive = buildArchive([recipe()], new Date("2026-08-26T10:00:00Z"));
-    assert.equal(archive.format, "second-breakfast-recipes");
+    assert.equal(archive.format, "savortome-recipes");
     assert.equal(archive.version, EXPORT_VERSION);
     assert.equal(archive.exportedAt, "2026-08-26T10:00:00.000Z");
     assert.equal(archive.count, 1);

@@ -5,7 +5,7 @@ import { looksLikeUrl } from "@seconds/core/format";
 
 /**
  * The real mobile flow is: watch a recipe video, hit share, copy link, open
- * Second Breakfast. Checking the clipboard when the app comes forward turns that into
+ * Savortome. Checking the clipboard when the app comes forward turns that into
  * one tap instead of a paste.
  */
 export function useClipboardLink(): { suggestion: string | null; dismiss: () => void } {

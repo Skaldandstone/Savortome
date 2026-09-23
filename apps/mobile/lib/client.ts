@@ -4,7 +4,7 @@ import { apiBaseUrl } from "./api";
 import { getAccountToken } from './accountToken';
 
 /**
- * Network client for the Second Breakfast server. Unlike the web app there is no cookie
+ * Network client for the Savortome server. Unlike the web app there is no cookie
  * to ride on, so every request carries a Clerk session token.
  *
  * The token is read from Clerk's singleton rather than a hook, so non-component

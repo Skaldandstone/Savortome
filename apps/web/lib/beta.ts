@@ -8,7 +8,10 @@ export function hasStudioBetaApproval(metadata: unknown): boolean {
   if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) return false;
   const studioAccess = (metadata as Record<string, unknown>).studio_access;
   if (!studioAccess || typeof studioAccess !== 'object' || Array.isArray(studioAccess)) return false;
-  const approval = (studioAccess as Record<string, unknown>)['second-breakfast'];
+  const access = studioAccess as Record<string, unknown>;
+  // `second-breakfast` is the historical Studio key. Read it during migration,
+  // but all new approvals must use the official Savortome product key.
+  const approval = access.savortome ?? access['second-breakfast'];
   return !!approval
     && typeof approval === 'object'
     && !Array.isArray(approval)

@@ -30,7 +30,7 @@ import type {
 } from "@seconds/core";
 
 /**
- * The full Second Breakfast data model. Only the recipe/import path is wired up in the
+ * The full Savortome data model. Only the recipe/import path is wired up in the
  * app today, but shelves, ratings, friends, pantry, and lists are defined here
  * so later slices land as features rather than migrations of live data.
  */
