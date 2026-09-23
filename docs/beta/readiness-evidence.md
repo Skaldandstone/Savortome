@@ -20,8 +20,14 @@
 > ADB listed no connected device at this checkpoint, so no install or device
 > interaction was claimed. The 688 core tests, 11 authorization tests, 10 web
 > legal/focus/Clerk contracts, all four typechecks, public Expo configuration,
-> and web production build passed. The provider-side EAS/Apple/Google, AWS,
-> Stripe, authenticated-browser, and device migration gates remain open.
+> and web production build passed. A read-only Apple provider audit also
+> confirmed App Store Connect app `Savortome` (Apple app ID `6811296756`) and
+> validated TestFlight build `0.1.0` (`1`) use
+> `com.skaldandstone.savortome`; this is metadata evidence, not tester or device
+> acceptance. The historical `com.secondbreakfast.app` bundle and Sign in with
+> Apple Services ID remain mapped compatibility dependencies and were not
+> deleted, revoked, or changed for signing. The EAS/Google, AWS, Stripe,
+> authenticated-browser, and device migration gates remain open.
 
 > **Meal-plan recovery continuation, 22 September 2026:** the local web and
 > mobile candidate now offers an explicit Undo after removing one planned meal,
