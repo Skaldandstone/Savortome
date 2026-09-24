@@ -271,6 +271,21 @@
   color: var(--warn);
 }
 
+.suggestRetry {
+  margin-top: 8px;
+  padding: 6px 9px;
+  font: inherit;
+  font-size: var(--step-1);
+  font-weight: 600;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.suggestError .suggestRetry { margin-top: 0; }
+.suggestRetry:hover { color: var(--accent); border-color: var(--accent); }
+
 /* --- suggestions waiting on your own plan --------------------------------- */
 
 .suggestions { margin-bottom: 16px; }

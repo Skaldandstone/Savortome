@@ -592,6 +592,41 @@ test('secondary planning, pairing, and shelf controls retain explicit accessible
   assert.ok(nodes(shelfTree).some(node => node.props?.['aria-label'] === 'New shelf name'));
 });
 
+test('friend suggestions expose retryable people and allergy failures without enabling send', async () => {
+  const friend = { id: 'friend-1', displayName: 'Sam' };
+  const f = fixture({ failMethods: new Set(['friends']), responses: { friends: { friends: [friend] }, friendAllergens: { allergens: [] } } });
+  const render = () => f.render(f.app.SuggestMeal, { recipeId: 'recipe-1', ingredients: [] });
+  assert.match(text(render()), /Loading people/);
+  f.state.effects[0]();
+  await new Promise(resolve => setImmediate(resolve));
+
+  let tree = render();
+  assert.match(text(tree), /People could not load/);
+  assert.equal(nodes(tree).some(node => node.type === 'button' && text(node) === 'Suggest'), false);
+  f.state.failMethods.delete('friends');
+  nodes(tree).find(node => node.type === 'button' && text(node) === 'Try again').props.onClick();
+  render();
+  f.state.effects.at(-2)();
+  await new Promise(resolve => setImmediate(resolve));
+
+  f.state.failMethods.add('friendAllergens');
+  render();
+  f.state.effects.at(-1)();
+  await new Promise(resolve => setImmediate(resolve));
+  tree = render();
+  assert.match(text(tree).replace(/\s+/g, ' '), /Couldn't check Sam’s saved allergy flags/);
+  assert.equal(nodes(tree).find(node => node.type === 'button' && text(node) === 'Suggest').props.disabled, true);
+
+  f.state.failMethods.delete('friendAllergens');
+  nodes(tree).find(node => node.type === 'button' && text(node) === 'Check again').props.onClick();
+  render();
+  f.state.effects.at(-1)();
+  await new Promise(resolve => setImmediate(resolve));
+  tree = render();
+  assert.equal(nodes(tree).find(node => node.type === 'button' && text(node) === 'Suggest').props.disabled, false);
+  assert.equal(f.state.calls.some(call => call.name === 'suggestForFriend'), false);
+});
+
 test('each cooking timer action names its timer and step without a per-second live region', () => {
   const f = fixture();
   const timer = { stepN: 2, label: 'Simmer gently', totalSeconds: 300, endsAt: 1, pausedRemaining: null };
