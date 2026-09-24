@@ -2,14 +2,18 @@
 
 import { Button, Callout, FieldRow, Panel, PanelHeader, TextField } from "@/ui";
 import { DiscoverCards } from "./DiscoverCards";
-import { useDiscover } from "./useDiscover";
+import { useDiscover, type DiscoverController } from "./useDiscover";
 import { WebRecipeFinder } from "./WebRecipeFinder";
 import styles from "./discover.module.css";
 
 /** Browse and search what other people have shared. */
 export function DiscoverPanel() {
-  const { data, loading, error, query, searchedQuery, activeTags, setQuery, search, toggleTag } =
-    useDiscover();
+  return <DiscoverPanelView discover={useDiscover()} />;
+}
+
+export function DiscoverPanelView({ discover }: { discover: DiscoverController }) {
+  const { data, loading, loaded, error, query, searchedQuery, activeTags, setQuery, search, toggleTag, retry } =
+    discover;
 
   return (
     <>
@@ -60,7 +64,10 @@ export function DiscoverPanel() {
 
         {error ? (
           <Callout tone="error" role="alert">
-            {error}
+            {loaded
+              ? "Shared recipes could not refresh. The last results we loaded remain below."
+              : "Shared recipes could not load. No empty result has been assumed."}{" "}
+            <Button type="button" variant="ghost" onClick={() => void retry()}>Try again</Button>
           </Callout>
         ) : null}
       </Panel>
@@ -71,18 +78,23 @@ export function DiscoverPanel() {
         aria-busy={loading}
         aria-live="polite"
       >
-        {loading ? (
+        {loading && loaded ? (
+          <p className={styles.empty} role="status">Refreshing shared recipes…</p>
+        ) : null}
+        {loading && !loaded ? (
           <p className={styles.empty} role="status">
             Looking for shared recipes…
           </p>
-        ) : data.recipes.length === 0 ? (
+        ) : !loaded ? null : data.recipes.length === 0 ? (
           <>
             <p className={styles.empty}>
-              {searchedQuery || activeTags.length > 0
+              {error
+                ? "The last shared-recipe results we loaded were empty."
+                : searchedQuery || activeTags.length > 0
                 ? "Nothing shared matches that yet."
                 : "No one has shared anything yet. Set one of your recipes to “Anyone with the link” and it turns up here."}
             </p>
-            <WebRecipeFinder query={searchedQuery} />
+            {!error ? <WebRecipeFinder query={searchedQuery} /> : null}
           </>
         ) : (
           <DiscoverCards cards={data.recipes} />
