@@ -36,16 +36,24 @@ export function SuggestMeal({
   // "loading"/"error" are both "unknown," not "none" — a friend's allergens
   // failing to load must never silently read the same as them having none.
   const [friendAllergens, setFriendAllergens] = useState<Allergen[] | "loading" | "error">("loading");
+  const [friendsError, setFriendsError] = useState(false);
+  const [friendsAttempt, setFriendsAttempt] = useState(0);
+  const [allergenAttempt, setAllergenAttempt] = useState(0);
 
   useEffect(() => {
+    let active = true;
+    setFriends(null);
+    setFriendsError(false);
     void api
       .friends()
       .then((overview) => {
+        if (!active) return;
         setFriends(overview.friends);
         setFriendId((prev) => prev || overview.friends[0]?.id || "");
       })
-      .catch(() => setFriends([]));
-  }, []);
+      .catch(() => { if (active) setFriendsError(true); });
+    return () => { active = false; };
+  }, [friendsAttempt]);
 
   useEffect(() => {
     if (!friendId) return;
@@ -65,13 +73,23 @@ export function SuggestMeal({
     return () => {
       cancelled = true;
     };
-  }, [friendId]);
+  }, [allergenAttempt, friendId]);
 
-  if (!friends || friends.length === 0) return null;
+  if (friendsError) return (
+    <div className={styles.suggest} data-print="hide">
+      <span className={styles.suggestLabel}>Suggest this to a friend's plan</span>
+      <span className={styles.suggestError} role="alert">People could not load. No suggestion was sent.</span>
+      <button type="button" className={styles.suggestRetry} onClick={() => setFriendsAttempt((attempt) => attempt + 1)}>Try again</button>
+    </div>
+  );
+
+  if (friends === null) return <div className={styles.suggest} data-print="hide" role="status">Loading people you can suggest this to…</div>;
+  if (friends.length === 0) return null;
 
   const allergensKnown = Array.isArray(friendAllergens);
   const conflicts = allergensKnown ? flagsForRecipe(ingredients, friendAllergens) : [];
   const conflictAllergens = [...new Set(conflicts.map((f) => f.allergen))];
+  const selectedFriendName = friends.find((friend) => friend.id === friendId)?.displayName;
 
   return (
     <div className={styles.suggest} data-print="hide" aria-busy={state === "sending"}>
@@ -127,7 +145,8 @@ export function SuggestMeal({
         <span className={styles.suggestError} role="status">Checking their allergies…</span>
       ) : friendAllergens === "error" ? (
         <span className={styles.suggestError} role="alert">
-          Couldn't check their allergies just now — try picking them again.
+          Couldn't check {selectedFriendName ? `${selectedFriendName}’s` : "this person's"} saved allergy flags. Suggest stays unavailable.{" "}
+          <button type="button" className={styles.suggestRetry} onClick={() => setAllergenAttempt((attempt) => attempt + 1)}>Check again</button>
         </span>
       ) : conflictAllergens.length > 0 ? (
         <span className={styles.suggestError} role="alert">

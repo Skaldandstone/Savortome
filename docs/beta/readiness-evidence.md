@@ -1,5 +1,18 @@
 # Privacy and release readiness evidence
 
+> **Friend-suggestion safety recovery, 24 September 2026:** recipe pages now
+> distinguish a failed people-list request from having no friends available and
+> offer a direct retry instead of silently removing the feature. If a selected
+> person's saved allergy flags cannot load, Suggest remains disabled and the
+> warning provides a working Check again action. No suggestion is sent during
+> either recovery path. Focused actual-component coverage proves list retry,
+> allergy retry, the fail-closed send control, and zero suggestion writes. The
+> people-load failure rendered without horizontal overflow at 390 px with 200%
+> text and at 1440 px in the dark woodland theme; the narrow retry target was
+> 54 px high. This does not prove a real friend relationship, authenticated
+> suggestion write, assistive-technology traversal, provider acceptance,
+> physical-device behavior, or owner visual acceptance.
+
 > **Saved-meal recovery continuation, 24 September 2026:** the web Saved
 > meals page now distinguishes loading and connection failure from a genuinely
 > empty collection. A failed load says saved meals were not changed and offers
