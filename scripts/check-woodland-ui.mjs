@@ -32,7 +32,7 @@ const stubs = {
   './useWakeLock': 'export const useWakeLock=()=>{};',
   './TimerTray': 'export function TimerTray(){};',
   './FinishPanel': 'export function FinishPanel(){};',
-  './useFriends': 'export const useFriends=()=>state.friends??({overview:{incoming:[],friends:[],outgoing:[]},feed:[],loading:false,busy:false,error:null,add:async()=>{},update:async()=>{}});',
+  './useFriends': 'export const useFriends=()=>state.friends??({overview:{incoming:[],friends:[],outgoing:[]},feed:[],loading:false,feedLoading:false,feedLoaded:true,busy:false,error:null,overviewError:null,feedError:null,retryOverview(){},retryFeed(){},add:async()=>true,update:async()=>true});',
   './FeedList': 'export function FeedList(){};',
   './PersonRow': 'export function PersonRow(){};',
   './useDiscover': 'export const useDiscover=()=>state.discover??({data:{tags:[],recipes:[],query:""},loading:false,error:null,query:"",activeTags:[],setQuery(){},search:async()=>{},toggleTag:async()=>{}});',
@@ -62,6 +62,7 @@ const result = await build({
     export {ShelfChecklist} from './apps/web/modules/shelves/ShelfChecklist.tsx';
     export {TimerTray} from './apps/web/modules/cook/TimerTray.tsx';
     export {FriendsPanel} from './apps/web/modules/friends/FriendsPanel.tsx';
+    export {useFriends} from './apps/web/modules/friends/useFriends.ts';
     export {DiscoverPanel} from './apps/web/modules/discover/DiscoverPanel.tsx';
     export {ListPanel} from './apps/web/modules/list/ListPanel.tsx';
     export {CookPanel} from './apps/web/modules/pantry/CookPanel.tsx';
@@ -625,6 +626,85 @@ test('friend suggestions expose retryable people and allergy failures without en
   tree = render();
   assert.equal(nodes(tree).find(node => node.type === 'button' && text(node) === 'Suggest').props.disabled, false);
   assert.equal(f.state.calls.some(call => call.name === 'suggestForFriend'), false);
+});
+
+test('friends and recent activity load independently, and a failed feed retry never erases people', async () => {
+  const friend = { id: 'friend-1', displayName: 'Sam', handle: 'sam' };
+  const activity = { kind: 'cooked', recipeId: 'recipe-1', recipeTitle: 'Soup', at: '2026-09-24T00:00:00Z' };
+  const f = fixture({
+    failMethods: new Set(['feed']),
+    responses: {
+      friends: { friends: [friend], incoming: [], outgoing: [] },
+      feed: [activity],
+      addFriend: { friends: [friend], incoming: [], outgoing: [] },
+    },
+  });
+  const render = () => f.render(f.app.useFriends);
+  render();
+  f.state.effects[0]();
+  f.state.effects[1]();
+  await new Promise(resolve => setImmediate(resolve));
+
+  let controller = render();
+  assert.equal(controller.overview.friends[0].displayName, 'Sam');
+  assert.equal(controller.overviewError, null);
+  assert.match(controller.feedError, /Fixture write failed/);
+  assert.equal(controller.feedLoaded, false);
+
+  f.state.failMethods.delete('feed');
+  controller.retryFeed();
+  render();
+  f.state.effects.at(-1)();
+  await new Promise(resolve => setImmediate(resolve));
+  controller = render();
+  assert.equal(controller.feedLoaded, true);
+  assert.equal(controller.feed[0].recipeTitle, 'Soup');
+
+  f.state.failMethods.add('feed');
+  assert.equal(await controller.add('sam'), true);
+  controller = render();
+  f.state.effects.at(-1)();
+  await new Promise(resolve => setImmediate(resolve));
+  controller = render();
+  assert.equal(controller.error, null);
+  assert.match(controller.feedError, /Fixture write failed/);
+  assert.equal(controller.overview.friends[0].displayName, 'Sam');
+});
+
+test('friends page protects typed handles and never presents failed loading as an empty list', async () => {
+  let addResult = false;
+  const friends = fixture({ friends: {
+    overview: { incoming: [], friends: [], outgoing: [] }, feed: [], loading: false,
+    feedLoading: false, feedLoaded: false, busy: false, error: null,
+    overviewError: 'Fixture load failed', feedError: null,
+    retryOverview() {}, retryFeed() {}, add: async () => addResult, update: async () => false,
+  } });
+  const render = () => friends.render(friends.app.FriendsPanel);
+  let tree = render();
+  assert.match(text(tree), /saved relationships have not changed/i);
+  assert.doesNotMatch(text(tree), /No friends yet/);
+  assert.equal(nodes(tree).find(node => node.props?.['aria-label'] === "Friend's handle").props.disabled, true);
+
+  friends.state.friends.overviewError = null;
+  tree = render();
+  const input = nodes(tree).find(node => node.props?.['aria-label'] === "Friend's handle");
+  input.props.onChange({ target: { value: '@sam' } });
+  tree = render();
+  nodes(tree).find(node => node.type === 'form').props.onSubmit({ preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
+  tree = render();
+  assert.equal(nodes(tree).find(node => node.props?.['aria-label'] === "Friend's handle").props.value, '@sam');
+
+  addResult = true;
+  nodes(tree).find(node => node.type === 'form').props.onSubmit({ preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
+  tree = render();
+  assert.equal(nodes(tree).find(node => node.props?.['aria-label'] === "Friend's handle").props.value, '');
+
+  friends.state.friends.feedLoaded = true;
+  friends.state.friends.feedError = 'Fixture feed failed';
+  tree = render();
+  assert.match(text(tree), /last activity we loaded remains below/i);
 });
 
 test('each cooking timer action names its timer and step without a per-second live region', () => {

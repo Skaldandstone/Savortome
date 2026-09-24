@@ -1,5 +1,21 @@
 # Privacy and release readiness evidence
 
+> **Friends-page recovery, 24 September 2026:** the friends list and recent
+> activity feed now load independently, so a feed failure cannot discard a
+> successfully loaded relationship list or present it as “No friends yet.” A
+> failed initial relationship load disables new friend requests, says saved
+> relationships were not changed, and offers a direct retry. Failed adds retain
+> the typed handle. A confirmed relationship write remains confirmed even when
+> the follow-up activity refresh fails; retained activity is labeled as the last
+> successfully loaded view. Focused actual-component coverage proves independent
+> loading, both retry paths, input retention, truthful empty-state handling, and
+> write-versus-refresh separation. The actual themed failure surface rendered
+> without horizontal overflow at 390 px with 200% text and at desktop width;
+> narrow retry targets measured 60 px high and desktop targets 44 px. This does
+> not prove authenticated relationships, real writes, assistive-technology
+> traversal, provider acceptance, physical-device behavior, or owner visual
+> acceptance.
+
 > **Friend-suggestion safety recovery, 24 September 2026:** recipe pages now
 > distinguish a failed people-list request from having no friends available and
 > offer a direct retry instead of silently removing the feature. If a selected
