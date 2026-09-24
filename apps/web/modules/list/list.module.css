@@ -44,6 +44,11 @@
 .note { color: var(--text-muted); font-size: var(--step-2); }
 
 .remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
   font: inherit;
   font-size: var(--step-4);
   line-height: 1;
@@ -158,3 +163,12 @@
 :global([data-woodland='true']) :is(.cartGroup,.kroger) { border-radius:4px; }
 :global([data-woodland='true']) .connect { display:inline-flex; align-items:center; min-height:44px; background:var(--action-surface); color:var(--action-text); border:1px solid var(--border); font:1rem Georgia,serif; }
 :global([data-woodland='true']) .krogerActions { flex-wrap:wrap; }
+
+:global([data-text-size='200']) .item { align-items:start; }
+:global([data-text-size='200']) .itemLabel {
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:start;
+}
+:global([data-text-size='200']) .itemLabel .amount { grid-column:2; }
+:global([data-text-size='200']) .itemLabel .name { grid-column:2; overflow-wrap:anywhere; }

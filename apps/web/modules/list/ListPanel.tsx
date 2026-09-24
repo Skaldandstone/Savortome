@@ -7,13 +7,16 @@ import { Button, Callout, Panel, PanelHeader } from "@/ui";
 import { CartButtons } from "./CartButtons";
 import { KrogerConnection } from "./KrogerConnection";
 import { ListItems } from "./ListItems";
-import { useShoppingList } from "./useShoppingList";
+import { useShoppingList, type ListController } from "./useShoppingList";
 import styles from "./list.module.css";
 
 export function ListPanel() {
+  return <ListPanelView shopping={useShoppingList()} />;
+}
+
+export function ListPanelView({ shopping }: { shopping: ListController }) {
   const [confirmingClear, setConfirmingClear] = useState(false);
-  const { list, providers, loading, busy, error, handoff, toggle, remove, clear, sendToCart } =
-    useShoppingList();
+  const { list, providers, loading, loaded, busy, error, handoff, toggle, remove, clear, sendToCart } = shopping;
 
   const outstanding = list ? list.itemCount - list.checkedCount : 0;
 
@@ -25,11 +28,11 @@ export function ListPanel() {
           hint="Ingredients merged across recipes, with anything already in your pantry taken off."
         />
 
-        {loading ? (
+        {loading && !loaded ? (
           <p className={styles.empty} role="status">
             Loading shopping list…
           </p>
-        ) : (
+        ) : loaded ? (
           <>
             {list && list.itemCount > 0 ? (
               <p className={styles.count}>
@@ -63,7 +66,16 @@ export function ListPanel() {
               </div>
             ) : null}
           </>
-        )}
+        ) : null}
+
+        {shopping.listError ? (
+          <Callout tone="error" role="alert">
+            {loaded
+              ? "Your shopping list could not refresh. The last list we loaded remains available above."
+              : "Your shopping list could not load. Your saved items have not changed."}{" "}
+            <Button type="button" variant="ghost" onClick={shopping.retryList}>Try list again</Button>
+          </Callout>
+        ) : null}
 
         {error ? (
           <Callout tone="error" role="alert">
@@ -75,12 +87,25 @@ export function ListPanel() {
 
       {list && list.itemCount > 0 ? (
         <>
-          <CartButtons
-            providers={providers}
-            disabled={busy}
-            handoff={handoff}
-            onSend={(provider) => void sendToCart(provider)}
-          />
+          {shopping.providersLoading && !shopping.providersLoaded ? (
+            <p className={styles.empty} role="status">Checking ways to use your list…</p>
+          ) : null}
+          {shopping.providersLoaded ? (
+            <CartButtons
+              providers={providers}
+              disabled={busy}
+              handoff={handoff}
+              onSend={(provider) => void sendToCart(provider)}
+            />
+          ) : null}
+          {shopping.providersError ? (
+            <Callout tone="error" role="alert">
+              {shopping.providersLoaded
+                ? "Ways to use your list could not refresh. The last options we loaded remain available above."
+                : "Ways to use your list could not load. Your shopping list is still available."}{" "}
+              <Button type="button" variant="ghost" onClick={shopping.retryProviders}>Try list options again</Button>
+            </Callout>
+          ) : null}
           <KrogerConnection />
         </>
       ) : null}
