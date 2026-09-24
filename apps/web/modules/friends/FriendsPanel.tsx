@@ -14,7 +14,10 @@ import styles from "./friends.module.css";
  * a decision, and burying them under a feed is how they get ignored.
  */
 export function FriendsPanel() {
-  const { overview, feed, loading, busy, error, add, update } = useFriends();
+  const {
+    overview, feed, loading, feedLoading, feedLoaded, busy, error,
+    overviewError, feedError, retryOverview, retryFeed, add, update,
+  } = useFriends();
   const [handle, setHandle] = useState("");
 
   return (
@@ -28,8 +31,11 @@ export function FriendsPanel() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            if (!handle.trim()) return;
-            void add(handle).then(() => setHandle(""));
+            const submittedHandle = handle.trim();
+            if (!submittedHandle) return;
+            void add(submittedHandle).then((saved) => {
+              if (saved) setHandle("");
+            });
           }}
         >
           <FieldRow>
@@ -39,9 +45,9 @@ export function FriendsPanel() {
               value={handle}
               onChange={(e) => setHandle(e.target.value)}
               placeholder="@their-handle"
-              disabled={busy}
+              disabled={busy || loading || Boolean(overviewError)}
             />
-            <Button type="submit" disabled={busy}>
+            <Button type="submit" disabled={busy || loading || Boolean(overviewError)}>
               Add friend
             </Button>
           </FieldRow>
@@ -53,13 +59,20 @@ export function FriendsPanel() {
           </Callout>
         ) : null}
 
+        {overviewError ? (
+          <Callout tone="error" role="alert">
+            <span>Friends could not load. Your saved relationships have not changed.</span>{" "}
+            <Button type="button" variant="ghost" onClick={retryOverview}>Try again</Button>
+          </Callout>
+        ) : null}
+
         {loading ? (
           <p className={styles.empty} role="status">
             Loading friends…
           </p>
         ) : null}
 
-        {overview.incoming.length > 0 ? (
+        {!loading && !overviewError && overview.incoming.length > 0 ? (
           <section className={styles.group}>
             <h3 className={styles.groupHeading}>
               Waiting on you ({overview.incoming.length})
@@ -84,7 +97,7 @@ export function FriendsPanel() {
           </section>
         ) : null}
 
-        {overview.friends.length > 0 ? (
+        {!loading && !overviewError && overview.friends.length > 0 ? (
           <section className={styles.group}>
             <h3 className={styles.groupHeading}>Friends ({overview.friends.length})</h3>
             <ul className={styles.people}>
@@ -100,7 +113,7 @@ export function FriendsPanel() {
           </section>
         ) : null}
 
-        {overview.outgoing.length > 0 ? (
+        {!loading && !overviewError && overview.outgoing.length > 0 ? (
           <section className={styles.group}>
             <h3 className={styles.groupHeading}>Asked ({overview.outgoing.length})</h3>
             <ul className={styles.people}>
@@ -120,6 +133,7 @@ export function FriendsPanel() {
         ) : null}
 
         {!loading &&
+        !overviewError &&
         overview.friends.length === 0 &&
         overview.incoming.length === 0 &&
         overview.outgoing.length === 0 ? (
@@ -131,7 +145,20 @@ export function FriendsPanel() {
 
       <section className={styles.feedSection}>
         <h2 className={styles.feedHeading}>What they&apos;ve been cooking</h2>
-        <FeedList items={feed} />
+        {feedLoading ? (
+          <p className={styles.empty} role="status">
+            {feedLoaded ? "Refreshing recent activity…" : "Loading recent activity…"}
+          </p>
+        ) : null}
+        {feedError ? (
+          <Callout tone="error" role="alert">
+            <span>{feedLoaded
+              ? "Recent activity could not refresh. The last activity we loaded remains below."
+              : "Recent activity could not load. Your friends and requests are still shown above."}</span>{" "}
+            <Button type="button" variant="ghost" onClick={retryFeed}>Try again</Button>
+          </Callout>
+        ) : null}
+        {feedLoaded ? <FeedList items={feed} /> : null}
       </section>
     </>
   );
