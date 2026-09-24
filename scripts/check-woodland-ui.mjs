@@ -44,6 +44,8 @@ const stubs = {
   './usePantry': 'export const usePantry=()=>state.pantry??({items:[],intakes:[],loading:false,error:null,add:async()=>{},update:async()=>{},remove:async()=>{},clear:async()=>{},resolveIntake:async()=>true}); export const usePantrySearch=()=>state.pantrySearch??({response:null,searching:false,error:null,search:async()=>{}});',
   './MatchList': 'export function MatchList(){}; export function QueryReadback(){};',
   './PantryList': 'export function PantryList(){};',
+  './TemplateItems': 'export function TemplateItems(){};',
+  './TemplateShareControl': 'export function TemplateShareControl(){};',
 };
 const result = await build({
   absWorkingDir: root, stdin: { resolveDir: root, contents: `
@@ -67,6 +69,7 @@ const result = await build({
     export {PantryReviewQueue} from './apps/web/modules/pantry/PantryReviewQueue.tsx';
     export {PlanTogether} from './apps/web/modules/plan/PlanTogether.tsx';
     export {PlanWeek} from './apps/web/modules/plan/PlanWeek.tsx';
+    export {TemplateList} from './apps/web/modules/templates/TemplateList.tsx';
     export {PlanScreen as MobilePlanScreen} from './apps/mobile/modules/plan/PlanScreen.tsx';
     export {CookingProfilePanel,mergeProfileUpdate} from './apps/web/modules/cooking/CookingProfilePanel.tsx';
     export {OnboardingJourney} from './apps/web/modules/onboarding/OnboardingJourney.tsx';
@@ -145,6 +148,43 @@ test('cooking profile load failure protects saved choices until a successful ret
   tree = render();
   assert.match(text(tree).replace(/\s+/g, ' '), /Cooking as Curious Apprentice/);
   assert.equal(f.state.fetchCalls.filter(call => call.init?.method === 'PATCH').length, 0);
+});
+
+test('saved meals distinguish load failure from empty and retain a meal after failed deletion', async () => {
+  const meal = { id: 'meal-1', name: 'Sunday dinner', visibility: 'private', items: [] };
+  const f = fixture({ failMethods: new Set(['myTemplates']), responses: { myTemplates: { templates: [meal] }, deleteTemplate: { ok: true } } });
+  const render = () => f.render(f.app.TemplateList);
+  assert.match(text(render()), /Loading saved meals/);
+  f.state.effects[0]();
+  await new Promise(resolve => setImmediate(resolve));
+
+  let tree = render();
+  assert.match(text(tree), /saved meals have not been changed/i);
+  assert.doesNotMatch(text(tree), /Nothing saved yet/);
+  f.state.failMethods.delete('myTemplates');
+  nodes(tree).find(node => node.props?.onClick && text(node) === 'Try again').props.onClick();
+  render();
+  f.state.effects.at(-1)();
+  await new Promise(resolve => setImmediate(resolve));
+
+  tree = render();
+  assert.match(text(tree), /Sunday dinner/);
+  nodes(tree).find(node => node.props?.['aria-label'] === 'Delete Sunday dinner').props.onClick();
+  tree = render();
+  assert.match(text(tree), /stops its shared link from working/i);
+  f.state.failMethods.add('deleteTemplate');
+  nodes(tree).find(node => node.props?.onClick && text(node) === 'Delete saved meal').props.onClick();
+  await new Promise(resolve => setImmediate(resolve));
+  tree = render();
+  assert.match(text(tree), /still saved/i);
+  assert.match(text(tree), /Sunday dinner/);
+
+  f.state.failMethods.delete('deleteTemplate');
+  nodes(tree).find(node => node.props?.onClick && text(node) === 'Delete saved meal').props.onClick();
+  await new Promise(resolve => setImmediate(resolve));
+  tree = render();
+  assert.match(text(tree), /Sunday dinner was deleted/);
+  assert.equal(nodes(tree).some(node => node.props?.['aria-label'] === 'Delete Sunday dinner'), false);
 });
 
 test('journal page headings remain server-gated and contain a native h1 when allowed', async () => {

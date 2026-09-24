@@ -1,5 +1,18 @@
 # Privacy and release readiness evidence
 
+> **Saved-meal recovery continuation, 24 September 2026:** the web Saved
+> meals page now distinguishes loading and connection failure from a genuinely
+> empty collection. A failed load says saved meals were not changed and offers
+> retry. Deletion now names the meal, explains that its shared link will stop
+> working while its recipes remain, waits for explicit confirmation, and keeps
+> the meal visible with an actionable message when the write fails. Focused
+> actual-component coverage proves load retry, retained content after a failed
+> delete, and removal only after server confirmation. The failure surface was
+> rendered at 390 px with 200% text and at 1440 px in the dark woodland theme;
+> both layouts had no horizontal overflow. This does not prove an authenticated
+> saved-meal write, assistive-technology traversal, physical-device behavior,
+> provider acceptance, or owner visual acceptance.
+
 > **Cooking-profile recovery continuation, 23 September 2026:** web and
 > mobile onboarding now keep cooking-tier, skill, and kitchen-stock controls
 > closed when the saved profile cannot load. The failure state says that saved
