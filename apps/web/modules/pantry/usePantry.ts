@@ -8,8 +8,15 @@ import { actionFailure, type ActionFailure } from "@/lib/action-failure";
 export interface PantryController {
   items: PantryEntry[];
   loading: boolean;
+  loaded: boolean;
+  pantryError: ActionFailure | null;
   error: ActionFailure | null;
   intakes: PantryIntakeView[];
+  intakesLoading: boolean;
+  intakesLoaded: boolean;
+  intakesError: ActionFailure | null;
+  retryPantry: () => void;
+  retryIntakes: () => void;
   add: (text: string) => Promise<boolean>;
   update: (update: PantryEntryUpdate) => Promise<boolean>;
   remove: (canonicalItem: string) => Promise<boolean>;
@@ -21,20 +28,29 @@ export interface PantryController {
 export function usePantry(): PantryController {
   const [items, setItems] = useState<PantryEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false);
+  const [pantryError, setPantryError] = useState<ActionFailure | null>(null);
   const [error, setError] = useState<ActionFailure | null>(null);
   const [intakes, setIntakes] = useState<PantryIntakeView[]>([]);
+  const [intakesLoading, setIntakesLoading] = useState(true);
+  const [intakesLoaded, setIntakesLoaded] = useState(false);
+  const [intakesError, setIntakesError] = useState<ActionFailure | null>(null);
+  const [pantryAttempt, setPantryAttempt] = useState(0);
+  const [intakesAttempt, setIntakesAttempt] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setPantryError(null);
     void (async () => {
       try {
-        const [next, pending] = await Promise.all([api.listPantry(), api.listPantryIntakes()]);
+        const next = await api.listPantry();
         if (!cancelled) {
           setItems(next);
-          setIntakes(pending);
+          setLoaded(true);
         }
       } catch (err) {
-        if (!cancelled) setError(actionFailure(err, "Couldn't load your pantry."));
+        if (!cancelled) setPantryError(actionFailure(err, "Couldn't load your pantry."));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -42,7 +58,29 @@ export function usePantry(): PantryController {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [pantryAttempt]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setIntakesLoading(true);
+    setIntakesError(null);
+    void (async () => {
+      try {
+        const pending = await api.listPantryIntakes();
+        if (!cancelled) {
+          setIntakes(pending);
+          setIntakesLoaded(true);
+        }
+      } catch (err) {
+        if (!cancelled) setIntakesError(actionFailure(err, "Couldn't load recent grocery reviews."));
+      } finally {
+        if (!cancelled) setIntakesLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [intakesAttempt]);
 
   const resolveIntake = useCallback(async (
     intakeId: string,
@@ -75,8 +113,15 @@ export function usePantry(): PantryController {
   return {
     items,
     loading,
+    loaded,
+    pantryError,
     error,
     intakes,
+    intakesLoading,
+    intakesLoaded,
+    intakesError,
+    retryPantry: () => setPantryAttempt(current => current + 1),
+    retryIntakes: () => setIntakesAttempt(current => current + 1),
     add: (text) => run(() => api.addPantry(text)),
     update: (update) => run(() => api.updatePantry(update)),
     remove: (canonicalItem) => run(() => api.removePantry([canonicalItem])),

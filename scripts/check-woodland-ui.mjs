@@ -41,7 +41,7 @@ const stubs = {
   './CartButtons': 'export function CartButtons(){};',
   './KrogerConnection': 'export function KrogerConnection(){};',
   './ListItems': 'export function ListItems(){};',
-  './usePantry': 'export const usePantry=()=>state.pantry??({items:[],intakes:[],loading:false,error:null,add:async()=>{},update:async()=>{},remove:async()=>{},clear:async()=>{},resolveIntake:async()=>true}); export const usePantrySearch=()=>state.pantrySearch??({response:null,searching:false,error:null,search:async()=>{}});',
+  './usePantry': 'export const usePantry=()=>state.pantry??({items:[],intakes:[],loading:false,loaded:true,pantryError:null,error:null,intakesLoading:false,intakesLoaded:true,intakesError:null,retryPantry(){},retryIntakes(){},add:async()=>{},update:async()=>{},remove:async()=>{},clear:async()=>{},resolveIntake:async()=>true}); export const usePantrySearch=()=>state.pantrySearch??({response:null,searching:false,error:null,search:async()=>{}});',
   './MatchList': 'export function MatchList(){}; export function QueryReadback(){};',
   './PantryList': 'export function PantryList(){};',
   './TemplateItems': 'export function TemplateItems(){};',
@@ -68,6 +68,7 @@ const result = await build({
     export {CookPanel} from './apps/web/modules/pantry/CookPanel.tsx';
     export {PantryList} from './apps/web/modules/pantry/PantryList.tsx';
     export {PantryReviewQueue} from './apps/web/modules/pantry/PantryReviewQueue.tsx';
+    export {usePantry} from './apps/web/modules/pantry/usePantry.ts';
     export {PlanTogether} from './apps/web/modules/plan/PlanTogether.tsx';
     export {PlanWeek} from './apps/web/modules/plan/PlanWeek.tsx';
     export {TemplateList} from './apps/web/modules/templates/TemplateList.tsx';
@@ -446,6 +447,75 @@ test('pantry amount correction and bulk clear stay open after rejected writes', 
   await nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Clear every item').props.onClick();
   tree = render();
   assert.ok(nodes(tree).some(node => text(node) === 'Keep my pantry'));
+});
+
+test('pantry and grocery reviews load independently and retry without erasing pantry memory', async () => {
+  const banana = {
+    canonicalItem: 'banana', displayName: 'bananas', quantity: 6, unit: null,
+    isStaple: false, isUsual: true, storageLocation: 'countertop',
+    acquiredAt: '2026-09-20T00:00:00.000Z', lastConfirmedAt: null,
+  };
+  const intake = {
+    id: '00000000-0000-0000-0000-000000000001', source: 'receipt', sourceLabel: 'Market',
+    acquiredAt: '2026-09-24T00:00:00.000Z', status: 'pending', createdAt: '2026-09-24T00:00:00.000Z',
+    items: [],
+  };
+  const f = fixture({
+    failMethods: new Set(['listPantryIntakes']),
+    responses: { listPantry: [banana], listPantryIntakes: [intake] },
+  });
+  const render = () => f.render(f.app.usePantry);
+  render();
+  f.state.effects[0]();
+  f.state.effects[1]();
+  await new Promise(resolve => setImmediate(resolve));
+
+  let controller = render();
+  assert.equal(controller.loaded, true);
+  assert.equal(controller.items[0].canonicalItem, 'banana');
+  assert.equal(controller.pantryError, null);
+  assert.equal(controller.intakesLoaded, false);
+  assert.match(controller.intakesError.message, /Fixture write failed/);
+
+  f.state.failMethods.delete('listPantryIntakes');
+  controller.retryIntakes();
+  render();
+  f.state.effects.at(-1)();
+  await new Promise(resolve => setImmediate(resolve));
+  controller = render();
+  assert.equal(controller.intakesLoaded, true);
+  assert.equal(controller.intakes[0].sourceLabel, 'Market');
+
+  f.state.failMethods.add('listPantry');
+  controller.retryPantry();
+  render();
+  f.state.effects.at(-2)();
+  await new Promise(resolve => setImmediate(resolve));
+  controller = render();
+  assert.equal(controller.loaded, true);
+  assert.equal(controller.items[0].canonicalItem, 'banana');
+  assert.match(controller.pantryError.message, /Fixture write failed/);
+});
+
+test('pantry panel never presents failed loading as an empty pantry', () => {
+  const f = fixture({ pantry: {
+    items: [], intakes: [], loading: false, loaded: false,
+    pantryError: { message: 'Fixture pantry failure', signInRequired: false }, error: null,
+    intakesLoading: false, intakesLoaded: false,
+    intakesError: { message: 'Fixture review failure', signInRequired: false },
+    retryPantry() {}, retryIntakes() {}, add: async () => false, update: async () => false,
+    remove: async () => false, clear: async () => false, resolveIntake: async () => false,
+  } });
+  const render = () => f.render(f.app.CookPanel);
+  let tree = render();
+  nodes(tree).find(node => text(node) === 'My pantry' && node.props?.onClick).props.onClick();
+  tree = render();
+  const copy = text(tree).replace(/\s+/g, ' ');
+  assert.match(copy, /saved items have not changed/i);
+  assert.match(copy, /pantry is still available/i);
+  assert.doesNotMatch(copy, /Nothing here yet/i);
+  assert.ok(nodes(tree).some(node => text(node) === 'Try pantry again'));
+  assert.ok(nodes(tree).some(node => text(node) === 'Try grocery reviews again'));
 });
 
 test('receipt and grocery intake stays a human-reviewed queue', async () => {
@@ -976,8 +1046,10 @@ test('asynchronous collection panels announce loading, results, and failures', (
   ));
 
   const pantry = fixture({ pantry: {
-    items: [], intakes: [], loading: true,
+    items: [], intakes: [], loading: true, loaded: false, pantryError: null,
+    intakesLoading: true, intakesLoaded: false, intakesError: null,
     error: { message: 'Fixture pantry failure', signInRequired: false },
+    retryPantry() {}, retryIntakes() {},
     add: async () => {}, update: async () => {}, remove: async () => {}, clear: async () => {}, resolveIntake: async () => true,
   } });
   const pantryTree = pantry.render(pantry.app.CookPanel);
