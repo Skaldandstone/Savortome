@@ -9,6 +9,8 @@ import {
   type AllergenFlag,
 } from "@seconds/core/format";
 import { api } from "@/lib/client";
+import { actionFailure, type ActionFailure } from "@/lib/action-failure";
+import { Button } from "@/ui";
 import styles from "./profile.module.css";
 
 /**
@@ -23,13 +25,48 @@ export function AllergenWarning({
   ingredients: readonly { canonicalItem: string; optional: boolean }[];
 }) {
   const [allergens, setAllergens] = useState<Allergen[]>([]);
+  const [loadState, setLoadState] = useState<"checking" | "ready" | "failed">("checking");
+  const [loadFailure, setLoadFailure] = useState<ActionFailure | null>(null);
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    void api
-      .dietaryProfile()
-      .then((data) => setAllergens(data.allergens))
-      .catch(() => undefined);
-  }, []);
+    let cancelled = false;
+    setLoadState("checking");
+    setLoadFailure(null);
+    void api.dietaryProfile().then((data) => {
+      if (cancelled) return;
+      setAllergens(data.allergens);
+      setLoadState("ready");
+    }).catch((error) => {
+      if (cancelled) return;
+      setAllergens([]);
+      setLoadFailure(actionFailure(error, "Your saved allergen flags could not be checked."));
+      setLoadState("failed");
+    });
+    return () => { cancelled = true; };
+  }, [attempt]);
+
+  if (loadState === "checking") {
+    return <p className={styles.checkState} role="status">Checking saved allergen flags…</p>;
+  }
+
+  if (loadState === "failed") {
+    return (
+      <div className={styles.warning} role="alert" data-print="hide">
+        <div>
+          <strong>Saved allergen check unavailable</strong>
+          <span className={styles.warningNote}>
+            {loadFailure?.signInRequired
+              ? "Sign in again, then retry the check. No saved-allergen comparison has been made."
+              : "We could not compare this recipe with your saved flags. Treat every ingredient as unchecked."}
+          </span>
+          <Button type="button" variant="ghost" onClick={() => setAttempt((current) => current + 1)}>
+            Try allergen check again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   const flags: AllergenFlag[] = flagsForRecipe(ingredients, allergens);
   if (flags.length === 0) return null;
