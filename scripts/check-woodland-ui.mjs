@@ -53,6 +53,7 @@ const result = await build({
     export {WoodlandNavigation,DecorationControl} from './apps/web/modules/woodland/Woodland.tsx';
     export {CareScreen} from './apps/web/modules/care/CareScreen.tsx';
     export {NewShelf} from './apps/web/modules/library/NewShelf.tsx';
+    export {AllergenWarning} from './apps/web/modules/profile/AllergenWarning.tsx';
     export {DietaryProfileForm} from './apps/web/modules/profile/DietaryProfileForm.tsx';
     export {FinishPanel} from './apps/web/modules/cook/FinishPanel.tsx';
     export {CookMode} from './apps/web/modules/cook/CookMode.tsx';
@@ -151,6 +152,33 @@ test('cooking profile load failure protects saved choices until a successful ret
   tree = render();
   assert.match(text(tree).replace(/\s+/g, ' '), /Cooking as Curious Apprentice/);
   assert.equal(f.state.fetchCalls.filter(call => call.init?.method === 'PATCH').length, 0);
+});
+
+test('failed saved-allergen checking cannot look like a conflict-free recipe and retry restores the warning', async () => {
+  const f = fixture({
+    failMethods: new Set(['dietaryProfile']),
+    responses: { dietaryProfile: { allergens: ['milk'], dietaryTags: [] } },
+  });
+  const props = { ingredients: [{ canonicalItem: 'milk', optional: false }] };
+  const render = () => f.render(f.app.AllergenWarning, props);
+  assert.match(text(render()), /Checking saved allergen flags/);
+  f.state.effects[0]();
+  await new Promise(resolve => setImmediate(resolve));
+
+  let tree = render();
+  assert.match(text(tree), /Saved allergen check unavailable/);
+  assert.match(text(tree), /Treat every ingredient as unchecked/);
+  assert.doesNotMatch(text(tree), /May contain/);
+
+  f.state.failMethods.delete('dietaryProfile');
+  nodes(tree).find(node => text(node) === 'Try allergen check again').props.onClick();
+  render();
+  f.state.effects.at(-1)();
+  await new Promise(resolve => setImmediate(resolve));
+  tree = render();
+  assert.match(text(tree).replace(/\s+/g, ' '), /May contain Milk/);
+  assert.equal(f.state.calls.filter(call => call.name === 'dietaryProfile').length, 2);
+  assert.equal(f.state.calls.some(call => call.name !== 'dietaryProfile'), false);
 });
 
 test('saved meals distinguish load failure from empty and retain a meal after failed deletion', async () => {
