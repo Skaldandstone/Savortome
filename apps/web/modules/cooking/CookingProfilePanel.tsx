@@ -54,9 +54,7 @@ export function CookingProfilePanel() {
       })
       .catch(() => {
         if (!active) return;
-        setProfile({});
         setLoadFailed(true);
-        setExpanded(true);
       });
     return () => { active = false; };
   }, [loadAttempt]);
@@ -82,6 +80,31 @@ export function CookingProfilePanel() {
       setSaving(false);
     }
   }
+
+  if (!profile && loadFailed) return (
+    <Panel className={styles.profilePanel}>
+      <PanelHeader
+        title="How do you cook?"
+        hint="So suggestions land somewhere near where you are. Nothing here is a test, and you can change it whenever."
+      />
+      <Callout tone="warn">
+        <div className={styles.loadNotice}>
+          <span>Your saved cooking preferences could not load. Your saved choices have not been changed. Try again before editing them.</span>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => {
+              setLoadFailed(false);
+              setError("");
+              setLoadAttempt(attempt => attempt + 1);
+            }}
+          >
+            Try again
+          </Button>
+        </div>
+      </Callout>
+    </Panel>
+  );
 
   if (!profile) return (
     <Panel className={styles.profilePanel}>
@@ -117,26 +140,6 @@ export function CookingProfilePanel() {
       />
 
       {error ? <Callout tone="warn">{error}</Callout> : null}
-      {loadFailed ? (
-        <Callout tone="warn">
-          <div className={styles.loadNotice}>
-            <span>Your cooking preferences could not load. Recipe search still works, but changes may not save until the connection returns.</span>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => {
-                setProfile(null);
-                setLoadFailed(false);
-                setError("");
-                setLoadAttempt(attempt => attempt + 1);
-              }}
-            >
-              Try again
-            </Button>
-          </div>
-        </Callout>
-      ) : null}
-
       <fieldset className={styles.group}>
         <legend className={styles.legend}>Pick whichever sounds most like you</legend>
         <div className={styles.tiers}>

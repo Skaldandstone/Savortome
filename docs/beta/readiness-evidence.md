@@ -1,5 +1,19 @@
 # Privacy and release readiness evidence
 
+> **Cooking-profile recovery continuation, 23 September 2026:** web and
+> mobile onboarding now keep cooking-tier, skill, and kitchen-stock controls
+> closed when the saved profile cannot load. The failure state says that saved
+> choices were not changed and offers a direct retry; mobile also offers a
+> clearly labeled skip so onboarding cannot trap someone during an outage. A
+> successful retry restores the real saved profile before editing resumes.
+> Focused actual-component checks cover the failed load, hidden controls, retry,
+> restored selection, and absence of writes during recovery. Thirty-three web
+> woodland checks, 16 mobile woodland checks, 688 core tests, all four workspace
+> typechecks, 10 web legal/focus contracts, and the production web build pass.
+> This is source and synthetic-boundary evidence. No authenticated browser,
+> physical-device, provider, customer-data, infrastructure, or deployment
+> acceptance is inferred from it.
+
 > **Official-name and Android build checkpoint, 22 September 2026:** Savortome
 > is now the canonical source, export, local-artifact, and new Clerk approval
 > name. The server reads the historical `studio_access.second-breakfast`
