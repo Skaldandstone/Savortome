@@ -93,6 +93,14 @@ test('mobile cooking onboarding saves one tier before revealing optional details
   assert.match(textOf(tree),/Suggestions can meet you where you are/);const tier=nodes(tree).find(n=>typeof n.type==='function'&&n.type.name==='Choice'&&n.props.title==='Curious Apprentice');tier.props.onPress();await new Promise(resolve=>setTimeout(resolve,0));
   assert.deepEqual(JSON.parse(JSON.stringify(writes)),[{tier:'apprentice'}]);tree=f.render('CookingStep',{userId:f.state.userId,onDone(){}});assert.match(textOf(tree),/Optional details/);assert.match(textOf(tree),/Feed me gently stays separate/);
 });
+test('mobile cooking onboarding keeps controls closed after load failure and recovers on retry',async()=>{
+  const f=fixture();let writes=0;f.state.accountClient={cookingProfile:async()=>{throw Error('offline');},setCookingProfile:async update=>{writes++;return update;}};
+  let tree=f.render('CookingStep',{userId:f.state.userId,onDone(){}});for(const effect of f.state.effects.splice(0))effect();await new Promise(resolve=>setTimeout(resolve,0));tree=f.render('CookingStep',{userId:f.state.userId,onDone(){}});
+  assert.match(textOf(tree),/saved choices have not been changed/i);assert.equal(nodes(tree).some(n=>typeof n.type==='function'&&n.type.name==='Choice'),false);assert.equal(writes,0);
+  f.state.accountClient.cookingProfile=async()=>({tier:'apprentice'});nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Try again').props.onPress();
+  tree=f.render('CookingStep',{userId:f.state.userId,onDone(){}});for(const effect of f.state.effects.splice(0))effect();await new Promise(resolve=>setTimeout(resolve,0));tree=f.render('CookingStep',{userId:f.state.userId,onDone(){}});
+  assert.match(textOf(tree),/Optional details/);assert.ok(nodes(tree).some(n=>typeof n.type==='function'&&n.type.name==='Choice'&&n.props.selected===true));assert.equal(writes,0);
+});
 test('mobile pantry memory keeps correction actions named and guidance qualified',()=>{
   const f=fixture();const updates=[];const removals=[];const props={items:[{canonicalItem:'banana',displayName:'bananas',quantity:6,unit:null,isStaple:false,isUsual:false,storageLocation:'unknown',acquiredAt:'2026-09-01T00:00:00.000Z',lastConfirmedAt:null,updatedAt:'2026-09-01T00:00:00.000Z'}],onAdd(){},onUpdate:value=>updates.push(value),onRemove:value=>removals.push(value),onClear(){}};let tree=f.render('PantryChips',props);
   const content=textOf(tree);assert.match(content,/not expiry or food-safety guarantees/i);assert.match(content,/USDA produce storage guidance/);

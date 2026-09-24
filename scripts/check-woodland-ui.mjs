@@ -68,7 +68,7 @@ const result = await build({
     export {PlanTogether} from './apps/web/modules/plan/PlanTogether.tsx';
     export {PlanWeek} from './apps/web/modules/plan/PlanWeek.tsx';
     export {PlanScreen as MobilePlanScreen} from './apps/mobile/modules/plan/PlanScreen.tsx';
-    export {mergeProfileUpdate} from './apps/web/modules/cooking/CookingProfilePanel.tsx';
+    export {CookingProfilePanel,mergeProfileUpdate} from './apps/web/modules/cooking/CookingProfilePanel.tsx';
     export {OnboardingJourney} from './apps/web/modules/onboarding/OnboardingJourney.tsx';
     export {CARE_FOODS} from './packages/core/src/care.ts';` },
   bundle: true, write: false, platform: 'node', format: 'iife', globalName: 'tested', jsx: 'automatic',
@@ -83,10 +83,15 @@ const result = await build({
   } }],
 });
 function fixture(overrides = {}) {
-  const state = { allowed: false, pathname: '/', cursor: 0, values: [], refs: [], effects: [], focusEffects: [], routes: [], calls: [], pending: [], refreshes: 0, fail: false, ...overrides };
+  const state = { allowed: false, pathname: '/', cursor: 0, values: [], refs: [], effects: [], focusEffects: [], routes: [], calls: [], fetchCalls: [], pending: [], refreshes: 0, fail: false, ...overrides };
   const stored = new Map();
   const localStorage = { getItem: key => stored.get(key) ?? null, setItem: (key, value) => stored.set(key, String(value)), removeItem: key => stored.delete(key) };
-  const sandbox = { state, navigator: { onLine: true }, localStorage, setTimeout, clearTimeout, URLSearchParams };
+  const fetch = async (url, init) => {
+    state.fetchCalls.push({ url, init });
+    if (state.fetchFail) return { ok: false, status: 503, json: async () => ({}) };
+    return { ok: true, status: 200, json: async () => state.fetchResponse ?? {} };
+  };
+  const sandbox = { state, fetch, navigator: { onLine: true }, localStorage, setTimeout, clearTimeout, URLSearchParams };
   runInNewContext(result.outputFiles[0].text, sandbox);
   return { state, sandbox, app: sandbox.tested, render: (fn, props = {}) => { state.cursor = 0; return fn(props); } };
 }
@@ -118,6 +123,28 @@ test('cooking-profile updates retain the visible local answer while merging skil
   const timing = f.app.mergeProfileUpdate(knife, { skills: { timing: 2 } });
   assert.deepEqual({ ...timing.skills }, { knife: 4, timing: 2 });
   assert.equal(timing.tier, 'artisan');
+});
+
+test('cooking profile load failure protects saved choices until a successful retry', async () => {
+  const f = fixture({ fetchFail: true });
+  const render = () => f.render(f.app.CookingProfilePanel);
+  assert.match(text(render()), /Loading your cooking preferences/);
+  f.state.effects[0]();
+  await new Promise(resolve => setImmediate(resolve));
+
+  let tree = render();
+  assert.match(text(tree), /saved choices have not been changed/i);
+  assert.equal(nodes(tree).some(node => node.type === 'fieldset' || node.props?.['aria-pressed'] !== undefined), false);
+
+  f.state.fetchFail = false;
+  f.state.fetchResponse = { tier: 'apprentice', stock: null, skills: {} };
+  nodes(tree).find(node => node.props?.onClick && text(node) === 'Try again').props.onClick();
+  render();
+  f.state.effects.at(-1)();
+  await new Promise(resolve => setImmediate(resolve));
+  tree = render();
+  assert.match(text(tree).replace(/\s+/g, ' '), /Cooking as Curious Apprentice/);
+  assert.equal(f.state.fetchCalls.filter(call => call.init?.method === 'PATCH').length, 0);
 });
 
 test('journal page headings remain server-gated and contain a native h1 when allowed', async () => {
