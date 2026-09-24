@@ -10,6 +10,13 @@ export interface ListController {
   list: ShoppingListView | null;
   providers: CartProvider[];
   loading: boolean;
+  loaded: boolean;
+  listError: ActionFailure | null;
+  providersLoading: boolean;
+  providersLoaded: boolean;
+  providersError: ActionFailure | null;
+  retryList: () => void;
+  retryProviders: () => void;
   busy: boolean;
   error: ActionFailure | null;
   handoff: CartHandoff | null;
@@ -25,20 +32,29 @@ export function useShoppingList(): ListController {
   const [list, setList] = useState<ShoppingListView | null>(null);
   const [providers, setProviders] = useState<CartProvider[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false);
+  const [listError, setListError] = useState<ActionFailure | null>(null);
+  const [providersLoading, setProvidersLoading] = useState(true);
+  const [providersLoaded, setProvidersLoaded] = useState(false);
+  const [providersError, setProvidersError] = useState<ActionFailure | null>(null);
+  const [listAttempt, setListAttempt] = useState(0);
+  const [providersAttempt, setProvidersAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ActionFailure | null>(null);
   const [handoff, setHandoff] = useState<CartHandoff | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setListError(null);
     void (async () => {
       try {
-        const [nextList, nextProviders] = await Promise.all([api.getList(), api.cartProviders()]);
+        const nextList = await api.getList();
         if (cancelled) return;
         setList(nextList);
-        setProviders(nextProviders);
+        setLoaded(true);
       } catch (err) {
-        if (!cancelled) setError(actionFailure(err, "Couldn't load your list."));
+        if (!cancelled) setListError(actionFailure(err, "Couldn't load your list."));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -46,7 +62,28 @@ export function useShoppingList(): ListController {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [listAttempt]);
+
+  useEffect(() => {
+    let cancelled = false;
+    setProvidersLoading(true);
+    setProvidersError(null);
+    void (async () => {
+      try {
+        const nextProviders = await api.cartProviders();
+        if (cancelled) return;
+        setProviders(nextProviders);
+        setProvidersLoaded(true);
+      } catch (err) {
+        if (!cancelled) setProvidersError(actionFailure(err, "Couldn't load ways to use your list."));
+      } finally {
+        if (!cancelled) setProvidersLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [providersAttempt]);
 
   const run = useCallback(async (write: () => Promise<ShoppingListView>): Promise<boolean> => {
     setBusy(true);
@@ -101,6 +138,13 @@ export function useShoppingList(): ListController {
     list,
     providers,
     loading,
+    loaded,
+    listError,
+    providersLoading,
+    providersLoaded,
+    providersError,
+    retryList: () => setListAttempt(current => current + 1),
+    retryProviders: () => setProvidersAttempt(current => current + 1),
     busy,
     error,
     handoff,

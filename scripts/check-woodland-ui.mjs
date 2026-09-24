@@ -37,7 +37,7 @@ const stubs = {
   './PersonRow': 'export function PersonRow(){};',
   './useDiscover': 'export const useDiscover=()=>state.discover??({data:{tags:[],recipes:[],query:""},loading:false,error:null,query:"",activeTags:[],setQuery(){},search:async()=>{},toggleTag:async()=>{}});',
   './DiscoverCards': 'export function DiscoverCards(){};',
-  './useShoppingList': 'export const useShoppingList=()=>state.shopping??({list:null,providers:{},loading:false,busy:false,error:null,handoff:null,toggle:async()=>{},remove:async()=>{},clear:async()=>{},sendToCart:async()=>{}});',
+  './useShoppingList': 'export const useShoppingList=()=>state.shopping??({list:null,providers:[],loading:false,loaded:true,listError:null,providersLoading:false,providersLoaded:true,providersError:null,retryList(){},retryProviders(){},busy:false,error:null,handoff:null,toggle:async()=>{},remove:async()=>{},clear:async()=>{},sendToCart:async()=>{}});',
   './CartButtons': 'export function CartButtons(){};',
   './KrogerConnection': 'export function KrogerConnection(){};',
   './ListItems': 'export function ListItems(){};',
@@ -64,7 +64,8 @@ const result = await build({
     export {FriendsPanel} from './apps/web/modules/friends/FriendsPanel.tsx';
     export {useFriends} from './apps/web/modules/friends/useFriends.ts';
     export {DiscoverPanel} from './apps/web/modules/discover/DiscoverPanel.tsx';
-    export {ListPanel} from './apps/web/modules/list/ListPanel.tsx';
+    export {ListPanel,ListPanelView} from './apps/web/modules/list/ListPanel.tsx';
+    export {useShoppingList} from './apps/web/modules/list/useShoppingList.ts';
     export {CookPanel} from './apps/web/modules/pantry/CookPanel.tsx';
     export {PantryList} from './apps/web/modules/pantry/PantryList.tsx';
     export {PantryReviewQueue} from './apps/web/modules/pantry/PantryReviewQueue.tsx';
@@ -777,6 +778,79 @@ test('friends page protects typed handles and never presents failed loading as a
   assert.match(text(tree), /last activity we loaded remains below/i);
 });
 
+test('shopping list and provider options load independently without erasing the list', async () => {
+  const list = {
+    id: 'list-1', name: 'Shopping list', createdAt: '2026-09-24T00:00:00.000Z',
+    itemCount: 1, checkedCount: 0,
+    items: [{ id: 'item-1', canonicalItem: 'banana', displayName: 'bananas', quantity: 6,
+      unit: null, amountUnknown: false, checked: false, mayAlreadyHave: false, recipeIds: [] }],
+  };
+  const providers = [{ id: 'clipboard', name: 'Copy list', kind: 'handoff', description: 'Copy the list.' }];
+  const f = fixture({
+    failMethods: new Set(['cartProviders']),
+    responses: { getList: list, cartProviders: providers },
+  });
+  const render = () => f.render(f.app.useShoppingList);
+  render();
+  f.state.effects[0]();
+  f.state.effects[1]();
+  await new Promise(resolve => setImmediate(resolve));
+
+  let controller = render();
+  assert.equal(controller.loaded, true);
+  assert.equal(controller.list.items[0].displayName, 'bananas');
+  assert.equal(controller.listError, null);
+  assert.equal(controller.providersLoaded, false);
+  assert.match(controller.providersError.message, /Fixture write failed/);
+
+  f.state.failMethods.delete('cartProviders');
+  controller.retryProviders();
+  render();
+  f.state.effects.at(-1)();
+  await new Promise(resolve => setImmediate(resolve));
+  controller = render();
+  assert.equal(controller.providersLoaded, true);
+  assert.equal(controller.providers[0].name, 'Copy list');
+
+  f.state.failMethods.add('getList');
+  controller.retryList();
+  render();
+  f.state.effects.at(-2)();
+  await new Promise(resolve => setImmediate(resolve));
+  controller = render();
+  assert.equal(controller.loaded, true);
+  assert.equal(controller.list.items[0].displayName, 'bananas');
+  assert.match(controller.listError.message, /Fixture write failed/);
+});
+
+test('shopping list panel distinguishes load failure from an empty list and provider failure', () => {
+  const savedList = {
+    id: 'list-1', name: 'Shopping list', createdAt: '2026-09-24T00:00:00.000Z',
+    itemCount: 1, checkedCount: 0, items: [],
+  };
+  const f = fixture({ shopping: {
+    list: null, providers: [], loading: false, loaded: false,
+    listError: { message: 'Fixture list failure', signInRequired: false },
+    providersLoading: false, providersLoaded: false,
+    providersError: { message: 'Fixture provider failure', signInRequired: false },
+    retryList() {}, retryProviders() {}, busy: false, error: null, handoff: null,
+    toggle: async () => {}, remove: async () => {}, clear: async () => {}, sendToCart: async () => {},
+  } });
+  let tree = f.render(f.app.ListPanelView, { shopping: f.state.shopping });
+  let copy = text(tree).replace(/\s+/g, ' ');
+  assert.match(copy, /saved items have not changed/i);
+  assert.doesNotMatch(copy, /Nothing on the list/i);
+  assert.ok(nodes(tree).some(node => text(node) === 'Try list again'));
+
+  f.state.shopping.list = savedList;
+  f.state.shopping.loaded = true;
+  tree = f.render(f.app.ListPanelView, { shopping: f.state.shopping });
+  copy = text(tree).replace(/\s+/g, ' ');
+  assert.match(copy, /1 to get/);
+  assert.match(copy, /shopping list is still available/i);
+  assert.ok(nodes(tree).some(node => text(node) === 'Try list options again'));
+});
+
 test('each cooking timer action names its timer and step without a per-second live region', () => {
   const f = fixture();
   const timer = { stepN: 2, label: 'Simmer gently', totalSeconds: 300, endsAt: 1, pausedRemaining: null };
@@ -1038,10 +1112,12 @@ test('asynchronous collection panels announce loading, results, and failures', (
   assert.ok(nodes(discoverResults).some(node => node.props?.role === 'status'));
 
   const shopping = fixture({ shopping: {
-    list: null, providers: {}, loading: true, busy: false, error: null, handoff: null,
+    list: null, providers: [], loading: true, loaded: false, listError: null,
+    providersLoading: true, providersLoaded: false, providersError: null,
+    retryList() {}, retryProviders() {}, busy: false, error: null, handoff: null,
     toggle: async () => {}, remove: async () => {}, clear: async () => {}, sendToCart: async () => {},
   } });
-  assert.ok(nodes(shopping.render(shopping.app.ListPanel)).some(
+  assert.ok(nodes(shopping.render(shopping.app.ListPanelView, { shopping: shopping.state.shopping })).some(
     node => node.props?.role === 'status' && text(node) === 'Loading shopping list…',
   ));
 
@@ -1059,11 +1135,13 @@ test('asynchronous collection panels announce loading, results, and failures', (
   assert.ok(nodes(openPantry).some(node => node.props?.role === 'alert' && text(node).includes('Fixture pantry failure')));
 
   const expiredList = fixture({ shopping: {
-    list: null, providers: [], loading: false, busy: false,
+    list: null, providers: [], loading: false, loaded: true, listError: null,
+    providersLoading: false, providersLoaded: true, providersError: null,
+    retryList() {}, retryProviders() {}, busy: false,
     error: { message: 'Your sign-in may have ended.', signInRequired: true }, handoff: null,
     toggle: async () => {}, remove: async () => {}, clear: async () => {}, sendToCart: async () => {},
   } });
-  const signInLink = nodes(expiredList.render(expiredList.app.ListPanel)).find(
+  const signInLink = nodes(expiredList.render(expiredList.app.ListPanelView, { shopping: expiredList.state.shopping })).find(
     node => node.props?.href === '/sign-in?redirect_url=%2Flist' && text(node) === 'Sign in again',
   );
   assert.equal(signInLink.props.href, '/sign-in?redirect_url=%2Flist');
