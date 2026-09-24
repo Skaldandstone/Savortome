@@ -89,11 +89,11 @@ export function CookPanel() {
 
         {showPantry ? (
           <div className={styles.pantryPanel}>
-            {pantry.loading ? (
+            {pantry.loading && !pantry.loaded ? (
               <p className={styles.empty} role="status">
                 Loading pantry…
               </p>
-            ) : (
+            ) : pantry.loaded ? (
               <PantryList
                 items={pantry.items}
                 onAdd={pantry.add}
@@ -101,8 +101,27 @@ export function CookPanel() {
                 onRemove={pantry.remove}
                 onClear={pantry.clear}
               />
-            )}
-            <PantryReviewQueue intakes={pantry.intakes} onResolve={pantry.resolveIntake} />
+            ) : null}
+            {pantry.pantryError ? (
+              <Callout tone="error" role="alert">
+                {pantry.loaded
+                  ? "Your pantry could not refresh. The last pantry we loaded remains available above."
+                  : "Your pantry could not load. Your saved items have not changed."}{" "}
+                <Button type="button" variant="ghost" onClick={pantry.retryPantry}>Try pantry again</Button>
+              </Callout>
+            ) : null}
+            {pantry.intakesLoading && !pantry.intakesLoaded ? (
+              <p className={styles.empty} role="status">Checking for groceries to review…</p>
+            ) : null}
+            {pantry.intakesLoaded ? <PantryReviewQueue intakes={pantry.intakes} onResolve={pantry.resolveIntake} /> : null}
+            {pantry.intakesError ? (
+              <Callout tone="error" role="alert">
+                {pantry.intakesLoaded
+                  ? "Recent grocery reviews could not refresh. The last reviews we loaded remain available above."
+                  : "Recent grocery reviews could not load. Your pantry is still available."}{" "}
+                <Button type="button" variant="ghost" onClick={pantry.retryIntakes}>Try grocery reviews again</Button>
+              </Callout>
+            ) : null}
             {pantry.error ? (
               <Callout tone="error" role="alert">
                 {pantry.error.message}

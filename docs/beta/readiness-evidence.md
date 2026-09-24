@@ -327,3 +327,10 @@ pnpm --filter @seconds/core exec node --import tsx --test test/offline-privacy.t
 ```
 
 For fresh browser worker QA, set `$env:CARE_HARNESS_PORT='3097'`, run `node scripts/care-offline-harness.mjs`, then open `http://localhost:3097/qa`. Use Install, Update, and Test offline navigation. Verify `/care-offline.html` returns 404 both before and after install; temporary open/warm choices should yield no match. The server binds loopback and is never mounted in the application. Use a fresh port/origin for an independent first-install test.
+
+# Pantry loading resilience (2026-09-24)
+
+- Pantry contents and recent grocery-review intakes now load independently. A failed intake request cannot discard a successfully loaded pantry or present it as empty.
+- Initial pantry failure shows a retryable error and does not render the empty-pantry prompt. Refresh failure retains the last loaded pantry with explicit stale wording. Grocery-review loading, failure, retry, and retained-review states are separate from pantry editing and search.
+- Focused component coverage proves independent success/failure/retry behavior, retained pantry contents after a failed refresh, and the absence of the false `Nothing here yet` state after loading fails.
+- Rendered the actual woodland pantry panel against local signed-out API failures. At 390 x 844 with 200% text, the document had no horizontal overflow (`innerWidth=390`, `scrollWidth=375`) and both retry targets exceeded 44 px. At the default 1280 px desktop viewport and 100% text, both retry targets were exactly 44 px. The failure copy, retry controls, brass borders, dark-timber surface, and responsive stacking were visually inspected. A temporary local review route was removed before the production build. This does not prove signed-in data, device behavior, provider intake, or owner acceptance.
