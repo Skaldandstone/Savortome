@@ -30,6 +30,7 @@
 .weekLabel { flex: 1 1 auto; font-size: var(--step-4); }
 
 .weekActions { display: flex; flex-wrap: wrap; align-items: center; gap: 14px; margin-top: 14px; }
+.loading { margin:16px 0 0; color:var(--text-muted); line-height:1.6; }
 
 .clearWeek {
   padding: 0;

@@ -20,7 +20,7 @@ const stubs = {
   'react-native': `export const Modal='Modal',Pressable='Pressable',ScrollView='ScrollView',Text='Text',View='View'; export const StyleSheet={create:value=>value};`,
   '@clerk/nextjs': 'export const useAuth=()=>({userId:null});',
   '@/lib/beta': 'export const canUseBeta=async()=>state.allowed;',
-  '@/lib/client': `export const api=new Proxy({}, {get:(_,name)=>async(...args)=>{state.calls.push({name,args});if((state.defer&&name==='dietaryProfile')||(state.deferSave&&name==='setDietaryProfile'))return new Promise((resolve,reject)=>state.pending.push({resolve,reject}));if(state.fail||state.failMethods?.has(name))throw Error('Fixture write failed');const response=state.responses?.[name]??state.response??{};return typeof response==='function'?response(...args):response;}});`,
+  '@/lib/client': `export const api=new Proxy({}, {get:(_,name)=>async(...args)=>{state.calls.push({name,args});if((state.defer&&name==='dietaryProfile')||(state.deferSave&&name==='setDietaryProfile')||state.deferMethods?.has(name))return new Promise((resolve,reject)=>state.pending.push({resolve,reject,name,args}));if(state.fail||state.failMethods?.has(name))throw Error('Fixture write failed');const response=state.responses?.[name]??state.response??{};return typeof response==='function'?response(...args):response;}});`,
   '@/lib/action-failure': `export const actionFailure=(error,fallback)=>({message:error instanceof Error?error.message:fallback,signInRequired:false}); export const signInReturnHref=path=>'/sign-in?redirect_url='+encodeURIComponent(path);`,
   '@/ui': `export function Button(){};export function Callout(){};export function Field(){};export function FieldRow(){};export function Panel(){};export function PanelHeader(){};export function TextArea(){};export function TextField(){};export const radius={sm:4,md:8};export const space={xs:4,sm:8,md:12,lg:16,xl:24,xxl:32};export const type={micro:12,small:14,body:16,title:20};export const usePalette=()=>({bg:'#fff',surface:'#fff',surfaceSunken:'#eee',text:'#111',textMuted:'#555',accent:'#765',border:'#aaa'});`,
   '@/modules/shelves': 'export function StarRating(){};',
@@ -255,6 +255,8 @@ test('web meal removal offers focused undo and keeps it available after a failed
   const values = [];
   values[0] = week;
   values[1] = [meal];
+  values[13] = week;
+  values[14] = false;
   const f = fixture({ values, responses: { planRemove: { meals: [] }, planAdd: { meals: [meal] } } });
   const render = () => f.render(f.app.PlanWeek, { initialWeek: week });
 
@@ -294,6 +296,8 @@ test('web week-clear confirmation remains open when the write is rejected', asyn
   const values = [];
   values[0] = week;
   values[1] = [meal];
+  values[13] = week;
+  values[14] = false;
   const f = fixture({ values, responses: { planClearWeek: { meals: [] } }, failMethods: new Set(['planClearWeek']) });
   const render = () => f.render(f.app.PlanWeek, { initialWeek: week });
   nodes(render()).find(n => n.type === 'button' && text(n) === 'Clear the week').props.onClick();
@@ -304,6 +308,60 @@ test('web week-clear confirmation remains open when the write is rejected', asyn
   tree = render();
   assert.ok(nodes(tree).some(n => typeof n.type === 'function' && text(n) === 'Clear every meal'));
   assert.ok(nodes(tree).some(n => n.props?.role === 'alert'));
+});
+
+test('failed week loading never renders a false empty planner and retry restores the grid', async () => {
+  const week = '2026-09-21';
+  const f = fixture({
+    failMethods: new Set(['plan']),
+    responses: { plan: { meals: [] }, library: { recipes: [] }, mySuggestions: { suggestions: [] } },
+  });
+  const render = () => f.render(f.app.PlanWeek, { initialWeek: week });
+  render();
+  f.state.effects[0]();
+  await new Promise(resolve => setImmediate(resolve));
+
+  let tree = render();
+  const failedCopy = text(tree).replace(/\s+/g, ' ');
+  assert.match(failedCopy, /saved plan has not changed/i);
+  assert.equal(nodes(tree).some(node => node.props?.['aria-label']?.startsWith('Add a recipe to')), false);
+  assert.ok(nodes(tree).some(node => text(node) === 'Try this week again'));
+
+  f.state.failMethods.delete('plan');
+  nodes(tree).find(node => text(node) === 'Try this week again').props.onClick();
+  render();
+  f.state.effects.at(-3)();
+  await new Promise(resolve => setImmediate(resolve));
+  tree = render();
+  assert.equal(nodes(tree).filter(node => node.type === 'section' && node.props?.['aria-label']).length >= 7, true);
+  assert.equal(nodes(tree).filter(node => node.props?.['aria-label']?.startsWith('Add a recipe to')).length, 21);
+});
+
+test('a late prior-week response cannot replace the newly selected week', async () => {
+  const week = '2026-09-21';
+  const nextWeek = '2026-09-28';
+  const f = fixture({
+    deferMethods: new Set(['plan']),
+    responses: { library: { recipes: [] }, mySuggestions: { suggestions: [] } },
+  });
+  const render = () => f.render(f.app.PlanWeek, { initialWeek: week });
+  let tree = render();
+  const cancelOld = f.state.effects[0]();
+  nodes(tree).find(node => text(node) === 'Next →' && node.props?.onClick).props.onClick();
+  render();
+  cancelOld();
+  f.state.effects.at(-3)();
+
+  const nextRequest = f.state.pending.find(request => request.name === 'plan' && request.args[0] === nextWeek);
+  const oldRequest = f.state.pending.find(request => request.name === 'plan' && request.args[0] === week);
+  nextRequest.resolve({ meals: [{ recipeId: 'new', date: '2026-09-29', slot: 'dinner', title: 'New soup', imageUrl: null, totalMinutes: 20 }] });
+  await new Promise(resolve => setImmediate(resolve));
+  oldRequest.resolve({ meals: [{ recipeId: 'old', date: '2026-09-22', slot: 'dinner', title: 'Old soup', imageUrl: null, totalMinutes: 20 }] });
+  await new Promise(resolve => setImmediate(resolve));
+
+  tree = render();
+  assert.match(text(tree), /New soup/);
+  assert.doesNotMatch(text(tree), /Old soup/);
 });
 
 test('mobile plan removal offers undo and clear-week requires confirmation', async () => {

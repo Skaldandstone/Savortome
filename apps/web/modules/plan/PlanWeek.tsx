@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type DragEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 import Link from "next/link";
 import {
   MEAL_SLOTS,
@@ -44,25 +44,35 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
   const [confirmingClear, setConfirmingClear] = useState(false);
   const [recentlyRemoved, setRecentlyRemoved] = useState<PlannedMeal | null>(null);
   const [planStatus, setPlanStatus] = useState("");
+  const [loadedWeek, setLoadedWeek] = useState<string | null>(null);
+  const [planLoading, setPlanLoading] = useState(true);
+  const [planLoadError, setPlanLoadError] = useState<ActionFailure | null>(null);
+  const [planAttempt, setPlanAttempt] = useState(0);
+  const loadedWeekRef = useRef<string | null>(null);
 
   const today = todayISO();
-
-  const load = useCallback(async (forWeek: string) => {
-    setError(null);
-    try {
-      const data = await api.plan(forWeek);
-      setMeals(data.meals);
-    } catch (err) {
-      setError(actionFailure(err, "Couldn't load your plan."));
-    }
-  }, []);
+  const currentWeekLoaded = loadedWeek === week;
 
   useEffect(() => {
+    let cancelled = false;
     setConfirmingClear(false);
     setRecentlyRemoved(null);
     setPlanStatus("");
-    void load(week);
-  }, [load, week]);
+    setPlanLoading(true);
+    setPlanLoadError(null);
+    if (loadedWeekRef.current !== week) setMeals([]);
+    void api.plan(week).then(data => {
+      if (cancelled) return;
+      setMeals(data.meals);
+      loadedWeekRef.current = week;
+      setLoadedWeek(week);
+    }).catch(err => {
+      if (!cancelled) setPlanLoadError(actionFailure(err, "Couldn't load your plan."));
+    }).finally(() => {
+      if (!cancelled) setPlanLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [week, planAttempt]);
 
   // The picker needs something to pick from; fetched once, not per open.
   useEffect(() => {
@@ -89,7 +99,7 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
       setSuggestions((prev) => prev.filter((s) => s.id !== suggestion.id));
       // An accepted suggestion just wrote to whichever week it was planned
       // for, which may not be the one currently on screen — reload either way.
-      if (action === "accept") void load(week);
+      if (action === "accept") setPlanAttempt(current => current + 1);
     } catch (err) {
       setError(actionFailure(err, "That didn't work."));
     } finally {
@@ -185,7 +195,7 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
         <div className={styles.weekActions}>
           <Button
             type="button"
-            disabled={busy || planned === 0}
+            disabled={busy || !currentWeekLoaded || planned === 0}
             onClick={() => void run(() => api.planToShoppingList(week))}
           >
             Add this week to the shopping list
@@ -243,6 +253,19 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
           <Callout tone="info" role="status">{planStatus}</Callout>
         ) : null}
 
+        {planLoading && !currentWeekLoaded ? (
+          <p className={styles.loading} role="status">Loading this week…</p>
+        ) : null}
+
+        {planLoadError ? (
+          <Callout tone="error" role="alert">
+            {currentWeekLoaded
+              ? "This week could not refresh. The last plan we loaded remains available below."
+              : "This week could not load. Your saved plan has not changed."}{" "}
+            <Button type="button" variant="ghost" onClick={() => setPlanAttempt(current => current + 1)}>Try this week again</Button>
+          </Callout>
+        ) : null}
+
         {error ? (
           <Callout tone="error" role="alert">
             {error.message}
@@ -281,7 +304,7 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
         ) : null}
       </Panel>
 
-      <div className={styles.week}>
+      {currentWeekLoaded ? <div className={styles.week}>
         {grid.map((day) => (
           <section
             key={day.date}
@@ -349,7 +372,7 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
             ))}
           </section>
         ))}
-      </div>
+      </div> : null}
 
       {adding ? (
         <AddMealDialog
