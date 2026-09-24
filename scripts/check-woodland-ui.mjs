@@ -35,7 +35,7 @@ const stubs = {
   './useFriends': 'export const useFriends=()=>state.friends??({overview:{incoming:[],friends:[],outgoing:[]},feed:[],loading:false,feedLoading:false,feedLoaded:true,busy:false,error:null,overviewError:null,feedError:null,retryOverview(){},retryFeed(){},add:async()=>true,update:async()=>true});',
   './FeedList': 'export function FeedList(){};',
   './PersonRow': 'export function PersonRow(){};',
-  './useDiscover': 'export const useDiscover=()=>state.discover??({data:{tags:[],recipes:[],query:""},loading:false,error:null,query:"",activeTags:[],setQuery(){},search:async()=>{},toggleTag:async()=>{}});',
+  './useDiscover': 'export const useDiscover=()=>state.discover??({data:{tags:[],recipes:[],query:"",appliedTags:[]},loading:false,loaded:true,error:null,query:"",searchedQuery:"",activeTags:[],setQuery(){},search:async()=>{},toggleTag:async()=>{},retry:async()=>{}});',
   './DiscoverCards': 'export function DiscoverCards(){};',
   './useShoppingList': 'export const useShoppingList=()=>state.shopping??({list:null,providers:[],loading:false,loaded:true,listError:null,providersLoading:false,providersLoaded:true,providersError:null,retryList(){},retryProviders(){},busy:false,error:null,handoff:null,toggle:async()=>{},remove:async()=>{},clear:async()=>{},sendToCart:async()=>{}});',
   './CartButtons': 'export function CartButtons(){};',
@@ -64,7 +64,8 @@ const result = await build({
     export {TimerTray} from './apps/web/modules/cook/TimerTray.tsx';
     export {FriendsPanel} from './apps/web/modules/friends/FriendsPanel.tsx';
     export {useFriends} from './apps/web/modules/friends/useFriends.ts';
-    export {DiscoverPanel} from './apps/web/modules/discover/DiscoverPanel.tsx';
+    export {DiscoverPanel,DiscoverPanelView} from './apps/web/modules/discover/DiscoverPanel.tsx';
+    export {useDiscover as useDiscoverController} from './apps/web/modules/discover/useDiscover.ts';
     export {ListPanel,ListPanelView} from './apps/web/modules/list/ListPanel.tsx';
     export {useShoppingList} from './apps/web/modules/list/useShoppingList.ts';
     export {CookPanel} from './apps/web/modules/pantry/CookPanel.tsx';
@@ -179,6 +180,46 @@ test('failed saved-allergen checking cannot look like a conflict-free recipe and
   assert.match(text(tree).replace(/\s+/g, ' '), /May contain Milk/);
   assert.equal(f.state.calls.filter(call => call.name === 'dietaryProfile').length, 2);
   assert.equal(f.state.calls.some(call => call.name !== 'dietaryProfile'), false);
+});
+
+test('discover failure never becomes a false empty community and exposes one retry', () => {
+  let retries = 0;
+  const discover = {
+    data: { tags: [], recipes: [], query: '', appliedTags: [] },
+    loading: false, loaded: false, error: 'Fixture discovery failure',
+    query: '', searchedQuery: '', activeTags: [],
+    setQuery() {}, search: async () => {}, toggleTag: async () => {},
+    retry: async () => { retries += 1; },
+  };
+  const f = fixture();
+  const tree = f.render(f.app.DiscoverPanelView, { discover });
+  assert.match(text(tree), /No empty result has been assumed/);
+  assert.doesNotMatch(text(tree), /No one has shared anything yet/);
+  assert.doesNotMatch(text(tree), /Nothing shared matches/);
+  nodes(tree).find(node => text(node) === 'Try again').props.onClick();
+  assert.equal(retries, 1);
+});
+
+test('a late discover response cannot replace the newer search', async () => {
+  const f = fixture({ deferMethods: new Set(['discover']) });
+  const render = () => f.render(f.app.useDiscoverController);
+  render();
+  const cleanup = f.state.effects[0]();
+  const newer = render().search('soup');
+
+  const initialRequest = f.state.pending.find(request => request.name === 'discover' && request.args[0].query === '');
+  const searchRequest = f.state.pending.find(request => request.name === 'discover' && request.args[0].query === 'soup');
+  searchRequest.resolve({ recipes: [{ id: 'new', title: 'New soup' }], tags: [], query: 'soup', appliedTags: [] });
+  await newer;
+  initialRequest.resolve({ recipes: [{ id: 'old', title: 'Old toast' }], tags: [], query: '', appliedTags: [] });
+  await new Promise(resolve => setImmediate(resolve));
+
+  const controller = render();
+  assert.equal(controller.loaded, true);
+  assert.equal(controller.loading, false);
+  assert.equal(controller.data.recipes[0].title, 'New soup');
+  assert.equal(controller.searchedQuery, 'soup');
+  cleanup();
 });
 
 test('saved meals distinguish load failure from empty and retain a meal after failed deletion', async () => {
@@ -1187,10 +1228,10 @@ test('asynchronous collection panels announce loading, results, and failures', (
   ));
 
   const discover = fixture({ discover: {
-    data: { tags: [], recipes: [], query: '' }, loading: true, error: null,
-    query: '', activeTags: [], setQuery() {}, search: async () => {}, toggleTag: async () => {},
+    data: { tags: [], recipes: [], query: '', appliedTags: [] }, loading: true, loaded: false, error: null,
+    query: '', searchedQuery: '', activeTags: [], setQuery() {}, search: async () => {}, toggleTag: async () => {}, retry: async () => {},
   } });
-  const discoverResults = nodes(discover.render(discover.app.DiscoverPanel)).find(
+  const discoverResults = nodes(discover.render(discover.app.DiscoverPanelView, { discover: discover.state.discover })).find(
     node => node.type === 'section' && node.props?.['aria-label'] === 'Shared recipe results',
   );
   assert.equal(discoverResults.props['aria-busy'], true);

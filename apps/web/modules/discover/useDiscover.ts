@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { DiscoverResponse } from "@seconds/core/format";
 import { api } from "@/lib/client";
 
@@ -9,6 +9,7 @@ const EMPTY: DiscoverResponse = { recipes: [], tags: [], query: "", appliedTags:
 export interface DiscoverController {
   data: DiscoverResponse;
   loading: boolean;
+  loaded: boolean;
   error: string | null;
   query: string;
   /**
@@ -22,36 +23,46 @@ export interface DiscoverController {
   setQuery: (query: string) => void;
   search: (query: string) => Promise<void>;
   toggleTag: (tag: string) => Promise<void>;
+  retry: () => Promise<void>;
 }
 
 export function useDiscover(): DiscoverController {
   const [data, setData] = useState<DiscoverResponse>(EMPTY);
   const [loading, setLoading] = useState(true);
+  const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [searchedQuery, setSearchedQuery] = useState("");
   const [activeTags, setActiveTags] = useState<string[]>([]);
+  const request = useRef(0);
 
   const load = useCallback(async (nextQuery: string, nextTags: string[]) => {
+    const version = ++request.current;
     setLoading(true);
     setError(null);
     setSearchedQuery(nextQuery);
     try {
-      setData(await api.discover({ query: nextQuery, tags: nextTags }));
+      const next = await api.discover({ query: nextQuery, tags: nextTags });
+      if (version !== request.current) return;
+      setData(next);
+      setLoaded(true);
     } catch (err) {
+      if (version !== request.current) return;
       setError(err instanceof Error ? err.message : "Couldn't load recipes.");
     } finally {
-      setLoading(false);
+      if (version === request.current) setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     void load("", []);
+    return () => { request.current += 1; };
   }, [load]);
 
   return {
     data,
     loading,
+    loaded,
     error,
     query,
     searchedQuery,
@@ -69,5 +80,6 @@ export function useDiscover(): DiscoverController {
       setActiveTags(next);
       return load(query, next);
     },
+    retry: () => load(searchedQuery, activeTags),
   };
 }
