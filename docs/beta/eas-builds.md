@@ -179,3 +179,26 @@ Completing the Ad Hoc path requires registering at least one intended test devic
 - `git diff --check`: passed with only the repository's expected CRLF conversion warnings.
 
 No public App Store distribution, physical-device test, or owner acceptance is claimed.
+
+## Registered-iPad beta build 3 (2026-09-29)
+
+EAS build `82dfac9b-da00-4e2d-8d37-776ca2d98f45` finished from exact merged
+commit `8382e139a3da72a361c5f6c39bcbe28a3ace265d`. It is an internal Ad Hoc
+build for the registered iPad, not a TestFlight or App Store release.
+
+- App/version/build/runtime: `Savortome` / `0.1.2` / `3` / `0.1.2`
+- Bundle ID: `com.skaldandstone.savortome`
+- Artifact: `savortome-0.1.2-build3.ipa`, 29,223,815 bytes
+- SHA-256: `19be9e87fe447b49b0e98d1b84573968e4a8bd2825a631b04a47d280ed6b06dc`
+- Provisioning profile: `3a947475-1a30-45cd-829a-a016e28dc20a`, expires
+  2027-09-08, includes only the registered device used for this review
+- Release entitlement: `get-task-allow=false`; minimum iOS 17; iPhone and
+  iPad device families
+
+The archive passed ZIP CRC and identity checks. Its Hermes bundle contains
+the production API origin, receipt endpoint and receipt/discovery UI. USB
+installation completed on device `00008027-0015518226EB002E`; the installed
+app inventory reports version `0.1.2`, build `3`, and Apple Distribution
+signing. Automated launch through the iOS 26 tunnel timed out and therefore
+does not prove current on-screen behavior. A physical tap-through of sign-in,
+Discover, starter-recipe save, and receipt review remains required.
