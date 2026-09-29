@@ -89,6 +89,7 @@ jobs:
         run: pnpm check:cooking
       - name: Library, plan and discovery
         run: |
+          pnpm --filter @seconds/db test:starter-recipes
           pnpm check:library
           pnpm check:plan
           pnpm check:discover

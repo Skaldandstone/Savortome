@@ -1,6 +1,6 @@
 # Demo runbook
 
-A walking order for showing Second Breakfast, plus the setup and the honest
+A walking order for showing Savortome, plus the setup and the honest
 gaps. Written 2026-08-27 after an overnight session; see `PRODUCT.md` for how
 any of this actually works.
 
@@ -25,9 +25,11 @@ that, sign-in loops, which blocks the credit meter and checkout both.
 
 ## Suggested walk
 
-1. **Library** (`/`) — the seeded recipes are already there: a YouTube
-   transcript extraction, a TikTok caption extraction, a schema.org blog
-   import, and two hand-typed recipes. Point at the shelf filter and sort.
+1. **Library** (`/`) — a new account starts empty by design and now links
+   directly to Discover. The first Discover request idempotently installs 12
+   original, human-authored Savortome Kitchen recipes. Save one to demonstrate
+   the difference between the shared starter catalogue and a person's private
+   library, then point at the shelf filter and sort.
 
 2. **Import something live.** Paste a real YouTube cooking video URL into the
    front page. This is the whole pitch: a rambling spoken-word video becomes a
@@ -68,9 +70,10 @@ that, sign-in loops, which blocks the credit meter and checkout both.
   banner both work, but the actual caching layer is intentionally switched
   off pending a real-browser check — see `PRODUCT.md`'s "Installing it, and
   losing signal".
-- **Mobile on an actual phone or emulator.** Bundles, typechecks, and a real
-  Android prebuild succeeds — but nobody has watched it render on a screen
-  yet.
+- **Full mobile acceptance.** The iOS app has been installed and launched on a
+  registered iPad, but the final production-Clerk build, signed-in writes,
+  receipt extraction, assistive-technology traversal and lifecycle checks are
+  still separate acceptance work.
 
 If asked live: "the payment and mobile-device pieces are staged and tested up
 to the edge of needing your Stripe account / a phone in hand" is the true

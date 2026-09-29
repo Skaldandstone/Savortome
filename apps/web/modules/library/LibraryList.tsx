@@ -1,9 +1,13 @@
+import Link from "next/link";
 import { LibraryItem, type LibraryEntry } from "./LibraryItem";
 import styles from "./library.module.css";
 
 export function LibraryList({ entries, woodland = false }: { entries: LibraryEntry[]; woodland?: boolean }) {
   if (entries.length === 0) {
-    return <p className={styles.empty}>{woodland ? 'Your journal has room for something good. Import a recipe or write one yourself.' : 'Nothing here yet. Import something above.'}</p>;
+    return <div className={styles.emptyBlock}>
+      <p className={styles.empty}>{woodland ? 'Your journal is ready for its first recipe.' : 'Your library is ready for its first recipe.'}</p>
+      <Link className={styles.emptyLink} href="/discover">Browse starter recipes</Link>
+    </div>;
   }
   return (
     <ul className={styles.list}>

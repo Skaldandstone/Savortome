@@ -196,9 +196,18 @@ export function LibraryScreen() {
       {error ? <Callout tone="error">{error}</Callout> : null}
 
       {!loading && recipes.length === 0 ? (
-        <Text style={[styles.empty, { color: c.textMuted }]}>
-          {activeShelf ? "Nothing on this shelf yet." : "Nothing here yet. Import something above."}
-        </Text>
+        <View style={styles.emptyBlock}>
+          <Text style={[styles.empty, { color: c.textMuted }]}>
+            {activeShelf ? "Nothing on this shelf yet." : "Your library is ready for its first recipe."}
+          </Text>
+          {!activeShelf ? (
+            <Link href="/(protected)/(tabs)/discover" asChild>
+              <Pressable accessibilityRole="link" style={[styles.discoverCta, { borderColor: c.accent }]}>
+                <Text style={{ color: c.accent, fontWeight: "700" }}>Browse starter recipes</Text>
+              </Pressable>
+            </Link>
+          ) : null}
+        </View>
       ) : null}
 
       {woodlandEnabled && <View style={{marginTop:22,marginBottom:6}}><Text accessibilityRole="header" style={{color:c.accent,fontFamily:'serif',fontSize:25}}>Your recipes</Text><Text style={{color:c.textMuted,fontSize:14,lineHeight:22}}>A journal of meals and memories.</Text></View>}
@@ -246,4 +255,6 @@ const styles = StyleSheet.create({
     alignSelf:'flex-start',
   },
   empty: { fontSize: typeScale.small, marginTop: space.lg, lineHeight: 19 },
+  emptyBlock: { gap: space.sm, alignItems: "flex-start" },
+  discoverCta: { borderWidth: 1, borderRadius: radius.sm, paddingHorizontal: 14, paddingVertical: 11, minHeight: 44, justifyContent: "center" },
 });

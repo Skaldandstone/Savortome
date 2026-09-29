@@ -15,7 +15,7 @@ import { readFileSync } from "node:fs";
 import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { inArray } from "drizzle-orm";
-import { isStaple, type Ingredient, type Visibility } from "@seconds/core";
+import { STARTER_RECIPES, STARTER_RECIPE_AUTHOR, isStaple, type Ingredient, type Visibility } from "@seconds/core";
 import * as schema from "../src/schema.js";
 import {
   discoverFeed,
@@ -23,6 +23,7 @@ import {
   searchDiscover,
   similarRecipes,
 } from "../src/queries/discover.js";
+import { ensureStarterRecipes } from "../src/queries/starter-recipes.js";
 
 const url =
   process.env.DATABASE_URL ??
@@ -38,6 +39,17 @@ const expect = (label: string, actual: unknown, expected: unknown) => {
       (ok ? "" : `\n        got ${JSON.stringify(actual)} want ${JSON.stringify(expected)}`),
   );
 };
+
+// --- built-in catalogue ----------------------------------------------------
+await ensureStarterRecipes(db);
+await ensureStarterRecipes(db);
+const starterRows = await db
+  .select({ id: schema.recipes.id, ownerId: schema.recipes.ownerId, visibility: schema.recipes.visibility })
+  .from(schema.recipes)
+  .where(inArray(schema.recipes.id, STARTER_RECIPES.map((recipe) => recipe.id)));
+expect("starter catalogue seeds every recipe once", starterRows.length, STARTER_RECIPES.length);
+expect("starter catalogue is public and owned by the system author", starterRows.every((row) =>
+  row.ownerId === STARTER_RECIPE_AUTHOR.id && row.visibility === "public"), true);
 
 /**
  * Discovery searches every public recipe, so a populated database returns
