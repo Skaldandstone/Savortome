@@ -126,6 +126,7 @@ Reset;$global:BetaReleaseMock.docker.Config.Env=@('NEXT_PUBLIC_CLERK_PUBLISHABLE
 Reset;$global:BetaReleaseMock.docker.Config.Env=@('NEXT_PUBLIC_ENABLE_SW=true');Throws {Prepare (Fresh)} 'build-time Clerk' 'missing Clerk build key rejected'
 Reset;$global:BetaReleaseMock.rollbackDocker.Config.Labels.'com.secondbreakfast.public-cache-version'='1';Throws {Prepare (Fresh)} 'privacy cache policy' 'pre-beta rollback image blocks beta preparation'
 Reset;$global:BetaReleaseMock.task.containerDefinitions[0].secrets+=@{name='SB_BETA_ENABLED';valueFrom='duplicate'};Throws {Prepare (Fresh)} 'also exist in secrets' 'conflicting secret beta flag rejected'
+Reset;$global:BetaReleaseMock.task.containerDefinitions[0].secrets+=@{name='RECEIPT_SCAN_ENABLED';valueFrom='duplicate'};Throws {Prepare (Fresh)} 'also exist in secrets' 'conflicting secret receipt-scan flag rejected'
 
 Reset;$dir=Fresh;Prepare $dir
 $candidate=Get-Content (Join-Path $dir 'candidate-task.json') -Raw|ConvertFrom-Json
@@ -140,6 +141,12 @@ Check ($candidate.tags[0].value -eq 'SecondBreakfast' -and $candidate.containerD
 $envs=$candidate.containerDefinitions[0].environment
 Check (($envs|Where-Object name -eq 'KEEP_EXISTING').value -eq 'unchanged' -and ($envs|Where-Object name -eq 'NODE_EXTRA_CA_CERTS').value -eq '/etc/ssl/rds-global-bundle.pem') 'unrelated environment and certificate trust preserved'
 Check (($envs|Where-Object name -eq 'SB_BETA_CLERK_USER_IDS').value -ceq 'user_A,user_B' -and ($envs|Where-Object name -eq 'SB_BETA_ENABLED').value -eq 'true' -and ($envs|Where-Object name -eq 'SB_BETA_LOCAL_PREVIEW').value -eq 'false') 'cohort deduplicated and local preview disabled'
+Check ((@($envs|Where-Object name -eq 'RECEIPT_SCAN_ENABLED').Count -eq 1) -and ($envs|Where-Object name -eq 'RECEIPT_SCAN_ENABLED').value -eq 'false' -and $record.receiptScanEnabled -eq $false) 'receipt scanning defaults off and is recorded once'
+Reset;$receiptDir=Fresh;& $release -Mode Prepare -Image $image -ReviewedCommit $commit -RollbackReviewedCommit $commit -ClerkUserIds user_A -ReceiptScanEnabled -ReleaseDirectory $receiptDir 6>$null
+$receiptTask=Get-Content (Join-Path $receiptDir 'candidate-task.json') -Raw|ConvertFrom-Json
+$receiptRecord=Get-Content (Join-Path $receiptDir 'release.json') -Raw|ConvertFrom-Json
+$receiptEnvs=$receiptTask.containerDefinitions[0].environment
+Check ((@($receiptEnvs|Where-Object name -eq 'RECEIPT_SCAN_ENABLED').Count -eq 1) -and ($receiptEnvs|Where-Object name -eq 'RECEIPT_SCAN_ENABLED').value -eq 'true' -and $receiptRecord.receiptScanEnabled -eq $true) 'explicit receipt scanning is enabled and recorded once'
 Throws {Prepare $dir} 'fresh release directory' 'previous rollback packet cannot be overwritten'
 $global:BetaReleaseMock.service.networkConfiguration.awsvpcConfiguration.subnets=@('drifted-subnet')
 Throws {& $release -Mode Deploy -ReleaseDirectory $dir} 'configuration changed' 'network drift blocks deployment'

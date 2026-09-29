@@ -5,6 +5,7 @@ param(
   [string]$Image,
   [string[]]$ClerkUserIds=@(),
   [switch]$DisableBeta,
+  [switch]$ReceiptScanEnabled,
   [string]$ReviewedCommit,
   [string]$CodeBuildId,
   [string]$BuildArtifactZip,
@@ -206,17 +207,18 @@ if($Mode -eq 'Prepare') {
   }
   if($Image){$web[0].image=$Image}
   $names=@($web[0].environment.name)+@($web[0].secrets.name)
-  if(@($web[0].secrets | Where-Object {$_.name -in @('SB_BETA_ENABLED','SB_BETA_CLERK_USER_IDS','SB_BETA_LOCAL_PREVIEW')}).Count -gt 0){throw 'Beta flags also exist in secrets. Resolve duplicate definitions before release.'}
+  if(@($web[0].secrets | Where-Object {$_.name -in @('SB_BETA_ENABLED','SB_BETA_CLERK_USER_IDS','SB_BETA_LOCAL_PREVIEW','RECEIPT_SCAN_ENABLED')}).Count -gt 0){throw 'Beta or receipt-scan flags also exist in secrets. Resolve duplicate definitions before release.'}
   if(-not $DisableBeta -and 'CLERK_SECRET_KEY' -notin $names){throw 'Clerk server configuration is missing. The image verifier separately proves the build-time publishable key.'}
-  $environment=@($web[0].environment | Where-Object {$_.name -notin @('SB_BETA_ENABLED','SB_BETA_CLERK_USER_IDS','SB_BETA_LOCAL_PREVIEW','SB_RELEASE_COMMIT')})
+  $environment=@($web[0].environment | Where-Object {$_.name -notin @('SB_BETA_ENABLED','SB_BETA_CLERK_USER_IDS','SB_BETA_LOCAL_PREVIEW','SB_RELEASE_COMMIT','RECEIPT_SCAN_ENABLED')})
   $environment+=@{name='SB_BETA_ENABLED';value= $(if($DisableBeta){'false'}else{'true'})}
   $environment+=@{name='SB_BETA_CLERK_USER_IDS';value= $(if($DisableBeta){''}else{($ClerkUserIds | Sort-Object -Unique) -join ','})}
   $environment+=@{name='SB_BETA_LOCAL_PREVIEW';value='false'}
+  $environment+=@{name='RECEIPT_SCAN_ENABLED';value= $(if($ReceiptScanEnabled){'true'}else{'false'})}
   if($ReviewedCommit){$environment+=@{name='SB_RELEASE_COMMIT';value=$ReviewedCommit}}
   $web[0] | Add-Member -NotePropertyName environment -NotePropertyValue $environment -Force
   WriteJson $candidate (Join-Path $ReleaseDirectory 'candidate-task.json')
   WriteJson $rollback (Join-Path $ReleaseDirectory 'rollback-task.json')
-  WriteJson ([ordered]@{preparedAt=[DateTime]::UtcNow.ToString('o');previousTaskArn=$service.taskDefinition;reviewedCommit=$ReviewedCommit;buildEvidence=$buildEvidence;rollbackBuildEvidence=$rollbackBuildEvidence;rollbackArn=$null;candidateArn=$null;desiredCount=$service.desiredCount;serviceFingerprint=(ServiceFingerprint $service);candidateHash=(PacketHash 'candidate-task.json');rollbackHash=(PacketHash 'rollback-task.json')}) $recordPath
+  WriteJson ([ordered]@{preparedAt=[DateTime]::UtcNow.ToString('o');previousTaskArn=$service.taskDefinition;reviewedCommit=$ReviewedCommit;receiptScanEnabled=[bool]$ReceiptScanEnabled;buildEvidence=$buildEvidence;rollbackBuildEvidence=$rollbackBuildEvidence;rollbackArn=$null;candidateArn=$null;desiredCount=$service.desiredCount;serviceFingerprint=(ServiceFingerprint $service);candidateHash=(PacketHash 'candidate-task.json');rollbackHash=(PacketHash 'rollback-task.json')}) $recordPath
   Write-Host "Prepared local candidate and pinned rollback in $ReleaseDirectory. No AWS resources changed."
   return
 }
