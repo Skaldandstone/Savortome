@@ -174,3 +174,9 @@ test('Android review source blocks storage and overlay permissions the beta does
   assert.match(picker[1].cameraPermission,/receipt photo for review/i);
   assert.match(picker[1].photosPermission,/receipt photo for review/i);
 });
+test('hosted account authentication keeps every required Expo runtime peer',async()=>{
+  const packageJson=JSON.parse(await readFile(root+'apps/mobile/package.json','utf8'));
+  for(const dependency of ['expo-auth-session','expo-crypto','expo-web-browser']){
+    assert.equal(typeof packageJson.dependencies[dependency],'string',`${dependency} must remain a direct mobile dependency`);
+  }
+});
