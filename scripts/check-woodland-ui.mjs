@@ -9,6 +9,7 @@ import { readFileSync } from 'node:fs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const careCss = readFileSync(new URL('../apps/web/modules/care/care.module.css', import.meta.url), 'utf8');
+const woodlandCss = readFileSync(new URL('../apps/web/ui/woodland.css', import.meta.url), 'utf8');
 const stubs = {
   'react/jsx-runtime': 'export const jsx=(type,props)=>({type,props}); export const jsxs=jsx; export const Fragment="fragment";',
   react: `export const useState=initial=>{const i=state.cursor++;if(!(i in state.values))state.values[i]=typeof initial==='function'?initial():initial;return [state.values[i],next=>state.values[i]=typeof next==='function'?next(state.values[i]):next];};
@@ -74,6 +75,7 @@ const result = await build({
     export {usePantry} from './apps/web/modules/pantry/usePantry.ts';
     export {PlanTogether} from './apps/web/modules/plan/PlanTogether.tsx';
     export {PlanWeek} from './apps/web/modules/plan/PlanWeek.tsx';
+    export {AddMealDialog} from './apps/web/modules/plan/AddMealDialog.tsx';
     export {TemplateList} from './apps/web/modules/templates/TemplateList.tsx';
     export {PlanScreen as MobilePlanScreen} from './apps/mobile/modules/plan/PlanScreen.tsx';
     export {CookingProfilePanel,mergeProfileUpdate} from './apps/web/modules/cooking/CookingProfilePanel.tsx';
@@ -122,6 +124,30 @@ function careFixture(online = true) {
 }
 const cards = tree => nodes(tree).filter(node => node.type === 'details' && node.props['data-kind']);
 const action = card => nodes(card).find(node => node.type === 'button' && node.props['aria-label']?.startsWith('Add '));
+
+const luminance = hex => hex.slice(1).match(/../g).map(value => parseInt(value, 16) / 255)
+  .map(value => value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4)
+  .reduce((sum, value, index) => sum + value * [.2126, .7152, .0722][index], 0);
+const contrast = (left, right) => {
+  const a = luminance(left), b = luminance(right);
+  return (Math.max(a, b) + .05) / (Math.min(a, b) + .05);
+};
+const themeBlock = selector => {
+  const start = woodlandCss.indexOf(selector);
+  const open = woodlandCss.indexOf('{', start);
+  return woodlandCss.slice(open + 1, woodlandCss.indexOf('}', open));
+};
+const themeToken = (block, name) => block.match(new RegExp(`--${name}:(#[0-9a-f]{6})`, 'i'))?.[1];
+
+test('forced woodland themes keep error messages readable regardless of system theme', () => {
+  const dark = themeBlock("[data-woodland='true'] {");
+  const light = themeBlock("[data-woodland='true'][data-theme='light'] {");
+  for (const block of [dark, light]) {
+    assert.ok(contrast(themeToken(block, 'error'), themeToken(block, 'error-soft')) >= 4.5);
+    assert.ok(contrast(themeToken(block, 'text'), themeToken(block, 'error-soft')) >= 4.5);
+  }
+  assert.equal((woodlandCss.match(/--error:#9e211a; --error-soft:#fdeceb/g) ?? []).length, 2);
+});
 
 test('cooking-profile updates retain the visible local answer while merging skill choices', () => {
   const f = fixture();
@@ -404,6 +430,60 @@ test('failed week loading never renders a false empty planner and retry restores
   tree = render();
   assert.equal(nodes(tree).filter(node => node.type === 'section' && node.props?.['aria-label']).length >= 7, true);
   assert.equal(nodes(tree).filter(node => node.props?.['aria-label']?.startsWith('Add a recipe to')).length, 21);
+});
+
+test('recipe picker distinguishes loading and failed requests from an empty library', () => {
+  const f = fixture();
+  const base = {
+    date: '2026-09-22', slot: 'dinner', recipes: [], onPick() {}, onClose() {}, onRetry() {},
+  };
+
+  let tree = f.render(f.app.AddMealDialog, {
+    ...base, loaded: false, loading: true, loadError: null,
+  });
+  assert.match(text(tree), /Loading your recipes/);
+  assert.doesNotMatch(text(tree), /Nothing in your recipes yet/);
+  assert.equal(nodes(tree).find(node => node.props?.['aria-label'] === 'Filter your recipes').props.disabled, true);
+
+  let retried = false;
+  tree = f.render(f.app.AddMealDialog, {
+    ...base, loaded: false, loading: false, loadError: "Couldn't load your recipes.", onRetry() { retried = true; },
+  });
+  assert.match(text(tree), /could not load/);
+  assert.match(text(tree), /Nothing has been added to this meal yet/);
+  assert.doesNotMatch(text(tree), /Nothing in your recipes yet/);
+  nodes(tree).find(node => node.type === 'button' && text(node) === 'Try recipes again').props.onClick();
+  assert.equal(retried, true);
+
+  tree = f.render(f.app.AddMealDialog, {
+    ...base, loaded: true, loading: false, loadError: null,
+  });
+  assert.match(text(tree), /Nothing in your recipes yet/);
+  assert.equal(nodes(tree).find(node => node.props?.['aria-label'] === 'Filter your recipes').props.disabled, false);
+});
+
+test('planner passes recipe-library failure and retry state into the open picker', () => {
+  const week = '2026-09-21';
+  const values = [];
+  values[0] = week;
+  values[1] = [];
+  values[2] = [];
+  values[3] = { date: '2026-09-22', slot: 'dinner' };
+  values[13] = week;
+  values[14] = false;
+  values[17] = false;
+  values[18] = false;
+  values[19] = { message: "Couldn't load your recipes.", signInRequired: false };
+  values[20] = 0;
+  const f = fixture({ values });
+
+  const shell = f.render(f.app.PlanWeek, { initialWeek: week });
+  const dialog = nodes(shell).find(node => typeof node.type === 'function' && node.type.name === 'AddMealDialog');
+  assert.equal(dialog.props.loaded, false);
+  assert.equal(dialog.props.loading, false);
+  assert.match(dialog.props.loadError, /couldn't load/i);
+  dialog.props.onRetry();
+  assert.equal(f.state.values[20], 1);
 });
 
 test('a late prior-week response cannot replace the newly selected week', async () => {
