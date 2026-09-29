@@ -48,6 +48,10 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
   const [planLoading, setPlanLoading] = useState(true);
   const [planLoadError, setPlanLoadError] = useState<ActionFailure | null>(null);
   const [planAttempt, setPlanAttempt] = useState(0);
+  const [libraryLoaded, setLibraryLoaded] = useState(false);
+  const [libraryLoading, setLibraryLoading] = useState(true);
+  const [libraryLoadError, setLibraryLoadError] = useState<ActionFailure | null>(null);
+  const [libraryAttempt, setLibraryAttempt] = useState(0);
   const loadedWeekRef = useRef<string | null>(null);
 
   const today = todayISO();
@@ -74,13 +78,24 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
     return () => { cancelled = true; };
   }, [week, planAttempt]);
 
-  // The picker needs something to pick from; fetched once, not per open.
+  // The picker needs something to pick from. Keep a successfully loaded list
+  // visible during refreshes, but never describe a failed first load as an
+  // honestly empty recipe library.
   useEffect(() => {
-    void api
-      .library()
-      .then((data) => setLibrary(data.recipes))
-      .catch(() => undefined);
-  }, []);
+    let cancelled = false;
+    setLibraryLoading(true);
+    setLibraryLoadError(null);
+    void api.library().then(data => {
+      if (cancelled) return;
+      setLibrary(data.recipes);
+      setLibraryLoaded(true);
+    }).catch(err => {
+      if (!cancelled) setLibraryLoadError(actionFailure(err, "Couldn't load your recipes."));
+    }).finally(() => {
+      if (!cancelled) setLibraryLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [libraryAttempt]);
 
   const loadSuggestions = useCallback(() => {
     void api
@@ -379,6 +394,10 @@ export function PlanWeek({ initialWeek }: { initialWeek: string }) {
           date={adding.date}
           slot={adding.slot}
           recipes={library}
+          loaded={libraryLoaded}
+          loading={libraryLoading}
+          loadError={libraryLoadError?.message ?? null}
+          onRetry={() => setLibraryAttempt(current => current + 1)}
           onClose={() => setAdding(null)}
           onPick={(recipeId) => {
             setAdding(null);

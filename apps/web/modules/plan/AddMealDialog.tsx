@@ -23,12 +23,20 @@ export function AddMealDialog({
   date,
   slot,
   recipes,
+  loaded,
+  loading,
+  loadError,
+  onRetry,
   onPick,
   onClose,
 }: {
   date: string;
   slot: MealSlot;
   recipes: LibraryRecipe[];
+  loaded: boolean;
+  loading: boolean;
+  loadError: string | null;
+  onRetry: () => void;
   onPick: (recipeId: string) => void;
   onClose: () => void;
 }) {
@@ -65,19 +73,37 @@ export function AddMealDialog({
         placeholder="Filter your recipes"
         aria-label="Filter your recipes"
         autoFocus
+        disabled={!loaded}
         onChange={(e) => setFilter(e.target.value)}
       />
 
+      {loading && !loaded ? (
+        <p className={styles.pickerStatus} role="status">Loading your recipes…</p>
+      ) : null}
+
+      {loadError ? (
+        <div className={styles.pickerError} role="alert">
+          <p>
+            {loaded
+              ? "Your recipes could not refresh. The last list we loaded is still available."
+              : "Your recipes could not load. Nothing has been added to this meal yet."}
+          </p>
+          <button type="button" className={styles.pickerRetry} disabled={loading} onClick={onRetry}>
+            {loading ? "Trying again…" : "Try recipes again"}
+          </button>
+        </div>
+      ) : null}
+
       <ul className={styles.pickList}>
-        {shown.map((recipe) => (
+        {loaded ? shown.map((recipe) => (
           <li key={recipe.id}>
             <button type="button" className={styles.pick} onClick={() => onPick(recipe.id)}>
               <strong>{recipe.title}</strong>
               <span>{recipe.attribution}</span>
             </button>
           </li>
-        ))}
-        {shown.length === 0 ? (
+        )) : null}
+        {loaded && !loadError && shown.length === 0 ? (
           <li className={styles.pickEmpty}>
             {recipes.length === 0
               ? "Nothing in your recipes yet — import or write one first."
