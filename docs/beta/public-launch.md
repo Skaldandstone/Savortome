@@ -319,3 +319,45 @@ Verified signed out afterwards: `/`, `/discover` and `/terms` return 200 in the
 woodland shell with the Sentry DSN meta tag present; `/cook`, `/list`,
 `/friends` and `/care` all 307 to sign-in; `/api/recipes` returns 401; the
 inlined Clerk key is `pk_live_`.
+
+## Starter catalogue and receipt runtime, 2026-09-29
+
+PR #116 merged twelve original Savortome Kitchen starter recipes, an
+idempotent transactionally locked production seed, truthful empty-library
+guidance, the complete mobile receipt capture/review flow, and scoped Clerk
+token caching. PR #117 added explicit default-off receipt-scan control to the
+guarded ECS release path. GitHub Typecheck/unit, Database, and E2E jobs passed
+for both pull requests; the release tool passed 64 strict mocked AWS/Docker
+assertions.
+
+The exact application source was sealed before the release-tool-only PR:
+
+- merged application commit `8382e139a3da72a361c5f6c39bcbe28a3ace265d`
+- snapshot commit `d1c81ec4a44eada4311f541a2748df9ae3e2606a`
+- manifest SHA-256
+  `d479c139a0c52562a5c458f169261d8c225151b0eb310ad3fa1551eaa6b0fcb1`
+- archive SHA-256
+  `2d19dd1a3ea938c538c8016f4969af366cd7c8b779a7e20f10d2def033ec6dcd`
+- CodeBuild `secondbreakfast-web-build:9293a520-2ad3-4b46-bbf7-f3033eb3a832`
+
+The resulting immutable image is
+`sha256:d752cb411bac0beca9936ece9fab52c10d40b9c5ffa6fea7ba4ef127ce0fb52e`
+with config digest
+`sha256:c1f4b88fb5572607840af49fc371596bc838a700946065a51805f5e017bf6b6d`.
+The verifier confirmed linux/amd64, UID 65532, direct distroless Node entrypoint,
+service worker enabled, cache policy 3, exact OCI source/revision labels, and a
+COMPLETE zero-finding ECR BASIC scan.
+
+The guarded release registered candidate task definition revision 27 and
+preserved the prior privacy-v3 image as rollback revision 26. ECS reached a
+steady state with one healthy target and the running container reported the
+exact candidate digest. Runtime flags are `SB_BETA_ENABLED=true`,
+`SB_PUBLIC_ACCESS=true`, `RECEIPT_SCAN_ENABLED=true`, and
+`STRIPE_CHECKOUT_ENABLED=false`.
+
+A signed-out production request to `/api/discover` returned 200 and twelve
+Savortome Kitchen recipes, proving the bounded seed ran successfully. The
+receipt endpoint returns the expected 401 before authentication. An
+authenticated receipt-photo request and explicit pantry-review confirmation
+still need physical-device acceptance; no image persistence, pantry write, or
+metered model call was attempted during this release check.
