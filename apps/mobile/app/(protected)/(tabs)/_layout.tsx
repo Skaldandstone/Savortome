@@ -1,6 +1,6 @@
 import { Tabs, Link } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { usePalette } from "@/ui";
 import { KitchenIcon } from '@/modules/woodland/KitchenIcon';
 import { woodlandEnabled } from '@/modules/woodland/Artwork';
@@ -11,7 +11,6 @@ import { woodlandEnabled } from '@/modules/woodland/Artwork';
  */
 export default function TabsLayout() {
   const c = usePalette();
-  const {fontScale,width} = useWindowDimensions();
 
   return (
     <SafeAreaView edges={["bottom"]} style={{ flex: 1, backgroundColor: c.surface }}>
@@ -23,11 +22,17 @@ export default function TabsLayout() {
           return <Pressable key={route.key} accessibilityRole="tab" accessibilityLabel={title} accessibilityState={{selected}}
             onPress={() => {const event=navigation.emit({type:'tabPress',target:route.key,canPreventDefault:true});if(!selected && !event.defaultPrevented) navigation.navigate(route.name,route.params);}}
             onLongPress={() => navigation.emit({type:'tabLongPress',target:route.key})}
-            style={{width:fontScale > 1.3 || width < 350 ? '33.333%' : '16.666%',minHeight:64,paddingVertical:9,paddingHorizontal:2,alignItems:'center',justifyContent:'center',gap:5,backgroundColor:selected?c.accentSoft:'transparent',borderRadius:4}}>
+            style={{flex:1,minWidth:0,minHeight:64,paddingVertical:9,paddingHorizontal:2,alignItems:'center',justifyContent:'center',gap:5,backgroundColor:selected?c.accentSoft:'transparent',borderRadius:4}}>
             <KitchenIcon name={route.name} color={selected?c.accent:c.textMuted} />
-            <Text style={{fontSize:12,color:selected?c.accent:c.textMuted,textAlign:'center',textDecorationLine:selected?'underline':'none'}}>{title}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{fontSize:12,color:selected?c.accent:c.textMuted,textAlign:'center',textDecorationLine:selected?'underline':'none'}}>{title}</Text>
           </Pressable>;
         })}
+        <Link href="/legal" asChild>
+          <Pressable accessibilityRole="link" accessibilityLabel="About Savortome and legal" style={{width:56,minHeight:64,paddingVertical:9,paddingHorizontal:2,alignItems:'center',justifyContent:'center',gap:5,borderRadius:4}}>
+            <Text accessible={false} style={{fontSize:22,lineHeight:24,color:c.textMuted}}>ⓘ</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75} style={{fontSize:12,color:c.textMuted,textAlign:'center'}}>About</Text>
+          </Pressable>
+        </Link>
       </View> : undefined}
       screenOptions={{
         headerShown: false,
@@ -44,7 +49,6 @@ export default function TabsLayout() {
       <Tabs.Screen name="friends" options={{ title: "Friends" }} />
       <Tabs.Screen name="discover" options={{ title: "Discover" }} />
     </Tabs>
-    <Link href="/legal" style={{ color: c.text, textAlign: "center", padding: 12, minHeight: 44, fontSize: 14 }}>About Savortome and legal</Link>
     </SafeAreaView>
   );
 }

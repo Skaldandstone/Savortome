@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { db, discoverFeed, popularTags, searchDiscover } from "@seconds/db";
+import { db, discoverFeed, ensureStarterRecipes, popularTags, searchDiscover } from "@seconds/db";
 import { errorResponse } from "@/lib/api";
 import { databaseConfigured, viewerId } from "@/lib/session";
 
@@ -25,6 +25,7 @@ export async function GET(request: Request) {
 
   try {
     const database = db();
+    await ensureStarterRecipes(database);
     const viewer = await viewerId(database);
     const filters = {
       query,

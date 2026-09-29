@@ -17,6 +17,8 @@ Metadata:
       - admit beta users only after owner approval recorded in Clerk metadata
       - accept origin traffic only from the reviewed Cloudflare prefix list
       - use exact Secrets Manager JSON keys and immutable ECR digests
+      - keep receipt extraction disabled unless the explicit parameter is true;
+        never persist receipt photos or bypass pantry review
     ref:
       - at: docs/beta/private-runtime-infrastructure.md
         has: session activation, identity, rollback, cleanup, and acceptance procedure
@@ -111,6 +113,14 @@ Parameters:
       Public launch switch. Exact 'true' opens the woodland experience to every
       visitor and skips the owner-approval cohort check. Account data still
       requires Clerk sign-in. Default false keeps private beta admission.
+  ReceiptScanEnabled:
+    Type: String
+    Default: 'false'
+    AllowedValues: ['true', 'false']
+    Description: >-
+      Enables authenticated receipt-photo extraction only when the separately
+      injected Anthropic key is also available. Photos are not persisted and
+      extracted items still require review before changing the pantry.
   SentryDsn:
     Type: String
     Default: ''
@@ -362,6 +372,7 @@ Resources:
             - {Name: SB_BETA_LOCAL_PREVIEW, Value: 'false'}
             - {Name: STRIPE_CHECKOUT_ENABLED, Value: 'false'}
             - {Name: STRIPE_LIVEMODE, Value: 'false'}
+            - {Name: RECEIPT_SCAN_ENABLED, Value: !Ref ReceiptScanEnabled}
           Secrets:
             - {Name: CLERK_SECRET_KEY, ValueFrom: !Sub '${ClerkSecretArn}:CLERK_SECRET_KEY::'}
             - {Name: DATABASE_URL, ValueFrom: !Sub '${DatabaseSecretArn}:DATABASE_URL::'}
@@ -433,6 +444,7 @@ Resources:
             - {Name: SB_BETA_LOCAL_PREVIEW, Value: 'false'}
             - {Name: STRIPE_CHECKOUT_ENABLED, Value: 'false'}
             - {Name: STRIPE_LIVEMODE, Value: 'false'}
+            - {Name: RECEIPT_SCAN_ENABLED, Value: !Ref ReceiptScanEnabled}
           Secrets:
             - {Name: CLERK_SECRET_KEY, ValueFrom: !Sub '${ClerkSecretArn}:CLERK_SECRET_KEY::'}
             - {Name: DATABASE_URL, ValueFrom: !Sub '${DatabaseSecretArn}:DATABASE_URL::'}

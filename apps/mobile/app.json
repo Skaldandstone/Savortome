@@ -4,7 +4,7 @@
     "slug": "seconds",
     "owner": "skald-and-stone",
     "scheme": "seconds",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "plugins": [
@@ -47,11 +47,11 @@
         "CFBundleDisplayName": "Savortome",
         "ITSAppUsesNonExemptEncryption": false
       },
-      "buildNumber": "2"
+      "buildNumber": "3"
     },
     "android": {
       "package": "com.skaldandstone.savortome",
-      "versionCode": 1,
+      "versionCode": 3,
       "allowBackup": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",

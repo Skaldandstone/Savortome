@@ -180,3 +180,21 @@ test('hosted account authentication keeps every required Expo runtime peer',asyn
     assert.equal(typeof packageJson.dependencies[dependency],'string',`${dependency} must remain a direct mobile dependency`);
   }
 });
+test('protected navigation keeps legal access inside the tab strip',async()=>{
+  const layout=await readFile(root+'apps/mobile/app/(protected)/(tabs)/_layout.tsx','utf8');
+  assert.equal((layout.match(/href="\/legal"/g)??[]).length,1);
+  assert.match(layout,/tabBar=.*href="\/legal"/s);
+  assert.doesNotMatch(layout,/<\/Tabs>\s*<Link href="\/legal"/s);
+  assert.match(layout,/accessibilityLabel="About Savortome and legal"/);
+});
+test('Clerk session storage is isolated when a beta changes instances',async()=>{
+  const [layout,cache]=await Promise.all([
+    readFile(root+'apps/mobile/app/_layout.tsx','utf8'),
+    readFile(root+'apps/mobile/lib/clerkTokenCache.ts','utf8'),
+  ]);
+  assert.match(layout,/createClerkTokenCache\(publishableKey\)/);
+  assert.match(layout,/__experimental_disableNativeClientSync/);
+  assert.match(cache,/publishableKey\.slice\(-16\)/);
+  assert.match(cache,/savortome_\$\{namespace\}_/);
+  assert.match(cache,/AFTER_FIRST_UNLOCK/);
+});

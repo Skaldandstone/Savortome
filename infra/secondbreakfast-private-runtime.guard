@@ -29,7 +29,9 @@ rule containers_are_nonroot_readonly_and_billing_disabled {
     Resources.CandidateTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'STRIPE_LIVEMODE' ].Value == 'false'
     Resources.CandidateTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'SB_BETA_ENABLED' ].Value == { 'Ref': 'BetaEnabled' }
     Resources.CandidateTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'SB_PUBLIC_ACCESS' ].Value == { 'Ref': 'PublicAccess' }
+    Resources.CandidateTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'RECEIPT_SCAN_ENABLED' ].Value == { 'Ref': 'ReceiptScanEnabled' }
     Resources.RollbackTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'SB_PUBLIC_ACCESS' ].Value == { 'Ref': 'PublicAccess' }
+    Resources.RollbackTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'RECEIPT_SCAN_ENABLED' ].Value == { 'Ref': 'ReceiptScanEnabled' }
     %tasks.Properties.ContainerDefinitions.*.Environment.*[ Name == 'SENTRY_DSN' ].Value == { 'Ref': 'SentryDsn' }
     Resources.RollbackTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'STRIPE_CHECKOUT_ENABLED' ].Value == 'false'
     Resources.RollbackTaskDefinition.Properties.ContainerDefinitions.*.Environment.*[ Name == 'STRIPE_LIVEMODE' ].Value == 'false'
