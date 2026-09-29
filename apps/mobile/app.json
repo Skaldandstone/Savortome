@@ -75,7 +75,7 @@
     },
     "icon": "./assets/icon.png",
     "runtimeVersion": {
-      "policy": "fingerprint"
+      "policy": "appVersion"
     },
     "updates": {
       "url": "https://u.expo.dev/88e6ce04-9624-4c8e-8004-1c8147cf4265"
