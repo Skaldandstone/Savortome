@@ -6,6 +6,7 @@ param(
   [string[]]$ClerkUserIds=@(),
   [switch]$DisableBeta,
   [switch]$ReceiptScanEnabled,
+  [string]$OpenAISecretArn,
   [string]$ReviewedCommit,
   [string]$CodeBuildId,
   [string]$BuildArtifactZip,
@@ -174,6 +175,8 @@ $lockPath=Join-Path $ReleaseDirectory 'release.lock'
 $packetLock=[IO.File]::Open($lockPath,[IO.FileMode]::OpenOrCreate,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)
 try {
 if($Mode -eq 'Prepare') {
+  if($OpenAISecretArn -and $DisableBeta){throw 'Kill switch cannot change provider secrets.'}
+  if($OpenAISecretArn -and $OpenAISecretArn -cnotmatch '^arn:aws:secretsmanager:us-east-2:051722405355:secret:dev/secondbreakfast/openai-[A-Za-z0-9-]+$'){throw 'OpenAI secret must belong to Savortome in the selected account and region.'}
   if($DisableBeta -and $Image){throw 'Kill switch cannot replace the current image. Omit Image.'}
   if(Test-Path -LiteralPath $recordPath){throw 'Use a fresh release directory so the previous rollback record is preserved.'}
   AssertStable $service
@@ -199,6 +202,10 @@ if($Mode -eq 'Prepare') {
   $candidate=$rollback|ConvertTo-Json -Depth 100|ConvertFrom-Json
   $web=@($candidate.containerDefinitions | Where-Object {@($_.portMappings | Where-Object {$_.containerPort -eq 3000}).Count -gt 0})
   if($web.Count -ne 1){throw 'Cannot identify exactly one web container on port 3000.'}
+  if($OpenAISecretArn){
+    if(@($web[0].environment | Where-Object name -eq 'OPENAI_API_KEY').Count -gt 0 -or @($web[0].secrets | Where-Object name -eq 'OPENAI_API_KEY').Count -gt 0){throw 'OpenAI configuration already exists. Refuse duplicate or silent key replacement.'}
+    $web[0] | Add-Member -NotePropertyName secrets -NotePropertyValue (@($web[0].secrets)+@{name='OPENAI_API_KEY';valueFrom="${OpenAISecretArn}:OPENAI_API_KEY::"}) -Force
+  }
   $rollbackBuildEvidence=$null
   if(-not $DisableBeta){
     if($RollbackReviewedCommit -cnotmatch '^[a-f0-9]{40}$'){throw 'A reviewed privacy-hardened rollback commit is required before enabling beta.'}

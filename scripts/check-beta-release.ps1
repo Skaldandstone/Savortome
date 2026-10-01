@@ -221,4 +221,15 @@ Check ($global:BetaReleaseMock.dockerCalls -eq 1 -and @($global:BetaReleaseMock.
 Reset;$config=EcrConfig;$digest=ConfigureEcrEvidence $config;$global:BetaReleaseMock.scan.imageScanFindings.findingSeverityCounts=@{HIGH=1};Throws {InvokeEcrPrepare $config $digest $sourceSha} 'scan is incomplete or has findings' 'artifact-free verification rejects ECR findings'
 Reset;$config=EcrConfig @{'com.skaldandstone.source-sha256'='f'*64};Throws {EcrPrepare $config $sourceSha} 'labels do not prove' 'artifact-free verification rejects source-label drift'
 Reset;$config=EcrConfig;$digest=ConfigureEcrEvidence $config;Add-Content -LiteralPath $config -Value ' ';Throws {InvokeEcrPrepare $config $digest $sourceSha} 'config does not match' 'artifact-free verification rejects config-blob tampering'
+Reset;$dir=Fresh;$openAIArn='arn:aws:secretsmanager:us-east-2:051722405355:secret:dev/secondbreakfast/openai-synthetic'
+& $release -Mode Prepare -Image $image -ReviewedCommit $commit -RollbackReviewedCommit $commit -OpenAISecretArn $openAIArn -ReceiptScanEnabled -ReleaseDirectory $dir 6>$null
+$candidate=Get-Content (Join-Path $dir 'candidate-task.json') -Raw|ConvertFrom-Json
+$rollback=Get-Content (Join-Path $dir 'rollback-task.json') -Raw|ConvertFrom-Json
+Check ((@($candidate.containerDefinitions[0].secrets | Where-Object name -eq 'OPENAI_API_KEY').Count -eq 1) -and ($candidate.containerDefinitions[0].secrets | Where-Object name -eq 'OPENAI_API_KEY').valueFrom -ceq "${openAIArn}:OPENAI_API_KEY::") 'OpenAI candidate gets one exact server secret JSON-key reference'
+Check (@($rollback.containerDefinitions[0].secrets | Where-Object name -eq 'OPENAI_API_KEY').Count -eq 0) 'provider injection leaves the reviewed rollback configuration unchanged'
+Check ((Mutations).Count -eq 0) 'OpenAI packet preparation performs no cloud mutation'
+Throws {& $release -Mode Prepare -Image $image -ReviewedCommit $commit -RollbackReviewedCommit $commit -OpenAISecretArn 'arn:aws:secretsmanager:us-east-2:051722405355:secret:prod/kall/openai-synthetic' -ReleaseDirectory (Fresh)} 'must belong to Savortome' 'another product secret is rejected'
+Throws {& $release -Mode Prepare -DisableBeta -OpenAISecretArn $openAIArn -ReleaseDirectory (Fresh)} 'cannot change provider secrets' 'kill switch cannot change provider credentials'
+Reset;$global:BetaReleaseMock.task.containerDefinitions[0].secrets+=@{name='OPENAI_API_KEY';valueFrom='existing-provider'}
+Throws {& $release -Mode Prepare -Image $image -ReviewedCommit $commit -RollbackReviewedCommit $commit -OpenAISecretArn $openAIArn -ReleaseDirectory (Fresh)} 'already exists' 'existing OpenAI key cannot be silently replaced'
 Write-Output "$assertions assertions passed. Strict mocked AWS/Docker execution only. Synthetic packet files: $testRoot"

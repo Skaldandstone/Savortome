@@ -50,3 +50,27 @@ receipt-device acceptance or deployment is claimed.
 Official API references: [image inputs](https://developers.openai.com/api/docs/guides/images-vision),
 [structured output](https://developers.openai.com/api/docs/guides/structured-outputs),
 [model](https://developers.openai.com/api/docs/models/gpt-4.1-mini).
+
+## Rollout preparation, 2026-10-01
+
+PR #119 is merged as `3b110e0170858c1b7d77337d0438fd8dc16276fa`.
+The exact source is sealed in snapshot `c1cc0c7ad1c974692a53678c33ad39c1812e8863`,
+manifest `33faf7cbc13be8bdfae991fcc707b8c01b6aafc8e912c3f31c92ab9a6afb21d9`,
+archive SHA-256 `bfb4b170d9348295a1095d552a86b8f41e9ec6bc615868ccabddb6fb42aeb91f`.
+The checksum-verified, versioned archive started existing CodeBuild run
+`secondbreakfast-web-build:83c60aa5-1196-421d-8163-bcb1d8038ad9`.
+Build completion and scan must be verified before release.
+
+AWS identity was refreshed for account `051722405355`. The running service is
+still stable on revision 27. Secret metadata lists no Savortome OpenAI secret;
+the Kall secret is a separate product and was not read or reused. The owner must
+provide a Savortome project key through Secrets Manager, never through chat.
+
+Release preparation now accepts `-OpenAISecretArn` for an exact Savortome ARN.
+It injects `OPENAI_API_KEY` into the candidate only, preserving the prior pinned
+rollback and its credentials. Duplicate/inline key configuration, another
+product's ARN and credential changes during a kill switch are rejected.
+All 70 release-script mock assertions pass. The execution role still needs a
+reviewed exact-ARN read grant before deployment; this switch neither grants
+permissions nor reads or stores a key. These release-tool changes are separate
+from the already sealed application image.
