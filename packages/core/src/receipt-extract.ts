@@ -1,18 +1,19 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+import OpenAI from "openai";
+import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { canonicalize } from "./units.js";
 import type { PhotoMediaType } from "./recipe.js";
 import {
   emitGenerationAudit,
   generatedContentSystem,
-  generationAudit,
+  providerGenerationAudit,
   sanitizeGeneratedText,
   type GenerationAuditSink,
 } from "./generated-content.js";
 
-export const RECEIPT_EXTRACTION_MODEL = "claude-opus-5";
-export const RECEIPT_EXTRACTION_PROMPT_VERSION = "savortome-receipt-extraction-v2";
+export const RECEIPT_EXTRACTION_MODEL = "gpt-4.1-mini-2025-04-14";
+export const RECEIPT_EXTRACTION_PROMPT_VERSION = "savortome-receipt-extraction-v3";
+
 
 const ReceiptSchema = z.object({
   store: z.string().trim().max(120).nullable(),
@@ -43,39 +44,42 @@ export async function extractReceiptPhoto(
   base64: string,
   mediaType: PhotoMediaType,
   opts: {
-    client?: Anthropic;
+    client?: OpenAI;
     model?: string;
     signal?: AbortSignal;
     onGenerationAudit?: GenerationAuditSink;
   } = {},
 ): Promise<ReceiptExtraction> {
-  const client = opts.client ?? new Anthropic();
+  const client = opts.client ?? new OpenAI({ timeout: 45_000, maxRetries: 0 });
   const model = opts.model ?? RECEIPT_EXTRACTION_MODEL;
   try {
-    const response = await client.messages.parse({
+    const response = await client.responses.parse({
       model,
-      max_tokens: 4_000,
-      system: generatedContentSystem(SYSTEM, RECEIPT_EXTRACTION_PROMPT_VERSION),
-      output_config: { format: zodOutputFormat(ReceiptSchema), effort: "low" },
-      messages: [{ role: "user", content: [
-        { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
-        { type: "text", text: "Extract the grocery items for a mandatory human review. Do not include any other receipt data." },
+      store: false,
+      max_output_tokens: 4_000,
+      instructions: generatedContentSystem(SYSTEM, RECEIPT_EXTRACTION_PROMPT_VERSION),
+      text: { format: zodTextFormat(ReceiptSchema, "grocery_receipt") },
+      input: [{ role: "user", content: [
+        { type: "input_image", image_url: `data:${mediaType};base64,${base64}`, detail: "high" },
+        { type: "input_text", text: "Extract the grocery items for a mandatory human review. Do not include any other receipt data." },
       ] }],
     }, { signal: opts.signal });
-    if (response.stop_reason === "refusal") {
-      emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+    if (response.status !== "completed" || response.output.some(item =>
+      item.type === "message" && item.content.some(content => content.type === "refusal"))) {
+      emitGenerationAudit(opts.onGenerationAudit, providerGenerationAudit("openai",
         RECEIPT_EXTRACTION_PROMPT_VERSION, model, "receipt-photo-v1", "rejected", response,
       ));
       throw new ReceiptExtractionError("The receipt could not be processed. You can add the items manually.");
     }
-    if (!response.parsed_output || response.parsed_output.items.length === 0) {
-      emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+    const parsed = ReceiptSchema.safeParse(response.output_parsed);
+    if (!parsed.success || parsed.data.items.length === 0) {
+      emitGenerationAudit(opts.onGenerationAudit, providerGenerationAudit("openai",
         RECEIPT_EXTRACTION_PROMPT_VERSION, model, "receipt-photo-v1", "rejected", response,
       ));
       throw new ReceiptExtractionError("No grocery items were found. Try a clearer photo or add them manually.");
     }
     const seen = new Set<string>();
-    const items = response.parsed_output.items.map(item => ({
+    const items = parsed.data.items.map(item => ({
       canonicalItem: canonicalize(sanitizeGeneratedText(item.displayName, 120)),
       displayName: sanitizeGeneratedText(item.displayName, 120),
       quantity: item.quantity,
@@ -86,17 +90,17 @@ export async function extractReceiptPhoto(
       return true;
     });
     if (items.length === 0) {
-      emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+      emitGenerationAudit(opts.onGenerationAudit, providerGenerationAudit("openai",
         RECEIPT_EXTRACTION_PROMPT_VERSION, model, "receipt-photo-v1", "rejected", response,
       ));
       throw new ReceiptExtractionError("No grocery items were found. Try a clearer photo or add them manually.");
     }
-    emitGenerationAudit(opts.onGenerationAudit, generationAudit(
+    emitGenerationAudit(opts.onGenerationAudit, providerGenerationAudit("openai",
       RECEIPT_EXTRACTION_PROMPT_VERSION, model, "receipt-photo-v1", "passed", response,
     ));
     return {
-      sourceLabel: response.parsed_output.store
-        ? sanitizeGeneratedText(response.parsed_output.store, 120) || null
+      sourceLabel: parsed.data.store
+        ? sanitizeGeneratedText(parsed.data.store, 120) || null
         : null,
       items,
     };

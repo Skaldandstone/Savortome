@@ -61,10 +61,23 @@ test("receipt route fails closed unless the metered feature is explicitly config
   assert.equal(fixture.state.modelCalls, 0);
 });
 
+test("receipt route cannot be enabled with the old Anthropic key or a blank OpenAI key", async () => {
+  const fixture = await routeFixture();
+  fixture.env.RECEIPT_SCAN_ENABLED = "true";
+  fixture.env.ANTHROPIC_API_KEY = "old-provider-placeholder";
+  for (const key of [undefined, "   "]) {
+    fixture.env.OPENAI_API_KEY = key;
+    assert.equal((await fixture.route.GET()).body.enabled, false);
+    assert.equal((await fixture.route.POST({ body: {} })).status, 501);
+  }
+  assert.equal(fixture.state.modelCalls, 0);
+  assert.equal(fixture.state.bodyReads, 0);
+});
+
 test("receipt route stores only normalized review data and a duplicate digest", async () => {
   const fixture = await routeFixture();
   fixture.env.RECEIPT_SCAN_ENABLED = "true";
-  fixture.env.ANTHROPIC_API_KEY = "test-placeholder";
+  fixture.env.OPENAI_API_KEY = "test-placeholder";
   const response = await fixture.route.POST({ body: { imageBase64: "aW1hZ2U=", imageMediaType: "image/jpeg" } });
   assert.equal(response.status, 200);
   assert.equal(fixture.state.modelCalls, 1);

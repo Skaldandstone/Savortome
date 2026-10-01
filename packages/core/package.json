@@ -22,6 +22,7 @@
     "cheerio": "^1.0.0",
     "domhandler": "^5.0.3",
     "entities": "^6.0.0",
+    "openai": "^7.25.0",
     "zod": "^4.1.5"
   },
   "devDependencies": {
