@@ -15,7 +15,7 @@ import { recordGenerationAudit } from "@/lib/generation-audit";
 export const runtime = "nodejs";
 
 const enabled = () =>
-  process.env.RECEIPT_SCAN_ENABLED === "true" && Boolean(process.env.ANTHROPIC_API_KEY);
+  process.env.RECEIPT_SCAN_ENABLED === "true" && Boolean(process.env.OPENAI_API_KEY?.trim());
 
 export async function GET() {
   return withUser(async () => ({ enabled: enabled() }));

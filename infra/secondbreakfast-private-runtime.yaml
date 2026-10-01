@@ -82,6 +82,11 @@ Parameters:
       configured" without it, so the app's headline feature is inert when this
       is missing. No default is safe: an empty ARN would make the task
       definition unusable rather than merely unconfigured.
+  OpenAISecretArn:
+    Type: String
+    Default: ''
+    AllowedPattern: '^(|arn:aws:secretsmanager:us-east-2:051722405355:secret:dev/secondbreakfast/openai-[A-Za-z0-9-]+)$'
+    Description: Optional receipt-provider secret JSON containing OPENAI_API_KEY. Receipt scanning fails closed without it. Never put this key in public/mobile configuration.
   BetaClerkUserIds:
     Type: String
     NoEcho: true
@@ -149,6 +154,7 @@ Rules:
             - Fn::Equals: [{Ref: DesiredCount}, '0']
         AssertDescription: DesiredCount must remain zero until the explicit review gate changes.
 Conditions:
+  HasOpenAISecret: !Not [!Equals [!Ref OpenAISecretArn, '']]
   CreateReviewedInfrastructure: !Equals [!Ref ActivationGate, REVIEWED_EPHEMERAL_PRIVATE_HTTPS]
 
 Resources:
@@ -263,6 +269,12 @@ Resources:
               - Effect: Allow
                 Action: secretsmanager:GetSecretValue
                 Resource: [!Ref ClerkSecretArn, !Ref DatabaseSecretArn, !Ref AdminSecretArn, !Ref AnthropicSecretArn]
+              - !If
+                - HasOpenAISecret
+                - Effect: Allow
+                  Action: secretsmanager:GetSecretValue
+                  Resource: !Ref OpenAISecretArn
+                - !Ref AWS::NoValue
 
   TaskRole:
     Type: AWS::IAM::Role
@@ -378,6 +390,10 @@ Resources:
             - {Name: DATABASE_URL, ValueFrom: !Sub '${DatabaseSecretArn}:DATABASE_URL::'}
             - {Name: ADMIN_API_TOKEN, ValueFrom: !Sub '${AdminSecretArn}:ADMIN_API_TOKEN::'}
             - {Name: ANTHROPIC_API_KEY, ValueFrom: !Sub '${AnthropicSecretArn}:ANTHROPIC_API_KEY::'}
+            - !If
+              - HasOpenAISecret
+              - {Name: OPENAI_API_KEY, ValueFrom: !Sub '${OpenAISecretArn}:OPENAI_API_KEY::'}
+              - !Ref AWS::NoValue
           MountPoints:
             - {SourceVolume: temporary-files, ContainerPath: /tmp, ReadOnly: false}
             - {SourceVolume: next-cache, ContainerPath: /app/apps/web/.next/cache, ReadOnly: false}
@@ -450,6 +466,10 @@ Resources:
             - {Name: DATABASE_URL, ValueFrom: !Sub '${DatabaseSecretArn}:DATABASE_URL::'}
             - {Name: ADMIN_API_TOKEN, ValueFrom: !Sub '${AdminSecretArn}:ADMIN_API_TOKEN::'}
             - {Name: ANTHROPIC_API_KEY, ValueFrom: !Sub '${AnthropicSecretArn}:ANTHROPIC_API_KEY::'}
+            - !If
+              - HasOpenAISecret
+              - {Name: OPENAI_API_KEY, ValueFrom: !Sub '${OpenAISecretArn}:OPENAI_API_KEY::'}
+              - !Ref AWS::NoValue
           MountPoints:
             - {SourceVolume: temporary-files, ContainerPath: /tmp, ReadOnly: false}
             - {SourceVolume: next-cache, ContainerPath: /app/apps/web/.next/cache, ReadOnly: false}
