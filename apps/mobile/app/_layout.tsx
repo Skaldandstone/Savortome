@@ -5,6 +5,7 @@ import { ClerkProvider } from "@clerk/expo";
 import { ThemeProvider } from "@/ui";
 import { useReducedMotion } from '@/ui/ThemeProvider';
 import { createClerkTokenCache } from "@/lib/clerkTokenCache";
+import { Sentry } from '@/lib/sentry';
 
 const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 const tokenCache = publishableKey ? createClerkTokenCache(publishableKey) : undefined;
@@ -13,7 +14,7 @@ const tokenCache = publishableKey ? createClerkTokenCache(publishableKey) : unde
  * Providers and the navigator. Only the protected routes require sign-in. The tabs are one entry
  * in the stack so that recipes and the importer push over them.
  */
-export default function RootLayout() {
+function RootLayout() {
   const navigator = <AppNavigator />;
   return (
     <SafeAreaProvider>
@@ -33,6 +34,8 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+
+export default Sentry.wrap(RootLayout);
 
 function AppNavigator() {
   const reducedMotion = useReducedMotion();

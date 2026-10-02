@@ -1,0 +1,60 @@
+package PACKAGE_NAME
+
+import android.content.Context
+import io.sentry.SentryEvent
+import io.sentry.SentryOptions
+import io.sentry.react.RNSentrySDK
+import io.sentry.protocol.SentryException
+import io.sentry.protocol.SentryStackFrame
+import io.sentry.protocol.SentryStackTrace
+
+/** Errors only. Never send a native crash's memory dump or private scope. */
+object SavortomeSentry {
+  fun init(context: Context) {
+    RNSentrySDK.init(context) { options ->
+      options.setSendDefaultPii(false)
+      options.setMaxBreadcrumbs(0)
+      options.setEnableAutoSessionTracking(false)
+      options.setEnableNdk(false)
+      options.setEnableScopeSync(false)
+      options.setAttachScreenshot(false)
+      options.setAttachViewHierarchy(false)
+      options.setTracesSampleRate(0.0)
+      options.setBeforeBreadcrumb { _, _ -> null }
+      options.setBeforeSend(SentryOptions.BeforeSendCallback { event, hint ->
+        hint.clearAttachments()
+        val clean = SentryEvent()
+        clean.eventId = event.eventId
+        clean.timestamp = event.timestamp
+        clean.level = event.level
+        clean.release = event.release
+        clean.dist = event.dist
+        clean.environment = event.environment
+        clean.platform = event.platform
+        val codes = setOf("account-startup-timeout", "hosted-auth-failed", "account-retry-failed", "diagnostic-test")
+        val code = event.getTag("diagnostic_code")?.takeIf { it in codes }
+        clean.setTag("app_surface", "mobile")
+        if (code != null) clean.setTag("diagnostic_code", code)
+        clean.exceptions = event.exceptions?.map { exception ->
+          val safeException = SentryException()
+          safeException.type = "NativeError"
+          safeException.value = code ?: "Application failure; private details withheld"
+          safeException.stacktrace = SentryStackTrace(exception.stacktrace?.frames?.map { frame ->
+            val safeFrame = SentryStackFrame()
+            safeFrame.filename = frame.filename?.substringBefore('?')?.substringAfterLast('/')?.substringAfterLast('\\')
+            safeFrame.function = frame.function
+            safeFrame.module = frame.module
+            safeFrame.lineno = frame.lineno
+            safeFrame.colno = frame.colno
+            safeFrame.isInApp = frame.isInApp
+            safeFrame
+          } ?: emptyList())
+          safeException
+        }
+        // Debug IDs and code addresses are needed for symbolication, not user data.
+        clean.debugMeta = event.debugMeta
+        clean
+      })
+    }
+  }
+}

@@ -2,7 +2,7 @@
   "name": "@seconds/mobile",
   "version": "0.1.0",
   "private": true,
-  "main": "expo-router/entry",
+  "main": "index.js",
   "expo": {
     "install": {
       "exclude": [
@@ -25,6 +25,7 @@
     "@expo/metro-runtime": "~57.0.16",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@seconds/core": "workspace:*",
+    "@sentry/react-native": "8.28.0",
     "expo": "~57.0.26",
     "expo-auth-session": "~57.0.13",
     "expo-clipboard": "~57.0.2",

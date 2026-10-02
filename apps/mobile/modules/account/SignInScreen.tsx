@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from 'expo-router';
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useHostedAuth } from "@clerk/expo/hosted-auth";
+import { reportAccountFailure } from '@/lib/sentry';
 import { Button, Callout, Panel, PanelHeader, space, type as typeScale, usePalette } from "@/ui";
 
 /**
@@ -25,6 +26,7 @@ export function SignInScreen() {
       // A cancelled browser session is a normal outcome, not a failure.
       if (!createdSessionId) setError(null);
     } catch (err) {
+      reportAccountFailure('hosted-auth-failed');
       setError(err instanceof Error ? err.message : "Sign-in didn't complete.");
     } finally {
       setBusy(null);
