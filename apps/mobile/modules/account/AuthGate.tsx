@@ -5,6 +5,7 @@ import { useAuth } from "@clerk/expo";
 import { usePalette } from "@/ui";
 import { SignInScreen } from "./SignInScreen";
 import { AccountLoadFailure } from './AccountLoadFailure';
+import { reportAccountFailure } from '@/lib/sentry';
 
 /**
  * Decides between the sign-in screen and the app. Clerk restores the session
@@ -23,7 +24,7 @@ function ConfiguredAuthGate({ children }: { children: ReactNode }) {
   const [timedOut, setTimedOut] = useState(false);
   useEffect(() => {
     if (isLoaded) { setTimedOut(false); return; }
-    const timer = setTimeout(() => setTimedOut(true), 12000);
+    const timer = setTimeout(() => { setTimedOut(true); reportAccountFailure('account-startup-timeout'); }, 12000);
     return () => clearTimeout(timer);
   }, [isLoaded]);
   // Loading/Loaded controls can both return null when Clerk enters its error

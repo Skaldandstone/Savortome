@@ -12,6 +12,7 @@ const bundle = await build({ bundle:true, write:false, platform:'node', format:'
       'expo-router':`export const Link='Link';`,
       'expo-updates':`export const reloadAsync=()=>{state.reloads++;return state.reload();};`,
       '@clerk/expo':`export const useAuth=()=>state.auth;`,
+      '@/lib/sentry':`export const reportAccountFailure=code=>state.reports.push(code);`,
       '@/ui':`export const usePalette=()=>({bg:'#191e1b',text:'#eddfc5',textMuted:'#c0af92',accent:'#e1ba7d'});export const Button='Button';`,
     };
     api.onResolve({filter:/.*/},args=>{
@@ -22,7 +23,7 @@ const bundle = await build({ bundle:true, write:false, platform:'node', format:'
   }}],
 });
 function fixture(auth={isLoaded:false,isSignedIn:undefined}) {
-  const state={auth,cursor:0,values:[],effects:[],reloads:0,reload:async()=>{},timers:[]};
+  const state={auth,cursor:0,values:[],effects:[],reloads:0,reload:async()=>{},timers:[],reports:[]};
   const context={state,process:{env:{EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY:'public-fixture'}},setTimeout:fn=>{state.timers.push(fn);return fn;},clearTimeout:fn=>state.timers=state.timers.filter(x=>x!==fn)};
   runInNewContext(bundle.outputFiles[0].text,context);
   const render=()=>{state.cursor=0;return context.app.AuthGate({children:'PRIVATE RECIPES'});};

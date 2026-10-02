@@ -46,6 +46,8 @@ jobs:
         run: pnpm check:web-legal
       - name: Mobile account startup recovery
         run: node scripts/check-mobile-account-startup.mjs
+      - name: Mobile telemetry privacy
+        run: node scripts/check-mobile-sentry.mjs
 
   database:
     name: Database checks

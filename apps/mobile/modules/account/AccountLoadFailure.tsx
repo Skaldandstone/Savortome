@@ -3,6 +3,7 @@ import { Link } from 'expo-router';
 import { reloadAsync } from 'expo-updates';
 import { Text, View } from 'react-native';
 import { Button, usePalette } from '@/ui';
+import { reportAccountFailure } from '@/lib/sentry';
 
 /** Never turn an unavailable account service into an empty protected screen. */
 export function AccountLoadFailure() {
@@ -16,6 +17,7 @@ export function AccountLoadFailure() {
       // Restart this app without deleting its account tokens or local data.
       await reloadAsync();
     } catch {
+      reportAccountFailure('account-retry-failed');
       setRetryFailed(true);
       setBusy(false);
     }
