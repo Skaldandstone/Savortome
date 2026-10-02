@@ -44,6 +44,8 @@ jobs:
         run: pnpm test
       - name: Legal and accessibility surfaces
         run: pnpm check:web-legal
+      - name: Mobile account startup recovery
+        run: node scripts/check-mobile-account-startup.mjs
 
   database:
     name: Database checks
