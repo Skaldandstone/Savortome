@@ -202,3 +202,25 @@ app inventory reports version `0.1.2`, build `3`, and Apple Distribution
 signing. Automated launch through the iOS 26 tunnel timed out and therefore
 does not prove current on-screen behavior. A physical tap-through of sign-in,
 Discover, starter-recipe save, and receipt review remains required.
+
+## Tablet rotation correction (2026-10-01)
+
+The native app explicitly locked orientation to portrait. Expo configuration now
+uses `default`, honoring device rotation settings. Version `0.1.3`, Android code
+`4` and iOS build `4` isolate the changed native configuration from older OTA
+runtimes. No package identity, credentials, dependencies or user data changed.
+
+Installed Expo plugin introspection produces Android MainActivity orientation
+`unspecified` and includes portrait and landscape in the iOS supported list.
+Mobile TypeScript and 19 woodland checks pass. This confirms generated native
+configuration, not physical rotation or layout acceptance. An updated installed
+binary is required; OTA alone cannot remove the native portrait lock.
+
+James also reports renewed Clerk login failure. The hosted sign-in page returns
+200 and ECS revision 29 is healthy, which does not prove authentication. The
+latest finished Android EAS build is from September 12; the local physical-review
+APK is version 0.1.0 from September 21. Both predate the September 29 auth fixes.
+Current EAS preview uses production Clerk and the production API origin. No
+Android device is currently connected through ADB; the installed build and exact
+error still need confirmation. Do not call the reported login issue resolved
+from this configuration check or a successful rebuild.
