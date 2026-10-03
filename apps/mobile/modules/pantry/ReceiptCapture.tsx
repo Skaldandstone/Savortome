@@ -18,34 +18,40 @@ export function ReceiptCapture({ onScan }: {
   onScan: (imageBase64: string, imageMediaType: PhotoMediaType) => Promise<boolean>;
 }) {
   const c = usePalette();
-  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [availability, setAvailability] = useState<"loading" | "enabled" | "disabled" | "failed">("loading");
+  const [attempt, setAttempt] = useState(0);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setAvailability("loading");
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        cancelled = true;
+        setAvailability("failed");
+      }
+    }, 12_000);
     void api.receiptScanStatus()
-      .then(result => { if (!cancelled) setEnabled(result.enabled); })
-      .catch(() => { if (!cancelled) setEnabled(false); });
-    return () => { cancelled = true; };
-  }, []);
-
-  if (enabled === null) return null;
+      .then(result => { if (!cancelled) setAvailability(result.enabled ? "enabled" : "disabled"); })
+      .catch(() => { if (!cancelled) setAvailability("failed"); })
+      .finally(() => clearTimeout(timeout));
+    return () => { cancelled = true; clearTimeout(timeout); };
+  }, [attempt]);
 
   const scan = async (source: "camera" | "library") => {
     setError(null);
     setMessage(null);
-    if (source === "camera") {
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) {
-        setError("Camera access was not granted. You can choose an existing receipt photo instead.");
-        return;
-      }
-    }
-
     setBusy(true);
     try {
+      if (source === "camera") {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) {
+          setError("Camera access was not granted. You can choose an existing receipt photo instead.");
+          return;
+        }
+      }
       const result = source === "camera"
         ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], base64: true, quality: 0.8 })
         : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], base64: true, quality: 0.8 });
@@ -58,9 +64,11 @@ export function ReceiptCapture({ onScan }: {
       }
       if (await onScan(asset.base64, mediaType)) {
         setMessage("Receipt ready to review below. Nothing was added to your pantry yet.");
+      } else {
+        setError("The receipt was not saved for review. Check your connection and account, then try again. Nothing was added to your pantry.");
       }
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "That receipt could not be read.");
+    } catch {
+      setError("That receipt could not be read. Try again, or choose an existing receipt photo. Nothing was added to your pantry.");
     } finally {
       setBusy(false);
     }
@@ -72,13 +80,20 @@ export function ReceiptCapture({ onScan }: {
         title="Scan a grocery receipt"
         hint="We read food names, then discard the photo. You review every item before it enters your pantry."
       />
-      {enabled ? (
+      {availability === "enabled" ? (
         <View style={styles.actions}>
           <Button label={busy ? "Reading receipt…" : "Take receipt photo"} disabled={busy} onPress={() => void scan("camera")} />
           <Button label="Choose receipt photo" variant="ghost" disabled={busy} onPress={() => void scan("library")} />
         </View>
+      ) : availability === "loading" ? (
+        <Text accessibilityLiveRegion="polite" style={[styles.unavailable, { color: c.textMuted }]}>Checking receipt scanning… You can still add pantry items by hand.</Text>
+      ) : availability === "failed" ? (
+        <>
+          <Callout tone="error" title="Could not check receipt scanning">Check your connection and account, then try again. Your pantry has not changed.</Callout>
+          <Button label="Try receipt scanning again" variant="ghost" onPress={() => setAttempt(value => value + 1)} />
+        </>
       ) : (
-        <Text style={[styles.unavailable, { color: c.textMuted }]}>Receipt scanning is not enabled in this build. You can still add pantry items by hand.</Text>
+        <Text style={[styles.unavailable, { color: c.textMuted }]}>Receipt scanning is currently unavailable. You can still add pantry items by hand.</Text>
       )}
       {message ? <Callout tone="info">{message}</Callout> : null}
       {error ? <Callout tone="error" title="Receipt not scanned">{error}</Callout> : null}
