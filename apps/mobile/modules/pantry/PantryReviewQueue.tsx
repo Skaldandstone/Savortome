@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatAmount, type PantryIntakeView } from "@seconds/core/format";
-import { Button, radius, space, type as typeScale, usePalette } from "@/ui";
+import { Button, Callout, radius, space, type as typeScale, usePalette } from "@/ui";
 
 export function PantryReviewQueue({ intakes, onResolve }: {
   intakes: PantryIntakeView[];
@@ -24,10 +24,28 @@ function ReviewCard({ intake, onResolve }: {
   const c = usePalette();
   const [selected, setSelected] = useState(() => intake.items.map(item => item.id));
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [status, setStatus] = useState("");
+  const [confirmDismiss, setConfirmDismiss] = useState(false);
+  const [completed, setCompleted] = useState(false);
   const resolve = async (action: "accept" | "dismiss") => {
     setBusy(true);
-    const saved = await onResolve(intake.id, action, selected);
-    if (!saved) setBusy(false);
+    setError("");
+    setStatus("");
+    try {
+      const saved = await onResolve(intake.id, action, selected);
+      if (saved) {
+        setCompleted(true);
+        setConfirmDismiss(false);
+        setStatus(action === "accept" ? "Selected groceries added to your pantry." : "Review dismissed. No items were added to your pantry.");
+      } else {
+        setError("We could not confirm that the review saved. Your selection is still here. Check your pantry before trying again.");
+      }
+    } catch {
+      setError("We could not confirm that the review saved. Your selection is still here. Check your pantry before trying again.");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -43,9 +61,9 @@ function ReviewCard({ intake, onResolve }: {
         return (
           <Pressable
             key={item.id}
-            disabled={busy}
+            disabled={busy || completed}
             accessibilityRole="checkbox"
-            accessibilityState={{ checked, disabled: busy }}
+            accessibilityState={{ checked, disabled: busy || completed }}
             accessibilityLabel={label}
             onPress={() => setSelected(current => checked ? current.filter(id => id !== item.id) : [...current, item.id])}
             style={styles.checkRow}
@@ -57,9 +75,20 @@ function ReviewCard({ intake, onResolve }: {
       })}
       <Text style={[styles.note, { color: c.textMuted }]}>Confirming replaces an existing displayed quantity. You can correct it afterward.</Text>
       <View style={styles.actions}>
-        <Button label={busy ? "Saving…" : "Add selected items"} disabled={busy || selected.length === 0} onPress={() => void resolve("accept")} />
-        <Button label="Dismiss" variant="ghost" disabled={busy} onPress={() => void resolve("dismiss")} />
+        <Button label={busy ? "Saving review…" : "Add selected items"} disabled={busy || completed || confirmDismiss || selected.length === 0} onPress={() => void resolve("accept")} />
+        <Button label="Dismiss" variant="ghost" disabled={busy || completed} onPress={() => { setConfirmDismiss(true); setError(""); }} />
       </View>
+      {confirmDismiss ? (
+        <View style={{ gap: space.sm }}>
+          <Text style={{ color: c.text }}>Dismiss this review without adding any items? You can keep it here to review later.</Text>
+          <View style={styles.actions}>
+            <Button label="Dismiss this review" disabled={busy} onPress={() => void resolve("dismiss")} />
+            <Button label="Keep reviewing" variant="ghost" disabled={busy} onPress={() => { setConfirmDismiss(false); setError(""); }} />
+          </View>
+        </View>
+      ) : null}
+      {error ? <Callout tone="error">{error}</Callout> : null}
+      {status ? <Callout tone="info">{status}</Callout> : null}
     </View>
   );
 }
