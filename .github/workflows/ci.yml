@@ -48,6 +48,8 @@ jobs:
         run: node scripts/check-mobile-account-startup.mjs
       - name: Mobile telemetry privacy
         run: node scripts/check-mobile-sentry.mjs
+      - name: Mobile receipt recovery
+        run: node scripts/check-mobile-receipts.mjs
 
   database:
     name: Database checks
