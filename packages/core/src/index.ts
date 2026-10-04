@@ -58,3 +58,4 @@ export * from "./step-ingredients.js";
 export * from "./onboarding.js";
 export * from "./generated-content.js";
 export * from "./starter-recipes.js";
+export * from "./barcode.js";

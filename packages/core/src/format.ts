@@ -36,3 +36,4 @@ export * from "./plan-together.js";
 export * from "./units-convert.js";
 export * from "./shopping.js";
 export * from "./carts.js";
+export * from "./barcode.js";
