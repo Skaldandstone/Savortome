@@ -4,7 +4,7 @@ import { getClerkInstance } from "@clerk/expo";
 import { apiBaseUrl } from "./api";
 import { createFoodNoteRecoveryStore } from "./foodNoteRecovery";
 
-/** Not wired to Today until consent/review/discard UI is implemented. */
+/** Today calls this only through explicit device recovery controls. */
 export function createNativeFoodNoteRecovery(accountId: string, sessionId: string) {
   const options = { keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY };
   return createFoodNoteRecoveryStore({

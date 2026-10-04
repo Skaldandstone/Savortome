@@ -6,6 +6,8 @@ import * as Crypto from "expo-crypto";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { foodLogDate, foodLogReceiptMatches, localFoodDate, parseFoodLogInput, planIngredientName, type FoodLogInput, type FoodLogEntry, type FoodLogSource, type PantryEntry, type PlanTogetherIdea, type PlanTogetherOptions } from "@seconds/core/format";
 import { createAccountClient } from "@/lib/client";
+import { createNativeFoodNoteRecovery } from "@/lib/nativeFoodNoteRecovery";
+import type { FoodNoteRecoveryRead } from "@/lib/foodNoteRecovery";
 import { Button, Callout, Field, Panel, PanelHeader, space, type as typeScale, usePalette } from "@/ui";
 import { FoodNoteCapture } from "./FoodNoteCapture";
 import { MissingShoppingReview } from "./MissingShoppingReview";
@@ -20,13 +22,20 @@ function ask(message: string, confirm: string): Promise<boolean> {
   ], { cancelable: true, onDismiss: () => resolve(false) }));
 }
 export function TodayScreen() {
-  const { userId } = useAuth();
-  return <AccountTodayScreen key={userId ?? "signed-out"} />;
+  const { userId, sessionId } = useAuth();
+  return <AccountTodayScreen key={`${userId ?? "signed-out"}:${sessionId ?? "no-session"}`} />;
 }
 
 function AccountTodayScreen() {
-  const { userId } = useAuth();
+  const { userId, sessionId } = useAuth();
   const client = useMemo(() => userId ? createAccountClient(userId) : null, [userId]);
+  const localStore = useMemo(() => userId && sessionId ? createNativeFoodNoteRecovery(userId, sessionId) : null, [userId, sessionId]);
+  const localEnabled = useRef(false);
+  const [localOn, setLocalOn] = useState(false);
+  const [localBusy, setLocalBusy] = useState(false);
+  const [localBlocked, setLocalBlocked] = useState(false);
+  const [localRead, setLocalRead] = useState<FoodNoteRecoveryRead | null>(null);
+  const [localError, setLocalError] = useState<string | null>(null);
   const c = usePalette(); const insets = useSafeAreaInsets(); const router = useRouter();
   const generation = useRef(0); const mounted = useRef(true); const focused = useRef(true);
   const [focusVisit, setFocusVisit] = useState(0);
@@ -66,7 +75,7 @@ function AccountTodayScreen() {
   const draftTitle = useRef(title); draftTitle.current = title;
   const current = (version: number) => mounted.current && focused.current && generation.current === version;
   useFocusEffect(useCallback(() => {
-    focused.current = true; action.current = false; ideasAction.current = false; setCaptureBusy(false); setBusy(false); setIdeasBusy(false); setLoading(false); setFocusVisit(value => value + 1);
+    focused.current = true; action.current = false; ideasAction.current = false; setCaptureBusy(false); setBusy(false); setLocalBusy(false); setIdeasBusy(false); setLoading(false); setFocusVisit(value => value + 1);
     return () => { focused.current = false; ++generation.current; };
   }, []));
   const load = useCallback(async () => {
@@ -82,6 +91,8 @@ function AccountTodayScreen() {
         setNotes(result); setLoaded(true);
         const confirmed = pending ? savedDay.find(note => foodLogReceiptMatches(pending, note)) : undefined;
         if (pending && pendingSave.current === pending && confirmed) {
+          if (localEnabled.current && localStore) await localStore.discard(true);
+          if (!current(version) || readVersion.current !== read) return;
           pendingSave.current = null; setUnconfirmed(false); id.current = pending.id;
           editRevision.current = confirmed.updatedAt;
           setError(null);
@@ -96,7 +107,7 @@ function AccountTodayScreen() {
       setLoadError("Food notes could not load. This does not confirm whether an earlier save or removal finished. Reload before another change.");
     } }
     finally { if (current(version) && readVersion.current === read) setLoading(false); }
-  }, [client]);
+  }, [client, localStore]);
   useEffect(() => {
     mounted.current = true; ++generation.current;
     pendingSave.current = null; pendingDelete.current = null; setDeleteUnconfirmed(false); action.current = false; ++readVersion.current; setUnconfirmed(false);
@@ -117,7 +128,7 @@ function AccountTodayScreen() {
   }, [date, notes, client, focusVisit]);
   const confirmReplace = useCallback(async () => !pendingDelete.current && !pendingSave.current && (!draftTitle.current.trim() || await ask("Replace the current unsaved food draft?", "Replace draft")), []);
   const save = async () => {
-    if (!client || action.current || captureBusy || !loaded || loading || pendingDelete.current) return;
+    if (!client || action.current || captureBusy || localBusy || localBlocked || !loaded || loading || pendingDelete.current) return;
     let input: FoodLogInput;
     try {
       id.current ??= Crypto.randomUUID();
@@ -127,10 +138,14 @@ function AccountTodayScreen() {
     pendingSave.current = input; setUnconfirmed(true);
     const version = generation.current; setBusy(true); setError(null); setMessage(null);
     try {
+      if (localEnabled.current && localStore) await localStore.keep({ kind: "save-unconfirmed", input, uncertainty }, true);
+      if (!current(version)) return;
       const entry = await client.saveFoodNote(input);
       if (!foodLogReceiptMatches(input, entry)) throw new Error("Unconfirmed food note");
       if (!current(version)) return;
       setNotes(existing => [entry, ...existing.filter(note => note.id !== entry.id)]);
+      if (localEnabled.current && localStore) await localStore.discard(true);
+      if (!current(version)) return;
       pendingSave.current = null; setUnconfirmed(false);
       setTitle(""); setPortion(""); setUncertainty(""); setSource("text"); id.current = null; editRevision.current = undefined;
       setMessage("Food note saved. Your pantry was not changed.");
@@ -138,7 +153,7 @@ function AccountTodayScreen() {
     finally { if (current(version)) { action.current = false; setBusy(false); } }
   };
   const remove = async (note: FoodLogEntry) => {
-    if (!client || action.current || captureBusy || pendingSave.current || pendingDelete.current || !loaded || loading) return;
+    if (!client || action.current || captureBusy || localBusy || localBlocked || pendingSave.current || pendingDelete.current || !loaded || loading) return;
     const version = generation.current;
     action.current = true;
     if (!await ask(`Remove the food note for ${note.title}? Pantry and plans will stay unchanged.`, "Remove note") || !current(version)) { if (current(version)) action.current = false; return; }
@@ -146,15 +161,19 @@ function AccountTodayScreen() {
     pendingDelete.current = note.id; setDeleteUnconfirmed(true);
     setBusy(true); setError(null); setMessage(null);
     try {
+      if (localEnabled.current && localStore) await localStore.keep({ kind: "delete-unconfirmed", id: note.id }, true);
+      if (!current(version)) return;
       const result = await client.deleteFoodNote(note.id);
       if (result.deleted !== true) throw new Error("Unconfirmed");
+      if (!current(version)) return;
+      if (localEnabled.current && localStore) await localStore.discard(true);
       if (current(version)) { pendingDelete.current = null; setDeleteUnconfirmed(false); setNotes(existing => existing.filter(item => item.id !== note.id)); setMessage("Food note removed. Pantry and plans were not changed."); }
     }
     catch { if (current(version)) setError("We could not confirm removal. The note may already be removed. Other note changes are paused; review and reload before another write. Nothing retries automatically."); }
     finally { if (current(version)) { action.current = false; setBusy(false); } }
   };
   const repeatOrEdit = async (note: FoodLogEntry, edit: boolean) => {
-    if (action.current || captureBusy || pendingSave.current || pendingDelete.current || !loaded || loading) return;
+    if (action.current || captureBusy || localBusy || localBlocked || pendingSave.current || pendingDelete.current || !loaded || loading) return;
     const version = generation.current;
     action.current = true;
     if (!await confirmReplace() || !current(version)) { if (current(version)) action.current = false; return; }
@@ -164,6 +183,63 @@ function AccountTodayScreen() {
     editRevision.current = edit ? note.updatedAt : undefined;
     if (edit) setDate(note.date);
     setMessage(edit ? "Editing an existing note. Save to confirm changes. A newer edit will require a fresh review." : "New repeat draft ready. Nothing saved yet.");
+  };
+  const deviceRecovery = async (keepDraft: boolean) => {
+    if (!localStore || action.current || captureBusy || busy || loading) return;
+    const version = generation.current; action.current = true; setLocalBusy(true); setLocalError(null);
+    try {
+      const consent = await ask("Keep and check a food-note copy in secure storage on this device? Only this account and app environment can access it. Original photos/audio are not kept. Copies older than 24 hours cannot restore. Sign-out does not erase copies; use Discard device recovery to remove them. Nothing saves to your account or retries automatically.", "Allow device recovery");
+      if (!consent || !current(version)) return;
+      localEnabled.current = true; setLocalOn(true); setLocalBlocked(true);
+      const found = await localStore.read(true);
+      if (!current(version)) return;
+      setLocalRead(found);
+      if (found.status !== "empty") return; // Never overwrite an unseen earlier request.
+      if (keepDraft) {
+        id.current ??= Crypto.randomUUID();
+        const input = parseFoodLogInput({ id: id.current, date, title, portion: portion.trim() || null, source, expectedUpdatedAt: editRevision.current });
+        await localStore.keep({ kind: "draft", input, uncertainty }, true);
+        if (!current(version)) return;
+        setMessage("Draft snapshot kept on this device, not saved to your account. Later unsaved edits are not kept automatically; discard the old copy before keeping a replacement. Reviewed saves checkpoint before sending.");
+      } else setMessage("No device copy found. Recovery is enabled for this visit; nothing was sent.");
+      setLocalRead(null); setLocalBlocked(false);
+    } catch { if (current(version)) { setLocalBlocked(true); setLocalError("Device recovery could not be confirmed. A local operation may still finish. Check again or deliberately discard the device copy; nothing retries automatically."); } }
+    finally { if (current(version)) { action.current = false; setLocalBusy(false); } }
+  };
+  const restoreDevice = async () => {
+    if (action.current || !localRead || localRead.status !== "review") return;
+    const version = generation.current; action.current = true;
+    try {
+      if ((title.trim() || portion.trim()) && !await ask("Replace the current on-screen draft with the kept copy? No account save or removal will run.", "Restore kept copy")) return;
+      if (!current(version)) return;
+      const recovery = localRead.recovery;
+      if (recovery.kind === "delete-unconfirmed") {
+        pendingDelete.current = recovery.id; setDeleteUnconfirmed(true);
+        setMessage("Restored an unconfirmed removal warning. Nothing was retried; review and reload notes before another change.");
+      } else {
+        const input = recovery.input;
+        setTitle(input.title); setPortion(input.portion ?? ""); setDate(input.date); setSource(input.source); setUncertainty(recovery.uncertainty);
+        id.current = input.id; editRevision.current = input.expectedUpdatedAt;
+        pendingSave.current = recovery.kind === "save-unconfirmed" ? input : null;
+        setUnconfirmed(recovery.kind === "save-unconfirmed");
+        setMessage("Kept food note restored for review. Nothing was sent; reload checks the original reference before any deliberate retry.");
+      }
+      setLocalRead(null); setLocalBlocked(false); setLoaded(false);
+      await load();
+    } finally { if (current(version)) action.current = false; }
+  };
+  const discardDevice = async () => {
+    if (!localStore || action.current || busy || captureBusy) return;
+    const version = generation.current; action.current = true; setLocalBusy(true);
+    try {
+      if (!await ask("Remove only the device copy and disable device recovery for this visit? Earlier account/local operations are not cancelled and may still finish. Reload before another account change.", "Discard device copy") || !current(version)) return;
+      await localStore.discard(true);
+      if (!current(version)) return;
+      localEnabled.current = false; setLocalOn(false); setLocalBlocked(false); setLocalRead(null); setLocalError(null); setLoaded(false);
+      setMessage("Device copy discarded. Saved account notes were not removed. Recovery is off for this visit; reload before another change.");
+      await load();
+    } catch { if (current(version)) { setLocalBlocked(true); setLocalError("Device discard was not confirmed and may still finish. No account note was removed. Check again before another change."); } }
+    finally { if (current(version)) { action.current = false; setLocalBusy(false); } }
   };
   const showIdeas = async () => {
     if (!client || ideasAction.current || hasShoppingPending) return;
@@ -183,7 +259,7 @@ function AccountTodayScreen() {
   const todayNotes = dayNotes;
   const recent = notes.filter((note, index) => notes.findIndex(other => other.title === note.title && other.portion === note.portion) === index).slice(0, 3);
   const textStyle = { color: c.textMuted, fontSize: typeScale.body, lineHeight: 23 };
-  const disabled = busy || captureBusy;
+  const disabled = busy || captureBusy || localBusy || localBlocked;
   const lockedDraft = disabled || unconfirmed || deleteUnconfirmed || !loaded || loading;
   return <ScrollView style={{ backgroundColor: c.bg }} contentContainerStyle={[styles.content, { paddingTop: insets.top + space.lg }]} keyboardShouldPersistTaps="handled">
     <Button label="Back to cooking" variant="ghost" onPress={() => router.replace("/(protected)/(tabs)/cook")} />
@@ -235,11 +311,24 @@ function AccountTodayScreen() {
     <Panel>
       <PanelHeader title="An optional food note" hint="A memory aid, not a score. No calorie goals, streaks or automatic pantry updates." />
       <View style={styles.fields}>
+        <Text style={textStyle}>Optional device recovery: keep a snapshot or check for a copy from an earlier visit. Secure device copies are separate from saved account notes. Sign-out does not erase them; discard here when finished. Original media is never kept.</Text>
+        <View style={styles.row}>
+          <Button label={localBusy ? "Checking device recovery…" : "Check for a kept food note"} variant="ghost" disabled={busy || captureBusy || localBusy || loading || unconfirmed || deleteUnconfirmed} onPress={() => void deviceRecovery(false)} />
+          <Button label="Keep this draft on this device" variant="ghost" disabled={disabled || loading || !loaded || unconfirmed || deleteUnconfirmed || !title.trim()} onPress={() => void deviceRecovery(true)} />
+        </View>
+        {localOn ? <Text accessibilityLiveRegion="polite" style={textStyle}>Device recovery is enabled for this visit. Save/removal requests checkpoint before sending; they never retry themselves. Unsaved edits are not automatically kept.</Text> : null}
+        {localError ? <Callout tone="error">{localError}</Callout> : null}
+        {localRead?.status === "review" ? <>
+          <Callout tone="warn">{localRead.recovery.kind === "delete-unconfirmed" ? "A kept removal is unconfirmed. It may already have finished; restoring only restores the warning." : `Kept ${localRead.recovery.kind === "save-unconfirmed" ? "unconfirmed save" : "draft"}: ${localRead.recovery.input.title}, ${localRead.recovery.input.date}. ${localRead.recovery.input.portion ?? "Portion unknown"}. Review before restoring; no eating or saved result is assumed.`}</Callout>
+          <Button label="Restore kept food note" disabled={busy || captureBusy || localBusy || loading} onPress={() => void restoreDevice()} />
+        </> : null}
+        {localRead?.status === "expired" || localRead?.status === "invalid" ? <Callout tone="warn">The device copy is too old or cannot be read safely. No fields or requests will be restored. Discard it deliberately, then reload account notes; an earlier request may still have finished.</Callout> : null}
+        {localOn || localBlocked ? <Button label="Discard device recovery" variant="ghost" disabled={busy || captureBusy || localBusy || loading} onPress={() => void discardDevice()} /> : null}
         {loading ? <Text accessibilityLiveRegion="polite" style={textStyle}>Loading food notes…</Text> : null}
         {loadError ? <Callout tone="error">{loadError}</Callout> : null}
         <Button label="Reload food notes" variant="ghost" disabled={disabled || loading} onPress={() => void load()} />
         {deleteUnconfirmed ? <>
-          <Callout tone="warn">Removal is unconfirmed and may already have happened. Reloading alone does not cancel the earlier request or clear this warning. Leaving Today can lose the local warning.</Callout>
+          <Callout tone="warn">Removal is unconfirmed and may already have happened. Reloading alone does not cancel the earlier request or clear this warning. {localOn ? "If its device checkpoint succeeded, check for the kept warning on your next visit; it will not restore or retry automatically." : "Leaving Today can lose the local warning."}</Callout>
           <Button label="Review unconfirmed food-note removal" variant="ghost" disabled={disabled || loading} onPress={() => {
             const version = generation.current;
             void (async () => {
@@ -248,6 +337,13 @@ function AccountTodayScreen() {
               const review = await ask("Discard only the local removal warning and reload? The earlier removal is not cancelled or undone and may still finish. Check the selected day's notes again before another write.", "Review notes");
               if (!current(version)) return;
               action.current = false; if (!review) return;
+              if (localEnabled.current && localStore) {
+                action.current = true;
+                try { await localStore.discard(true); }
+                catch { if (current(version)) { setLocalBlocked(true); setLocalError("The device removal warning could not be cleared. Check or discard device recovery before another change."); } return; }
+                finally { if (current(version)) action.current = false; }
+                if (!current(version)) return;
+              }
               pendingDelete.current = null; setDeleteUnconfirmed(false); setLoaded(false);
               setError(null); setMessage("Reloading for review. Earlier removal may still finish; check this day's notes before another change.");
               await load();
@@ -268,14 +364,21 @@ function AccountTodayScreen() {
               const discard = !pendingSave.current || await ask("The note may already have saved. Discard this local draft only? Reload notes before adding it again.", "Discard local draft");
               if (!current(version)) return;
               action.current = false; if (!discard) return;
+              if (localEnabled.current && localStore) {
+                action.current = true;
+                try { await localStore.discard(true); }
+                catch { if (current(version)) { setLocalBlocked(true); setLocalError("Device draft discard was not confirmed. Your on-screen draft is still here. Check or discard device recovery."); } return; }
+                finally { if (current(version)) action.current = false; }
+                if (!current(version)) return;
+              }
               pendingSave.current = null; setUnconfirmed(false); setTitle(""); setPortion(""); setSource("text"); setUncertainty(""); id.current = null; editRevision.current = undefined; setMessage("Local draft discarded. Saved notes were not removed."); setError(null);
             })();
           }} /></View>
         {message ? <Callout tone="info">{message}</Callout> : null}{error ? <Callout tone="error">{error}</Callout> : null}
       </View>
     </Panel>
-    {client ? <FoodNoteCapture key={userId} client={client} disabled={busy || unconfirmed || deleteUnconfirmed || loading || !loaded} onBusy={setCaptureBusy} confirmReplace={confirmReplace} onDraft={(draft, kind) => {
-      if (pendingSave.current || pendingDelete.current || action.current) return;
+    {client ? <FoodNoteCapture key={userId} client={client} disabled={disabled || unconfirmed || deleteUnconfirmed || loading || !loaded} onBusy={setCaptureBusy} confirmReplace={confirmReplace} onDraft={(draft, kind) => {
+      if (localBlocked || localBusy || pendingSave.current || pendingDelete.current || action.current) return;
       setTitle(draft.title); setPortion(draft.portion ?? ""); setSource(kind); setUncertainty(draft.uncertainty); id.current = null; editRevision.current = undefined;
       setMessage("Draft ready. Check the name and portion before saving. Nothing has been saved.");
     }} /> : null}
