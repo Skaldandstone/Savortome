@@ -30,7 +30,7 @@ export function MealRenameReview({ meal, client, disabled, onPending, onConfirme
     try { exact = pending ?? parseMealTemplateRename({ previousName: meal.name, name: draft }); }
     catch { setMessage("Enter a name of one to 160 characters, without control characters."); return; }
     if (!pending && exact.name === meal.name) { setMessage("This is already the saved name."); return; }
-    const version = visit.current; action.current = true; setBusy(true);
+    const version = ++visit.current; action.current = true; setBusy(true);
     pendingRef.current = exact; setPending(exact); onPending(true); setMessage("");
     try {
       const result = await client.renameTemplate(meal.id, exact);
@@ -61,12 +61,12 @@ export function MealRenameReview({ meal, client, disabled, onPending, onConfirme
         if (!focused.current || action.current) return;
         setExpanded(false); setDraft(meal.name); setMessage("");
       }} /> : <Button label="Discard local retry and review saved meals" variant="ghost" disabled={busy} onPress={() => {
-        if (!focused.current || action.current) return;
+        if (!focused.current || action.current || !pendingRef.current) return;
         const version = visit.current;
         Alert.alert("Review an unconfirmed name?", "Discard only this local retry? The earlier rename is not cancelled and may still finish. Reload saved meals and recheck the name before making another change.", [
           { text: "Keep request", style: "cancel" },
           { text: "Discard locally", onPress: () => {
-            if (!current(version) || action.current) return;
+            if (!current(version) || action.current || !pendingRef.current) return;
             pendingRef.current = null; setPending(null); onPending(false); onReview();
           } },
         ]);
