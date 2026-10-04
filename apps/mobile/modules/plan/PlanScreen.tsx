@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -11,12 +11,11 @@ import {
   shiftWeeks,
   todayISO,
   weekLabel,
-  weekStart,
   type LibraryRecipe,
   type MealSlot,
   type PlannedMeal,
+  type SecondsClient,
 } from "@seconds/core/format";
-import { api } from "@/lib/client";
 import {
   Button,
   Callout,
@@ -36,8 +35,11 @@ import {
  * becomes a scroll. Every day and slot is still shown, empty ones included —
  * an empty Thursday is what a plan is for.
  */
-export function PlanScreen() {
-  const [week, setWeek] = useState(() => weekStart(todayISO()));
+export function PlanScreen({ initialWeek, client }: { initialWeek: string; client: SecondsClient }) {
+  const [week, setWeek] = useState(initialWeek);
+  const alive = useRef(true); const visit = useRef(0); const currentWeek = useRef(week); currentWeek.current = week;
+  const mutation = useRef(false);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; ++visit.current; }; }, []);
   const [meals, setMeals] = useState<PlannedMeal[]>([]);
   const [library, setLibrary] = useState<LibraryRecipe[]>([]);
   const [adding, setAdding] = useState<{ date: string; slot: MealSlot } | null>(null);
@@ -55,42 +57,52 @@ export function PlanScreen() {
   const today = todayISO();
 
   const load = useCallback(async (forWeek: string) => {
+    const version = visit.current;
     setError(null);
     try {
-      setMeals((await api.plan(forWeek)).meals);
+      const result = await client.plan(forWeek);
+      if (alive.current && visit.current === version && currentWeek.current === forWeek) setMeals(result.meals);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't load your plan.");
+      if (alive.current && visit.current === version && currentWeek.current === forWeek) setError("Your plan could not load. Nothing has been deleted. Try returning to this screen.");
     }
-  }, []);
+  }, [client]);
 
   // Planning happens here, but recipes arrive from other screens.
   useFocusEffect(
     useCallback(() => {
+      const version = ++visit.current;
+      mutation.current = false; setBusy(false);
       void load(week);
-      void api
+      void client
         .library()
-        .then((data) => setLibrary(data.recipes))
+        .then((data) => { if (alive.current && visit.current === version) setLibrary(data.recipes); })
         .catch(() => undefined);
-    }, [load, week]),
+      return () => { ++visit.current; };
+    }, [client, load, week]),
   );
 
   const run = async (work: () => Promise<{ meals: PlannedMeal[]; addedToList?: number }>) => {
+    if (mutation.current) return false;
+    mutation.current = true;
+    const version = visit.current; const selectedWeek = week;
     setBusy(true);
     setError(null);
     try {
       const data = await work();
+      if (!alive.current || visit.current !== version || currentWeek.current !== selectedWeek) return false;
       setMeals(data.meals);
       if (data.addedToList) setSentToList(data.addedToList);
       return true;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That didn't work.");
+      if (alive.current && visit.current === version) setError("We could not confirm that change. Reload your plan or shopping list before trying again.");
       return false;
     } finally {
-      setBusy(false);
+      if (alive.current && visit.current === version) { mutation.current = false; setBusy(false); }
     }
   };
 
   const chooseWeek = (next: string) => {
+    if (mutation.current) return;
     setConfirmingClear(false);
     setRecentlyRemoved(null);
     setPlanStatus("");
@@ -99,7 +111,7 @@ export function PlanScreen() {
 
   const removeMeal = async (meal: PlannedMeal) => {
     setPlanStatus("");
-    if (await run(() => api.planRemove(meal.recipeId, meal.date, meal.slot, week))) {
+    if (await run(() => client.planRemove(meal.recipeId, meal.date, meal.slot, week))) {
       setRecentlyRemoved(meal);
     }
   };
@@ -107,7 +119,7 @@ export function PlanScreen() {
   const undoRemoval = async () => {
     const meal = recentlyRemoved;
     if (!meal) return;
-    if (await run(() => api.planAdd(meal.recipeId, meal.date, meal.slot, week))) {
+    if (await run(() => client.planAdd(meal.recipeId, meal.date, meal.slot, week))) {
       setRecentlyRemoved(null);
       setPlanStatus(`${meal.title} is back on ${dayLabel(meal.date)}.`);
     }
@@ -115,7 +127,7 @@ export function PlanScreen() {
 
   const clearWeek = async () => {
     setPlanStatus("");
-    if (await run(() => api.planClearWeek(week))) {
+    if (await run(() => client.planClearWeek(week))) {
       setConfirmingClear(false);
       setRecentlyRemoved(null);
       setPlanStatus("The week is clear.");
@@ -149,7 +161,7 @@ export function PlanScreen() {
           <Button
             label="Add week to shopping list"
             disabled={busy || planned === 0}
-            onPress={() => void run(() => api.planToShoppingList(week))}
+            onPress={() => void run(() => client.planToShoppingList(week))}
           />
           {planned > 0 ? (
             <Button
@@ -295,7 +307,7 @@ export function PlanScreen() {
                 onPress={() => {
                   const at = adding;
                   setAdding(null);
-                  if (at) void run(() => api.planAdd(recipe.id, at.date, at.slot, week));
+                  if (at) void run(() => client.planAdd(recipe.id, at.date, at.slot, week));
                 }}
               >
                 <Text style={{ color: c.text, fontWeight: "600", fontSize: typeScale.body }}>

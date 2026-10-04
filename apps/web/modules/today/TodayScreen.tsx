@@ -7,6 +7,7 @@ import { actionFailure, signInReturnHref } from "@/lib/action-failure";
 import { Button, Callout, FieldRow, Panel, PanelHeader, TextField } from "@/ui";
 import styles from "./today.module.css";
 import { MissingShoppingReview } from "./MissingShoppingReview";
+import { PlanIdeaReview } from "./PlanIdeaReview";
 
 const base64Of = (blob: Blob) => new Promise<string>((resolve, reject) => {
   const reader = new FileReader(); reader.onerror = () => reject(new Error("File could not be read."));
@@ -245,7 +246,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
       <FieldRow><Button disabled={ideasBusy || hasShoppingPending} onClick={() => void showIdeas()}>{ideasBusy ? "Finding ideas…" : "Show me some ideas"}</Button><Button variant="ghost" disabled={hasShoppingPending} onClick={() => setShowInvitation(false)}>Not now</Button><Link href="/care">Feed me gently</Link></FieldRow>
       {ideasError ? <Callout tone="error" role="alert">{ideasError}</Callout> : null}
       {ideas?.length === 0 ? <p>No suitable saved recipes matched. <Link href="/discover">Browse starter recipes</Link> or <Link href="/care">choose something simple</Link>. Restrictions weren’t loosened.</p> : null}
-      {ideas?.map(idea => <article className={styles.idea} key={idea.recipeId}><h3><Link href={`/recipe/${idea.recipeId}`}>{idea.title}</Link></h3><p>{idea.totalMinutes === null ? "Total time not recorded" : `${idea.totalMinutes} minutes total`}</p><p>{idea.reason}</p><p>Pantry names matched: {idea.have.join(", ") || "none"}. Still needed: {idea.missing.join(", ") || "no additional names identified"}.</p><MissingShoppingReview missing={idea.missing} client={api} onPending={pending => setShoppingPending(current => ({ ...current, [idea.recipeId]: pending }))} /><Link href="/plan">Choose a meal slot in your plan</Link></article>)}
+      {ideas?.map(idea => <article className={styles.idea} key={idea.recipeId}><h3><Link href={`/recipe/${idea.recipeId}`}>{idea.title}</Link></h3><p>{idea.totalMinutes === null ? "Total time not recorded" : `${idea.totalMinutes} minutes total`}</p><p>{idea.reason}</p><p>Pantry names matched: {idea.have.join(", ") || "none"}. Still needed: {idea.missing.join(", ") || "no additional names identified"}.</p><MissingShoppingReview missing={idea.missing} client={api} onPending={pending => setShoppingPending(current => ({ ...current, [idea.recipeId]: pending }))} /><PlanIdeaReview recipeId={idea.recipeId} title={idea.title} client={api} onPending={pending => setShoppingPending(current => ({ ...current, [`plan:${idea.recipeId}`]: pending }))} /></article>)}
       {ideas?.length ? <p>Suggestions require the saved dietary tags to be explicitly present and exclude detected allergen conflicts. Tags can be wrong or incomplete. Matches use ingredient names, not quantities or preparation. Check what is actually available and your package labels. Suggestions do not verify allergy safety.</p> : null}
     </Panel> : <Button variant="ghost" onClick={() => setShowInvitation(true)}>Show the meal-planning invitation</Button>}
     <Panel><PanelHeader title="An optional food note" hint="A small memory aid, not a score. Record what you want to remember. No calorie goals, streaks, reminders or automatic pantry updates." />

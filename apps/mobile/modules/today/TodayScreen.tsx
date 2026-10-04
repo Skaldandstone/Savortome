@@ -9,6 +9,7 @@ import { createAccountClient } from "@/lib/client";
 import { Button, Callout, Field, Panel, PanelHeader, space, type as typeScale, usePalette } from "@/ui";
 import { FoodNoteCapture } from "./FoodNoteCapture";
 import { MissingShoppingReview } from "./MissingShoppingReview";
+import { PlanIdeaReview } from "./PlanIdeaReview";
 
 function ask(message: string, confirm: string): Promise<boolean> {
   return new Promise(resolve => Alert.alert("Check before continuing", message, [
@@ -173,6 +174,7 @@ function AccountTodayScreen() {
         <Text style={textStyle}>{idea.totalMinutes === null ? "Total time not recorded" : `${idea.totalMinutes} minutes total`}</Text>
         <Text style={textStyle}>{idea.reason}</Text><Text style={textStyle}>Pantry names matched: {idea.have.join(", ") || "none"}. Still needed: {idea.missing.join(", ") || "no additional names identified"}.</Text>
         {client ? <MissingShoppingReview missing={idea.missing} client={client} onPending={pending => setShoppingPending(current => ({ ...current, [idea.recipeId]: pending }))} /> : null}
+        {client ? <PlanIdeaReview recipeId={idea.recipeId} title={idea.title} client={client} onPending={pending => setShoppingPending(current => ({ ...current, [`plan:${idea.recipeId}`]: pending }))} /> : null}
         <Button label={`View ${idea.title}`} variant="ghost" onPress={() => router.push(`/recipe/${idea.recipeId}`)} />
       </View>)}
       {ideas?.length ? <Text style={textStyle}>Matches require explicit saved dietary tags and exclude detected allergen conflicts. Tags may be incomplete or wrong. Name matching ignores quantities and preparation. Check package labels; suggestions do not verify allergy safety.</Text> : null}
