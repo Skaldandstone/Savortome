@@ -53,7 +53,15 @@ export function FoodNoteCapture({ client, onDraft, onBusy, confirmReplace, disab
   const recorder = useAudioRecorder({ ...RecordingPresets.HIGH_QUALITY, directory: "cache" });
   const stop = useCallback((keep: boolean): Promise<void> => {
     if (timer.current) { clearTimeout(timer.current); timer.current = null; }
-    if (stopping.current) { if (!keep) keepStopped.current = false; return stopping.current; }
+    if (stopping.current) {
+      if (keep) return stopping.current;
+      keepStopped.current = false;
+      removeTemporaryFile(audioRef.current); audioRef.current = null;
+      if (active.current) setAudioUri(null);
+      // Discard can arrive after the stop saved its URI but before audio-mode
+      // restoration finishes. Clean up again once that same stop settles.
+      return stopping.current.then(() => { removeTemporaryFile(recorder.uri); });
+    }
     keepStopped.current = keep;
     const version = generation.current;
     const work = async () => { try {
@@ -84,7 +92,7 @@ export function FoodNoteCapture({ client, onDraft, onBusy, confirmReplace, disab
     const listener = AppState.addEventListener("change", state => {
       // System photo pickers and permission sheets may change AppState. Do not
       // invalidate a photo selection simply because its picker became active.
-      if (state !== "active" && (recordingRef.current || audioRef.current)) {
+      if (state !== "active" && (recordingRef.current || audioRef.current || stopping.current)) {
         ++generation.current; operation.current = false; setBusy(false); onBusy(false); void stop(false);
       }
     });

@@ -85,10 +85,29 @@ Food-note drafts now check a bounded file header against the claimed media type 
 
 Today uses a bounded desktop content width, existing journal panels, readable body text and labeled per-note controls. Barcode video styling uses theme background tokens. No rendered/accessibility result is claimed from these source edits.
 
-Remaining implementation review: end-to-end source consistency and media/cache interruption edges. Deferred gates: Open Food Facts legal/registration plus multi-instance shared egress quota; actual OpenAI retention/configuration review and photo metadata disclosure/removal policy; native binary/version bump and OS formats; database migration/application; unit/component/type/build, signed-in/session/rollback, accessibility/theme/device and owner acceptance. No provider enablement is implied by these edits. No tests/typechecks/builds or browser/native/provider/deployment success are claimed for the later source increments. Session comparison/keyless-development specifically need later signed-in, loading, expired-session, A-B-A account switching and mocked boundary checks. Native microphone teardown, app-crash cache retention and availability recovery remain open.
+The final source consistency and interruption review is recorded below; runtime verification remains deferred. Deferred gates: Open Food Facts legal/registration plus multi-instance shared egress quota; actual OpenAI retention/configuration review and photo metadata disclosure/removal policy; native binary/version bump and OS formats; database migration/application; unit/component/type/build, signed-in/session/rollback, accessibility/theme/device and owner acceptance. No provider enablement is implied by these edits. No tests/typechecks/builds or browser/native/provider/deployment success are claimed for the later source increments. Session comparison/keyless-development specifically need later signed-in, loading, expired-session, A-B-A account switching and mocked boundary checks. Native microphone teardown, app-crash cache retention and availability recovery remain open.
 
 Live SSE-145 was read and retains FUTURE-04/FUTURE-05 as In Progress. The Linear connector requires reauthentication, and the authenticated browser comment editor did not resolve reliably; no new Linear status or comment is claimed. Notion received the approved expansion and gamification exclusion on 3 October.
 
 Implementation references: [OpenAI structured outputs](https://developers.openai.com/api/docs/guides/structured-outputs), [image inputs](https://developers.openai.com/api/docs/guides/images-vision), [Open Food Facts API and license requirements](https://openfoodfacts.github.io/openfoodfacts-server/api/), and [barcode normalization](https://openfoodfacts.github.io/openfoodfacts-server/api/ref-barcode-normalization/). These are provider constraints, not evidence of a working deployed integration. Do not assume the older v2 API is the current recommendation; current documentation recommends v3 for new integrations.
 
 Browser camera source follows the [Shape Detection API specification](https://wicg.github.io/shape-detection-api/#barcode-detection-api). Browser support and installed-device acceptance remain pending; manual entry is the universal fallback.
+
+### Final overnight source checkpoint, 4 October
+
+The four approved implementation slices now have source on web/mobile: reviewed barcode-to-pantry, optional editable photo/voice food notes, gentle Today/check-in and pantry ideas, and the 24-entry starter catalogue. This completes the bounded overnight source pass, not product acceptance. Gamification remains excluded.
+
+The final review closes the native background-during-recorder-stop interval: discard clears sendable state immediately and attempts cache cleanup after the existing stop settles. Food-note and draft routes now opt into content-free unexpected-error logging, so raw database failures are not passed to the general error logger by these routes. Existing unrelated route logging is unchanged. Neither fix has been tested tonight.
+
+Source is preserved on `codex/food-support-expansion`; main and the existing deployed/mobile builds are unchanged. Receipt recovery PR #124 and pantry review PR #125 original branches remain preserved, and both CI checks remain in the integration source. The overnight heartbeat is to be paused at this checkpoint.
+
+Next acceptance work, deliberately deferred by tonight's instruction:
+
+- Run core/web/mobile checks and meaningful account isolation, identical retry, malformed media/link, availability and capture-interruption cases. The earlier 695-test result covers only the first checkpoint.
+- Apply migration 0020 to disposable fixtures first and exercise rollback, save/reload/delete and session changes. No migration has been applied tonight.
+- Inspect rendered narrow/wide layouts, themes, enlarged text, keyboard/screen-reader behavior and both native permission/capture lifecycles. Source styling is not visual/device acceptance.
+- Bump native version/build number and build a new installable binary. The existing app does not contain this source; there was no APK, OTA or release build tonight.
+- Before provider enablement, review Open Food Facts registration/licensing and shared egress limits, OpenAI retention and photo metadata policy, real recorder formats and explicit upload consent. Provider flags remain off and no paid/provider calls were made.
+- Reconcile the source checkpoint with Linear after connector reauthentication; Notion already contains the approved scope, but its source-delivery update remains pending. No tracker completion is claimed.
+
+No deployments, invitations, account/credential/signing changes, live billing, automatic inventory consumption or proactive reminders occurred.

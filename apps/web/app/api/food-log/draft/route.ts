@@ -7,7 +7,7 @@ import { matchesFoodMediaHeader } from "@/lib/food-media";
 export const runtime = "nodejs";
 const status = () => ({ photo: process.env.FOOD_PHOTO_ENABLED === "true" && Boolean(process.env.OPENAI_API_KEY?.trim()), voice: process.env.FOOD_VOICE_ENABLED === "true" && Boolean(process.env.OPENAI_API_KEY?.trim()) });
 const privateResponse = (response: Response) => { response.headers.set("Cache-Control", "private, no-store"); return response; };
-export async function GET() { return privateResponse(await withUser(async () => status())); }
+export async function GET() { return privateResponse(await withUser(async () => status(), { redactUnexpectedErrors: true })); }
 export async function POST(request: Request) {
   return privateResponse(await withUser(async () => {
     const enabled = status();
@@ -29,5 +29,5 @@ export async function POST(request: Request) {
     if (!matchesFoodMediaHeader(bytes, body.mediaType)) throw new BadRequestError("That file does not match its audio format. Record a new note or type one.");
     // Upload bytes and transcript are transient; only explicit later saves store a reviewed note.
     return { draft: await extractFoodVoice(bytes, body.mediaType, options) };
-  }));
+  }, { redactUnexpectedErrors: true }));
 }
