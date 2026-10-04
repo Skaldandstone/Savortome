@@ -43,7 +43,8 @@ function fixture(initial=[],platform='native'){
  state.localSet=async(key,value)=>{state.localCalls.push(['set',key]);state.localValues.set(key,value);};
  state.localRemove=async key=>{state.localCalls.push(['remove',key]);state.localValues.delete(key);};
  state.client=owner=>{if(!state.clients.has(owner))state.clients.set(owner,{foodNoteCaptureStatus:async()=>({photo:false,voice:false}),listFoodNotes:date=>{state.calls.push({kind:'list',owner,date});return state.list(owner,date);},saveFoodNote:input=>{state.calls.push({kind:'save',owner,input});return state.save(owner,input);},deleteFoodNote:id=>{state.calls.push({kind:'delete',owner,id});return state.remove(owner,id);}});return state.clients.get(owner);};
- const context={state,Date,setTimeout,clearTimeout,crypto:{randomUUID:()=>state.nextId()},document:{addEventListener:()=>{},removeEventListener:()=>{}},window:{addEventListener:()=>{},removeEventListener:()=>{},confirm:()=>true}};runInNewContext(bundle.outputFiles[0].text,context);
+ state.timers=new Map();state.nextTimer=0;
+ const context={state,Date,setTimeout:(fn,ms)=>{const key=++state.nextTimer;state.timers.set(key,{fn,ms});return key;},clearTimeout:key=>state.timers.delete(key),crypto:{randomUUID:()=>state.nextId()},document:{addEventListener:()=>{},removeEventListener:()=>{}},window:{addEventListener:()=>{},removeEventListener:()=>{},confirm:()=>true}};runInNewContext(bundle.outputFiles[0].text,context);
  const unmount=()=>{state.cleanups.filter(Boolean).forEach(fn=>fn());state.cleanups=[];};
  const render=()=>{let root=platform==='web'?context.app.WebTodayScreen({}):context.app.TodayScreen();while(typeof root.type==='function'&&!/^AccountTodayScreen\d*$/.test(root.type.name))root=root.type(root.props);if(root.key!==state.rootKey){unmount();state.rootKey=root.key;state.values=[];state.deps=[];state.effects=[];state.focus.clear();state.focusCleanups.clear();}state.cursor=0;const tree=root.type(root.props);state.effects.splice(0).forEach(fn=>fn());return tree;};
  const settle=async()=>{for(let i=0;i<4;i++){render();await flush();}return render();};
@@ -51,7 +52,8 @@ function fixture(initial=[],platform='native'){
  const focus=()=>{for(const fn of state.focus)state.focusCleanups.set(fn,fn());};
  const decide=confirm=>{const alert=state.alerts.shift();assert.ok(alert,'Expected confirmation');const buttons=alert.buttons;buttons[confirm?buttons.length-1:0].onPress();};
  const writes=kind=>state.calls.filter(c=>c.kind===kind);
- return {state,render,settle,blur,focus,unmount,decide,writes};
+ const expire=()=>{const first=state.timers.entries().next().value;assert.ok(first,'Expected storage deadline');const [key,timer]=first;assert.equal(timer.ms,12000);state.timers.delete(key);timer.fn();};
+ return {state,render,settle,blur,focus,unmount,decide,writes,expire};
 }
 fixture.counter=0;
 async function ready(initial=[]){const f=fixture(initial);await f.settle();return f;}
@@ -140,4 +142,25 @@ test('native local: failed device discard keeps record and blocks further note c
 });
 test('native local: cancelling restore preserves on-screen draft and never dispatches',async()=>{
  const f=await ready();fill(f);await localConsent(f,'Keep this draft on this device');await restart(f);fill(f,'Different soup','One bowl');await localConsent(f);await press(f,'Restore kept food note');f.decide(false);await f.settle();assert.equal(field(f.render(),'Food name').props.value,'Different soup');assert.equal(f.writes('save').length,0);assert.equal(f.state.localValues.size,1);
+});
+test('native local: failed fresh read invalidates earlier restore offer',async()=>{
+ const f=await ready();fill(f);await localConsent(f,'Keep this draft on this device');await restart(f);await localConsent(f);assert.ok(button(f.render(),'Restore kept food note'));
+ f.state.localGet=async()=>{throw Error('storage unavailable');};await localConsent(f);assert.match(text(f.render()),/recovery could not be confirmed/);assert.equal(button(f.render(),'Restore kept food note'),undefined);assert.equal(f.writes('save').length,0);
+});
+test('native local: failed discard invalidates the old restore offer until a fresh read',async()=>{
+ const f=await ready();fill(f);await localConsent(f,'Keep this draft on this device');await restart(f);await localConsent(f);f.state.localRemove=async()=>{throw Error('unavailable');};await press(f,'Discard device recovery');f.decide(true);await f.settle();
+ assert.match(text(f.render()),/discard was not confirmed/);assert.equal(button(f.render(),'Restore kept food note'),undefined);assert.equal(f.writes('save').length,0);
+});
+test('native local: timed-out read withholds late record until deliberate reread',async()=>{
+ const f=await ready();fill(f);await localConsent(f,'Keep this draft on this device');await restart(f);const gate=deferred();const original=f.state.localGet;f.state.localGet=()=>gate.promise;
+ await press(f,'Check for a kept food note');f.decide(true);await flush();f.expire();await f.settle();assert.match(text(f.render()),/recovery could not be confirmed/);assert.equal(button(f.render(),'Restore kept food note'),undefined);
+ gate.resolve([...f.state.localValues.values()][0]);await f.settle();assert.equal(button(f.render(),'Restore kept food note'),undefined);f.state.localGet=original;await localConsent(f);assert.ok(button(f.render(),'Restore kept food note'));assert.equal(f.writes('save').length,0);
+});
+test('native local: timed-out pre-save checkpoint never dispatches even if write later completes',async()=>{
+ const f=await ready();fill(f);await localConsent(f,'Keep this draft on this device');const gate=deferred();const original=f.state.localSet;f.state.localSet=async(...args)=>{await gate.promise;await original(...args);};await press(f,'Save reviewed edits');f.expire();await f.settle();
+ assert.equal(f.writes('save').length,0);assert.match(text(f.render()),/could not confirm/);gate.resolve();await f.settle();assert.equal(f.writes('save').length,0);assert.equal(JSON.parse([...f.state.localValues.values()][0]).recovery.kind,'save-unconfirmed');assert.equal(field(f.render(),'Food name').props.editable,false);
+});
+test('native local: expired discard keeps notes blocked after late local deletion until explicit check',async()=>{
+ const f=await ready();fill(f);await localConsent(f,'Keep this draft on this device');await restart(f);await localConsent(f);const gate=deferred();const original=f.state.localRemove;f.state.localRemove=async(...args)=>{await gate.promise;await original(...args);};await press(f,'Discard device recovery');f.decide(true);await flush();f.expire();await f.settle();assert.match(text(f.render()),/discard was not confirmed/);
+ gate.resolve();await f.settle();assert.equal(f.state.localValues.size,0);assert.equal(field(f.render(),'Food name').props.editable,false);await localConsent(f);assert.match(text(f.render()),/No device copy found/);assert.equal(f.writes('delete').length,0);
 });

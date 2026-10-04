@@ -190,7 +190,7 @@ function AccountTodayScreen() {
     try {
       const consent = await ask("Keep and check a food-note copy in secure storage on this device? Only this account and app environment can access it. Original photos/audio are not kept. Copies older than 24 hours cannot restore. Sign-out does not erase copies; use Discard device recovery to remove them. Nothing saves to your account or retries automatically.", "Allow device recovery");
       if (!consent || !current(version)) return;
-      localEnabled.current = true; setLocalOn(true); setLocalBlocked(true);
+      localEnabled.current = true; setLocalOn(true); setLocalBlocked(true); setLocalRead(null);
       const found = await localStore.read(true);
       if (!current(version)) return;
       setLocalRead(found);
@@ -233,6 +233,9 @@ function AccountTodayScreen() {
     const version = generation.current; action.current = true; setLocalBusy(true);
     try {
       if (!await ask("Remove only the device copy and disable device recovery for this visit? Earlier account/local operations are not cancelled and may still finish. Reload before another account change.", "Discard device copy") || !current(version)) return;
+      // A started discard can still complete after an error/timeout. The
+      // previous read must never remain available as a trusted restore offer.
+      setLocalRead(null);
       await localStore.discard(true);
       if (!current(version)) return;
       localEnabled.current = false; setLocalOn(false); setLocalBlocked(false); setLocalRead(null); setLocalError(null); setLoaded(false);
