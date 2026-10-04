@@ -16,13 +16,25 @@ export function PlanIdeaReview({ recipeId, title, client, onPending }: { recipeI
     let exact: ReviewedMealInput;
     try { exact = pending ?? parseReviewedMeal({ recipeId, date, slot }); }
     catch { setMessage("Choose a valid date and meal slot before adding this recipe."); return; }
-    const version = visit.current; action.current = true; setBusy(true); setPending(exact); onPending(true); setMessage("");
+    const version = ++visit.current; action.current = true; setBusy(true); setPending(exact); onPending(true); setMessage("");
     try {
       const result = await client.reviewedPlanAdd(exact);
       if (!result.meals.some(meal => meal.recipeId === exact.recipeId && meal.date === exact.date && meal.slot === exact.slot)) throw new Error("Unconfirmed");
       if (alive.current && focused.current && visit.current === version) { setDone(true); setPending(null); onPending(false); setMessage(`${title} is planned for ${exact.date}, ${MEAL_SLOT_LABEL[exact.slot]}. Existing meals were kept. Pantry, food notes and shopping list were not changed.`); }
     } catch { if (alive.current && focused.current && visit.current === version) setMessage("We could not confirm the meal. It may already be planned. Keep this exact selection for retry, or check your plan."); }
     finally { if (alive.current && focused.current && visit.current === version) { action.current = false; setBusy(false); } }
+  };
+  const discardRetry = () => {
+    if (action.current || !pending || !alive.current || !focused.current) return;
+    const version = visit.current;
+    Alert.alert("Discard local retry state?", "The meal may already be planned. This will not remove it.", [
+      { text: "Keep selection", style: "cancel" },
+      { text: "Discard", onPress: () => {
+        if (!alive.current || !focused.current || visit.current !== version || action.current) return;
+        setPending(null); onPending(false);
+        setMessage("Local retry state discarded. Check your plan before choosing another date or slot.");
+      } },
+    ]);
   };
   const openPlan = () => {
     try { const input = parseReviewedMeal({ recipeId, date, slot: slot || "dinner" }); router.push({ pathname: "/(protected)/(tabs)/plan", params: { week: weekStart(input.date) } }); }
@@ -36,7 +48,7 @@ export function PlanIdeaReview({ recipeId, title, client, onPending }: { recipeI
       <Text style={text}>Choose a meal slot</Text><View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>{MEAL_SLOTS.map(value => <Button key={value} label={MEAL_SLOT_LABEL[value]} variant="toggle" selected={slot === value} disabled={busy || pending !== null || done} onPress={() => setSlot(value)} />)}</View>
       <Button label={busy ? "Adding meal…" : pending ? "Retry this exact meal" : "Add this meal to my plan"} disabled={busy || done || !date || !slot} onPress={() => void save()} />
       <Button label="Check this week in my plan" variant="ghost" onPress={openPlan} />
-      {pending ? <><Text style={text}>This selection is unconfirmed. Changing ideas is paused. Leaving Today may lose local retry state; check your plan when you return.</Text><Button label="Discard local retry state" variant="ghost" disabled={busy} onPress={() => Alert.alert("Discard local retry state?", "The meal may already be planned. This will not remove it.", [{ text: "Keep selection", style: "cancel" }, { text: "Discard", onPress: () => { if (alive.current && focused.current) { setPending(null); onPending(false); setMessage("Local retry state discarded. Check your plan before choosing another date or slot."); } } }])} /></> : null}
+      {pending ? <><Text style={text}>This selection is unconfirmed. Changing ideas is paused. Leaving Today may lose local retry state; check your plan when you return.</Text><Button label="Discard local retry state" variant="ghost" disabled={busy} onPress={discardRetry} /></> : null}
       {message ? <Callout tone={done ? "info" : "error"}>{message}</Callout> : null}
     </> : null}
   </View>;

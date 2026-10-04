@@ -1,0 +1,44 @@
+// Actual web/native meal review and parser; synthetic hooks/API/Alert/router.
+// No hosted planning write, account, device or rendered acceptance.
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {runInNewContext} from 'node:vm';
+import {build} from 'esbuild';
+const mocks={
+ react:`export const useState=v=>{const i=state.cursor++;if(!(i in state.values))state.values[i]=typeof v==='function'?v():v;return[state.values[i],v=>state.values[i]=typeof v==='function'?v(state.values[i]):v];};export const useRef=v=>state.values[state.cursor++]??={current:v};export const useCallback=(fn,deps)=>{const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){state.deps[i]=deps;state.values[i]=fn;}return state.values[i];};export const useEffect=(fn,deps)=>{const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){state.cleanups[i]?.();state.deps[i]=deps;state.effects.push(()=>state.cleanups[i]=fn());}};`,
+ 'react/jsx-runtime':`export const Fragment='Fragment';export const jsx=(type,props)=>({type,props});export const jsxs=jsx;`,
+ 'react-native':`export const Text='Text',View='View';export const Alert={alert:(title,message,buttons)=>state.alerts.push({title,message,buttons})};`,
+ 'expo-router':`import {useEffect} from 'react';export const useRouter=()=>({push:path=>state.routes.push(path)});export const useFocusEffect=fn=>useEffect(()=>{state.focus=fn;state.blur=fn();return()=>state.blur?.();},[fn]);`,
+ 'next/link':`export default 'Link';`,
+ '@/ui':`export const Button='Button',Callout='Callout',Field='Field',FieldRow='FieldRow',space={sm:8},type={body:16},usePalette=()=>({textMuted:'#ccc'});`,
+ '@seconds/core/format':`export {localFoodDate} from './packages/core/src/food-log.ts';export {MEAL_SLOTS,MEAL_SLOT_LABEL,weekStart} from './packages/core/src/plan.ts';export {parseReviewedMeal} from './packages/core/src/reviewed-meal.ts';`,
+};
+const bundle=await build({bundle:true,write:false,format:'iife',globalName:'app',jsx:'automatic',stdin:{resolveDir:process.cwd(),contents:`export {PlanIdeaReview as Native} from './apps/mobile/modules/today/PlanIdeaReview.tsx';export {PlanIdeaReview as Web} from './apps/web/modules/today/PlanIdeaReview.tsx';`},plugins:[{name:'review-boundaries',setup(api){api.onResolve({filter:/.*/},args=>Object.hasOwn(mocks,args.path)?{path:args.path,namespace:'mock'}:undefined);api.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:mocks[args.path],loader:'js',resolveDir:process.cwd()}));}}]});
+const flush=()=>new Promise(resolve=>setImmediate(resolve));
+const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return{promise,resolve,reject};};
+const recipeId='00000000-0000-4000-8000-000000000001';
+function nodes(t){return Array.isArray(t)?t.flatMap(nodes):t&&typeof t==='object'?[t,...nodes(t.props?.children)]:[];}
+function text(t){return Array.isArray(t)?t.map(text).join(' '):t&&typeof t==='object'?text(t.props?.children):t==null?'':String(t);}
+function fixture(platform){
+ const state={cursor:0,values:[],deps:[],cleanups:[],effects:[],calls:[],pending:[],routes:[],alerts:[],confirm:true};
+ state.save=async input=>({meals:[{...input}]});const client={reviewedPlanAdd:input=>{state.calls.push(input);return state.save(input);}};
+ const context={state,window:{confirm:()=>state.confirm}};runInNewContext(bundle.outputFiles[0].text,context);
+ const render=()=>{state.cursor=0;const tree=context.app[platform]({recipeId,title:'Fixture soup',client,onPending:value=>state.pending.push(value)});state.effects.splice(0).forEach(fn=>fn());return tree;};
+ const button=label=>{const found=nodes(render()).find(n=>n.type==='Button'&&(n.props.label??text(n)).replace(/\s+/g,' ').trim()===label);assert.ok(found,`Missing ${label}`);return found;};
+ const press=label=>{const b=button(label);assert.equal(!!b.props.disabled,false);(b.props.onPress??b.props.onClick)();};
+ const settle=async()=>{for(let i=0;i<3;i++){render();await flush();}return render();};
+ const choose=()=>{if(platform==='Native')press('Dinner');else nodes(render()).find(n=>n.type==='select').props.onChange({target:{value:'dinner'}});};
+ const unmount=()=>state.cleanups.filter(Boolean).forEach(fn=>fn());
+ render();if(platform==='Native')press('Choose a day and meal for Fixture soup');
+ return{state,render,button,press,settle,choose,unmount};
+}
+for(const platform of ['Web','Native']){
+ test(`${platform}: explicit valid slot required; exact response confirms once`,async()=>{const f=fixture(platform);assert.equal(f.state.calls.length,0);f.button('Add this meal to my plan').props[platform==='Web'?'onClick':'onPress']();await f.settle();assert.equal(f.state.calls.length,0);assert.match(text(f.render()),/Choose a valid/);f.choose();f.press('Add this meal to my plan');await f.settle();assert.match(text(f.render()),/is planned/);assert.deepEqual(f.state.pending,[true,false]);assert.equal(f.button('Add this meal to my plan').props.disabled,true);});
+ test(`${platform}: rejected write locks exact selection and retry preserves immutable input`,async()=>{const f=fixture(platform),gate=deferred();f.state.save=()=>gate.promise;f.choose();f.press('Add this meal to my plan');const b=f.button('Adding meal…');assert.equal(b.props.disabled,true);(b.props.onPress??b.props.onClick)();assert.equal(f.state.calls.length,1);gate.reject(Error('private planning response'));await f.settle();assert.match(text(f.render()),/could not confirm/);assert.doesNotMatch(text(f.render()),/private planning response/);const exact=f.state.calls[0];f.state.save=async input=>({meals:[{...input}]});f.press('Retry this exact meal');await f.settle();assert.equal(f.state.calls[1],exact);assert.match(text(f.render()),/is planned/);});
+ test(`${platform}: mismatched response cannot confirm or unlock another selection`,async()=>{const f=fixture(platform);f.choose();f.state.save=async input=>({meals:[{...input,slot:'lunch'}]});f.press('Add this meal to my plan');await f.settle();assert.match(text(f.render()),/could not confirm/);assert.doesNotMatch(text(f.render()),/is planned/);assert.deepEqual(f.state.pending,[true]);assert.ok(f.button('Retry this exact meal'));});
+ test(`${platform}: late write after unmount cannot claim success or release parent lock`,async()=>{const f=fixture(platform),gate=deferred();f.state.save=()=>gate.promise;f.choose();f.press('Add this meal to my plan');f.unmount();gate.resolve({meals:[f.state.calls[0]]});await flush();assert.deepEqual(f.state.pending,[true]);assert.doesNotMatch(text(f.render()),/is planned/);});
+}
+test('Native: discard prompt from old focus cannot clear retry state after reentry',async()=>{const f=fixture('Native');f.choose();f.state.save=async()=>{throw Error('fixture failure');};f.press('Add this meal to my plan');await f.settle();f.press('Discard local retry state');const alert=f.state.alerts.shift();f.state.blur();f.state.blur=f.state.focus();await f.settle();alert.buttons[1].onPress();await f.settle();assert.deepEqual(f.state.pending,[true]);assert.ok(f.button('Retry this exact meal'));});
+test('Native: old discard prompt cannot release a new in-flight exact retry',async()=>{const f=fixture('Native');f.choose();f.state.save=async()=>{throw Error('fixture failure');};f.press('Add this meal to my plan');await f.settle();f.press('Discard local retry state');const alert=f.state.alerts.shift(),gate=deferred();f.state.save=()=>gate.promise;f.press('Retry this exact meal');alert.buttons[1].onPress();await f.settle();assert.deepEqual(f.state.pending,[true,true]);assert.match(text(f.render()),/selection is unconfirmed/);gate.reject(Error('fixture failure'));await f.settle();assert.ok(f.button('Retry this exact meal'));});
+test('Native: current deliberate discard releases only local retry and makes no write',async()=>{const f=fixture('Native');f.choose();f.state.save=async()=>{throw Error('fixture failure');};f.press('Add this meal to my plan');await f.settle();f.press('Discard local retry state');f.state.alerts.shift().buttons[1].onPress();await f.settle();assert.deepEqual(f.state.pending,[true,false]);assert.equal(f.state.calls.length,1);assert.match(text(f.render()),/Local retry state discarded/);assert.ok(f.button('Add this meal to my plan'));});
+test('Native: old prompt after a completed newer retry cannot overwrite its confirmation',async()=>{const f=fixture('Native');f.choose();f.state.save=async()=>{throw Error('fixture failure');};f.press('Add this meal to my plan');await f.settle();f.press('Discard local retry state');const alert=f.state.alerts.shift();f.state.save=async input=>({meals:[input]});f.press('Retry this exact meal');await f.settle();alert.buttons[1].onPress();await f.settle();assert.match(text(f.render()),/is planned/);assert.doesNotMatch(text(f.render()),/Local retry state discarded/);assert.deepEqual(f.state.pending,[true,true,false]);});
