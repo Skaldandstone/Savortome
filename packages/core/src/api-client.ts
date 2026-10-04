@@ -552,12 +552,12 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
       if (query?.trim()) params.set("q", query.trim());
       if (sort && sort !== "newest") params.set("sort", sort);
       const qs = params.toString();
-      return send<LibraryResponse>(`/api/recipes${qs ? `?${qs}` : ""}`);
+      return sendTimed<LibraryResponse>(`/api/recipes${qs ? `?${qs}` : ""}`, {}, 12_000);
     },
 
     credits: () => send<CreditsResponse>("/api/credits"),
 
-    plan: (week) => send<PlanResponse>(`/api/plan${week ? `?week=${week}` : ""}`),
+    plan: (week) => sendTimed<PlanResponse>(`/api/plan${week ? `?week=${encodeURIComponent(week)}` : ""}`, {}, 12_000),
 
     planTogether: (options) => {
       const query = new URLSearchParams();
@@ -565,36 +565,36 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
       if (options?.pantryOnly) query.set("pantryOnly", "true");
       if (options?.maxMinutes !== undefined) query.set("maxMinutes", String(options.maxMinutes));
       const encoded = query.toString();
-      return send<{ ideas: PlanTogetherIdea[]; pantryCount: number }>(`/api/plan/together${encoded ? `?${encoded}` : ""}`);
+      return sendTimed<{ ideas: PlanTogetherIdea[]; pantryCount: number }>(`/api/plan/together${encoded ? `?${encoded}` : ""}`, {}, 12_000);
     },
 
     reviewedPlanAdd: (input) => sendTimed<PlanResponse>("/api/plan/meal", { method: "POST", body: body(input) }, 12_000),
     planAdd: (recipeId, date, slot, week) =>
-      send<PlanResponse>("/api/plan", {
+      sendTimed<PlanResponse>("/api/plan", {
         method: "POST",
         body: body({ action: "add", recipeId, date, slot, week }),
-      }),
+      }, 12_000),
 
     planRemove: (recipeId, date, slot, week) =>
-      send<PlanResponse>("/api/plan", {
+      sendTimed<PlanResponse>("/api/plan", {
         method: "POST",
         body: body({ action: "remove", recipeId, date, slot, week }),
-      }),
+      }, 12_000),
 
     planMove: (recipeId, from, to, week) =>
-      send<PlanResponse>("/api/plan", {
+      sendTimed<PlanResponse>("/api/plan", {
         method: "POST",
         body: body({ action: "move", recipeId, from, date: to.date, slot: to.slot, week }),
-      }),
+      }, 12_000),
 
     planClearWeek: (week) =>
-      send<PlanResponse>("/api/plan", { method: "POST", body: body({ action: "clearWeek", week }) }),
+      sendTimed<PlanResponse>("/api/plan", { method: "POST", body: body({ action: "clearWeek", week }) }, 12_000),
 
     planToShoppingList: (week) =>
-      send<PlanResponse>("/api/plan", {
+      sendTimed<PlanResponse>("/api/plan", {
         method: "POST",
         body: body({ action: "toShoppingList", week }),
-      }),
+      }, 12_000),
 
     mySuggestions: () => send<{ suggestions: PlanSuggestion[] }>("/api/plan/suggestions"),
 

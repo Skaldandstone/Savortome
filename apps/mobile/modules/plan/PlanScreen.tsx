@@ -27,6 +27,7 @@ import {
   type as typeScale,
   usePalette,
 } from "@/ui";
+import { useReducedMotion } from "@/ui/ThemeProvider";
 
 /**
  * A week of meals, a day at a time.
@@ -41,11 +42,22 @@ export function PlanScreen({ initialWeek, client }: { initialWeek: string; clien
   const mutation = useRef(false);
   useEffect(() => { alive.current = true; return () => { alive.current = false; ++visit.current; }; }, []);
   const [meals, setMeals] = useState<PlannedMeal[]>([]);
+  const [loadedWeek, setLoadedWeek] = useState<string | null>(null);
+  const [planLoading, setPlanLoading] = useState(false);
+  const [planError, setPlanError] = useState<string | null>(null);
+  const planRequest = useRef(0);
   const [library, setLibrary] = useState<LibraryRecipe[]>([]);
+  const [libraryLoaded, setLibraryLoaded] = useState(false);
+  const [libraryLoading, setLibraryLoading] = useState(false);
+  const [libraryError, setLibraryError] = useState<string | null>(null);
+  const libraryRequest = useRef(0);
   const [adding, setAdding] = useState<{ date: string; slot: MealSlot } | null>(null);
   const [filter, setFilter] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unconfirmed, setUnconfirmed] = useState(false);
+  const uncertain = useRef(false);
+  const [reviewReloaded, setReviewReloaded] = useState(false);
   const [sentToList, setSentToList] = useState<number | null>(null);
   const [confirmingClear, setConfirmingClear] = useState(false);
   const [recentlyRemoved, setRecentlyRemoved] = useState<PlannedMeal | null>(null);
@@ -53,48 +65,65 @@ export function PlanScreen({ initialWeek, client }: { initialWeek: string; clien
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = usePalette();
+  const reducedMotion = useReducedMotion();
 
   const today = todayISO();
 
   const load = useCallback(async (forWeek: string) => {
     const version = visit.current;
-    setError(null);
+    const request = ++planRequest.current;
+    setPlanLoading(true); setPlanError(null);
     try {
       const result = await client.plan(forWeek);
-      if (alive.current && visit.current === version && currentWeek.current === forWeek) setMeals(result.meals);
+      if (alive.current && visit.current === version && currentWeek.current === forWeek && planRequest.current === request) { setMeals(result.meals); setLoadedWeek(forWeek); if (uncertain.current) setReviewReloaded(true); }
     } catch (err) {
-      if (alive.current && visit.current === version && currentWeek.current === forWeek) setError("Your plan could not load. Nothing has been deleted. Try returning to this screen.");
+      if (alive.current && visit.current === version && currentWeek.current === forWeek && planRequest.current === request) setPlanError("Your plan could not load. Nothing has been deleted. Load it again before changing meals.");
+    } finally {
+      if (alive.current && visit.current === version && planRequest.current === request) setPlanLoading(false);
     }
+  }, [client]);
+  const loadLibrary = useCallback(async () => {
+    const version = visit.current; const request = ++libraryRequest.current;
+    setLibraryLoading(true); setLibraryError(null);
+    try {
+      const result = await client.library();
+      if (alive.current && visit.current === version && libraryRequest.current === request) { setLibrary(result.recipes); setLibraryLoaded(true); }
+    } catch {
+      if (alive.current && visit.current === version && libraryRequest.current === request) setLibraryError("Your recipes could not load. Your collection was not deleted. Try loading it again.");
+    } finally { if (alive.current && visit.current === version && libraryRequest.current === request) setLibraryLoading(false); }
   }, [client]);
 
   // Planning happens here, but recipes arrive from other screens.
   useFocusEffect(
     useCallback(() => {
-      const version = ++visit.current;
+      ++visit.current;
       mutation.current = false; setBusy(false);
       void load(week);
-      void client
-        .library()
-        .then((data) => { if (alive.current && visit.current === version) setLibrary(data.recipes); })
-        .catch(() => undefined);
+      void loadLibrary();
       return () => { ++visit.current; };
-    }, [client, load, week]),
+    }, [load, loadLibrary, week]),
   );
 
   const run = async (work: () => Promise<{ meals: PlannedMeal[]; addedToList?: number }>) => {
-    if (mutation.current) return false;
+    if (mutation.current || uncertain.current || planLoading || loadedWeek !== week || planError) return false;
     mutation.current = true;
+    // Freeze other writes immediately, including if focus changes before this
+    // request settles. Suppressing late feedback must not imply no write ran.
+    uncertain.current = true; setUnconfirmed(true); setReviewReloaded(false);
     const version = visit.current; const selectedWeek = week;
+    ++planRequest.current;
     setBusy(true);
     setError(null);
     try {
       const data = await work();
       if (!alive.current || visit.current !== version || currentWeek.current !== selectedWeek) return false;
       setMeals(data.meals);
+      setLoadedWeek(selectedWeek);
+      uncertain.current = false; setUnconfirmed(false); setReviewReloaded(false);
       if (data.addedToList) setSentToList(data.addedToList);
       return true;
     } catch (err) {
-      if (alive.current && visit.current === version) setError("We could not confirm that change. Reload your plan or shopping list before trying again.");
+      if (alive.current && visit.current === version) { uncertain.current = true; setUnconfirmed(true); setReviewReloaded(false); setError("We could not confirm that change. It may already have saved. Reload the plan and check your shopping list if you sent meals there. Do not repeat an uncertain shopping-list write automatically."); }
       return false;
     } finally {
       if (alive.current && visit.current === version) { mutation.current = false; setBusy(false); }
@@ -102,10 +131,11 @@ export function PlanScreen({ initialWeek, client }: { initialWeek: string; clien
   };
 
   const chooseWeek = (next: string) => {
-    if (mutation.current) return;
+    if (mutation.current || uncertain.current) return;
     setConfirmingClear(false);
     setRecentlyRemoved(null);
     setPlanStatus("");
+    setSentToList(null); setAdding(null); setPlanError(null); setLoadedWeek(null);
     setWeek(next);
   };
 
@@ -119,7 +149,7 @@ export function PlanScreen({ initialWeek, client }: { initialWeek: string; clien
   const undoRemoval = async () => {
     const meal = recentlyRemoved;
     if (!meal) return;
-    if (await run(() => client.planAdd(meal.recipeId, meal.date, meal.slot, week))) {
+    if (await run(() => client.reviewedPlanAdd({ recipeId: meal.recipeId, date: meal.date, slot: meal.slot }))) {
       setRecentlyRemoved(null);
       setPlanStatus(`${meal.title} is back on ${dayLabel(meal.date)}.`);
     }
@@ -134,11 +164,12 @@ export function PlanScreen({ initialWeek, client }: { initialWeek: string; clien
     }
   };
 
-  const grid = groupByDay(meals, week);
-  const planned = recipeIdsIn(meals).length;
+  const grid = loadedWeek === week ? groupByDay(meals, week) : [];
+  const planned = loadedWeek === week ? recipeIdsIn(meals).length : 0;
   const shown = filter.trim()
     ? library.filter((r) => r.title.toLowerCase().includes(filter.trim().toLowerCase()))
     : library;
+  const blocked = busy || unconfirmed || planLoading || loadedWeek !== week || planError !== null;
 
   return (
     <ScrollView
@@ -152,22 +183,25 @@ export function PlanScreen({ initialWeek, client }: { initialWeek: string; clien
         />
 
         <View style={styles.weekBar}>
-          <Button label="←" accessibilityLabel="Previous week" variant="ghost" onPress={() => chooseWeek(shiftWeeks(week, -1))} />
+          <Button label="←" accessibilityLabel="Previous week" variant="ghost" disabled={busy || unconfirmed} onPress={() => chooseWeek(shiftWeeks(week, -1))} />
           <Text style={[styles.weekLabel, { color: c.text }]}>{weekLabel(week)}</Text>
-          <Button label="→" accessibilityLabel="Next week" variant="ghost" onPress={() => chooseWeek(shiftWeeks(week, 1))} />
+          <Button label="→" accessibilityLabel="Next week" variant="ghost" disabled={busy || unconfirmed} onPress={() => chooseWeek(shiftWeeks(week, 1))} />
         </View>
+        {planLoading ? <Text accessibilityLiveRegion="polite" style={[styles.calloutText, { color: c.textMuted }]}>Loading this week… Editing is paused.</Text> : null}
+        {planError ? <Callout tone="error"><Text style={[styles.calloutText, { color: c.textMuted }]}>{planError}</Text><Button label="Load this week again" disabled={planLoading || busy} onPress={() => void load(week)} /></Callout> : null}
+        {loadedWeek === week && (planLoading || planError) ? <Text style={[styles.calloutText, { color: c.textMuted }]}>Showing the last loaded meals for this week. They may have changed.</Text> : null}
 
         <View style={styles.weekActions}>
           <Button
             label="Add week to shopping list"
-            disabled={busy || planned === 0}
+            disabled={blocked || planned === 0}
             onPress={() => void run(() => client.planToShoppingList(week))}
           />
           {planned > 0 ? (
             <Button
               label="Clear week"
               variant="ghost"
-              disabled={busy}
+              disabled={blocked}
               selected={confirmingClear}
               onPress={() => {
                 setPlanStatus("");
@@ -184,7 +218,7 @@ export function PlanScreen({ initialWeek, client }: { initialWeek: string; clien
               <Button
                 label={busy ? "Clearing…" : "Clear every meal"}
                 variant="danger"
-                disabled={busy}
+                disabled={blocked}
                 onPress={() => void clearWeek()}
               />
               <Button label="Keep this week" variant="ghost" disabled={busy} onPress={() => setConfirmingClear(false)} />
@@ -204,13 +238,19 @@ export function PlanScreen({ initialWeek, client }: { initialWeek: string; clien
             <View style={styles.recoveryActions}>
               <Button
                 label={busy ? "Restoring…" : "Undo"}
-                disabled={busy}
+                disabled={blocked}
                 onPress={() => void undoRemoval()}
               />
             </View>
           </Callout>
         ) : planStatus ? <Callout tone="info">{planStatus}</Callout> : null}
         {error ? <Callout tone="error">{error}</Callout> : null}
+        {unconfirmed ? <Callout tone="warn" title="Check the result before another change">
+          <Text style={[styles.calloutText, { color: c.textMuted }]}>Your request may still finish later. Reloading is a current view, not proof that a timed-out write never saved. Leaving this screen may lose this local warning.</Text>
+          <Button label="Reload this week to review" disabled={planLoading || busy} onPress={() => void load(week)} />
+          <Button label="Check shopping list" variant="ghost" onPress={() => router.push("/(protected)/(tabs)/list")} />
+          <Button label="I reviewed the result; allow further changes" variant="ghost" disabled={!reviewReloaded || planLoading || planError !== null} onPress={() => { uncertain.current = false; setUnconfirmed(false); setError(null); setConfirmingClear(false); setRecentlyRemoved(null); setSentToList(null); setPlanStatus("Review acknowledged. No request was repeated and nothing was undone."); }} />
+        </Callout> : null}
       </Panel>
 
       {grid.map((day) => (
@@ -254,7 +294,7 @@ export function PlanScreen({ initialWeek, client }: { initialWeek: string; clien
                     accessibilityRole="button"
                     accessibilityLabel={`Remove ${meal.title} from ${dayLabel(day.date)}`}
                     style={styles.remove}
-                    disabled={busy}
+                    disabled={blocked}
                     onPress={() => void removeMeal(meal)}
                   >
                     <Text style={{ color: c.textMuted, fontSize: typeScale.title }}>×</Text>
@@ -265,7 +305,7 @@ export function PlanScreen({ initialWeek, client }: { initialWeek: string; clien
               <Button
                 label="+ Add"
                 variant="ghost"
-                disabled={busy}
+                disabled={blocked}
                 onPress={() => {
                   setFilter("");
                   setAdding({ date: day.date, slot });
@@ -278,7 +318,7 @@ export function PlanScreen({ initialWeek, client }: { initialWeek: string; clien
 
       <Modal
         visible={adding !== null}
-        animationType="slide"
+        animationType={reducedMotion ? "none" : "slide"}
         presentationStyle="pageSheet"
         onRequestClose={() => setAdding(null)}
       >
@@ -296,18 +336,22 @@ export function PlanScreen({ initialWeek, client }: { initialWeek: string; clien
             autoCapitalize="none"
             accessibilityLabel="Filter your recipes"
             onChangeText={setFilter}
+            editable={libraryLoaded && !busy}
           />
+          {libraryLoading ? <Text accessibilityLiveRegion="polite" style={[styles.calloutText, { color: c.textMuted }]}>Loading your recipes…</Text> : null}
+          {libraryError ? <Callout tone="error"><Text style={[styles.calloutText, { color: c.textMuted }]}>{libraryError}</Text><Button label="Load recipes again" disabled={libraryLoading} onPress={() => void loadLibrary()} /></Callout> : null}
 
           <ScrollView contentContainerStyle={styles.pickList} keyboardShouldPersistTaps="handled">
-            {shown.map((recipe) => (
+            {libraryLoaded ? shown.map((recipe) => (
               <Pressable
                 key={recipe.id}
                 accessibilityRole="button"
                 style={[styles.pick, { backgroundColor: c.surface, borderColor: c.border }]}
+                disabled={blocked || libraryLoading || libraryError !== null}
                 onPress={() => {
                   const at = adding;
                   setAdding(null);
-                  if (at) void run(() => client.planAdd(recipe.id, at.date, at.slot, week));
+                  if (at) void run(() => client.reviewedPlanAdd({ recipeId: recipe.id, date: at.date, slot: at.slot }));
                 }}
               >
                 <Text style={{ color: c.text, fontWeight: "600", fontSize: typeScale.body }}>
@@ -317,8 +361,8 @@ export function PlanScreen({ initialWeek, client }: { initialWeek: string; clien
                   {recipe.attribution}
                 </Text>
               </Pressable>
-            ))}
-            {shown.length === 0 ? (
+            )) : null}
+            {libraryLoaded && !libraryLoading && !libraryError && shown.length === 0 ? (
               <Text style={{ color: c.textMuted, fontSize: typeScale.small }}>
                 {library.length === 0
                   ? "Nothing in your recipes yet — import or write one first."
