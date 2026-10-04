@@ -223,7 +223,8 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
     action.current = true; ++request.current; setLoading(false);
     const account = owner.current; const epoch = accountEpoch.current; setBusy(true); setError("");
     try {
-      await api.deleteFoodNote(id);
+      const result = await api.deleteFoodNote(id);
+      if (result.deleted !== true) throw new Error("Unconfirmed removal");
       if (!alive.current || accountEpoch.current !== epoch || owner.current !== account) return;
       setNotes(current => current.filter(note => note.id !== id)); setConfirmDelete(null); setStatus("Food note removed. Pantry and plans were not changed.");
     } catch (cause) { if (alive.current && accountEpoch.current === epoch && owner.current === account) failure(cause, "Could not confirm removal. Reload notes to check."); }
