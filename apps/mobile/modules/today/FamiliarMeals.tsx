@@ -4,6 +4,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { orderedTemplateItems, templateFoodNoteName, TEMPLATE_ROLE_LABEL, type MealTemplate, type SecondsClient } from "@seconds/core/format";
 import { Button, Callout, Panel, PanelHeader, space, type as typeScale, usePalette } from "@/ui";
 import { CombinationPlanReview } from "./CombinationPlanReview";
+import { MealRenameReview } from "./MealRenameReview";
 
 export function FamiliarMeals({ client, disabled, onDraft, onPending }: {
   client: SecondsClient; disabled: boolean; onDraft: (title: string) => boolean | Promise<boolean>; onPending: (id: string, pending: boolean) => void;
@@ -52,6 +53,17 @@ export function FamiliarMeals({ client, disabled, onDraft, onPending }: {
         <Text accessibilityRole="header" style={{ color: c.text, fontSize: typeScale.title }}>{meal.name}</Text>
         {meal.items.length ? orderedTemplateItems(meal.items).map((item, index) => <Button key={`${item.role}:${item.recipeId}:${index}`} label={`${TEMPLATE_ROLE_LABEL[item.role]}: ${item.title}`} variant="ghost" disabled={locked || preparing} onPress={() => router.push({ pathname: "/recipe/[id]", params: { id: item.recipeId } })} />) : <Text style={textStyle}>No dishes remain in this combination. You can still review its name.</Text>}
         <Button label={`Use ${meal.name} as a food-note draft`} variant="ghost" disabled={locked || busy || preparing || !templateFoodNoteName(meal.name)} onPress={() => void draft(meal)} />
+        <MealRenameReview meal={meal} client={client} disabled={locked || busy || preparing}
+          onPending={pending => {
+            const key = `rename:${meal.id}`;
+            pendingRef.current = { ...pendingRef.current, [key]: pending }; setPlanPending(pendingRef.current); onPending(key, pending);
+          }}
+          onConfirmed={name => setMeals(current => current?.map(saved => saved.id === meal.id ? { ...saved, name } : saved) ?? current)}
+          onReview={() => {
+            if (!focused.current || action.current) return;
+            setMeals(null); setFailed(false); setShown(6);
+            setMessage("Local rename retry discarded. Reload saved meals to review the name. The earlier request is not cancelled and may still finish; recheck before another change.");
+          }} />
         <CombinationPlanReview meal={meal} client={client} disabled={locked || busy || preparing} onPending={pending => { pendingRef.current = { ...pendingRef.current, [meal.id]: pending }; setPlanPending(pendingRef.current); onPending(meal.id, pending); }} />
         {!templateFoodNoteName(meal.name) ? <Text style={textStyle}>This name is too long or cannot be copied. Enter a short food name below instead; nothing is truncated.</Text> : null}
       </View>) : null}
