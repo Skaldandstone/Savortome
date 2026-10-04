@@ -1,4 +1,4 @@
-// Real template queries + exact migration 0010 on disposable, partial PGlite.
+// Real template queries + exact migrations 0010/0022 on disposable, partial PGlite.
 // Minimal recipe projection deliberately excludes pgvector/full schema bootstrap.
 // No DATABASE_URL, hosted data, provider calls or multi-connection proof.
 // node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-template-recovery.mjs
@@ -25,7 +25,11 @@ async function fixture(run){
  const pg=new PGlite();
  try{
   await pg.exec(`CREATE TYPE visibility AS ENUM ('private','friends','public');`+tableDDL('users')+tableDDL('pantry_items'));
-  await pg.exec(`CREATE TABLE recipes(id uuid PRIMARY KEY,owner_id uuid NOT NULL REFERENCES users(id),title text NOT NULL,image_url text,visibility visibility NOT NULL DEFAULT 'private');`);
+  await pg.exec(`CREATE TABLE recipes(id uuid PRIMARY KEY,owner_id uuid NOT NULL,title text NOT NULL,image_url text,visibility visibility NOT NULL DEFAULT 'private');`);
+  for(const name of ['pantry_items_user_id_users_id_fk','recipes_owner_id_users_id_fk']){
+   const ddl=initial.split('--> statement-breakpoint').find(sql=>sql.includes(`ADD CONSTRAINT "${name}"`));
+   assert.ok(ddl,`Missing reviewed ${name}`);await pg.exec(ddl);
+  }
   await pg.exec(readFileSync('packages/db/migrations/0010_meal-templates.sql','utf8'));
   await pg.exec(readFileSync('packages/db/migrations/0022_meal-template-identities.sql','utf8'));
   await pg.query(`INSERT INTO users(id,email,handle,display_name) VALUES ($1,'owner@example.test','fixture-owner','Owner'),($2,'other@example.test','fixture-other','Other')`,[owner,other]);
@@ -127,4 +131,47 @@ test('0022 exact partial migration backfills live grouping and second dialect ru
  assert.equal((await rows(pg,'SELECT * FROM drizzle.__drizzle_migrations')).length,1);
  assert.equal(await deleteTemplate(db,owner,request),true);
  await assert.rejects(createTemplate(db,owner,'Legacy soup',items,request));
+}));
+test('0022 failed backfill rolls DDL and migration journal back, then explicit repaired retry succeeds',async()=>fixture(async({pg,db})=>{
+ await pg.exec('DROP TABLE meal_template_references; ALTER TABLE meal_templates DROP CONSTRAINT meal_templates_owner_id_users_id_fk');
+ const absentOwner='00000000-0000-4000-8000-000000000099';
+ await pg.query(`INSERT INTO meal_templates(id,owner_id,name) VALUES ($1,$2,'Orphan fixture')`,[request,absentOwner]);
+ const before=await rows(pg,'SELECT * FROM meal_templates');
+ await pg.exec('CREATE SCHEMA drizzle; CREATE TABLE drizzle.__drizzle_migrations(id serial PRIMARY KEY,hash text NOT NULL,created_at bigint)');
+ const prior=migrations[migrationIndex-1];
+ await pg.query('INSERT INTO drizzle.__drizzle_migrations(hash,created_at) VALUES ($1,$2)',[prior.hash,prior.folderMillis]);
+ const history=await rows(pg,'SELECT * FROM drizzle.__drizzle_migrations');
+ const apply=()=>db.dialect.migrate([migrations[migrationIndex]],db.session,{migrationsSchema:'drizzle'});
+ await assert.rejects(apply());
+ assert.equal((await rows(pg,"SELECT to_regclass('public.meal_template_references') AS relation"))[0].relation,null);
+ assert.deepEqual(await rows(pg,'SELECT * FROM meal_templates'),before);
+ assert.deepEqual(await rows(pg,'SELECT * FROM drizzle.__drizzle_migrations'),history);
+ // Explicit fixture repair only, not automatic production cleanup or migration repair.
+ await pg.query('UPDATE meal_templates SET owner_id=$1 WHERE id=$2',[owner,request]);
+ await apply();
+ assert.deepEqual(await rows(pg,'SELECT * FROM meal_template_references'),[{id:request,owner_id:owner,deleted:false}]);
+ assert.equal((await rows(pg,'SELECT * FROM drizzle.__drizzle_migrations')).length,2);
+}));
+test('template account cascade: injected identity failure restores all rows; successful deletion removes only that owner',async()=>fixture(async({pg,db})=>{
+ const removed='00000000-0000-4000-8000-000000000006',otherLive='00000000-0000-4000-8000-000000000007',otherRemoved='00000000-0000-4000-8000-000000000008';
+ await createTemplate(db,owner,'Soup',items,request);
+ await createTemplate(db,owner,'Removed soup',items,removed);await deleteTemplate(db,owner,removed);
+ await createTemplate(db,other,'Other soup',[{role:'main',recipeId:foreign}],otherLive);
+ await createTemplate(db,other,'Other removed soup',[{role:'main',recipeId:foreign}],otherRemoved);await deleteTemplate(db,other,otherRemoved);
+ const tables=['users','recipes','pantry_items','meal_templates','meal_template_items','meal_template_references'];
+ const snapshot=async()=>Object.fromEntries(await Promise.all(tables.map(async table=>[table,await rows(pg,`SELECT * FROM ${table} ORDER BY 1,2`)])));
+ const before=await snapshot();
+ await pg.exec(`CREATE FUNCTION reject_identity_cascade() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'fixture identity cascade failure'; END $$; CREATE TRIGGER reject_identity_cascade BEFORE DELETE ON meal_template_references FOR EACH ROW EXECUTE FUNCTION reject_identity_cascade();`);
+ await assert.rejects(pg.query('DELETE FROM users WHERE id=$1',[owner]));
+ assert.deepEqual(await snapshot(),before);
+ await pg.exec('DROP TRIGGER reject_identity_cascade ON meal_template_references');
+ await pg.query('DELETE FROM users WHERE id=$1',[owner]);
+ assert.deepEqual(await listTemplates(db,owner),[]);
+ assert.equal((await listTemplates(db,other))[0].id,otherLive);
+ const surviving=await rows(pg,'SELECT * FROM meal_template_references ORDER BY id');
+ assert.deepEqual(surviving,[{id:otherLive,owner_id:other,deleted:false},{id:otherRemoved,owner_id:other,deleted:true}]);
+ assert.equal((await rows(pg,'SELECT * FROM recipes'))[0].id,foreign);
+ assert.deepEqual(await rows(pg,'SELECT * FROM pantry_items'),[]);
+ await assert.rejects(createTemplate(db,owner,'Soup',items,request));
+ await assert.rejects(createTemplate(db,other,'Other removed soup',[{role:'main',recipeId:foreign}],otherRemoved));
 }));
