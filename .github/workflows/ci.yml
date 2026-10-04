@@ -52,6 +52,20 @@ jobs:
         run: node scripts/check-mobile-receipts.mjs
       - name: Pantry review recovery
         run: node scripts/check-pantry-review-recovery.mjs
+      # Local synthetic boundaries only: no provider keys, native builds or devices.
+      - name: Food capture and recovery lifecycle
+        run: |
+          node scripts/check-food-capture-lifecycle.mjs
+          node scripts/check-today-recovery.mjs
+          node scripts/check-food-note-transport.mjs
+          node scripts/check-food-note-local-recovery.mjs
+          node scripts/check-food-note-signout.mjs
+          node scripts/check-food-recovery-accessibility.mjs
+      # Disposable PGlite fixtures are distinct from the full pgvector schema job.
+      - name: Food-note tenant recovery and partial migrations
+        run: |
+          node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-food-note-recovery.mjs
+          node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-food-note-migration.mjs
 
   database:
     name: Database checks
