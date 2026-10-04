@@ -31,6 +31,13 @@ export const foodLogEntries = pgTable("food_log_entries", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 }, table => [primaryKey({ columns: [table.userId, table.id] }), index("food_log_user_date_idx").on(table.userId, table.date)]);
+
+/** Account-scoped retry identity only; deletion never retains food content. */
+export const foodNoteReferences = pgTable("food_note_references", {
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  id: uuid("id").notNull(),
+  deleted: boolean("deleted").notNull().default(false),
+}, table => [primaryKey({ columns: [table.userId, table.id] })]);
 import type {
   CookTier,
   Ingredient,

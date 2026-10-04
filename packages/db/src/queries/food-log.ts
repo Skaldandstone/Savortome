@@ -1,7 +1,7 @@
 import { and, desc, eq } from "drizzle-orm";
 import { foodLogDate, foodLogId, FoodLogValidationError, parseFoodLogInput, type FoodLogEntry } from "@seconds/core";
 import type { Database } from "../client.js";
-import { foodLogEntries } from "../schema.js";
+import { foodLogEntries, foodNoteReferences } from "../schema.js";
 
 function view(row: typeof foodLogEntries.$inferSelect): FoodLogEntry {
   return { id: row.id, date: row.date, title: row.title, portion: row.portion, source: row.source,
@@ -18,6 +18,12 @@ export async function saveFoodNote(database: Database, userId: string, value: un
   const input = parseFoodLogInput(value);
   const { expectedUpdatedAt, ...fields } = input;
   return database.transaction(async tx => {
+    // One durable owner/ID row serializes saves and removals even when the
+    // food row is absent. It holds no title, date, portion or media.
+    await tx.insert(foodNoteReferences).values({ userId, id: input.id }).onConflictDoNothing();
+    const [reference] = await tx.select().from(foodNoteReferences)
+      .where(and(eq(foodNoteReferences.userId, userId), eq(foodNoteReferences.id, input.id))).for("update");
+    if (!reference || reference.deleted) throw new FoodLogValidationError("This note was removed or is unavailable. Discard the old local draft and review a new note before saving.");
     if (!expectedUpdatedAt) {
       const [created] = await tx.insert(foodLogEntries).values({ userId, ...fields }).onConflictDoNothing().returning();
       if (created) return view(created);
@@ -39,5 +45,15 @@ export async function saveFoodNote(database: Database, userId: string, value: un
   });
 }
 export async function deleteFoodNote(database: Database, userId: string, id: unknown): Promise<void> {
-  await database.delete(foodLogEntries).where(and(eq(foodLogEntries.userId, userId), eq(foodLogEntries.id, foodLogId(id))));
+  const noteId = foodLogId(id);
+  await database.transaction(async tx => {
+    await tx.insert(foodNoteReferences).values({ userId, id: noteId, deleted: true }).onConflictDoNothing();
+    // Match the save lock order. A removal arriving before its delayed create
+    // permanently closes that ID; another deliberate note gets a new ID.
+    await tx.select().from(foodNoteReferences)
+      .where(and(eq(foodNoteReferences.userId, userId), eq(foodNoteReferences.id, noteId))).for("update");
+    await tx.update(foodNoteReferences).set({ deleted: true })
+      .where(and(eq(foodNoteReferences.userId, userId), eq(foodNoteReferences.id, noteId)));
+    await tx.delete(foodLogEntries).where(and(eq(foodLogEntries.userId, userId), eq(foodLogEntries.id, noteId)));
+  });
 }

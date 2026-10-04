@@ -71,13 +71,48 @@ test('exact food-note schema has owner composite identity, cascade FK, date inde
   assert.ok((await rows(pg,`SELECT indexdef FROM pg_indexes WHERE tablename='food_log_entries' AND indexname='food_log_user_date_idx'`)).some(c=>/\(user_id, date\)/.test(c.indexdef)));
  }finally{await pg.close();}
 });
-test('migrated real queries preserve tenant identity and cascade only the deleted account',async()=>{
+test('0020/0021 migrated real queries preserve tenant identity and cascade only the deleted account',async()=>{
  const {pg,db}=await baseline();try{
-  await apply(db);const input={id:noteId,date:'2026-10-04',title:'Soup',portion:null,source:'text'};
+  await apply(db);await apply(db,migrations[targetIndex+1]);const input={id:noteId,date:'2026-10-04',title:'Soup',portion:null,source:'text'};
   await saveFoodNote(db,owner,input);await saveFoodNote(db,other,{...input,title:'Other soup'});
   assert.equal((await listFoodNotes(db,owner))[0].title,'Soup');assert.equal((await listFoodNotes(db,other))[0].title,'Other soup');
   await pg.query('DELETE FROM users WHERE id=$1',[owner]);assert.deepEqual(await listFoodNotes(db,owner),[]);assert.equal((await listFoodNotes(db,other))[0].title,'Other soup');
+  assert.equal((await rows(pg,'SELECT count(*) AS count FROM food_note_references WHERE user_id=$1',[owner]))[0].count,0);
   await assert.rejects(saveFoodNote(db,owner,{...input,id:'00000000-0000-4000-8000-000000000004'}),error=>error.cause?.code==='23503');
   assert.equal((await listFoodNotes(db,other)).length,1);
  }finally{await pg.close();}
+});
+test('0021 backfills only present IDs and preserves contents; retained deletion markers contain no food',async()=>{
+ const {pg,db}=await baseline();try{
+  await apply(db);
+  await pg.query(`INSERT INTO food_log_entries(user_id,id,date,title,source) VALUES($1,$2,'2026-10-04','Existing note','text')`,[owner,noteId]);
+  const content=await rows(pg,'SELECT * FROM food_log_entries');
+  await apply(db,migrations[targetIndex+1]);assert.deepEqual(await rows(pg,'SELECT * FROM food_log_entries'),content);
+  assert.deepEqual(await rows(pg,'SELECT * FROM food_note_references'),[{user_id:owner,id:noteId,deleted:false}]);
+  const columns=await rows(pg,`SELECT column_name FROM information_schema.columns WHERE table_name='food_note_references' ORDER BY ordinal_position`);
+  assert.deepEqual(columns.map(c=>c.column_name),['user_id','id','deleted']);
+  await apply(db,migrations[targetIndex+1]);assert.equal((await rows(pg,'SELECT count(*) AS count FROM food_note_references'))[0].count,1);
+ }finally{await pg.close();}
+});
+test('0021 fault after backfill rolls back marker table and journal while keeping existing notes',async()=>{
+ const {pg,db}=await baseline();try{
+  await apply(db);await pg.query(`INSERT INTO food_log_entries(user_id,id,date,title,source) VALUES($1,$2,'2026-10-04','Existing note','text')`,[owner,noteId]);
+  const content=await rows(pg,'SELECT * FROM food_log_entries');const migration=migrations[targetIndex+1];
+  await assert.rejects(apply(db,{...migration,sql:[...migration.sql,'SELECT 1/0;']}),error=>error.cause?.code==='22012');
+  assert.equal((await rows(pg,`SELECT to_regclass('public.food_note_references') AS name`))[0].name,null);
+  assert.equal((await rows(pg,'SELECT count(*) AS count FROM drizzle.__drizzle_migrations'))[0].count,2);
+  assert.deepEqual(await rows(pg,'SELECT * FROM food_log_entries'),content);
+  await apply(db,migration);assert.equal((await rows(pg,'SELECT count(*) AS count FROM food_note_references'))[0].count,1);
+ }finally{await pg.close();}
+});
+test('0021 generated metadata changes only the reference table and links to the prior snapshot',()=>{
+ const previous=JSON.parse(readFileSync(resolve(folder,'meta/0020_snapshot.json'),'utf8'));
+ const current=JSON.parse(readFileSync(resolve(folder,'meta/0021_snapshot.json'),'utf8'));
+ assert.equal(current.prevId,previous.id);
+ assert.equal(journal.entries[targetIndex+1].tag,'0021_food-note-identities');
+ assert.equal(journal.entries[targetIndex+1].idx,21);
+ for(const [name,table] of Object.entries(previous.tables))assert.deepEqual(current.tables[name],table);
+ assert.deepEqual(Object.keys(current.tables).filter(name=>!previous.tables[name]),['public.food_note_references']);
+ assert.deepEqual(Object.keys(current.tables['public.food_note_references'].columns),['user_id','id','deleted']);
+ for(const key of ['enums','schemas','sequences','roles','policies','views'])assert.deepEqual(current[key],previous[key]);
 });
