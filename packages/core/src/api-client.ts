@@ -327,6 +327,17 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
 
   const body = (value: unknown) => JSON.stringify(value);
 
+  /** Native-compatible timeout, including a token supplier that never settles. */
+  async function sendTimed<T>(path: string, init: RequestInit, milliseconds: number): Promise<T> {
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => { controller.abort(); reject(new ApiError("The request timed out. Reload to check whether a save completed.", 408)); }, milliseconds);
+    });
+    try { return await Promise.race([send<T>(path, { ...init, signal: controller.signal }), timeout]); }
+    finally { if (timer) clearTimeout(timer); }
+  }
+
   return {
     importRecipe: (request) =>
       send<ImportResponse>("/api/import", { method: "POST", body: body(request) }),
@@ -369,15 +380,15 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
     },
 
     listPantry: () => send<PantryEntry[]>("/api/pantry"),
-    listFoodNotes: (date) => send<FoodLogEntry[]>(`/api/food-log${date ? `?date=${encodeURIComponent(date)}` : ""}`, { signal: AbortSignal.timeout(12_000) }),
-    foodNoteCaptureStatus: () => send<{ photo: boolean; voice: boolean }>("/api/food-log/draft", { signal: AbortSignal.timeout(12_000) }),
-    foodNoteDraft: (source, base64, mediaType) => send<{ draft: FoodNoteDraft }>("/api/food-log/draft", { method: "POST", body: body({ source, base64, mediaType }), signal: AbortSignal.timeout(75_000) }),
-    saveFoodNote: (input) => send<FoodLogEntry>("/api/food-log", { method: "POST", body: body(input), signal: AbortSignal.timeout(12_000) }),
-    deleteFoodNote: (id) => send<{ deleted: boolean }>("/api/food-log", { method: "DELETE", body: body({ id }), signal: AbortSignal.timeout(12_000) }),
-    barcodeLookupStatus: () => send<{ enabled: boolean }>("/api/pantry/barcode"),
-    lookupProductBarcode: (barcode) => send<{ product: BarcodeProductDraft | null }>("/api/pantry/barcode", {
-      method: "POST", body: body({ barcode }), signal: AbortSignal.timeout(12_000),
-    }),
+    listFoodNotes: (date) => sendTimed<FoodLogEntry[]>(`/api/food-log${date ? `?date=${encodeURIComponent(date)}` : ""}`, {}, 12_000),
+    foodNoteCaptureStatus: () => sendTimed<{ photo: boolean; voice: boolean }>("/api/food-log/draft", {}, 12_000),
+    foodNoteDraft: (source, base64, mediaType) => sendTimed<{ draft: FoodNoteDraft }>("/api/food-log/draft", { method: "POST", body: body({ source, base64, mediaType }) }, 75_000),
+    saveFoodNote: (input) => sendTimed<FoodLogEntry>("/api/food-log", { method: "POST", body: body(input) }, 12_000),
+    deleteFoodNote: (id) => sendTimed<{ deleted: boolean }>("/api/food-log", { method: "DELETE", body: body({ id }) }, 12_000),
+    barcodeLookupStatus: () => sendTimed<{ enabled: boolean }>("/api/pantry/barcode", {}, 12_000),
+    lookupProductBarcode: (barcode) => sendTimed<{ product: BarcodeProductDraft | null }>("/api/pantry/barcode", {
+      method: "POST", body: body({ barcode }),
+    }, 12_000),
 
     addPantry: (text) =>
       send<PantryEntry[]>("/api/pantry", { method: "POST", body: body({ text }) }),

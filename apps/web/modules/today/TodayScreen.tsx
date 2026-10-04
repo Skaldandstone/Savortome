@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { localFoodDate, type FoodLogEntry, type FoodLogSource, type PlanTogetherIdea } from "@seconds/core/format";
+import { foodLogDate, localFoodDate, type FoodLogEntry, type FoodLogSource, type PlanTogetherIdea } from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { actionFailure, signInReturnHref } from "@/lib/action-failure";
 import { Button, Callout, FieldRow, Panel, PanelHeader, TextField } from "@/ui";
@@ -15,11 +15,13 @@ const base64Of = (blob: Blob) => new Promise<string>((resolve, reject) => {
 
 export function TodayScreen() {
   const { userId } = useAuth();
-  const owner = useRef(userId); owner.current = userId;
+  const owner = useRef(userId); const accountEpoch = useRef(0); if (owner.current !== userId) { owner.current = userId; ++accountEpoch.current; }
   const request = useRef(0);
   const alive = useRef(true);
   const [date, setDate] = useState(() => localFoodDate());
   const [notes, setNotes] = useState<FoodLogEntry[]>([]);
+  const [dayNotes, setDayNotes] = useState<FoodLogEntry[]>([]);
+  const [dayState, setDayState] = useState<"loading" | "ready" | "failed">("loading");
   const [loading, setLoading] = useState(true);
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -52,56 +54,66 @@ export function TodayScreen() {
     setRecording(false);
   }, []);
   const load = useCallback(async () => {
-    const account = owner.current; const version = ++request.current;
+    const account = owner.current; const epoch = accountEpoch.current; const version = ++request.current;
     setLoading(true); setLoadError(null);
     try {
       const result = await api.listFoodNotes();
-      if (alive.current && owner.current === account && request.current === version) { setNotes(result); setLoaded(true); }
+      if (alive.current && accountEpoch.current === epoch && owner.current === account && request.current === version) { setNotes(result); setLoaded(true); }
     } catch {
-      if (alive.current && owner.current === account && request.current === version) setLoadError("Your food notes could not load. Nothing has been deleted. Try loading them again before saving another note.");
-    } finally { if (alive.current && owner.current === account && request.current === version) setLoading(false); }
+      if (alive.current && accountEpoch.current === epoch && owner.current === account && request.current === version) setLoadError("Your food notes could not load. Nothing has been deleted. Try loading them again before saving another note.");
+    } finally { if (alive.current && accountEpoch.current === epoch && owner.current === account && request.current === version) setLoading(false); }
   }, []);
   useEffect(() => {
-    alive.current = true;
+    ++accountEpoch.current; alive.current = true;
     stopCapture(); setVoiceBlob(null); setCapture({ photo: false, voice: false });
     setNotes([]); setLoaded(false); setTitle(""); setPortion(""); setSource("text"); setUncertainty(""); draftId.current = null;
     setIdeas(null); setIdeasError(null); setIdeasBusy(false); setBusy(false); setError(""); setStatus(""); setNeedsSignIn(false); setShowInvitation(true);
     void load();
-    const account = owner.current;
-    void api.foodNoteCaptureStatus().then(result => { if (alive.current && owner.current === account) setCapture(result); }).catch(() => {});
-    return () => { alive.current = false; ++request.current; stopCapture(); };
+    const account = owner.current; const epoch = accountEpoch.current;
+    void api.foodNoteCaptureStatus().then(result => { if (alive.current && accountEpoch.current === epoch && owner.current === account) setCapture(result); }).catch(() => {});
+    return () => { alive.current = false; ++accountEpoch.current; ++request.current; stopCapture(); };
   }, [userId, load, stopCapture]);
   useEffect(() => {
     const hide = () => { if (document.visibilityState !== "visible") stopCapture(); };
     document.addEventListener("visibilitychange", hide);
     return () => document.removeEventListener("visibilitychange", hide);
   }, [stopCapture]);
+  useEffect(() => {
+    let cancelled = false;
+    const account = owner.current; const epoch = accountEpoch.current;
+    setDayNotes([]); setDayState("loading");
+    try { foodLogDate(date); } catch { setDayState("failed"); return; }
+    void api.listFoodNotes(date).then(result => {
+      if (!cancelled && alive.current && owner.current === account && accountEpoch.current === epoch) { setDayNotes(result); setDayState("ready"); }
+    }).catch(() => { if (!cancelled && alive.current && accountEpoch.current === epoch) setDayState("failed"); });
+    return () => { cancelled = true; };
+  }, [date, notes, userId]);
   const failure = (cause: unknown, fallback: string) => {
     const result = actionFailure(cause, fallback); setError(result.message); setNeedsSignIn(result.signInRequired);
   };
   const generate = async (kind: "photo" | "voice", blob: Blob) => {
-    const account = owner.current;
+    const account = owner.current; const epoch = accountEpoch.current;
     setBusy(true); setError(""); setStatus(""); setNeedsSignIn(false);
     try {
       const max = kind === "photo" ? 8_000_000 : 5_000_000;
       if (!blob.size || blob.size > max) throw new Error("That file is empty or too large. Use a smaller file or type a note.");
       const mediaType = blob.type.split(";")[0]!;
       const data = await base64Of(blob);
-      if (!alive.current || owner.current !== account) return;
+      if (!alive.current || accountEpoch.current !== epoch || owner.current !== account) return;
       const { draft } = await api.foodNoteDraft(kind, data, mediaType);
-      if (!alive.current || owner.current !== account) return;
+      if (!alive.current || accountEpoch.current !== epoch || owner.current !== account) return;
       setTitle(draft.title); setPortion(draft.portion ?? ""); setSource(kind); setUncertainty(draft.uncertainty); draftId.current = null;
       setStatus("Draft ready. Check the food name and portion before saving. Nothing has been saved yet.");
-    } catch (cause) { if (alive.current && owner.current === account) failure(cause, "Could not prepare a draft. Type a food note instead."); }
-    finally { if (alive.current && owner.current === account) { setBusy(false); if (kind === "voice") setVoiceBlob(null); } }
+    } catch (cause) { if (alive.current && accountEpoch.current === epoch && owner.current === account) failure(cause, "Could not prepare a draft. Type a food note instead."); }
+    finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) { setBusy(false); if (kind === "voice") setVoiceBlob(null); } }
   };
   const startVoice = async () => {
     setError(""); setVoiceBlob(null);
-    const account = owner.current;
+    const account = owner.current; const epoch = accountEpoch.current;
     try {
       if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") throw new Error("Recording is not supported here. Type a food note or use your keyboard's dictation.");
       const tracks = await navigator.mediaDevices.getUserMedia({ audio: true });
-      if (!alive.current || owner.current !== account) { tracks.getTracks().forEach(track => track.stop()); return; }
+      if (!alive.current || accountEpoch.current !== epoch || owner.current !== account) { tracks.getTracks().forEach(track => track.stop()); return; }
       const mimeType = ["audio/webm", "audio/mp4"].find(type => MediaRecorder.isTypeSupported(type));
       if (!mimeType) { tracks.getTracks().forEach(track => track.stop()); throw new Error("This browser's audio format is unsupported. Type a note instead."); }
       stream.current = tracks;
@@ -110,7 +122,7 @@ export function TodayScreen() {
       captureRecorder.ondataavailable = event => { size += event.data.size; if (size <= 5_000_000) chunks.push(event.data); else stopCapture(); };
       captureRecorder.onstop = () => {
         tracks.getTracks().forEach(track => track.stop());
-        if (alive.current && owner.current === account) { setRecording(false); if (size <= 5_000_000) setVoiceBlob(new Blob(chunks, { type: mimeType })); else setError("That recording was too large. Try a shorter note."); }
+        if (alive.current && accountEpoch.current === epoch && owner.current === account) { setRecording(false); if (size <= 5_000_000) setVoiceBlob(new Blob(chunks, { type: mimeType })); else setError("That recording was too large. Try a shorter note."); }
       };
       captureRecorder.onerror = () => { stopCapture(); if (owner.current === account && alive.current) setError("Recording stopped unexpectedly. You can type the note instead."); };
       captureRecorder.start(1000); setRecording(true);
@@ -118,35 +130,35 @@ export function TodayScreen() {
     } catch (cause) { stopCapture(); if (owner.current === account && alive.current) failure(cause, "Microphone unavailable. Type a note instead."); }
   };
   const save = async () => {
-    const account = owner.current;
+    const account = owner.current; const epoch = accountEpoch.current;
     setBusy(true); setError(""); setStatus(""); setNeedsSignIn(false);
     try {
       draftId.current ??= crypto.randomUUID();
       const entry = await api.saveFoodNote({ id: draftId.current, date, title: title.trim(), portion: portion.trim() || null, source });
-      if (!alive.current || owner.current !== account) return;
+      if (!alive.current || accountEpoch.current !== epoch || owner.current !== account) return;
       setNotes(current => [entry, ...current.filter(note => note.id !== entry.id)]); setStatus("Food note saved. Your pantry was not changed.");
       setTitle(""); setPortion(""); setUncertainty(""); setSource("text"); draftId.current = null;
-    } catch (cause) { if (alive.current && owner.current === account) failure(cause, "We could not confirm the note saved. Your draft is still here. Reload notes before retrying."); }
-    finally { if (alive.current && owner.current === account) setBusy(false); }
+    } catch (cause) { if (alive.current && accountEpoch.current === epoch && owner.current === account) failure(cause, "We could not confirm the note saved. Your draft is still here. Reload notes before retrying."); }
+    finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) setBusy(false); }
   };
   const remove = async (id: string) => {
-    const account = owner.current; setBusy(true); setError("");
+    const account = owner.current; const epoch = accountEpoch.current; setBusy(true); setError("");
     try {
       await api.deleteFoodNote(id);
-      if (!alive.current || owner.current !== account) return;
+      if (!alive.current || accountEpoch.current !== epoch || owner.current !== account) return;
       setNotes(current => current.filter(note => note.id !== id)); setConfirmDelete(null); setStatus("Food note removed. Pantry and plans were not changed.");
-    } catch (cause) { if (alive.current && owner.current === account) failure(cause, "Could not confirm removal. Reload notes to check."); }
-    finally { if (alive.current && owner.current === account) setBusy(false); }
+    } catch (cause) { if (alive.current && accountEpoch.current === epoch && owner.current === account) failure(cause, "Could not confirm removal. Reload notes to check."); }
+    finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) setBusy(false); }
   };
   const showIdeas = async () => {
-    const account = owner.current; setIdeasBusy(true); setIdeasError(null);
+    const account = owner.current; const epoch = accountEpoch.current; setIdeasBusy(true); setIdeasError(null);
     try {
       const response = await api.planTogether({ strictDietary: true });
-      if (alive.current && owner.current === account) setIdeas(response.ideas);
-    } catch { if (alive.current && owner.current === account) setIdeasError("Meal ideas could not load, including your saved dietary settings. Try again or use Feed me gently with temporary choices."); }
-    finally { if (alive.current && owner.current === account) setIdeasBusy(false); }
+      if (alive.current && accountEpoch.current === epoch && owner.current === account) setIdeas(response.ideas);
+    } catch { if (alive.current && accountEpoch.current === epoch && owner.current === account) setIdeasError("Meal ideas could not load, including your saved dietary settings. Try again or use Feed me gently with temporary choices."); }
+    finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) setIdeasBusy(false); }
   };
-  const todayNotes = notes.filter(note => note.date === date);
+  const todayNotes = dayNotes;
   const recent = notes.filter((note, index) => notes.findIndex(other => other.title === note.title && other.portion === note.portion) === index).slice(0, 3);
   return <div className={styles.stack}>
     {showInvitation ? <Panel><PanelHeader title="Want to plan something to eat together?" hint="We can start with what your pantry thinks is still there. You can correct it, choose something else, or leave this for later." />
@@ -189,8 +201,10 @@ export function TodayScreen() {
       {status ? <Callout tone="info" role="status">{status}</Callout> : null}
       {error ? <Callout tone="error" role="alert">{error} {needsSignIn ? <Link href={signInReturnHref("/today")}>Sign in again</Link> : null}</Callout> : null}
     </Panel>
-    <Panel><PanelHeader title="Your notes for this day" hint="These are things you recorded, not evidence of what remains in your pantry." />
-      {loaded && !todayNotes.length ? <p>No notes for this day. Leaving this empty is fine.</p> : null}
+    <Panel><PanelHeader title="Your recent notes for this day" hint="Shows up to 30 notes for the selected date. These record what you told us, not what remains in your pantry." />
+      {dayState === "loading" ? <p role="status">Loading this day's notes…</p> : null}
+      {dayState === "failed" ? <Callout tone="error" role="alert">This day's notes could not load. Check the date or reload your notes; an empty display does not mean they were deleted.</Callout> : null}
+      {dayState === "ready" && !todayNotes.length ? <p>No notes for this day. Leaving this empty is fine.</p> : null}
       {todayNotes.map(note => <article className={styles.idea} key={note.id}><h3>{note.title}</h3><p>{note.portion ?? "Portion not recorded"}</p>
         <FieldRow><Button variant="ghost" disabled={busy || recording} onClick={() => {
           if (title.trim() && !window.confirm("Replace your current unsaved draft with this note?")) return;

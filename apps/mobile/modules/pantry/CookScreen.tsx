@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useRouter } from "expo-router";
 import { KitchenWelcome } from '@/modules/woodland/KitchenWelcome';
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,6 +19,7 @@ const EXAMPLES = ["chicken thighs, rice, an onion", "something quick and vegetar
  * common case is one tap rather than retyping.
  */
 export function CookScreen() {
+  const router = useRouter();
   const pantry = usePantry();
   const { response, searching, error, search } = usePantrySearch();
   const [query, setQuery] = useState("");
@@ -32,6 +34,7 @@ export function CookScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <KitchenWelcome />
+      <Panel><PanelHeader title="A little help for today" hint="Meal ideas from your pantry, or an optional food note to help you remember." /><Button label="Open Today and food notes" onPress={() => router.push("/today")} /></Panel>
       <ReceiptCapture onScan={pantry.scanReceipt} />
       <BarcodeCapture onQueued={pantry.queuedIntake} />
       <PantryReviewQueue intakes={pantry.intakes} onResolve={pantry.resolveIntake} />
