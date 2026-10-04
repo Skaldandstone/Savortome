@@ -8,7 +8,7 @@ import { build } from 'esbuild';
 const mocks = {
   'expo-secure-store': `export const WHEN_UNLOCKED_THIS_DEVICE_ONLY='synthetic-device-only'; export const getItemAsync=(...args)=>native.get(...args); export const setItemAsync=(...args)=>native.set(...args); export const deleteItemAsync=(...args)=>native.remove(...args);`,
   'expo-crypto': `export const CryptoDigestAlgorithm={SHA256:'synthetic-sha256'}; export const digestStringAsync=(algorithm,text)=>native.digest(algorithm,text);`,
-  '@clerk/expo': `export const getClerkInstance=()=>({get session(){return native.session;}});`,
+  '@clerk/expo': `export const getClerkInstance=()=>({get session(){if(native.sessionError)throw Error('private-session-accessor');return native.session;}});`,
   './api': `export const apiBaseUrl=()=>native.origin;`,
 };
 const bundle = await build({ stdin: { resolveDir: process.cwd(), contents: `export {createFoodNoteRecoveryStore} from './apps/mobile/lib/foodNoteRecovery.ts'; export {createNativeFoodNoteRecovery} from './apps/mobile/lib/nativeFoodNoteRecovery.ts';` }, bundle: true, write: false, format: 'iife', globalName: 'recoveryModule', plugins: [{ name: 'real-contract-storage-boundaries', setup(api) {
@@ -34,6 +34,21 @@ function fixture() {
   return { state, storage, options, store: createStore(options) };
 }
 fixture.counter = 0;
+
+test('actual native adapter fails closed and sanitizes unavailable initial SDK lookup for every operation', async () => {
+  let calls = 0;
+  Object.assign(context.native, { sessionError: true, origin: 'https://unavailable-synthetic.invalid',
+    digest: async () => { calls++; return 'a'.repeat(64); },
+    get: async () => { calls++; return null; }, set: async () => { calls++; }, remove: async () => { calls++; },
+  });
+  try {
+    const store = context.recoveryModule.createNativeFoodNoteRecovery('native-account', 'native-session');
+    for (const invoke of [() => store.read(true), () => store.keep(draft(), true), () => store.discard(true)]) {
+      await assert.rejects(invoke(), error => /Local recovery could not be confirmed/.test(error.message) && !error.message.includes('private-session-accessor'));
+    }
+    assert.equal(calls, 0);
+  } finally { context.native.sessionError = false; }
+});
 test('explicit consent is required for reads, writes and discard', async () => {
   const f = fixture();
   await assert.rejects(f.store.keep(draft(), false)); await assert.rejects(f.store.read(false)); await assert.rejects(f.store.discard(false));
@@ -71,6 +86,26 @@ test('account/session change during namespace lookup prevents all storage access
   const f = fixture(); const pendingHash = deferred(); const store = createStore({ ...f.options, digest: () => pendingHash.promise });
   const outcome = assert.rejects(store.read(true), /Local recovery/); f.state.session = null;
   pendingHash.resolve('a'.repeat(64)); await outcome; assert.equal(f.state.calls.length, 0);
+});
+
+test('lookup failure after delayed namespace resolution blocks storage and permits deliberate retry', async () => {
+  const f = fixture(), hash = deferred(); let unavailable = false;
+  const store = createStore({ ...f.options, digest: () => hash.promise, currentSession: () => { if (unavailable) throw Error('private lookup'); return f.state.session; } });
+  const outcome = assert.rejects(store.keep(draft(), true), error => /Local recovery/.test(error.message) && !error.message.includes('private lookup'));
+  unavailable = true; hash.resolve('b'.repeat(64)); await outcome;
+  assert.equal(f.state.calls.length, 0); unavailable = false;
+  await store.keep(draft(), true); assert.equal((await store.read(true)).status, 'review');
+});
+
+test('lookup failure after a dispatched read withholds contents without discarding the copy', async () => {
+  const f = fixture(); await f.store.keep(draft(), true);
+  const gate = deferred(); let unavailable = false;
+  const store = createStore({ ...f.options, currentSession: () => { if (unavailable) throw Error('private late lookup'); return f.state.session; } });
+  const original = f.storage.get; f.storage.get = () => gate.promise;
+  const outcome = assert.rejects(store.read(true), error => /Local recovery/.test(error.message) && !error.message.includes('private late lookup'));
+  await flush(); unavailable = true; gate.resolve([...f.state.values.values()][0]); await outcome;
+  assert.equal(f.state.values.size, 1); assert.equal(f.state.calls.some(c => c[0] === 'remove'), false);
+  unavailable = false; f.storage.get = original; assert.equal((await store.read(true)).status, 'review');
 });
 test('late old-session read never exposes data after same-account session replacement', async () => {
   const f = fixture(); await f.store.keep(draft(), true); const read = deferred(); f.storage.get = () => read.promise;

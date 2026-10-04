@@ -35,8 +35,10 @@ function byteLength(text: string) {
 export function createFoodNoteRecoveryStore(options: Options) {
   const now = options.now ?? Date.now;
   const active = () => {
-    const session = options.currentSession();
-    if (!options.accountId || !options.sessionId || !options.environment || session?.accountId !== options.accountId || session.sessionId !== options.sessionId) throw failure();
+    try {
+      const session = options.currentSession();
+      if (!options.accountId || !options.sessionId || !options.environment || session?.accountId !== options.accountId || session.sessionId !== options.sessionId) throw failure();
+    } catch { throw failure(); } // An unavailable SDK lookup neither authorizes storage nor exposes its details.
   };
   // JSON framing avoids ambiguous concatenations between environments/accounts.
   let key: Promise<string> | undefined;
