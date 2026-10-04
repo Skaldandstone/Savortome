@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "@clerk/expo";
 import type { PantryEntry, PantryEntryUpdate, PantryIntakeView, PantrySearchResponse, PhotoMediaType } from "@seconds/core/format";
-import { api } from "@/lib/client";
+import { createAccountClient } from "@/lib/client";
 
 export interface PantryController {
   items: PantryEntry[];
@@ -18,6 +19,8 @@ export interface PantryController {
 
 /** What's in the kitchen. Same shape as the web hook, over the network client. */
 export function usePantry(): PantryController {
+  const { userId } = useAuth();
+  const api = useMemo(() => createAccountClient(userId ?? ""), [userId]);
   const [items, setItems] = useState<PantryEntry[]>([]);
   const [intakes, setIntakes] = useState<PantryIntakeView[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +28,7 @@ export function usePantry(): PantryController {
 
   useEffect(() => {
     let cancelled = false;
+    setItems([]); setIntakes([]); setLoading(true); setError(null);
     void (async () => {
       try {
         const [next, pending] = await Promise.all([api.listPantry(), api.listPantryIntakes()]);
@@ -38,7 +42,7 @@ export function usePantry(): PantryController {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [api]);
 
   const run = useCallback(async (write: () => Promise<PantryEntry[]>) => {
     setError(null);
@@ -47,7 +51,7 @@ export function usePantry(): PantryController {
     } catch (err) {
       setError(err instanceof Error ? err.message : "That didn't save.");
     }
-  }, []);
+  }, [api]);
 
   return {
     items,
@@ -93,21 +97,30 @@ export interface SearchController {
 }
 
 export function usePantrySearch(): SearchController {
+  const { userId } = useAuth();
+  const api = useMemo(() => createAccountClient(userId ?? ""), [userId]);
+  const request = useRef(0);
   const [response, setResponse] = useState<PantrySearchResponse | null>(null);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    ++request.current; setResponse(null); setSearching(false); setError(null);
+    return () => { ++request.current; };
+  }, [api]);
 
   const search = useCallback(async (query: string) => {
+    const version = ++request.current;
     setSearching(true);
     setError(null);
     try {
-      setResponse(await api.searchPantry(query));
+      const result = await api.searchPantry(query);
+      if (request.current === version) setResponse(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That search didn't work.");
+      if (request.current === version) setError(err instanceof Error ? err.message : "That search didn't work.");
     } finally {
-      setSearching(false);
+      if (request.current === version) setSearching(false);
     }
-  }, []);
+  }, [api]);
 
   return { response, searching, error, search };
 }

@@ -17,6 +17,11 @@ function ask(message: string, confirm: string): Promise<boolean> {
 }
 export function TodayScreen() {
   const { userId } = useAuth();
+  return <AccountTodayScreen key={userId ?? "signed-out"} />;
+}
+
+function AccountTodayScreen() {
+  const { userId } = useAuth();
   const client = useMemo(() => userId ? createAccountClient(userId) : null, [userId]);
   const c = usePalette(); const insets = useSafeAreaInsets(); const router = useRouter();
   const generation = useRef(0); const mounted = useRef(true); const focused = useRef(true);

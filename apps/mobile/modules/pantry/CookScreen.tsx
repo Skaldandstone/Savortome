@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "expo-router";
+import { useAuth } from "@clerk/expo";
 import { KitchenWelcome } from '@/modules/woodland/KitchenWelcome';
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -19,6 +20,12 @@ const EXAMPLES = ["chicken thighs, rice, an onion", "something quick and vegetar
  * common case is one tap rather than retyping.
  */
 export function CookScreen() {
+  const { userId } = useAuth();
+  // Reset private drafts, inventory, review selections and search on a switch.
+  return <AccountCookScreen key={userId ?? "signed-out"} />;
+}
+
+function AccountCookScreen() {
   const router = useRouter();
   const pantry = usePantry();
   const { response, searching, error, search } = usePantrySearch();

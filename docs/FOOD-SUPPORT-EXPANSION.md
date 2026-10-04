@@ -40,7 +40,7 @@ Savortome offers practical food support. Gamification is reserved for a potentia
 
 ## Delivery status, 4 October 2026
 
-Branch `codex/food-support-expansion`, based on `main` at `abf335f`. The first checkpoint `e013f47` adds the 24-recipe catalogue and shared barcode validation. Existing receipt recovery PR124 and pantry review recovery PR125 remain independent; preserve both test suites when integrating.
+Branch `codex/food-support-expansion`, based on `main` at `abf335f`. The first checkpoint `e013f47` adds the 24-recipe catalogue and shared barcode validation. Native food notes are checkpointed at `14e7c4a`. Receipt recovery PR124 and pantry review recovery PR125 were merged into this feature branch (not main) at `fb53016` and `dbc9635`; both source test suites and both CI steps were retained. The originals remain preserved and the PRs are still open. Earlier CI results apply to those original heads, not to this unvalidated integration.
 
 No new native binary, provider enablement, production database write, deployment or fitness-app change is implied by this checkpoint. Browser, assistive-technology, physical-device, provider and owner acceptance remain separate checks.
 
@@ -61,7 +61,9 @@ Native iteration now adds protected `/today`, a Cook entry point, editable text 
 
 Selected-day notes now load through a date-scoped request on both platforms instead of filtering only the recent-history window. Loading/failure states do not claim an empty history, and the 30-note display cap is explicit. Native focus return refreshes notes while retaining the unsaved text draft.
 
-Still to iterate: uncertain-write recovery; focus/mount/capture interruptions and rapid action guards; account-safe existing pantry-hook integration; provider format/signature/retention/rate-limit boundaries; optional browser barcode camera and theme polish. No browser, native-device, provider or deployment success is claimed for these changes.
+Native Cook and Today now remount private state on account changes. Existing native pantry reads/writes and searches use the account-pinned client; stale search responses are ignored. This is a source privacy improvement, not verified account-switch acceptance.
+
+Still to iterate: uncertain-write recovery; focus/mount/capture interruptions and rapid action guards; provider format/signature/retention/rate-limit boundaries; optional browser barcode camera and theme polish. No browser, native-device, provider or deployment success is claimed for these changes.
 
 Live SSE-145 was read and retains FUTURE-04/FUTURE-05 as In Progress. The Linear connector requires reauthentication, and the authenticated browser comment editor did not resolve reliably; no new Linear status or comment is claimed. Notion received the approved expansion and gamification exclusion on 3 October.
 
