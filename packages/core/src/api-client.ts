@@ -3,7 +3,7 @@ import type { PantryEntry, PantryEntryUpdate, PantryMatch } from "./pantry.js";
 import type { PantryIntakeInput, PantryIntakeResolution, PantryIntakeView } from "./pantry-intake.js";
 import type { PlanTogetherIdea, PlanTogetherOptions } from "./plan-together.js";
 import type { ReviewedMealInput } from "./reviewed-meal.js";
-import type { ReviewedTemplatePlanInput } from "./template.js";
+import type { ReviewedTemplatePlanInput, MealTemplateRenameInput } from "./template.js";
 import type { BarcodeProductDraft } from "./barcode.js";
 import type { FoodLogEntry, FoodLogInput, FoodNoteDraft } from "./food-log.js";
 import type { ShoppingLine } from "./shopping.js";
@@ -248,6 +248,7 @@ export interface SecondsClient {
     requestId?: string,
   ) => Promise<{ id: string }>;
   deleteTemplate: (id: string) => Promise<{ ok: boolean }>;
+  renameTemplate: (id: string, input: MealTemplateRenameInput) => Promise<{ confirmed: { id: string; name: string } | null }>;
   setTemplateVisibility: (id: string, visibility: Visibility) => Promise<{ visibility: Visibility | null }>;
   saveSharedTemplate: (id: string) => Promise<{ id: string }>;
   friends: () => Promise<FriendsOverview>;
@@ -494,6 +495,7 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
     },
 
     deleteTemplate: (id) => sendTimed<{ ok: boolean }>(`/api/templates/${id}`, { method: "DELETE" }, 12_000),
+    renameTemplate: (id, input) => sendTimed<{ confirmed: { id: string; name: string } | null }>(`/api/templates/${id}`, { method: "PATCH", body: body(input) }, 12_000),
 
     setTemplateVisibility: (id, visibility) =>
       sendTimed<{ visibility: Visibility | null }>(`/api/templates/${id}/share`, {

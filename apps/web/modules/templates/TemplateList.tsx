@@ -7,6 +7,7 @@ import { createClient, type MealTemplate, type SecondsClient } from "@seconds/co
 import { Button, Callout, Panel, PanelHeader } from "@/ui";
 import { TemplateItems } from "./TemplateItems";
 import { TemplateShareControl } from "./TemplateShareControl";
+import { TemplateRenameControl } from "./TemplateRenameControl";
 import styles from "./templates.module.css";
 
 /** Every meal you've saved — a main plus whichever side, drink, and dessert go with it. */
@@ -31,7 +32,8 @@ function AccountTemplateList({ sessionId }: { sessionId?: string }) {
   const [message, setMessage] = useState("");
   const [unconfirmedDelete, setUnconfirmedDelete] = useState<string | null>(null);
   const [sharePending, setSharePending] = useState<Record<string, boolean>>({});
-  const locked = deleting !== null || unconfirmedDelete !== null || Object.values(sharePending).some(Boolean);
+  const [renamePending, setRenamePending] = useState<Record<string, boolean>>({});
+  const locked = deleting !== null || unconfirmedDelete !== null || Object.values(sharePending).some(Boolean) || Object.values(renamePending).some(Boolean);
 
   useEffect(() => {
     let active = true;
@@ -103,6 +105,14 @@ function AccountTemplateList({ sessionId }: { sessionId?: string }) {
                 </button>
               </div>
               <TemplateItems items={template.items} linkBase="/recipe" />
+              <TemplateRenameControl templateId={template.id} name={template.name} client={api} disabled={locked}
+                onPending={pending => setRenamePending(current => ({ ...current, [template.id]: pending }))}
+                onConfirmed={name => setTemplates(current => current?.map(saved => saved.id === template.id ? { ...saved, name } : saved) ?? current)}
+                onReview={() => {
+                  if (action.current) return;
+                  setRenamePending({}); setConfirmingDelete(null); setLoadAttempt(value => value + 1);
+                  setMessage("Reloading to review the unconfirmed name. Earlier requests are not cancelled and may still finish; recheck before making another change.");
+                }} />
               <TemplateShareControl templateId={template.id} initialVisibility={template.visibility} client={api} disabled={locked} onPending={pending => setSharePending(current => ({ ...current, [template.id]: pending }))} onReview={() => {
                 if (action.current) return;
                 setSharePending({}); setConfirmingDelete(null); setLoadAttempt(value => value + 1);

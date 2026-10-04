@@ -3,6 +3,8 @@ import {
   canView,
   isUuid,
   parseMealTemplateCreate,
+  parseMealTemplateRename,
+  type MealTemplateRenameInput,
   type MealTemplate,
   type SharedTemplateView,
   type TemplateItem,
@@ -148,6 +150,26 @@ export async function deleteTemplate(
     .where(and(eq(schema.mealTemplates.id, templateId), eq(schema.mealTemplates.ownerId, ownerId)))
     .returning({ id: schema.mealTemplates.id });
   return Boolean(deleted);
+}
+
+/** Rename only an owned meal; lock the row through comparison and update. */
+export async function renameTemplate(database: Database, ownerId: string, templateId: string, value: MealTemplateRenameInput): Promise<{ id: string; name: string } | null> {
+  if (!isUuid(templateId)) return null;
+  const input = parseMealTemplateRename(value);
+  return database.transaction(async tx => {
+    const [existing] = await tx.select({ id: schema.mealTemplates.id, name: schema.mealTemplates.name })
+      .from(schema.mealTemplates)
+      .where(and(eq(schema.mealTemplates.id, templateId), eq(schema.mealTemplates.ownerId, ownerId)))
+      .for("update");
+    // Identical retries can confirm the current name without writing again.
+    // Name comparison is not a version history or a guarantee against ABA.
+    if (!existing || (existing.name !== input.previousName && existing.name !== input.name)) return null;
+    if (existing.name === input.name) return existing;
+    const [updated] = await tx.update(schema.mealTemplates).set({ name: input.name })
+      .where(and(eq(schema.mealTemplates.id, templateId), eq(schema.mealTemplates.ownerId, ownerId)))
+      .returning({ id: schema.mealTemplates.id, name: schema.mealTemplates.name });
+    return updated ?? null;
+  });
 }
 
 /**

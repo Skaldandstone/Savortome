@@ -41,6 +41,22 @@ export interface MealTemplateCreateInput {
   items: { role: TemplateRole; recipeId: string }[];
 }
 
+export interface MealTemplateRenameInput {
+  /** Exact last-read name; never normalize the concurrency comparison. */
+  previousName: string;
+  name: string;
+}
+
+export function parseMealTemplateRename(value: unknown): MealTemplateRenameInput {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Review the saved meal name.");
+  const input = value as Record<string, unknown>;
+  // Historical names may be longer than today's creation limit. Bound the
+  // request while allowing those meals to be renamed without recreating them.
+  if (typeof input.previousName !== "string" || input.previousName.length > 1024 || /[\u0000-\u001f\u007f]/.test(input.previousName)) throw new Error("Reload the saved meal before renaming it.");
+  if (typeof input.name !== "string" || input.name.length > 160 || !input.name.trim() || /[\u0000-\u001f\u007f]/.test(input.name)) throw new Error("Use a meal name between one and 160 characters.");
+  return { previousName: input.previousName, name: input.name.trim() };
+}
+
 export function parseMealTemplateCreate(value: unknown): MealTemplateCreateInput {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Review a meal before saving.");
   const body = value as Record<string, unknown>;
