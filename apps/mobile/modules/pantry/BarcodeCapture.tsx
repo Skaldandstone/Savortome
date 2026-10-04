@@ -19,6 +19,7 @@ export function BarcodeCapture({ onQueued }: { onQueued: (intake: PantryIntakeVi
   const scannerLock = useRef(false);
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [availabilityError, setAvailabilityError] = useState(false);
+  const [availabilityVisit, setAvailabilityVisit] = useState(0);
   const [uncertain, setUncertain] = useState(false);
   const action = useRef(false);
   const cameraRun = useRef(0);
@@ -42,14 +43,18 @@ export function BarcodeCapture({ onQueued }: { onQueued: (intake: PantryIntakeVi
     return () => listener.remove();
   }, []);
   useEffect(() => {
-    ++version.current; ++cameraRun.current; let active = true;
+    ++version.current; ++cameraRun.current;
     action.current = false; setUncertain(false); setAvailabilityError(false);
     setCamera(false); setProduct(null); setName(""); setAmount(""); setBarcode(""); setError(null); setNotice(null); setBusy(false); setEnabled(null); reference.current = null;
+    return () => { ++version.current; ++cameraRun.current; };
+  }, [client]);
+  useFocusEffect(useCallback(() => {
+    let active = true; setEnabled(null); setAvailabilityError(false);
     if (client) void client.barcodeLookupStatus().then(result => { if (active) setEnabled(result.enabled); })
       .catch(() => { if (active) setAvailabilityError(true); });
     else setEnabled(false);
-    return () => { active = false; ++version.current; ++cameraRun.current; };
-  }, [client]);
+    return () => { active = false; };
+  }, [client, availabilityVisit]));
   const lookup = async (value = barcode) => {
     if (action.current || uncertain) return;
     if (!client) { setError("Sign in to look up products."); return; }
@@ -122,7 +127,10 @@ export function BarcodeCapture({ onQueued }: { onQueued: (intake: PantryIntakeVi
         <Button label="Close camera" variant="ghost" onPress={() => { ++cameraRun.current; scannerLock.current = true; setCamera(false); }} />
       </View> : null}
       {enabled === false ? <Text style={{ color: c.textMuted }}>Lookup is unavailable in this build. Enter the product below.</Text> : null}
-      {availabilityError ? <Text accessibilityRole="alert" style={{ color: c.textMuted }}>Could not check lookup availability. Manual entry still works. Reopen this screen to try again.</Text> : null}
+      {enabled === null && !availabilityError ? <Text accessibilityLiveRegion="polite" style={{ color: c.textMuted }}>Checking lookup availability… Manual entry is ready below.</Text> : null}
+      {availabilityError ? <View style={styles.fields}><Callout tone="info">Could not check lookup availability. Your entry is still here and manual entry works.</Callout>
+        <Button label="Check lookup availability again" variant="ghost" onPress={() => setAvailabilityVisit(value => value + 1)} />
+      </View> : null}
       {product ? <View><Text style={{ color: c.textMuted }}>{product.brand ?? ""} {product.packageLabel ? `Package label: ${product.packageLabel}.` : ""} Open Food Facts data (ODbL) can be incomplete. Check your package for allergens.</Text>
         <Button label="View Open Food Facts source" variant="ghost" onPress={() => void Linking.openURL(product.sourceUrl).catch(() => setError("Could not open the source link."))} /></View> : null}
       <Text style={{ color: c.text }}>Product name, editable</Text>

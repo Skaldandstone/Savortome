@@ -45,7 +45,9 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [needsSignIn, setNeedsSignIn] = useState(false);
-  const [capture, setCapture] = useState({ photo: false, voice: false });
+  const [capture, setCapture] = useState<{ photo: boolean; voice: boolean } | null>(null);
+  const [captureError, setCaptureError] = useState(false);
+  const [captureVisit, setCaptureVisit] = useState(0);
   const draftId = useRef<string | null>(null);
   const pendingSave = useRef<FoodLogInput | null>(null);
   const action = useRef(false);
@@ -93,14 +95,23 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
   useEffect(() => {
     ++accountEpoch.current; alive.current = true;
     pendingSave.current = null; action.current = false; setUnconfirmed(false);
-    stopCapture(true); setVoiceBlob(null); setCapture({ photo: false, voice: false });
+    stopCapture(true); setVoiceBlob(null); setCapture(null); setCaptureError(false);
     setNotes([]); setLoaded(false); setTitle(""); setPortion(""); setSource("text"); setUncertainty(""); draftId.current = null;
     setIdeas(null); setIdeasError(null); setIdeasBusy(false); setBusy(false); setError(""); setStatus(""); setNeedsSignIn(false); setShowInvitation(true);
     void load();
-    const account = owner.current; const epoch = accountEpoch.current;
-    void api.foodNoteCaptureStatus().then(result => { if (alive.current && accountEpoch.current === epoch && owner.current === account) setCapture(result); }).catch(() => {});
     return () => { alive.current = false; ++accountEpoch.current; ++request.current; stopCapture(true); };
   }, [userId, load, stopCapture]);
+  useEffect(() => {
+    let active = true;
+    const account = owner.current; const epoch = accountEpoch.current;
+    setCapture(null); setCaptureError(false);
+    void api.foodNoteCaptureStatus().then(result => {
+      if (active && alive.current && accountEpoch.current === epoch && owner.current === account) setCapture(result);
+    }).catch(() => {
+      if (active && alive.current && accountEpoch.current === epoch && owner.current === account) setCaptureError(true);
+    });
+    return () => { active = false; };
+  }, [api, userId, captureVisit]);
   useEffect(() => {
     const hide = () => { if (document.visibilityState !== "visible") stopCapture(true); };
     const leave = () => stopCapture(true);
@@ -239,14 +250,18 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
         }}>Discard draft</Button></FieldRow>
       </form>
       <details className={styles.capture}><summary>Use a photo or voice note instead</summary>
+        {!capture && !captureError ? <p role="status">Checking photo and voice availability… Text entry is ready above.</p> : null}
+        {captureError ? <Callout tone="info" role="status">Could not check photo and voice availability. Your typed draft is unchanged.
+          <Button type="button" variant="ghost" onClick={() => setCaptureVisit(value => value + 1)}>Check capture availability again</Button>
+        </Callout> : null}
         <p>Only when you choose to send it, the file goes to OpenAI to prepare an editable draft. Savortome does not save the original file or raw transcript. Provider processing and retention are governed by our configured OpenAI service. A photo cannot establish hidden ingredients, portions, nutrients or allergy safety.</p>
-        <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Choose a food photo for an editable draft" disabled={busy || recording || unconfirmed || !capture.photo} onChange={event => {
+        <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Choose a food photo for an editable draft" disabled={busy || recording || unconfirmed || !capture?.photo} onChange={event => {
           const file = event.target.files?.[0]; event.target.value = "";
           if (file && title.trim() && !window.confirm("Replace the current unsaved food draft with a photo suggestion?")) return;
           if (file) void generate("photo", file);
         }} />
-        {!capture.photo ? <p>Photo suggestions aren’t enabled in this build. You can type a note.</p> : null}
-        {capture.voice ? <div className={styles.stack}>
+        {capture && !capture.photo ? <p>Photo suggestions aren’t enabled in this build. You can type a note.</p> : null}
+        {capture?.voice ? <div className={styles.stack}>
           <p>Record up to 45 seconds. Recording stops and is discarded when you leave this screen or hide the app. Nothing is sent until you select Send for editable draft.</p>
           <FieldRow><Button variant="ghost" disabled={busy || unconfirmed || !loaded} onClick={() => recording ? stopCapture() : void startVoice()}>{recording ? "Stop recording" : "Record a voice note"}</Button>
             {voiceBlob ? <><Button disabled={busy || unconfirmed} onClick={() => {
@@ -254,7 +269,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
               void generate("voice", voiceBlob);
             }}>Send for editable draft</Button><Button variant="ghost" disabled={busy} onClick={() => setVoiceBlob(null)}>Discard recording</Button></> : null}</FieldRow>
           {recording ? <p role="status">Recording. Stop whenever you want.</p> : voiceBlob ? <p role="status">Recording ready; not sent yet.</p> : null}
-        </div> : <p>Voice transcription isn’t enabled in this build. Your keyboard’s dictation can still enter text.</p>}
+        </div> : capture ? <p>Voice transcription isn’t enabled in this build. Your keyboard’s dictation can still enter text.</p> : null}
       </details>
       {status ? <Callout tone="info" role="status">{status}</Callout> : null}
       {error ? <Callout tone="error" role="alert">{error} {needsSignIn ? <Link href={signInReturnHref("/today")}>Sign in again</Link> : null}</Callout> : null}

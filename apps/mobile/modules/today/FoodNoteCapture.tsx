@@ -4,8 +4,16 @@ import { useFocusEffect } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { File, Paths } from "expo-file-system";
 import { RecordingPresets, requestRecordingPermissionsAsync, setAudioModeAsync, useAudioRecorder } from "expo-audio";
-import { isPhotoMediaType, type FoodNoteDraft, type SecondsClient } from "@seconds/core/format";
+import { ApiError, isPhotoMediaType, type FoodNoteDraft, type SecondsClient } from "@seconds/core/format";
 import { Button, Callout, Panel, PanelHeader, space, usePalette } from "@/ui";
+class CaptureInputError extends Error {}
+function captureFailure(cause: unknown, fallback: string) {
+  if (cause instanceof CaptureInputError) return cause.message;
+  if (cause instanceof ApiError && cause.status === 401) return "Your sign-in may have ended. Sign in again before sending a food note.";
+  if (cause instanceof ApiError && cause.status === 408) return "The request timed out. Nothing was saved as a food note. You can type a note instead.";
+  // Native SDK/file/provider diagnostics may contain paths or raw details.
+  return fallback;
+}
 
 function removeTemporaryFile(uri: string | null) {
   if (!uri) return;
@@ -36,6 +44,7 @@ export function FoodNoteCapture({ client, onDraft, onBusy, confirmReplace, disab
   const [error, setError] = useState<string | null>(null);
   const generation = useRef(0);
   const active = useRef(false);
+  const statusRequest = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recordingRef = useRef(false);
   const operation = useRef(false);
@@ -53,7 +62,10 @@ export function FoodNoteCapture({ client, onDraft, onBusy, confirmReplace, disab
       if (keepStopped.current && active.current && generation.current === version && uri) {
         audioRef.current = uri; setAudioUri(uri);
       } else { removeTemporaryFile(uri); removeTemporaryFile(audioRef.current); audioRef.current = null; if (active.current) setAudioUri(null); }
-    } catch { if (active.current) setError("Recording stopped unexpectedly. You can type a note instead."); }
+    } catch {
+      keepStopped.current = false; removeTemporaryFile(recorder.uri); removeTemporaryFile(audioRef.current); audioRef.current = null;
+      if (active.current) { setAudioUri(null); setError("Recording could not be finalized. It will not be offered for sending. You can type a note instead."); }
+    }
     finally {
       // Restore playback mode; this feature never requests background audio.
       await setAudioModeAsync({ allowsRecording: false, shouldPlayInBackground: false }).catch(() => {});
@@ -79,11 +91,12 @@ export function FoodNoteCapture({ client, onDraft, onBusy, confirmReplace, disab
     return () => listener.remove();
   }, [stop, onBusy]);
   const loadStatus = useCallback(async () => {
-    const version = generation.current; setStatusError(false);
-    try { const result = await client.foodNoteCaptureStatus(); if (active.current && version === generation.current) setStatus(result); }
-    catch { if (active.current && version === generation.current) setStatusError(true); }
+    const version = generation.current; const request = ++statusRequest.current;
+    setStatus(null); setStatusError(false);
+    try { const result = await client.foodNoteCaptureStatus(); if (active.current && version === generation.current && request === statusRequest.current) setStatus(result); }
+    catch { if (active.current && version === generation.current && request === statusRequest.current) setStatusError(true); }
   }, [client]);
-  useFocusEffect(useCallback(() => { void loadStatus(); }, [loadStatus]));
+  useFocusEffect(useCallback(() => { void loadStatus(); return () => { ++statusRequest.current; }; }, [loadStatus]));
   const draft = async (source: "photo" | "voice", base64: string, mediaType: string, version: number) => {
     const result = await client.foodNoteDraft(source, base64, mediaType);
     if (active.current && generation.current === version) onDraft(result.draft, source);
@@ -98,7 +111,7 @@ export function FoodNoteCapture({ client, onDraft, onBusy, confirmReplace, disab
       if (!await confirmReplace() || !active.current || generation.current !== version) return;
       if (camera) {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
-        if (!permission.granted) throw new Error("Camera access was not granted. Choose an existing photo or type a note.");
+        if (!permission.granted) throw new CaptureInputError("Camera access was not granted. Choose an existing photo or type a note.");
       }
       if (!active.current || generation.current !== version) return;
       const asset = camera
@@ -110,9 +123,9 @@ export function FoodNoteCapture({ client, onDraft, onBusy, confirmReplace, disab
       if (selected?.uri.startsWith(Paths.cache.uri)) temporary = selected.uri;
       if (!active.current || generation.current !== version) return;
       const type = selected?.mimeType ?? (selected?.uri.toLowerCase().endsWith(".png") ? "image/png" : "image/jpeg");
-      if (!selected?.base64 || selected.base64.length > 10_666_668 || !isPhotoMediaType(type)) throw new Error("Use a JPEG, PNG or WebP photo under 8 MB.");
+      if (!selected?.base64 || selected.base64.length > 10_666_668 || !isPhotoMediaType(type)) throw new CaptureInputError("Use a JPEG, PNG or WebP photo under 8 MB.");
       await draft("photo", selected.base64, type, version);
-    } catch (cause) { if (active.current && generation.current === version) setError(cause instanceof Error ? cause.message : "Could not prepare a photo draft. Type a note instead."); }
+    } catch (cause) { if (active.current && generation.current === version) setError(captureFailure(cause, "Could not prepare a photo draft. Type a note instead.")); }
     finally { removeTemporaryFile(temporary); if (active.current && generation.current === version) { operation.current = false; setBusy(false); onBusy(false); } }
   };
   const start = async () => {
@@ -122,14 +135,14 @@ export function FoodNoteCapture({ client, onDraft, onBusy, confirmReplace, disab
     setError(null); removeTemporaryFile(audioRef.current); audioRef.current = null; setAudioUri(null); setBusy(true); onBusy(true);
     try {
       const permission = await requestRecordingPermissionsAsync();
-      if (!permission.granted) throw new Error("Microphone access was not granted. You can type a note or use keyboard dictation.");
+      if (!permission.granted) throw new CaptureInputError("Microphone access was not granted. You can type a note or use keyboard dictation.");
       if (!active.current || generation.current !== version || AppState.currentState !== "active") return;
       await setAudioModeAsync({ allowsRecording: true, shouldPlayInBackground: false });
       await recorder.prepareToRecordAsync();
       if (!active.current || generation.current !== version || AppState.currentState !== "active") { await stop(false); return; }
       recordingRef.current = true; recorder.record(); setRecording(true);
       timer.current = setTimeout(() => { void stop(true); }, 45_000);
-    } catch (cause) { if (active.current && generation.current === version) setError(cause instanceof Error ? cause.message : "Recording unavailable. Type a note instead."); }
+    } catch (cause) { if (active.current && generation.current === version) setError(captureFailure(cause, "Recording unavailable. Type a note instead.")); }
     finally { if (active.current && generation.current === version) { operation.current = false; setBusy(false); if (!recordingRef.current) onBusy(false); } }
   };
   const sendVoice = async () => {
@@ -141,12 +154,12 @@ export function FoodNoteCapture({ client, onDraft, onBusy, confirmReplace, disab
     try {
       if (!uri || !await confirmReplace() || !active.current || generation.current !== version) return;
       const file = new File(uri);
-      if (!file.exists || file.size === 0 || file.size > 5_000_000) throw new Error("Recording is empty or too large. Try a shorter note.");
+      if (!file.exists || file.size === 0 || file.size > 5_000_000) throw new CaptureInputError("Recording is empty or too large. Try a shorter note.");
       const base64 = await file.base64();
       if (!active.current || generation.current !== version) return;
       sent = true;
       await draft("voice", base64, "audio/mp4", version);
-    } catch (cause) { if (active.current && generation.current === version) setError(cause instanceof Error ? cause.message : "Voice draft unavailable. Type a note instead."); }
+    } catch (cause) { if (active.current && generation.current === version) setError(captureFailure(cause, "Voice draft unavailable. Type a note instead.")); }
     finally {
       if (sent) { removeTemporaryFile(uri); if (audioRef.current === uri) audioRef.current = null; }
       if (active.current && generation.current === version) { operation.current = false; if (sent) setAudioUri(null); setBusy(false); onBusy(false); }

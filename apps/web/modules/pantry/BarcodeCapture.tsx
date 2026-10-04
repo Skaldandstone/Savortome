@@ -24,6 +24,7 @@ function AccountBarcodeCapture({ onQueued, userId, sessionId }: CaptureProps & {
   const version = useRef(0);
   const [enabled, setEnabled] = useState<boolean | null>(null);
   const [availabilityError, setAvailabilityError] = useState(false);
+  const [availabilityVisit, setAvailabilityVisit] = useState(0);
   const [camera, setCamera] = useState(false);
   const [uncertain, setUncertain] = useState(false);
   const action = useRef(false);
@@ -37,13 +38,17 @@ function AccountBarcodeCapture({ onQueued, userId, sessionId }: CaptureProps & {
   const [error, setError] = useState<string | null>(null);
   const reference = useRef<string | null>(null);
   useEffect(() => {
-    ++version.current; let active = true;
+    ++version.current;
     action.current = false; setCamera(false); setUncertain(false); setAvailabilityError(false);
     setProduct(null); setName(""); setAmount(""); setBarcode(""); setError(null); setNotice(null); setBusy(false); setEnabled(null); reference.current = null;
+    return () => { ++version.current; };
+  }, [userId, api]);
+  useEffect(() => {
+    let active = true; setEnabled(null); setAvailabilityError(false);
     void api.barcodeLookupStatus().then(result => { if (active) setEnabled(result.enabled); })
       .catch(() => { if (active) setAvailabilityError(true); });
-    return () => { active = false; ++version.current; };
-  }, [userId, api]);
+    return () => { active = false; };
+  }, [api, availabilityVisit]);
   const lookup = async () => {
     if (action.current || uncertain || !enabled) return;
     action.current = true; setCamera(false);
@@ -88,7 +93,10 @@ function AccountBarcodeCapture({ onQueued, userId, sessionId }: CaptureProps & {
         <Button type="button" disabled={busy || uncertain || camera} onClick={() => setCamera(true)}>Scan barcode with camera</Button></FieldRow>
     </form>
     {camera ? <BrowserBarcodeScanner key={userId} onClose={() => { setCamera(false); document.getElementById("pantry-barcode")?.focus(); }} onCode={code => { setCamera(false); setBarcode(code); setNotice("Barcode found. Choose Look up label, or enter the product name below."); document.getElementById("pantry-barcode")?.focus(); }} /> : null}
-    {availabilityError ? <p role="status">Could not check product lookup availability. Manual entry still works. Reopen this screen to try lookup again.</p> : null}
+    {enabled === null && !availabilityError ? <p role="status">Checking product lookup availability… Manual entry is ready below.</p> : null}
+    {availabilityError ? <Callout tone="info" role="status">Could not check product lookup availability. Your entry is still here and manual entry works.
+      <Button type="button" onClick={() => setAvailabilityVisit(value => value + 1)}>Check lookup availability again</Button>
+    </Callout> : null}
     {enabled === false ? <p>Lookup is unavailable in this build. You can still enter the product below.</p> : null}
     {product ? <p>{product.brand ? `${product.brand}. ` : ""}{product.packageLabel ? `Package label: ${product.packageLabel}. ` : ""}
       Label from <a href={product.sourceUrl} target="_blank" rel="noreferrer">Open Food Facts</a> (ODbL). It may be incomplete or wrong. Check your package for allergens.</p> : null}
