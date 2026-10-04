@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {readFileSync} from 'node:fs';
 import {resolve} from 'node:path';
-import {saveFoodNote,listFoodNotes} from '../packages/db/src/queries/food-log.ts';
+import {saveFoodNote,deleteFoodNote,listFoodNotes} from '../packages/db/src/queries/food-log.ts';
 import * as schema from '../packages/db/src/schema.ts';
 const require=createRequire(new URL('../packages/db/package.json',import.meta.url));
 const {PGlite}=require('@electric-sql/pglite');
@@ -92,6 +92,34 @@ test('0021 backfills only present IDs and preserves contents; retained deletion 
   const columns=await rows(pg,`SELECT column_name FROM information_schema.columns WHERE table_name='food_note_references' ORDER BY ordinal_position`);
   assert.deepEqual(columns.map(c=>c.column_name),['user_id','id','deleted']);
   await apply(db,migrations[targetIndex+1]);assert.equal((await rows(pg,'SELECT count(*) AS count FROM food_note_references'))[0].count,1);
+ }finally{await pg.close();}
+});
+
+test('account cascade fault rolls back notes and live/deleted identities; deliberate retry affects only that account',async()=>{
+ const {pg,db}=await baseline();try{
+  await apply(db);await apply(db,migrations[targetIndex+1]);
+  const input={id:noteId,date:'2026-10-04',title:'Owner note',portion:null,source:'text'};
+  const removedId='00000000-0000-4000-8000-000000000008';
+  await saveFoodNote(db,owner,input);await saveFoodNote(db,other,{...input,title:'Other note'});
+  await saveFoodNote(db,owner,{...input,id:removedId});await deleteFoodNote(db,owner,removedId);
+  await saveFoodNote(db,other,{...input,id:removedId});await deleteFoodNote(db,other,removedId);
+  const notes=await rows(pg,'SELECT * FROM food_log_entries ORDER BY user_id,id');
+  const references=await rows(pg,'SELECT * FROM food_note_references ORDER BY user_id,id');
+  const pantry=await rows(pg,'SELECT * FROM pantry_items');
+  await pg.exec(`CREATE FUNCTION fail_identity_cascade() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'synthetic account cascade fault'; END $$;
+    CREATE TRIGGER fail_identity_cascade BEFORE DELETE ON food_note_references FOR EACH ROW EXECUTE FUNCTION fail_identity_cascade();`);
+  await assert.rejects(pg.query('DELETE FROM users WHERE id=$1',[owner]),/synthetic account cascade fault/);
+  assert.equal((await rows(pg,'SELECT count(*) AS count FROM users WHERE id=$1',[owner]))[0].count,1);
+  assert.deepEqual(await rows(pg,'SELECT * FROM food_log_entries ORDER BY user_id,id'),notes);
+  assert.deepEqual(await rows(pg,'SELECT * FROM food_note_references ORDER BY user_id,id'),references);
+  assert.deepEqual(await rows(pg,'SELECT * FROM pantry_items'),pantry);
+  await pg.exec('DROP TRIGGER fail_identity_cascade ON food_note_references; DROP FUNCTION fail_identity_cascade();');
+  await pg.query('DELETE FROM users WHERE id=$1',[owner]);
+  assert.deepEqual(await rows(pg,'SELECT * FROM food_note_references ORDER BY user_id,id'),references.filter(r=>r.user_id===other));
+  assert.deepEqual(await listFoodNotes(db,owner),[]);assert.equal((await listFoodNotes(db,other))[0].title,'Other note');
+  assert.equal((await rows(pg,'SELECT count(*) AS count FROM users WHERE id=$1',[owner]))[0].count,0);
+  await assert.rejects(saveFoodNote(db,owner,input),error=>error.cause?.code==='23503');
+  await assert.rejects(saveFoodNote(db,other,{...input,id:removedId}),/removed or is unavailable/);
  }finally{await pg.close();}
 });
 test('0021 fault after backfill rolls back marker table and journal while keeping existing notes',async()=>{
