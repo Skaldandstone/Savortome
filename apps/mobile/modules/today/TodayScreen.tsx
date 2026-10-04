@@ -4,7 +4,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { useAuth } from "@clerk/expo";
 import * as Crypto from "expo-crypto";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { foodLogDate, localFoodDate, type FoodLogEntry, type FoodLogSource, type PlanTogetherIdea } from "@seconds/core/format";
+import { foodLogDate, localFoodDate, parseFoodLogInput, type FoodLogInput, type FoodLogEntry, type FoodLogSource, type PlanTogetherIdea } from "@seconds/core/format";
 import { createAccountClient } from "@/lib/client";
 import { Button, Callout, Field, Panel, PanelHeader, space, type as typeScale, usePalette } from "@/ui";
 import { FoodNoteCapture } from "./FoodNoteCapture";
@@ -42,22 +42,40 @@ function AccountTodayScreen() {
   const [ideas, setIdeas] = useState<PlanTogetherIdea[] | null>(null);
   const [ideasBusy, setIdeasBusy] = useState(false); const [ideasError, setIdeasError] = useState<string | null>(null);
   const id = useRef<string | null>(null);
+  const pendingSave = useRef<FoodLogInput | null>(null);
+  const action = useRef(false);
+  const readVersion = useRef(0);
+  const [unconfirmed, setUnconfirmed] = useState(false);
   const draftTitle = useRef(title); draftTitle.current = title;
   const current = (version: number) => mounted.current && focused.current && generation.current === version;
   useFocusEffect(useCallback(() => {
-    focused.current = true; setCaptureBusy(false); setBusy(false); setIdeasBusy(false); setLoading(false); setFocusVisit(value => value + 1);
+    focused.current = true; action.current = false; setCaptureBusy(false); setBusy(false); setIdeasBusy(false); setLoading(false); setFocusVisit(value => value + 1);
     return () => { focused.current = false; ++generation.current; };
   }, []));
   const load = useCallback(async () => {
     if (!client) return;
     const version = generation.current;
+    const read = ++readVersion.current;
     setLoading(true); setLoadError(null);
-    try { const result = await client.listFoodNotes(); if (current(version)) { setNotes(result); setLoaded(true); } }
-    catch { if (current(version)) setLoadError("Food notes could not load. Nothing has been deleted. Reload before saving another note."); }
-    finally { if (current(version)) setLoading(false); }
+    try {
+      const pending = pendingSave.current;
+      const result = await client.listFoodNotes();
+      const savedDay = pending ? await client.listFoodNotes(pending.date) : [];
+      if (current(version) && readVersion.current === read) {
+        setNotes(result); setLoaded(true);
+        if (pending && pendingSave.current === pending && savedDay.some(note => note.id === pending.id && note.date === pending.date && note.title === pending.title && note.portion === pending.portion && note.source === pending.source)) {
+          pendingSave.current = null; setUnconfirmed(false); id.current = pending.id;
+          setError(null);
+          setMessage("Reload confirmed your note was saved. The draft is still here if you want to edit it; discarding it will not remove the saved note.");
+        }
+      }
+    }
+    catch { if (current(version) && readVersion.current === read) setLoadError("Food notes could not load. Nothing has been deleted. Reload before saving another note."); }
+    finally { if (current(version) && readVersion.current === read) setLoading(false); }
   }, [client]);
   useEffect(() => {
     mounted.current = true; ++generation.current;
+    pendingSave.current = null; action.current = false; ++readVersion.current; setUnconfirmed(false);
     setNotes([]); setLoaded(false); setTitle(""); setPortion(""); setDate(localFoodDate()); setSource("text"); setUncertainty(""); id.current = null;
     setIdeas(null); setIdeasError(null); setMessage(null); setError(null); setInvitation(true); setBusy(false); setCaptureBusy(false);
     void load();
@@ -73,32 +91,44 @@ function AccountTodayScreen() {
       .catch(() => { if (!cancelled && current(version)) setDayState("failed"); });
     return () => { cancelled = true; };
   }, [date, notes, client, focusVisit]);
-  const confirmReplace = useCallback(async () => !draftTitle.current.trim() || await ask("Replace the current unsaved food draft?", "Replace draft"), []);
+  const confirmReplace = useCallback(async () => !pendingSave.current && (!draftTitle.current.trim() || await ask("Replace the current unsaved food draft?", "Replace draft")), []);
   const save = async () => {
-    if (!client) return;
-    const version = generation.current; setBusy(true); setError(null); setMessage(null);
+    if (!client || action.current || captureBusy || !loaded) return;
+    let input: FoodLogInput;
     try {
       id.current ??= Crypto.randomUUID();
-      const entry = await client.saveFoodNote({ id: id.current, date, title, portion: portion.trim() || null, source });
+      input = pendingSave.current ?? parseFoodLogInput({ id: id.current, date, title, portion: portion.trim() || null, source });
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Review the name and date before saving."); return; }
+    action.current = true; ++readVersion.current; setLoading(false);
+    pendingSave.current = input; setUnconfirmed(true);
+    const version = generation.current; setBusy(true); setError(null); setMessage(null);
+    try {
+      const entry = await client.saveFoodNote(input);
       if (!current(version)) return;
       setNotes(existing => [entry, ...existing.filter(note => note.id !== entry.id)]);
+      pendingSave.current = null; setUnconfirmed(false);
       setTitle(""); setPortion(""); setUncertainty(""); setSource("text"); id.current = null;
       setMessage("Food note saved. Your pantry was not changed.");
     } catch { if (current(version)) setError("We could not confirm the note saved. Your draft is still here. Reload notes before retrying; you may need to sign in again."); }
-    finally { if (current(version)) setBusy(false); }
+    finally { if (current(version)) { action.current = false; setBusy(false); } }
   };
   const remove = async (note: FoodLogEntry) => {
-    if (!client) return;
+    if (!client || action.current || captureBusy || pendingSave.current) return;
     const version = generation.current;
-    if (!await ask(`Remove the food note for ${note.title}? Pantry and plans will stay unchanged.`, "Remove note") || !current(version)) return;
+    action.current = true;
+    if (!await ask(`Remove the food note for ${note.title}? Pantry and plans will stay unchanged.`, "Remove note") || !current(version)) { if (current(version)) action.current = false; return; }
+    ++readVersion.current; setLoading(false);
     setBusy(true); setError(null); setMessage(null);
     try { await client.deleteFoodNote(note.id); if (current(version)) { setNotes(existing => existing.filter(item => item.id !== note.id)); setMessage("Food note removed."); } }
     catch { if (current(version)) setError("We could not confirm removal. Reload food notes to check."); }
-    finally { if (current(version)) setBusy(false); }
+    finally { if (current(version)) { action.current = false; setBusy(false); } }
   };
   const repeatOrEdit = async (note: FoodLogEntry, edit: boolean) => {
+    if (action.current || captureBusy || pendingSave.current) return;
     const version = generation.current;
-    if (!await confirmReplace() || !current(version)) return;
+    action.current = true;
+    if (!await confirmReplace() || !current(version)) { if (current(version)) action.current = false; return; }
+    action.current = false;
     setTitle(note.title); setPortion(note.portion ?? ""); setSource(edit ? note.source : "repeat"); setUncertainty("");
     id.current = edit ? note.id : null;
     if (edit) setDate(note.date);
@@ -115,6 +145,7 @@ function AccountTodayScreen() {
   const recent = notes.filter((note, index) => notes.findIndex(other => other.title === note.title && other.portion === note.portion) === index).slice(0, 3);
   const textStyle = { color: c.textMuted, fontSize: typeScale.body, lineHeight: 23 };
   const disabled = busy || captureBusy;
+  const lockedDraft = disabled || unconfirmed;
   return <ScrollView style={{ backgroundColor: c.bg }} contentContainerStyle={[styles.content, { paddingTop: insets.top + space.lg }]} keyboardShouldPersistTaps="handled">
     <Button label="Back to cooking" variant="ghost" onPress={() => router.replace("/(protected)/(tabs)/cook")} />
     <Text accessibilityRole="header" style={[styles.heading, { color: c.text }]}>Today, at your pace</Text>
@@ -139,16 +170,28 @@ function AccountTodayScreen() {
         {loading ? <Text accessibilityLiveRegion="polite" style={textStyle}>Loading food notes…</Text> : null}
         {loadError ? <Callout tone="error">{loadError}</Callout> : null}
         <Button label="Reload food notes" variant="ghost" disabled={disabled || loading} onPress={() => void load()} />
-        <Text style={textStyle}>Date (YYYY-MM-DD)</Text><Field value={date} accessibilityLabel="Food note date, YYYY-MM-DD" editable={!disabled} maxLength={10} onChangeText={setDate} />
-        <Text style={textStyle}>Food name</Text><Field value={title} accessibilityLabel="Food name" editable={!disabled} maxLength={160} onChangeText={value => { setTitle(value); setSource("text"); }} />
-        <Text style={textStyle}>Portion, if you know it (optional)</Text><Field value={portion} accessibilityLabel="Portion, optional" editable={!disabled} maxLength={120} onChangeText={setPortion} placeholder="One bowl; leave blank if unsure" />
+        <Text style={textStyle}>Date (YYYY-MM-DD)</Text><Field value={date} accessibilityLabel="Food note date, YYYY-MM-DD" editable={!lockedDraft} maxLength={10} onChangeText={setDate} />
+        <Text style={textStyle}>Food name</Text><Field value={title} accessibilityLabel="Food name" editable={!lockedDraft} maxLength={160} onChangeText={value => { setTitle(value); setSource("text"); }} />
+        <Text style={textStyle}>Portion, if you know it (optional)</Text><Field value={portion} accessibilityLabel="Portion, optional" editable={!lockedDraft} maxLength={120} onChangeText={setPortion} placeholder="One bowl; leave blank if unsure" />
         {uncertainty ? <Callout tone="warn">{uncertainty} Photo portions stay unknown unless you enter one.</Callout> : null}
-        <View style={styles.row}><Button label={busy ? "Saving…" : id.current ? "Save reviewed edits" : "Save food note"} disabled={disabled || !loaded || !title.trim()} onPress={() => void save()} />
-          <Button label="Discard draft" variant="ghost" disabled={disabled || !title} onPress={() => { setTitle(""); setPortion(""); setSource("text"); setUncertainty(""); id.current = null; setMessage("Draft discarded."); setError(null); }} /></View>
+        {unconfirmed && !busy ? <Callout tone="warn">The save was not confirmed. This draft stays unchanged for a retry with the same reference. Reload first to check whether it already saved.</Callout> : null}
+        <View style={styles.row}><Button label={busy ? "Saving…" : unconfirmed ? "Retry the same food note" : id.current ? "Save reviewed edits" : "Save food note"} disabled={disabled || !loaded || !title.trim()} onPress={() => void save()} />
+          <Button label="Discard draft" variant="ghost" disabled={disabled || !title} onPress={() => {
+            const version = generation.current;
+            void (async () => {
+              if (action.current) return;
+              action.current = true;
+              const discard = !pendingSave.current || await ask("The note may already have saved. Discard this local draft only? Reload notes before adding it again.", "Discard local draft");
+              if (!current(version)) return;
+              action.current = false; if (!discard) return;
+              pendingSave.current = null; setUnconfirmed(false); setTitle(""); setPortion(""); setSource("text"); setUncertainty(""); id.current = null; setMessage("Local draft discarded. Saved notes were not removed."); setError(null);
+            })();
+          }} /></View>
         {message ? <Callout tone="info">{message}</Callout> : null}{error ? <Callout tone="error">{error}</Callout> : null}
       </View>
     </Panel>
-    {client ? <FoodNoteCapture key={userId} client={client} disabled={busy} onBusy={setCaptureBusy} confirmReplace={confirmReplace} onDraft={(draft, kind) => {
+    {client ? <FoodNoteCapture key={userId} client={client} disabled={busy || unconfirmed} onBusy={setCaptureBusy} confirmReplace={confirmReplace} onDraft={(draft, kind) => {
+      if (pendingSave.current || action.current) return;
       setTitle(draft.title); setPortion(draft.portion ?? ""); setSource(kind); setUncertainty(draft.uncertainty); id.current = null;
       setMessage("Draft ready. Check the name and portion before saving. Nothing has been saved.");
     }} /> : null}
@@ -157,11 +200,11 @@ function AccountTodayScreen() {
       {dayState === "failed" ? <Callout tone="error">This day's notes could not load. Check the date or reload; an empty display does not mean notes were deleted.</Callout> : null}
       {dayState === "ready" && !todayNotes.length ? <Text style={textStyle}>No notes for this day. Leaving this empty is fine.</Text> : null}
       {todayNotes.map(note => <View style={[styles.note, { borderColor: c.border }]} key={note.id}><Text accessibilityRole="header" style={{ color: c.text, fontSize: typeScale.title }}>{note.title}</Text><Text style={textStyle}>{note.portion ?? "Portion not recorded"}</Text>
-        <View style={styles.row}><Button label={`Edit ${note.title} note`} variant="ghost" disabled={disabled} onPress={() => void repeatOrEdit(note, true)} /><Button label={`Remove ${note.title} note`} variant="ghost" disabled={disabled} onPress={() => void remove(note)} /></View>
+        <View style={styles.row}><Button label={`Edit ${note.title} note`} variant="ghost" disabled={lockedDraft} onPress={() => void repeatOrEdit(note, true)} /><Button label={`Remove ${note.title} note`} variant="ghost" disabled={lockedDraft} onPress={() => void remove(note)} /></View>
       </View>)}
     </Panel>
     {loaded && recent.length ? <Panel><PanelHeader title="Something familiar" hint="Copy a previous food note into a new draft. It only records another meal when you explicitly save." />
-      {recent.map(note => <Button key={note.id} label={`Use ${note.title} as a new draft`} variant="ghost" disabled={disabled} onPress={() => void repeatOrEdit(note, false)} />)}
+      {recent.map(note => <Button key={note.id} label={`Use ${note.title} as a new draft`} variant="ghost" disabled={lockedDraft} onPress={() => void repeatOrEdit(note, false)} />)}
     </Panel> : null}
   </ScrollView>;
 }

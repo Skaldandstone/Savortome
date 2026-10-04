@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { foodLogDate, localFoodDate, type FoodLogEntry, type FoodLogSource, type PlanTogetherIdea } from "@seconds/core/format";
+import { foodLogDate, localFoodDate, parseFoodLogInput, type FoodLogInput, type FoodLogEntry, type FoodLogSource, type PlanTogetherIdea } from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { actionFailure, signInReturnHref } from "@/lib/action-failure";
 import { Button, Callout, FieldRow, Panel, PanelHeader, TextField } from "@/ui";
@@ -39,6 +39,9 @@ export function TodayScreen() {
   const [needsSignIn, setNeedsSignIn] = useState(false);
   const [capture, setCapture] = useState({ photo: false, voice: false });
   const draftId = useRef<string | null>(null);
+  const pendingSave = useRef<FoodLogInput | null>(null);
+  const action = useRef(false);
+  const [unconfirmed, setUnconfirmed] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
@@ -49,7 +52,11 @@ export function TodayScreen() {
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const stopCapture = useCallback((discard = false) => {
-    if (discard) { ++voiceGeneration.current; voiceOpening.current = false; setVoiceBlob(null); }
+    if (discard) {
+      ++voiceGeneration.current;
+      if (voiceOpening.current && !action.current) setBusy(false);
+      voiceOpening.current = false; setVoiceBlob(null);
+    }
     if (stopTimer.current) clearTimeout(stopTimer.current);
     if (recorder.current?.state === "recording") recorder.current.stop();
     stream.current?.getTracks().forEach(track => track.stop());
@@ -60,14 +67,24 @@ export function TodayScreen() {
     const account = owner.current; const epoch = accountEpoch.current; const version = ++request.current;
     setLoading(true); setLoadError(null);
     try {
+      const pending = pendingSave.current;
       const result = await api.listFoodNotes();
-      if (alive.current && accountEpoch.current === epoch && owner.current === account && request.current === version) { setNotes(result); setLoaded(true); }
+      const savedDay = pending ? await api.listFoodNotes(pending.date) : [];
+      if (alive.current && accountEpoch.current === epoch && owner.current === account && request.current === version) {
+        setNotes(result); setLoaded(true);
+        if (pending && pendingSave.current === pending && savedDay.some(note => note.id === pending.id && note.date === pending.date && note.title === pending.title && note.portion === pending.portion && note.source === pending.source)) {
+          pendingSave.current = null; setUnconfirmed(false); draftId.current = pending.id;
+          setError(""); setNeedsSignIn(false);
+          setStatus("Reload confirmed your note was saved. You can edit this draft; discarding it will not remove the saved note.");
+        }
+      }
     } catch {
       if (alive.current && accountEpoch.current === epoch && owner.current === account && request.current === version) setLoadError("Your food notes could not load. Nothing has been deleted. Try loading them again before saving another note.");
     } finally { if (alive.current && accountEpoch.current === epoch && owner.current === account && request.current === version) setLoading(false); }
   }, []);
   useEffect(() => {
     ++accountEpoch.current; alive.current = true;
+    pendingSave.current = null; action.current = false; setUnconfirmed(false);
     stopCapture(true); setVoiceBlob(null); setCapture({ photo: false, voice: false });
     setNotes([]); setLoaded(false); setTitle(""); setPortion(""); setSource("text"); setUncertainty(""); draftId.current = null;
     setIdeas(null); setIdeasError(null); setIdeasBusy(false); setBusy(false); setError(""); setStatus(""); setNeedsSignIn(false); setShowInvitation(true);
@@ -97,6 +114,8 @@ export function TodayScreen() {
     const result = actionFailure(cause, fallback); setError(result.message); setNeedsSignIn(result.signInRequired);
   };
   const generate = async (kind: "photo" | "voice", blob: Blob) => {
+    if (action.current || pendingSave.current || voiceOpening.current || recorder.current?.state === "recording") return;
+    action.current = true;
     const account = owner.current; const epoch = accountEpoch.current;
     setBusy(true); setError(""); setStatus(""); setNeedsSignIn(false);
     try {
@@ -110,10 +129,10 @@ export function TodayScreen() {
       setTitle(draft.title); setPortion(draft.portion ?? ""); setSource(kind); setUncertainty(draft.uncertainty); draftId.current = null;
       setStatus("Draft ready. Check the food name and portion before saving. Nothing has been saved yet.");
     } catch (cause) { if (alive.current && accountEpoch.current === epoch && owner.current === account) failure(cause, "Could not prepare a draft. Type a food note instead."); }
-    finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) { setBusy(false); if (kind === "voice") setVoiceBlob(null); } }
+    finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) { action.current = false; setBusy(false); if (kind === "voice") setVoiceBlob(null); } }
   };
   const startVoice = async () => {
-    if (voiceOpening.current || recorder.current?.state === "recording" || busy) return;
+    if (voiceOpening.current || recorder.current?.state === "recording" || busy || action.current || pendingSave.current) return;
     voiceOpening.current = true;
     const voiceRun = ++voiceGeneration.current;
     setBusy(true);
@@ -121,8 +140,14 @@ export function TodayScreen() {
     const account = owner.current; const epoch = accountEpoch.current;
     try {
       if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") throw new Error("Recording is not supported here. Type a food note or use your keyboard's dictation.");
+      stopTimer.current = setTimeout(() => {
+        if (voiceGeneration.current !== voiceRun || !voiceOpening.current) return;
+        stopCapture(true);
+        if (alive.current && accountEpoch.current === epoch && owner.current === account) setError("Microphone access did not finish. Try again or type a note. Any late microphone grant will be closed.");
+      }, 12000);
       const tracks = await navigator.mediaDevices.getUserMedia({ audio: true });
       if (!alive.current || accountEpoch.current !== epoch || owner.current !== account || voiceGeneration.current !== voiceRun || document.hidden) { tracks.getTracks().forEach(track => track.stop()); return; }
+      if (stopTimer.current) clearTimeout(stopTimer.current);
       const mimeType = ["audio/webm", "audio/mp4"].find(type => MediaRecorder.isTypeSupported(type));
       if (!mimeType) { tracks.getTracks().forEach(track => track.stop()); throw new Error("This browser's audio format is unsupported. Type a note instead."); }
       stream.current = tracks;
@@ -138,28 +163,38 @@ export function TodayScreen() {
       captureRecorder.start(1000); setRecording(true);
       stopTimer.current = setTimeout(() => stopCapture(), 45_000);
     } catch (cause) { if (voiceGeneration.current === voiceRun) { stopCapture(true); if (owner.current === account && alive.current && accountEpoch.current === epoch) failure(cause, "Microphone unavailable. Type a note instead."); } }
-    finally { if (owner.current === account && alive.current && accountEpoch.current === epoch) { voiceOpening.current = false; setBusy(false); } }
+    finally { if (owner.current === account && alive.current && accountEpoch.current === epoch && voiceGeneration.current === voiceRun) { voiceOpening.current = false; setBusy(false); } }
   };
   const save = async () => {
+    if (action.current || voiceOpening.current || recorder.current?.state === "recording" || !loaded) return;
+    let input: FoodLogInput;
+    try {
+      draftId.current ??= crypto.randomUUID();
+      input = pendingSave.current ?? parseFoodLogInput({ id: draftId.current, date, title, portion: portion.trim() || null, source });
+    } catch (cause) { failure(cause, "Review the food name and date before saving."); return; }
+    action.current = true; ++request.current; setLoading(false);
+    pendingSave.current = input; setUnconfirmed(true);
     const account = owner.current; const epoch = accountEpoch.current;
     setBusy(true); setError(""); setStatus(""); setNeedsSignIn(false);
     try {
-      draftId.current ??= crypto.randomUUID();
-      const entry = await api.saveFoodNote({ id: draftId.current, date, title: title.trim(), portion: portion.trim() || null, source });
+      const entry = await api.saveFoodNote(input);
       if (!alive.current || accountEpoch.current !== epoch || owner.current !== account) return;
       setNotes(current => [entry, ...current.filter(note => note.id !== entry.id)]); setStatus("Food note saved. Your pantry was not changed.");
+      pendingSave.current = null; setUnconfirmed(false);
       setTitle(""); setPortion(""); setUncertainty(""); setSource("text"); draftId.current = null;
     } catch (cause) { if (alive.current && accountEpoch.current === epoch && owner.current === account) failure(cause, "We could not confirm the note saved. Your draft is still here. Reload notes before retrying."); }
-    finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) setBusy(false); }
+    finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) { action.current = false; setBusy(false); } }
   };
   const remove = async (id: string) => {
+    if (action.current || pendingSave.current || voiceOpening.current || recorder.current?.state === "recording") return;
+    action.current = true; ++request.current; setLoading(false);
     const account = owner.current; const epoch = accountEpoch.current; setBusy(true); setError("");
     try {
       await api.deleteFoodNote(id);
       if (!alive.current || accountEpoch.current !== epoch || owner.current !== account) return;
       setNotes(current => current.filter(note => note.id !== id)); setConfirmDelete(null); setStatus("Food note removed. Pantry and plans were not changed.");
     } catch (cause) { if (alive.current && accountEpoch.current === epoch && owner.current === account) failure(cause, "Could not confirm removal. Reload notes to check."); }
-    finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) setBusy(false); }
+    finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) { action.current = false; setBusy(false); } }
   };
   const showIdeas = async () => {
     const account = owner.current; const epoch = accountEpoch.current; setIdeasBusy(true); setIdeasError(null);
@@ -184,16 +219,20 @@ export function TodayScreen() {
       {loadError ? <Callout tone="error" role="alert">{loadError}</Callout> : null}
       <Button variant="ghost" disabled={busy || loading} onClick={() => void load()}>Reload food notes</Button>
       <form className={styles.stack} onSubmit={event => { event.preventDefault(); void save(); }}>
-        <label>Date<TextField type="date" value={date} disabled={busy || recording} onChange={event => setDate(event.target.value)} /></label>
-        <label>Food name<TextField value={title} maxLength={160} disabled={busy || recording} onChange={event => { setTitle(event.target.value); setSource("text"); }} /></label>
-        <label>Portion, if you know it (optional)<TextField value={portion} maxLength={120} disabled={busy || recording} onChange={event => setPortion(event.target.value)} placeholder="For example, one bowl; leave blank if unsure" /></label>
+        <label>Date<TextField type="date" value={date} disabled={busy || recording || unconfirmed} onChange={event => setDate(event.target.value)} /></label>
+        <label>Food name<TextField value={title} maxLength={160} disabled={busy || recording || unconfirmed} onChange={event => { setTitle(event.target.value); setSource("text"); }} /></label>
+        <label>Portion, if you know it (optional)<TextField value={portion} maxLength={120} disabled={busy || recording || unconfirmed} onChange={event => setPortion(event.target.value)} placeholder="For example, one bowl; leave blank if unsure" /></label>
         {uncertainty ? <Callout tone="warn">{uncertainty} Photo portions are unknown; add one only if you know it.</Callout> : null}
-        <Button type="submit" disabled={busy || recording || !loaded || !title.trim()}>{busy ? "Working…" : draftId.current ? "Save reviewed edits" : "Save food note"}</Button>
-        <FieldRow><Button type="button" variant="ghost" disabled={busy || recording || !title} onClick={() => { setTitle(""); setPortion(""); setSource("text"); setUncertainty(""); draftId.current = null; setError(""); setStatus("Draft discarded."); }}>Discard draft</Button></FieldRow>
+        {unconfirmed && !busy ? <Callout tone="warn">The save was not confirmed. This draft stays unchanged for a retry with the same reference. Reload first to check whether it already saved.</Callout> : null}
+        <Button type="submit" disabled={busy || recording || !loaded || !title.trim()}>{busy ? "Working…" : unconfirmed ? "Retry the same food note" : draftId.current ? "Save reviewed edits" : "Save food note"}</Button>
+        <FieldRow><Button type="button" variant="ghost" disabled={busy || recording || !title} onClick={() => {
+          if (action.current || (pendingSave.current && !window.confirm("The note may already have saved. Discard this local draft only? Reload notes before adding it again."))) return;
+          pendingSave.current = null; setUnconfirmed(false); setTitle(""); setPortion(""); setSource("text"); setUncertainty(""); draftId.current = null; setError(""); setStatus("Local draft discarded. Saved notes were not removed.");
+        }}>Discard draft</Button></FieldRow>
       </form>
       <details className={styles.capture}><summary>Use a photo or voice note instead</summary>
         <p>Only when you choose to send it, the file goes to OpenAI to prepare an editable draft. Savortome does not save the original file or raw transcript. Provider processing and retention are governed by our configured OpenAI service. A photo cannot establish hidden ingredients, portions, nutrients or allergy safety.</p>
-        <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Choose a food photo for an editable draft" disabled={busy || recording || !capture.photo} onChange={event => {
+        <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Choose a food photo for an editable draft" disabled={busy || recording || unconfirmed || !capture.photo} onChange={event => {
           const file = event.target.files?.[0]; event.target.value = "";
           if (file && title.trim() && !window.confirm("Replace the current unsaved food draft with a photo suggestion?")) return;
           if (file) void generate("photo", file);
@@ -201,8 +240,8 @@ export function TodayScreen() {
         {!capture.photo ? <p>Photo suggestions aren’t enabled in this build. You can type a note.</p> : null}
         {capture.voice ? <div className={styles.stack}>
           <p>Record up to 45 seconds. Recording stops and is discarded when you leave this screen or hide the app. Nothing is sent until you select Send for editable draft.</p>
-          <FieldRow><Button variant="ghost" disabled={busy || !loaded} onClick={() => recording ? stopCapture() : void startVoice()}>{recording ? "Stop recording" : "Record a voice note"}</Button>
-            {voiceBlob ? <><Button disabled={busy} onClick={() => {
+          <FieldRow><Button variant="ghost" disabled={busy || unconfirmed || !loaded} onClick={() => recording ? stopCapture() : void startVoice()}>{recording ? "Stop recording" : "Record a voice note"}</Button>
+            {voiceBlob ? <><Button disabled={busy || unconfirmed} onClick={() => {
               if (title.trim() && !window.confirm("Replace the current unsaved food draft with a voice suggestion?")) return;
               void generate("voice", voiceBlob);
             }}>Send for editable draft</Button><Button variant="ghost" disabled={busy} onClick={() => setVoiceBlob(null)}>Discard recording</Button></> : null}</FieldRow>
@@ -217,15 +256,17 @@ export function TodayScreen() {
       {dayState === "failed" ? <Callout tone="error" role="alert">This day's notes could not load. Check the date or reload your notes; an empty display does not mean they were deleted.</Callout> : null}
       {dayState === "ready" && !todayNotes.length ? <p>No notes for this day. Leaving this empty is fine.</p> : null}
       {todayNotes.map(note => <article className={styles.idea} key={note.id}><h3>{note.title}</h3><p>{note.portion ?? "Portion not recorded"}</p>
-        <FieldRow><Button variant="ghost" disabled={busy || recording} onClick={() => {
+        <FieldRow><Button variant="ghost" disabled={busy || recording || unconfirmed} onClick={() => {
+          if (action.current || pendingSave.current) return;
           if (title.trim() && !window.confirm("Replace your current unsaved draft with this note?")) return;
           setTitle(note.title); setPortion(note.portion ?? ""); setDate(note.date); setSource(note.source); draftId.current = note.id; setUncertainty(""); setStatus("Editing an existing note. Save to confirm your changes.");
-        }}>Edit note</Button><Button variant="ghost" disabled={busy} onClick={() => setConfirmDelete(note.id)}>Remove note</Button></FieldRow>
+        }}>Edit note</Button><Button variant="ghost" disabled={busy || recording || unconfirmed} onClick={() => setConfirmDelete(note.id)}>Remove note</Button></FieldRow>
         {confirmDelete === note.id ? <div role="group" aria-label={`Confirm removing ${note.title}`}><p>Remove this food note?</p><FieldRow><Button variant="danger" disabled={busy} onClick={() => void remove(note.id)}>Confirm removal</Button><Button variant="ghost" disabled={busy} onClick={() => setConfirmDelete(null)}>Keep note</Button></FieldRow></div> : null}
       </article>)}
     </Panel>
     {loaded && recent.length ? <Panel><PanelHeader title="Something familiar" hint="Copy a previous food note into a new draft if you want. It only records another meal when you explicitly save it." />
-      {recent.map(note => <Button key={note.id} variant="ghost" disabled={busy || recording} onClick={() => {
+      {recent.map(note => <Button key={note.id} variant="ghost" disabled={busy || recording || unconfirmed} onClick={() => {
+        if (action.current || pendingSave.current) return;
         if (title.trim() && !window.confirm("Replace your current unsaved food draft?")) return;
         setTitle(note.title); setPortion(note.portion ?? ""); setSource("repeat"); setUncertainty(""); draftId.current = null; setStatus("New repeat draft ready. Nothing saved yet.");
       }}>Use {note.title} as a new draft</Button>)}
