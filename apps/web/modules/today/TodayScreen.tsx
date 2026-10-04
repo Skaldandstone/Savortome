@@ -66,6 +66,8 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
   const pendingSave = useRef<FoodLogInput | null>(null);
   const action = useRef(false);
   const [unconfirmed, setUnconfirmed] = useState(false);
+  const pendingDelete = useRef<string | null>(null);
+  const [deleteUnconfirmed, setDeleteUnconfirmed] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
@@ -75,6 +77,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
   const [recording, setRecording] = useState(false);
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const noteLocked = busy || recording || unconfirmed || deleteUnconfirmed || loading || !loaded;
   const stopCapture = useCallback((discard = false) => {
     if (discard) {
       ++voiceGeneration.current;
@@ -103,12 +106,12 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
         }
       }
     } catch {
-      if (alive.current && accountEpoch.current === epoch && owner.current === account && request.current === version) setLoadError("Your food notes could not load. Nothing has been deleted. Try loading them again before saving another note.");
+      if (alive.current && accountEpoch.current === epoch && owner.current === account && request.current === version) setLoadError("Your food notes could not load. This does not confirm whether an earlier save or removal finished. Reload before another change.");
     } finally { if (alive.current && accountEpoch.current === epoch && owner.current === account && request.current === version) setLoading(false); }
   }, [api]);
   useEffect(() => {
     ++accountEpoch.current; alive.current = true;
-    pendingSave.current = null; action.current = false; setUnconfirmed(false);
+    pendingSave.current = null; pendingDelete.current = null; setDeleteUnconfirmed(false); action.current = false; setUnconfirmed(false);
     stopCapture(true); setVoiceBlob(null); setCapture(null); setCaptureError(false);
     setNotes([]); setLoaded(false); setTitle(""); setPortion(""); setSource("text"); setUncertainty(""); draftId.current = null;
     setIdeas(null); setIdeasError(null); setIdeasBusy(false); setBusy(false); setError(""); setStatus(""); setNeedsSignIn(false); setShowInvitation(true);
@@ -147,7 +150,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
     const result = actionFailure(cause, fallback); setError(result.message); setNeedsSignIn(result.signInRequired);
   };
   const generate = async (kind: "photo" | "voice", blob: Blob) => {
-    if (action.current || pendingSave.current || voiceOpening.current || recorder.current?.state === "recording") return;
+    if (action.current || pendingSave.current || pendingDelete.current || loading || !loaded || voiceOpening.current || recorder.current?.state === "recording") return;
     action.current = true;
     const account = owner.current; const epoch = accountEpoch.current;
     setBusy(true); setError(""); setStatus(""); setNeedsSignIn(false);
@@ -165,7 +168,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
     finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) { action.current = false; setBusy(false); if (kind === "voice") setVoiceBlob(null); } }
   };
   const startVoice = async () => {
-    if (voiceOpening.current || recorder.current?.state === "recording" || busy || action.current || pendingSave.current) return;
+    if (voiceOpening.current || recorder.current?.state === "recording" || busy || action.current || pendingSave.current || pendingDelete.current || loading || !loaded) return;
     voiceOpening.current = true;
     const voiceRun = ++voiceGeneration.current;
     setBusy(true);
@@ -199,7 +202,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
     finally { if (owner.current === account && alive.current && accountEpoch.current === epoch && voiceGeneration.current === voiceRun) { voiceOpening.current = false; setBusy(false); } }
   };
   const save = async () => {
-    if (action.current || voiceOpening.current || recorder.current?.state === "recording" || !loaded) return;
+    if (action.current || pendingDelete.current || loading || voiceOpening.current || recorder.current?.state === "recording" || !loaded) return;
     let input: FoodLogInput;
     try {
       draftId.current ??= crypto.randomUUID();
@@ -219,15 +222,17 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
     finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) { action.current = false; setBusy(false); } }
   };
   const remove = async (id: string) => {
-    if (action.current || pendingSave.current || voiceOpening.current || recorder.current?.state === "recording") return;
+    if (action.current || pendingSave.current || pendingDelete.current || loading || !loaded || voiceOpening.current || recorder.current?.state === "recording") return;
     action.current = true; ++request.current; setLoading(false);
+    pendingDelete.current = id; setDeleteUnconfirmed(true);
     const account = owner.current; const epoch = accountEpoch.current; setBusy(true); setError("");
     try {
       const result = await api.deleteFoodNote(id);
       if (result.deleted !== true) throw new Error("Unconfirmed removal");
       if (!alive.current || accountEpoch.current !== epoch || owner.current !== account) return;
+      pendingDelete.current = null; setDeleteUnconfirmed(false);
       setNotes(current => current.filter(note => note.id !== id)); setConfirmDelete(null); setStatus("Food note removed. Pantry and plans were not changed.");
-    } catch (cause) { if (alive.current && accountEpoch.current === epoch && owner.current === account) failure(cause, "Could not confirm removal. Reload notes to check."); }
+    } catch (cause) { if (alive.current && accountEpoch.current === epoch && owner.current === account) failure(cause, "We could not confirm removal. The note may already be removed. Other note changes are paused; review and reload before another write. Nothing retries automatically."); }
     finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) { action.current = false; setBusy(false); } }
   };
   const showIdeas = async () => {
@@ -271,8 +276,8 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
       {ideas?.map(idea => <article className={styles.idea} key={idea.recipeId}><h3><Link href={`/recipe/${idea.recipeId}`}>{idea.title}</Link></h3><p>{idea.totalMinutes === null ? "Total time not recorded" : `${idea.totalMinutes} minutes total`}</p><p>{idea.stepCount == null ? "Saved step count unavailable" : `${idea.stepCount} saved instruction entries; review the method`}</p><p>{idea.reason}</p><p>Pantry names matched: {idea.have.join(", ") || "none"}. Still needed: {idea.missing.join(", ") || "no additional names identified"}.</p><MissingShoppingReview missing={idea.missing} client={api} onPending={pending => setShoppingPending(current => ({ ...current, [idea.recipeId]: pending }))} /><PlanIdeaReview recipeId={idea.recipeId} title={idea.title} client={api} onPending={pending => setShoppingPending(current => ({ ...current, [`plan:${idea.recipeId}`]: pending }))} /></article>)}
       {ideas?.length ? <p>Suggestions require the saved dietary tags to be explicitly present and exclude detected allergen conflicts. Tags can be wrong or incomplete. Matches use ingredient names, not quantities or preparation. Check what is actually available and your package labels. Suggestions do not verify allergy safety.</p> : null}
     </Panel> : <Button variant="ghost" onClick={() => setShowInvitation(true)}>Show the meal-planning invitation</Button>}
-    <FamiliarMeals client={api} disabled={busy || recording || unconfirmed || ideasBusy || hasShoppingPending} onPending={(id, pending) => setShoppingPending(current => ({ ...current, [`combination:${id}`]: pending }))} onDraft={name => {
-      if (action.current || pendingSave.current || recording) return false;
+    <FamiliarMeals client={api} disabled={noteLocked || ideasBusy || hasShoppingPending} onPending={(id, pending) => setShoppingPending(current => ({ ...current, [`combination:${id}`]: pending }))} onDraft={name => {
+      if (action.current || pendingSave.current || pendingDelete.current || loading || !loaded || recording) return false;
       if ((title.trim() || portion.trim() || voiceBlob) && !window.confirm("Replace the current unsaved food-note draft with this meal name? Nothing will be saved.")) return false;
       setTitle(name); setPortion(""); setSource("text"); setUncertainty(""); draftId.current = null; setError(""); setStatus("Saved meal name copied. Review the date and portion before saving. No eating or pantry change has been recorded.");
       document.getElementById("today-food-name")?.focus();
@@ -281,14 +286,23 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
     <Panel><PanelHeader title="An optional food note" hint="A small memory aid, not a score. Record what you want to remember. No calorie goals, streaks, reminders or automatic pantry updates." />
       {loading ? <p role="status">Loading your notes…</p> : null}
       {loadError ? <Callout tone="error" role="alert">{loadError}</Callout> : null}
-      <Button variant="ghost" disabled={busy || loading} onClick={() => void load()}>Reload food notes</Button>
+      <Button variant="ghost" disabled={busy || recording || loading} onClick={() => void load()}>Reload food notes</Button>
+      {deleteUnconfirmed ? <Callout tone="warn" role="status">
+        <p>Removal is unconfirmed and may already have happened. Reloading alone does not cancel the earlier request or clear this warning. Leaving Today can lose the local warning.</p>
+        <Button type="button" variant="ghost" disabled={busy || recording || loading} onClick={() => {
+          if (action.current || !window.confirm("Discard only the local removal warning and reload? The earlier removal is not cancelled or undone and may still finish. Check this day's notes before another write.")) return;
+          pendingDelete.current = null; setDeleteUnconfirmed(false); setConfirmDelete(null); setLoaded(false);
+          setError(""); setStatus("Reloading for review. Earlier removal may still finish; recheck before another change.");
+          void load();
+        }}>Review unconfirmed food-note removal</Button>
+      </Callout> : null}
       <form className={styles.stack} onSubmit={event => { event.preventDefault(); void save(); }}>
-        <label>Date<TextField type="date" value={date} disabled={busy || recording || unconfirmed} onChange={event => setDate(event.target.value)} /></label>
-        <label>Food name<TextField id="today-food-name" value={title} maxLength={160} disabled={busy || recording || unconfirmed} onChange={event => { setTitle(event.target.value); setSource("text"); }} /></label>
-        <label>Portion, if you know it (optional)<TextField value={portion} maxLength={120} disabled={busy || recording || unconfirmed} onChange={event => setPortion(event.target.value)} placeholder="For example, one bowl; leave blank if unsure" /></label>
+        <label>Date<TextField type="date" value={date} disabled={noteLocked} onChange={event => setDate(event.target.value)} /></label>
+        <label>Food name<TextField id="today-food-name" value={title} maxLength={160} disabled={noteLocked} onChange={event => { setTitle(event.target.value); setSource("text"); }} /></label>
+        <label>Portion, if you know it (optional)<TextField value={portion} maxLength={120} disabled={noteLocked} onChange={event => setPortion(event.target.value)} placeholder="For example, one bowl; leave blank if unsure" /></label>
         {uncertainty ? <Callout tone="warn">{uncertainty} Photo portions are unknown; add one only if you know it.</Callout> : null}
         {unconfirmed && !busy ? <Callout tone="warn">The save was not confirmed. This draft stays unchanged for a retry with the same reference. Reload first to check whether it already saved.</Callout> : null}
-        <Button type="submit" disabled={busy || recording || !loaded || !title.trim()}>{busy ? "Working…" : unconfirmed ? "Retry the same food note" : draftId.current ? "Save reviewed edits" : "Save food note"}</Button>
+        <Button type="submit" disabled={busy || recording || deleteUnconfirmed || loading || !loaded || !title.trim()}>{busy ? "Working…" : unconfirmed ? "Retry the same food note" : draftId.current ? "Save reviewed edits" : "Save food note"}</Button>
         <FieldRow><Button type="button" variant="ghost" disabled={busy || recording || !title} onClick={() => {
           if (action.current || (pendingSave.current && !window.confirm("The note may already have saved. Discard this local draft only? Reload notes before adding it again."))) return;
           pendingSave.current = null; setUnconfirmed(false); setTitle(""); setPortion(""); setSource("text"); setUncertainty(""); draftId.current = null; setError(""); setStatus("Local draft discarded. Saved notes were not removed.");
@@ -300,7 +314,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
           <Button type="button" variant="ghost" onClick={() => setCaptureVisit(value => value + 1)}>Check capture availability again</Button>
         </Callout> : null}
         <p>Only when you choose to send it, the file goes to OpenAI to prepare an editable draft. Savortome does not save the original file or raw transcript. Provider processing and retention are governed by our configured OpenAI service. A photo cannot establish hidden ingredients, portions, nutrients or allergy safety.</p>
-        <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Choose a food photo for an editable draft" disabled={busy || recording || unconfirmed || !capture?.photo} onChange={event => {
+        <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Choose a food photo for an editable draft" disabled={noteLocked || !capture?.photo} onChange={event => {
           const file = event.target.files?.[0]; event.target.value = "";
           if (file && title.trim() && !window.confirm("Replace the current unsaved food draft with a photo suggestion?")) return;
           if (file) void generate("photo", file);
@@ -308,8 +322,8 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
         {capture && !capture.photo ? <p>Photo suggestions aren’t enabled in this build. You can type a note.</p> : null}
         {capture?.voice ? <div className={styles.stack}>
           <p>Record up to 45 seconds. Recording stops and is discarded when you leave this screen or hide the app. Nothing is sent until you select Send for editable draft.</p>
-          <FieldRow><Button variant="ghost" disabled={busy || unconfirmed || !loaded} onClick={() => recording ? stopCapture() : void startVoice()}>{recording ? "Stop recording" : "Record a voice note"}</Button>
-            {voiceBlob ? <><Button disabled={busy || unconfirmed} onClick={() => {
+          <FieldRow><Button variant="ghost" disabled={!recording && (busy || unconfirmed || deleteUnconfirmed || loading || !loaded)} onClick={() => recording ? stopCapture() : void startVoice()}>{recording ? "Stop recording" : "Record a voice note"}</Button>
+            {voiceBlob ? <><Button disabled={noteLocked} onClick={() => {
               if (title.trim() && !window.confirm("Replace the current unsaved food draft with a voice suggestion?")) return;
               void generate("voice", voiceBlob);
             }}>Send for editable draft</Button><Button variant="ghost" disabled={busy} onClick={() => setVoiceBlob(null)}>Discard recording</Button></> : null}</FieldRow>
@@ -324,17 +338,17 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
       {dayState === "failed" ? <Callout tone="error" role="alert">This day's notes could not load. Check the date or reload your notes; an empty display does not mean they were deleted.</Callout> : null}
       {dayState === "ready" && !todayNotes.length ? <p>No notes for this day. Leaving this empty is fine.</p> : null}
       {todayNotes.map(note => <article className={styles.idea} key={note.id}><h3>{note.title}</h3><p>{note.portion ?? "Portion not recorded"}</p>
-        <FieldRow><Button variant="ghost" aria-label={`Edit food note for ${note.title}`} disabled={busy || recording || unconfirmed} onClick={() => {
-          if (action.current || pendingSave.current) return;
+        <FieldRow><Button variant="ghost" aria-label={`Edit food note for ${note.title}`} disabled={noteLocked} onClick={() => {
+          if (action.current || pendingSave.current || pendingDelete.current) return;
           if (title.trim() && !window.confirm("Replace your current unsaved draft with this note?")) return;
           setTitle(note.title); setPortion(note.portion ?? ""); setDate(note.date); setSource(note.source); draftId.current = note.id; setUncertainty(""); setStatus("Editing an existing note. Save to confirm your changes.");
-        }}>Edit note</Button><Button variant="ghost" aria-label={`Remove food note for ${note.title}`} disabled={busy || recording || unconfirmed} onClick={() => setConfirmDelete(note.id)}>Remove note</Button></FieldRow>
-        {confirmDelete === note.id ? <div role="group" aria-label={`Confirm removing ${note.title}`}><p>Remove this food note?</p><FieldRow><Button variant="danger" disabled={busy} onClick={() => void remove(note.id)}>Confirm removal</Button><Button variant="ghost" disabled={busy} onClick={() => setConfirmDelete(null)}>Keep note</Button></FieldRow></div> : null}
+        }}>Edit note</Button><Button variant="ghost" aria-label={`Remove food note for ${note.title}`} disabled={noteLocked} onClick={() => setConfirmDelete(note.id)}>Remove note</Button></FieldRow>
+        {confirmDelete === note.id ? <div role="group" aria-label={`Confirm removing ${note.title}`}><p>Remove this food note? Pantry and plans stay unchanged.</p><FieldRow><Button variant="danger" disabled={noteLocked} onClick={() => void remove(note.id)}>Confirm removal</Button><Button variant="ghost" disabled={busy} onClick={() => setConfirmDelete(null)}>Keep note</Button></FieldRow></div> : null}
       </article>)}
     </Panel>
     {loaded && recent.length ? <Panel><PanelHeader title="Something familiar" hint="Copy a previous food note into a new draft if you want. It only records another meal when you explicitly save it." />
-      {recent.map(note => <Button key={note.id} variant="ghost" disabled={busy || recording || unconfirmed} onClick={() => {
-        if (action.current || pendingSave.current) return;
+      {recent.map(note => <Button key={note.id} variant="ghost" disabled={noteLocked} onClick={() => {
+        if (action.current || pendingSave.current || pendingDelete.current) return;
         if (title.trim() && !window.confirm("Replace your current unsaved food draft?")) return;
         setTitle(note.title); setPortion(note.portion ?? ""); setSource("repeat"); setUncertainty(""); draftId.current = null; setStatus("New repeat draft ready. Nothing saved yet.");
       }}>Use {note.title} as a new draft</Button>)}
