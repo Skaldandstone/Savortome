@@ -225,7 +225,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
   };
   const todayNotes = dayNotes;
   const recent = notes.filter((note, index) => notes.findIndex(other => other.title === note.title && other.portion === note.portion) === index).slice(0, 3);
-  return <div className={styles.stack}>
+  return <div className={`${styles.page} ${styles.stack}`}>
     {showInvitation ? <Panel><PanelHeader title="Want to plan something to eat together?" hint="We can start with what your pantry thinks is still there. You can correct it, choose something else, or leave this for later." />
       <FieldRow><Button disabled={ideasBusy} onClick={() => void showIdeas()}>{ideasBusy ? "Finding ideas…" : "Show me some ideas"}</Button><Button variant="ghost" onClick={() => setShowInvitation(false)}>Not now</Button><Link href="/care">Feed me gently</Link></FieldRow>
       {ideasError ? <Callout tone="error" role="alert">{ideasError}</Callout> : null}
@@ -279,11 +279,11 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
       {dayState === "failed" ? <Callout tone="error" role="alert">This day's notes could not load. Check the date or reload your notes; an empty display does not mean they were deleted.</Callout> : null}
       {dayState === "ready" && !todayNotes.length ? <p>No notes for this day. Leaving this empty is fine.</p> : null}
       {todayNotes.map(note => <article className={styles.idea} key={note.id}><h3>{note.title}</h3><p>{note.portion ?? "Portion not recorded"}</p>
-        <FieldRow><Button variant="ghost" disabled={busy || recording || unconfirmed} onClick={() => {
+        <FieldRow><Button variant="ghost" aria-label={`Edit food note for ${note.title}`} disabled={busy || recording || unconfirmed} onClick={() => {
           if (action.current || pendingSave.current) return;
           if (title.trim() && !window.confirm("Replace your current unsaved draft with this note?")) return;
           setTitle(note.title); setPortion(note.portion ?? ""); setDate(note.date); setSource(note.source); draftId.current = note.id; setUncertainty(""); setStatus("Editing an existing note. Save to confirm your changes.");
-        }}>Edit note</Button><Button variant="ghost" disabled={busy || recording || unconfirmed} onClick={() => setConfirmDelete(note.id)}>Remove note</Button></FieldRow>
+        }}>Edit note</Button><Button variant="ghost" aria-label={`Remove food note for ${note.title}`} disabled={busy || recording || unconfirmed} onClick={() => setConfirmDelete(note.id)}>Remove note</Button></FieldRow>
         {confirmDelete === note.id ? <div role="group" aria-label={`Confirm removing ${note.title}`}><p>Remove this food note?</p><FieldRow><Button variant="danger" disabled={busy} onClick={() => void remove(note.id)}>Confirm removal</Button><Button variant="ghost" disabled={busy} onClick={() => setConfirmDelete(null)}>Keep note</Button></FieldRow></div> : null}
       </article>)}
     </Panel>
