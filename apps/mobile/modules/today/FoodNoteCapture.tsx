@@ -150,7 +150,12 @@ export function FoodNoteCapture({ client, onDraft, onBusy, confirmReplace, disab
       if (!active.current || generation.current !== version || AppState.currentState !== "active") { await stop(false); return; }
       recordingRef.current = true; recorder.record(); setRecording(true);
       timer.current = setTimeout(() => { void stop(true); }, 45_000);
-    } catch (cause) { if (active.current && generation.current === version) setError(captureFailure(cause, "Recording unavailable. Type a note instead.")); }
+    } catch (cause) {
+      // Preparation/record() can fail after recording mode was enabled. Restore
+      // playback and discard any partial cache file before exposing recovery.
+      await stop(false);
+      if (active.current && generation.current === version) setError(captureFailure(cause, "Recording unavailable. Type a note instead."));
+    }
     finally { if (active.current && generation.current === version) { operation.current = false; setBusy(false); if (!recordingRef.current) onBusy(false); } }
   };
   const sendVoice = async () => {
