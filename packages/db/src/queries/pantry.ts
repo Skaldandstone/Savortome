@@ -165,6 +165,7 @@ export interface PantrySearchFilters {
   /** Recipe must carry at least one of these tags. */
   tags?: string[];
   maxMinutes?: number | null;
+  maxSteps?: number | null;
   course?: string | null;
   limit?: number;
 }
@@ -173,6 +174,7 @@ export interface PantrySearchRow extends PantryMatch {
   title: string;
   imageUrl: string | null;
   totalMinutes: number | null;
+  stepCount?: number | null;
   tags: string[];
   timesCooked: number;
   /** Every indexed ingredient, including staples and optional items, for safety checks. */
@@ -184,6 +186,7 @@ interface RawRow {
   title: string;
   image_url: string | null;
   total_minutes: number | null;
+  step_count: number | null;
   tags: string[] | null;
   times_cooked: number | null;
   required_count: number | string;
@@ -212,6 +215,7 @@ export async function searchByPantry(
     requireIngredients = [],
     tags = [],
     maxMinutes = null,
+    maxSteps = null,
     course = null,
     limit = 40,
   } = filters;
@@ -238,6 +242,7 @@ export async function searchByPantry(
       r.title,
       r.image_url,
       r.total_minutes,
+      case when jsonb_typeof(r.steps) = 'array' then jsonb_array_length(r.steps) else null end as step_count,
       r.tags,
       coalesce(rt.times_cooked, 0) as times_cooked,
       coalesce((
@@ -291,6 +296,7 @@ export async function searchByPantry(
           : sql``
       }
       ${course ? sql`and lower(r.course) = ${course.toLowerCase()}` : sql``}
+      ${maxSteps !== null ? sql`and (case when jsonb_typeof(r.steps) = 'array' then jsonb_array_length(r.steps) else null end) between 1 and ${maxSteps}` : sql``}
     group by r.id, rt.times_cooked
     limit ${limit}
   `);
@@ -307,6 +313,7 @@ export async function searchByPantry(
       title: row.title,
       imageUrl: row.image_url,
       totalMinutes: row.total_minutes,
+      stepCount: row.step_count ?? null,
       tags: row.tags ?? [],
       timesCooked: Number(row.times_cooked ?? 0),
       ingredients: row.ingredients ?? [],

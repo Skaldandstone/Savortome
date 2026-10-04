@@ -29,6 +29,7 @@ async function planningResponse(request: Request, json: boolean) {
     const candidates = await searchByPantry(database, userId, {
       ingredients: pantry.map(entry => entry.canonicalItem),
       maxMinutes: options.maxMinutes,
+      maxSteps: options.maxSteps,
       requireIngredients: options.pantryItem ? [options.pantryItem] : options.useIngredient ? [options.useIngredient] : [],
       excludeIngredients: options.skipIngredient ? [options.skipIngredient] : [],
       limit: 40,

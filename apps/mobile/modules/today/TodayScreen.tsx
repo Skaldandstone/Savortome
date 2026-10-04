@@ -46,6 +46,7 @@ function AccountTodayScreen() {
   const [ideas, setIdeas] = useState<PlanTogetherIdea[] | null>(null);
   const [ideasBusy, setIdeasBusy] = useState(false); const [ideasError, setIdeasError] = useState<string | null>(null);
   const [maxMinutes, setMaxMinutes] = useState<PlanTogetherOptions["maxMinutes"]>();
+  const [maxSteps, setMaxSteps] = useState<PlanTogetherOptions["maxSteps"]>();
   const [pantryOnly, setPantryOnly] = useState(false);
   const [useIngredient, setUseIngredient] = useState("");
   const [skipIngredient, setSkipIngredient] = useState("");
@@ -155,7 +156,7 @@ function AccountTodayScreen() {
     catch { setIdeas(null); setIdeasError("Enter one ingredient name per field, up to 100 characters, without commas, semicolons or alternatives."); return; }
     ideasAction.current = true; setIdeas(null);
     const version = generation.current; setIdeasBusy(true); setIdeasError(null);
-    try { const result = await client.planTogether({ strictDietary: true, maxMinutes, pantryOnly, ...ingredientOptions }); if (current(version)) {
+    try { const result = await client.planTogether({ strictDietary: true, maxMinutes, maxSteps, pantryOnly, ...ingredientOptions }); if (current(version)) {
       setIdeas(result.ideas);
       setIngredientSummary(`Ingredient names used for matching: use ${normalizedIngredients.useIngredient ?? "any"}; skip ${normalizedIngredients.skipIngredient ?? "none"}.`);
     } }
@@ -176,6 +177,8 @@ function AccountTodayScreen() {
       <Text style={textStyle}>Optional time limit</Text>
       <View style={styles.row}><Button label="No time limit" variant="toggle" selected={maxMinutes === undefined} disabled={ideasBusy || hasShoppingPending} onPress={() => { setMaxMinutes(undefined); setIdeas(null); setIdeasError(null); }} />
         {([10, 20, 30, 60] as const).map(minutes => <Button key={minutes} label={`Up to ${minutes} min`} variant="toggle" selected={maxMinutes === minutes} disabled={ideasBusy || hasShoppingPending} onPress={() => { setMaxMinutes(minutes); setIdeas(null); setIdeasError(null); }} />)}</View>
+      <Text style={textStyle}>Optional saved-step limit</Text><View style={styles.row}><Button label="No step limit" variant="toggle" selected={maxSteps === undefined} disabled={ideasBusy || hasShoppingPending} onPress={() => { setMaxSteps(undefined); setIdeas(null); setIdeasError(null); }} />{([3, 5, 8] as const).map(count => <Button key={count} label={`Up to ${count} saved steps`} variant="toggle" selected={maxSteps === count} disabled={ideasBusy || hasShoppingPending} onPress={() => { setMaxSteps(count); setIdeas(null); setIdeasError(null); }} />)}</View>
+      <Text style={textStyle}>Counts saved instruction entries, not effort. One step may contain several actions or a complex method. Fewer steps do not prove it is easy. Empty or unknown methods do not meet a selected limit.</Text>
       <Button label="No shopping today: match pantry names only" variant="toggle" selected={pantryOnly} disabled={ideasBusy || hasShoppingPending} onPress={() => { setPantryOnly(value => !value); setIdeas(null); setIdeasError(null); }} />
       <Text style={textStyle}>Use this ingredient (optional)</Text>
       <Field accessibilityLabel="Use this ingredient for meal ideas" value={useIngredient} maxLength={100} placeholder="For example, bananas" editable={!ideasBusy && !hasShoppingPending} onChangeText={value => { setSelectedPantry(null); setUseIngredient(value); setIdeas(null); setIdeasError(null); }} />
@@ -193,6 +196,7 @@ function AccountTodayScreen() {
       {ideas?.map(idea => <View key={idea.recipeId} style={[styles.note, { borderColor: c.border }]}>
         <Text accessibilityRole="header" style={{ color: c.text, fontSize: typeScale.title }}>{idea.title}</Text>
         <Text style={textStyle}>{idea.totalMinutes === null ? "Total time not recorded" : `${idea.totalMinutes} minutes total`}</Text>
+        <Text style={textStyle}>{idea.stepCount == null ? "Saved step count unavailable" : `${idea.stepCount} saved instruction entries; review the method`}</Text>
         <Text style={textStyle}>{idea.reason}</Text><Text style={textStyle}>Pantry names matched: {idea.have.join(", ") || "none"}. Still needed: {idea.missing.join(", ") || "no additional names identified"}.</Text>
         {client ? <MissingShoppingReview missing={idea.missing} client={client} onPending={pending => setShoppingPending(current => ({ ...current, [idea.recipeId]: pending }))} /> : null}
         {client ? <PlanIdeaReview recipeId={idea.recipeId} title={idea.title} client={client} onPending={pending => setShoppingPending(current => ({ ...current, [`plan:${idea.recipeId}`]: pending }))} /> : null}

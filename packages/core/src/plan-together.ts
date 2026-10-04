@@ -7,6 +7,7 @@ export interface PlanTogetherCandidate extends PantryMatch {
   title: string;
   imageUrl: string | null;
   totalMinutes: number | null;
+  stepCount?: number | null;
   tags: string[];
   ingredients: string[];
 }
@@ -16,6 +17,7 @@ export interface PlanTogetherIdea {
   title: string;
   imageUrl: string | null;
   totalMinutes: number | null;
+  stepCount?: number | null;
   have: string[];
   missing: string[];
   canMakeNow: boolean;
@@ -27,6 +29,8 @@ export interface PlanTogetherIdea {
 export interface PlanTogetherOptions {
   strictDietary?: boolean;
   maxMinutes?: 10 | 20 | 30 | 60;
+  /** Count of saved instruction entries, never a difficulty/energy inference. */
+  maxSteps?: 3 | 5 | 8;
   pantryOnly?: boolean;
   /** Temporary names, normalized by the input parser before ranking; never saved as dietary settings. */
   useIngredient?: string;
@@ -44,8 +48,10 @@ export function planIngredientName(value: string | null | undefined): string | u
 }
 
 export function parsePlanTogetherOptions(params: URLSearchParams): PlanTogetherOptions {
-  if (["maxMinutes", "pantryOnly", "strictDietary", "useIngredient", "skipIngredient", "pantryItem"].some(key => params.getAll(key).length > 1)) throw new Error("Choose one value for each meal-planning limit.");
+  if (["maxMinutes", "maxSteps", "pantryOnly", "strictDietary", "useIngredient", "skipIngredient", "pantryItem"].some(key => params.getAll(key).length > 1)) throw new Error("Choose one value for each meal-planning limit.");
   const rawTime = params.get("maxMinutes");
+  const rawSteps = params.get("maxSteps");
+  if (rawSteps !== null && !["3", "5", "8"].includes(rawSteps)) throw new Error("Choose a supported saved-step limit.");
   const rawPantry = params.get("pantryOnly");
   const rawDietary = params.get("strictDietary");
   if (rawTime !== null && !["10", "20", "30", "60"].includes(rawTime)) throw new Error("Choose a supported meal-planning time limit.");
@@ -55,7 +61,7 @@ export function parsePlanTogetherOptions(params: URLSearchParams): PlanTogetherO
   const pantryItem = params.get("pantryItem") ?? undefined;
   if (pantryItem !== undefined && (pantryItem.length === 0 || pantryItem.length > 200 || /[\u0000-\u001f\u007f]/.test(pantryItem))) throw new Error("Choose one saved pantry item.");
   if (pantryItem && useIngredient) throw new Error("Choose a saved pantry item or enter an ingredient, not both.");
-  return { strictDietary: rawDietary === "true", pantryOnly: rawPantry === "true", maxMinutes: rawTime === null ? undefined : Number(rawTime) as PlanTogetherOptions["maxMinutes"], useIngredient, skipIngredient: planIngredientName(params.get("skipIngredient")), pantryItem };
+  return { strictDietary: rawDietary === "true", pantryOnly: rawPantry === "true", maxMinutes: rawTime === null ? undefined : Number(rawTime) as PlanTogetherOptions["maxMinutes"], maxSteps: rawSteps === null ? undefined : Number(rawSteps) as PlanTogetherOptions["maxSteps"], useIngredient, skipIngredient: planIngredientName(params.get("skipIngredient")), pantryItem };
 }
 
 /** JSON callers keep temporary food choices out of URLs and access-log queries. */
@@ -72,6 +78,10 @@ export function parsePlanTogetherInput(value: unknown): PlanTogetherOptions {
   if (input.maxMinutes !== undefined) {
     if (typeof input.maxMinutes !== "number") throw new Error("Choose a supported time limit.");
     params.set("maxMinutes", String(input.maxMinutes));
+  }
+  if (input.maxSteps !== undefined) {
+    if (typeof input.maxSteps !== "number") throw new Error("Choose a supported saved-step limit.");
+    params.set("maxSteps", String(input.maxSteps));
   }
   for (const key of ["useIngredient", "skipIngredient", "pantryItem"] as const) {
     if (input[key] !== undefined) {
@@ -116,6 +126,7 @@ export function suggestPlanTogether(
     // Unknown times never satisfy a selected limit. Include elapsed waiting
     // time from the saved recipe; never substitute active preparation time.
     .filter(candidate => options.maxMinutes === undefined || (candidate.totalMinutes !== null && Number.isFinite(candidate.totalMinutes) && candidate.totalMinutes >= 0 && candidate.totalMinutes <= options.maxMinutes))
+    .filter(candidate => options.maxSteps === undefined || (typeof candidate.stepCount === "number" && Number.isInteger(candidate.stepCount) && candidate.stepCount > 0 && candidate.stepCount <= options.maxSteps))
     .filter(candidate => !options.strictDietary || profile.dietaryTags.every(tag => candidate.tags.includes(tag)))
     .filter(candidate => flagsForRecipe(
       candidate.ingredients.map(canonicalItem => ({ canonicalItem, optional: false })),
@@ -143,6 +154,7 @@ export function suggestPlanTogether(
       title: candidate.title,
       imageUrl: candidate.imageUrl,
       totalMinutes: candidate.totalMinutes,
+      stepCount: typeof candidate.stepCount === "number" && Number.isInteger(candidate.stepCount) && candidate.stepCount > 0 ? candidate.stepCount : null,
       have: candidate.have,
       missing: candidate.missing,
       canMakeNow: candidate.canMakeNow,
