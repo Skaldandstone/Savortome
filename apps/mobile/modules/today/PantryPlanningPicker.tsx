@@ -32,7 +32,7 @@ export function PantryPlanningPicker({ client, disabled, onChoose }: {
     <Button label={expanded ? "Hide pantry choices" : "Check what your pantry thinks is still there"} variant="ghost" onPress={() => setExpanded(value => !value)} />
     {expanded ? <>
       <Text style={textStyle}>This is a saved snapshot, not a stock check. Items worth checking appear first. Choosing one only fills the meal search; it does not confirm freshness, presence or quantities.</Text>
-      <Button label={busy ? "Loading pantry choices…" : items !== null ? "Refresh pantry choices" : "Check my pantry"} variant="ghost" disabled={disabled || busy} onPress={() => void load()} />
+      <Button label={busy ? "Loading pantry choices…" : items !== null ? "Refresh pantry choices" : "Check my pantry"} busy={busy} variant="ghost" disabled={disabled || busy} onPress={() => void load()} />
       {busy ? <Text accessibilityLiveRegion="polite" style={textStyle}>Checking your saved pantry…</Text> : null}
       {failed ? <Callout tone="error">Pantry choices could not load. Try again; an empty view does not mean your pantry was cleared. You can still type a temporary ingredient above.</Callout> : null}
       {items?.length === 0 ? <Text style={textStyle}>No saved pantry items. Type a temporary ingredient above or add items in your pantry.</Text> : null}
