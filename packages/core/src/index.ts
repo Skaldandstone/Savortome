@@ -14,6 +14,7 @@ export * from "./pantry.js";
 export * from "./pantry-guidance.js";
 export * from "./pantry-intake.js";
 export * from "./plan-together.js";
+export * from "./meal-shopping.js";
 export * from "./receipt-extract.js";
 export * from "./units-convert.js";
 export * from "./shopping.js";

@@ -446,13 +446,13 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
 
     getSharedRecipe: (recipeId) => send<SharedRecipeResponse>(`/api/shared/${recipeId}`),
 
-    getList: () => send<ShoppingListView>("/api/list"),
+    getList: () => sendTimed<ShoppingListView>("/api/list", {}, 12_000),
 
     addRecipesToList: (recipeIds) =>
       send<ShoppingListView>("/api/list", { method: "POST", body: body({ recipeIds }) }),
 
     addItemsToList: (items) =>
-      send<ShoppingListView>("/api/list", { method: "POST", body: body({ items }) }),
+      sendTimed<ShoppingListView>("/api/list", { method: "POST", body: body({ items }) }, 12_000),
 
     setListItemChecked: (itemId, checked) =>
       send<ShoppingListView>(`/api/list/items/${itemId}`, {

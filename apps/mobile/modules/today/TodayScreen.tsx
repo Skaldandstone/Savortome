@@ -8,6 +8,7 @@ import { foodLogDate, localFoodDate, parseFoodLogInput, type FoodLogInput, type 
 import { createAccountClient } from "@/lib/client";
 import { Button, Callout, Field, Panel, PanelHeader, space, type as typeScale, usePalette } from "@/ui";
 import { FoodNoteCapture } from "./FoodNoteCapture";
+import { MissingShoppingReview } from "./MissingShoppingReview";
 
 function ask(message: string, confirm: string): Promise<boolean> {
   return new Promise(resolve => Alert.alert("Check before continuing", message, [
@@ -44,6 +45,8 @@ function AccountTodayScreen() {
   const [maxMinutes, setMaxMinutes] = useState<PlanTogetherOptions["maxMinutes"]>();
   const [pantryOnly, setPantryOnly] = useState(false);
   const ideasAction = useRef(false);
+  const [shoppingPending, setShoppingPending] = useState<Record<string, boolean>>({});
+  const hasShoppingPending = Object.values(shoppingPending).some(Boolean);
   const id = useRef<string | null>(null);
   const pendingSave = useRef<FoodLogInput | null>(null);
   const action = useRef(false);
@@ -138,7 +141,7 @@ function AccountTodayScreen() {
     setMessage(edit ? "Editing an existing note. Save to confirm changes." : "New repeat draft ready. Nothing saved yet.");
   };
   const showIdeas = async () => {
-    if (!client || ideasAction.current) return;
+    if (!client || ideasAction.current || hasShoppingPending) return;
     ideasAction.current = true; setIdeas(null);
     const version = generation.current; setIdeasBusy(true); setIdeasError(null);
     try { const result = await client.planTogether({ strictDietary: true, maxMinutes, pantryOnly }); if (current(version)) setIdeas(result.ideas); }
@@ -157,18 +160,19 @@ function AccountTodayScreen() {
     {invitation ? <Panel>
       <PanelHeader title="Want to plan something to eat together?" hint="Start with what your pantry thinks is still there. Correct it, choose something else, or leave this for later." />
       <Text style={textStyle}>Optional time limit</Text>
-      <View style={styles.row}><Button label="No time limit" variant="toggle" selected={maxMinutes === undefined} disabled={ideasBusy} onPress={() => { setMaxMinutes(undefined); setIdeas(null); setIdeasError(null); }} />
-        {([10, 20, 30, 60] as const).map(minutes => <Button key={minutes} label={`Up to ${minutes} min`} variant="toggle" selected={maxMinutes === minutes} disabled={ideasBusy} onPress={() => { setMaxMinutes(minutes); setIdeas(null); setIdeasError(null); }} />)}</View>
-      <Button label="No shopping today: match pantry names only" variant="toggle" selected={pantryOnly} disabled={ideasBusy} onPress={() => { setPantryOnly(value => !value); setIdeas(null); setIdeasError(null); }} />
+      <View style={styles.row}><Button label="No time limit" variant="toggle" selected={maxMinutes === undefined} disabled={ideasBusy || hasShoppingPending} onPress={() => { setMaxMinutes(undefined); setIdeas(null); setIdeasError(null); }} />
+        {([10, 20, 30, 60] as const).map(minutes => <Button key={minutes} label={`Up to ${minutes} min`} variant="toggle" selected={maxMinutes === minutes} disabled={ideasBusy || hasShoppingPending} onPress={() => { setMaxMinutes(minutes); setIdeas(null); setIdeasError(null); }} />)}</View>
+      <Button label="No shopping today: match pantry names only" variant="toggle" selected={pantryOnly} disabled={ideasBusy || hasShoppingPending} onPress={() => { setPantryOnly(value => !value); setIdeas(null); setIdeasError(null); }} />
       <Text style={textStyle}>Time uses the saved total; check the steps for waiting time. Unknown times are excluded with a limit. No-shopping matches check every listed ingredient, including staples and optional items. Names do not confirm quantities or preparation. We check up to 40 saved recipe candidates, not necessarily your whole library.</Text>
-      <View style={styles.row}><Button label={ideasBusy ? "Finding ideas…" : "Show me some ideas"} disabled={ideasBusy} onPress={() => void showIdeas()} />
-        <Button label="Not now" variant="ghost" onPress={() => setInvitation(false)} /><Button label="Feed me gently" variant="ghost" onPress={() => router.push("/care")} /></View>
+      <View style={styles.row}><Button label={ideasBusy ? "Finding ideas…" : "Show me some ideas"} disabled={ideasBusy || hasShoppingPending} onPress={() => void showIdeas()} />
+        <Button label="Not now" variant="ghost" disabled={hasShoppingPending} onPress={() => setInvitation(false)} /><Button label="Feed me gently" variant="ghost" onPress={() => router.push("/care")} /></View>
       {ideasError ? <Callout tone="error">{ideasError}</Callout> : null}
       {ideas?.length === 0 ? <Text style={textStyle}>No suitable saved recipe matched. Browse starter recipes or choose something simple. Restrictions weren’t loosened.</Text> : null}
       {ideas?.map(idea => <View key={idea.recipeId} style={[styles.note, { borderColor: c.border }]}>
         <Text accessibilityRole="header" style={{ color: c.text, fontSize: typeScale.title }}>{idea.title}</Text>
         <Text style={textStyle}>{idea.totalMinutes === null ? "Total time not recorded" : `${idea.totalMinutes} minutes total`}</Text>
         <Text style={textStyle}>{idea.reason}</Text><Text style={textStyle}>Pantry names matched: {idea.have.join(", ") || "none"}. Still needed: {idea.missing.join(", ") || "no additional names identified"}.</Text>
+        {client ? <MissingShoppingReview missing={idea.missing} client={client} onPending={pending => setShoppingPending(current => ({ ...current, [idea.recipeId]: pending }))} /> : null}
         <Button label={`View ${idea.title}`} variant="ghost" onPress={() => router.push(`/recipe/${idea.recipeId}`)} />
       </View>)}
       {ideas?.length ? <Text style={textStyle}>Matches require explicit saved dietary tags and exclude detected allergen conflicts. Tags may be incomplete or wrong. Name matching ignores quantities and preparation. Check package labels; suggestions do not verify allergy safety.</Text> : null}
