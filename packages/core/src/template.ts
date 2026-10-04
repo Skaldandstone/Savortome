@@ -87,6 +87,13 @@ export function orderedTemplateItems(items: readonly TemplateItem[]): TemplateIt
   return [...items].sort((a, b) => TEMPLATE_ROLES.indexOf(a.role) - TEMPLATE_ROLES.indexOf(b.role) || a.recipeId.localeCompare(b.recipeId));
 }
 
+/** Local literal name/dish search over an already loaded owner snapshot. */
+export function familiarMealMatches(meals: readonly MealTemplate[], query: string): MealTemplate[] {
+  if (query.length > 100 || /[\u0000-\u001f\u007f]/.test(query)) return [];
+  const needle = query.trim().toLowerCase();
+  return meals.filter(meal => !needle || meal.name.toLowerCase().includes(needle) || meal.items.some(item => item.title.toLowerCase().includes(needle)));
+}
+
 export interface ReviewedTemplatePlanInput {
   templateId: string;
   /** Explicit distinct recipe snapshot; a changed combination requires review. */
