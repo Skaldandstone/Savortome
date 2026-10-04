@@ -22,6 +22,24 @@ export interface PlanTogetherIdea {
   resurfaceItems: string[];
 }
 
+/** Explicit planning limits, not inferred energy or cooking difficulty. */
+export interface PlanTogetherOptions {
+  strictDietary?: boolean;
+  maxMinutes?: 10 | 20 | 30 | 60;
+  pantryOnly?: boolean;
+}
+
+export function parsePlanTogetherOptions(params: URLSearchParams): PlanTogetherOptions {
+  if (["maxMinutes", "pantryOnly", "strictDietary"].some(key => params.getAll(key).length > 1)) throw new Error("Choose one value for each meal-planning limit.");
+  const rawTime = params.get("maxMinutes");
+  const rawPantry = params.get("pantryOnly");
+  const rawDietary = params.get("strictDietary");
+  if (rawTime !== null && !["10", "20", "30", "60"].includes(rawTime)) throw new Error("Choose a supported meal-planning time limit.");
+  if (rawPantry !== null && rawPantry !== "true" && rawPantry !== "false") throw new Error("Choose whether to use pantry matches only.");
+  if (rawDietary !== null && rawDietary !== "true" && rawDietary !== "false") throw new Error("Choose a valid dietary matching setting.");
+  return { strictDietary: rawDietary === "true", pantryOnly: rawPantry === "true", maxMinutes: rawTime === null ? undefined : Number(rawTime) as PlanTogetherOptions["maxMinutes"] };
+}
+
 /**
  * Pantry planning stays deterministic and local. Detected allergen conflicts
  * are removed before any ranking; dietary tags influence order only because a
@@ -33,11 +51,20 @@ export function suggestPlanTogether(
   profile: DietaryProfile,
   now: Date = new Date(),
   limit = 3,
+  options: PlanTogetherOptions = {},
 ): PlanTogetherIdea[] {
   const pantryByName = new Map(pantry.map(entry => [entry.canonicalItem, entry]));
   const taggedPreferences = new Set<string>(profile.dietaryTags);
 
   return candidates
+    // Search normally assumes staples. A no-shopping request cannot rely on
+    // that assumption: require every indexed name, even optional ingredients.
+    // An empty ingredient index is not evidence that nothing is needed.
+    .filter(candidate => !options.pantryOnly || (candidate.ingredients.length > 0 && candidate.missing.length === 0 && candidate.ingredients.every(item => pantryByName.has(item))))
+    // Unknown times never satisfy a selected limit. Include elapsed waiting
+    // time from the saved recipe; never substitute active preparation time.
+    .filter(candidate => options.maxMinutes === undefined || (candidate.totalMinutes !== null && Number.isFinite(candidate.totalMinutes) && candidate.totalMinutes >= 0 && candidate.totalMinutes <= options.maxMinutes))
+    .filter(candidate => !options.strictDietary || profile.dietaryTags.every(tag => candidate.tags.includes(tag)))
     .filter(candidate => flagsForRecipe(
       candidate.ingredients.map(canonicalItem => ({ canonicalItem, optional: false })),
       profile.allergens,

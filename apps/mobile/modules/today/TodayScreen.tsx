@@ -4,7 +4,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { useAuth } from "@clerk/expo";
 import * as Crypto from "expo-crypto";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { foodLogDate, localFoodDate, parseFoodLogInput, type FoodLogInput, type FoodLogEntry, type FoodLogSource, type PlanTogetherIdea } from "@seconds/core/format";
+import { foodLogDate, localFoodDate, parseFoodLogInput, type FoodLogInput, type FoodLogEntry, type FoodLogSource, type PlanTogetherIdea, type PlanTogetherOptions } from "@seconds/core/format";
 import { createAccountClient } from "@/lib/client";
 import { Button, Callout, Field, Panel, PanelHeader, space, type as typeScale, usePalette } from "@/ui";
 import { FoodNoteCapture } from "./FoodNoteCapture";
@@ -41,6 +41,9 @@ function AccountTodayScreen() {
   const [invitation, setInvitation] = useState(true);
   const [ideas, setIdeas] = useState<PlanTogetherIdea[] | null>(null);
   const [ideasBusy, setIdeasBusy] = useState(false); const [ideasError, setIdeasError] = useState<string | null>(null);
+  const [maxMinutes, setMaxMinutes] = useState<PlanTogetherOptions["maxMinutes"]>();
+  const [pantryOnly, setPantryOnly] = useState(false);
+  const ideasAction = useRef(false);
   const id = useRef<string | null>(null);
   const pendingSave = useRef<FoodLogInput | null>(null);
   const action = useRef(false);
@@ -49,7 +52,7 @@ function AccountTodayScreen() {
   const draftTitle = useRef(title); draftTitle.current = title;
   const current = (version: number) => mounted.current && focused.current && generation.current === version;
   useFocusEffect(useCallback(() => {
-    focused.current = true; action.current = false; setCaptureBusy(false); setBusy(false); setIdeasBusy(false); setLoading(false); setFocusVisit(value => value + 1);
+    focused.current = true; action.current = false; ideasAction.current = false; setCaptureBusy(false); setBusy(false); setIdeasBusy(false); setLoading(false); setFocusVisit(value => value + 1);
     return () => { focused.current = false; ++generation.current; };
   }, []));
   const load = useCallback(async () => {
@@ -135,11 +138,12 @@ function AccountTodayScreen() {
     setMessage(edit ? "Editing an existing note. Save to confirm changes." : "New repeat draft ready. Nothing saved yet.");
   };
   const showIdeas = async () => {
-    if (!client) return;
+    if (!client || ideasAction.current) return;
+    ideasAction.current = true; setIdeas(null);
     const version = generation.current; setIdeasBusy(true); setIdeasError(null);
-    try { const result = await client.planTogether({ strictDietary: true }); if (current(version)) setIdeas(result.ideas); }
+    try { const result = await client.planTogether({ strictDietary: true, maxMinutes, pantryOnly }); if (current(version)) setIdeas(result.ideas); }
     catch { if (current(version)) setIdeasError("Meal ideas or saved dietary settings could not load. Try again or use Feed me gently with temporary choices."); }
-    finally { if (current(version)) setIdeasBusy(false); }
+    finally { if (current(version)) { ideasAction.current = false; setIdeasBusy(false); } }
   };
   const todayNotes = dayNotes;
   const recent = notes.filter((note, index) => notes.findIndex(other => other.title === note.title && other.portion === note.portion) === index).slice(0, 3);
@@ -152,12 +156,18 @@ function AccountTodayScreen() {
     <Text style={textStyle}>A meal idea or a little memory aid. Use what helps, leave what doesn’t.</Text>
     {invitation ? <Panel>
       <PanelHeader title="Want to plan something to eat together?" hint="Start with what your pantry thinks is still there. Correct it, choose something else, or leave this for later." />
+      <Text style={textStyle}>Optional time limit</Text>
+      <View style={styles.row}><Button label="No time limit" variant="toggle" selected={maxMinutes === undefined} disabled={ideasBusy} onPress={() => { setMaxMinutes(undefined); setIdeas(null); setIdeasError(null); }} />
+        {([10, 20, 30, 60] as const).map(minutes => <Button key={minutes} label={`Up to ${minutes} min`} variant="toggle" selected={maxMinutes === minutes} disabled={ideasBusy} onPress={() => { setMaxMinutes(minutes); setIdeas(null); setIdeasError(null); }} />)}</View>
+      <Button label="No shopping today: match pantry names only" variant="toggle" selected={pantryOnly} disabled={ideasBusy} onPress={() => { setPantryOnly(value => !value); setIdeas(null); setIdeasError(null); }} />
+      <Text style={textStyle}>Time uses the saved total; check the steps for waiting time. Unknown times are excluded with a limit. No-shopping matches check every listed ingredient, including staples and optional items. Names do not confirm quantities or preparation. We check up to 40 saved recipe candidates, not necessarily your whole library.</Text>
       <View style={styles.row}><Button label={ideasBusy ? "Finding ideas…" : "Show me some ideas"} disabled={ideasBusy} onPress={() => void showIdeas()} />
         <Button label="Not now" variant="ghost" onPress={() => setInvitation(false)} /><Button label="Feed me gently" variant="ghost" onPress={() => router.push("/care")} /></View>
       {ideasError ? <Callout tone="error">{ideasError}</Callout> : null}
       {ideas?.length === 0 ? <Text style={textStyle}>No suitable saved recipe matched. Browse starter recipes or choose something simple. Restrictions weren’t loosened.</Text> : null}
       {ideas?.map(idea => <View key={idea.recipeId} style={[styles.note, { borderColor: c.border }]}>
         <Text accessibilityRole="header" style={{ color: c.text, fontSize: typeScale.title }}>{idea.title}</Text>
+        <Text style={textStyle}>{idea.totalMinutes === null ? "Total time not recorded" : `${idea.totalMinutes} minutes total`}</Text>
         <Text style={textStyle}>{idea.reason}</Text><Text style={textStyle}>Pantry names matched: {idea.have.join(", ") || "none"}. Still needed: {idea.missing.join(", ") || "no additional names identified"}.</Text>
         <Button label={`View ${idea.title}`} variant="ghost" onPress={() => router.push(`/recipe/${idea.recipeId}`)} />
       </View>)}

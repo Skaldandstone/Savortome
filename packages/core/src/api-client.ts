@@ -1,7 +1,7 @@
 import type { RecipeRating, RecipeShelfState, ShelfSummary, StatusShelf } from "./shelves.js";
 import type { PantryEntry, PantryEntryUpdate, PantryMatch } from "./pantry.js";
 import type { PantryIntakeInput, PantryIntakeResolution, PantryIntakeView } from "./pantry-intake.js";
-import type { PlanTogetherIdea } from "./plan-together.js";
+import type { PlanTogetherIdea, PlanTogetherOptions } from "./plan-together.js";
 import type { BarcodeProductDraft } from "./barcode.js";
 import type { FoodLogEntry, FoodLogInput, FoodNoteDraft } from "./food-log.js";
 import type { ShoppingLine } from "./shopping.js";
@@ -267,7 +267,7 @@ export interface SecondsClient {
   credits: () => Promise<CreditsResponse>;
   library: (shelfId?: string, query?: string, sort?: LibrarySort) => Promise<LibraryResponse>;
   plan: (week?: string) => Promise<PlanResponse>;
-  planTogether: (options?: { strictDietary?: boolean }) => Promise<{ ideas: PlanTogetherIdea[]; pantryCount: number }>;
+  planTogether: (options?: PlanTogetherOptions) => Promise<{ ideas: PlanTogetherIdea[]; pantryCount: number }>;
   planAdd: (recipeId: string, date: string, slot: MealSlot, week?: string) => Promise<PlanResponse>;
   planRemove: (recipeId: string, date: string, slot: MealSlot, week?: string) => Promise<PlanResponse>;
   planMove: (
@@ -557,7 +557,14 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
 
     plan: (week) => send<PlanResponse>(`/api/plan${week ? `?week=${week}` : ""}`),
 
-    planTogether: (options) => send<{ ideas: PlanTogetherIdea[]; pantryCount: number }>(`/api/plan/together${options?.strictDietary ? "?strictDietary=true" : ""}`),
+    planTogether: (options) => {
+      const query = new URLSearchParams();
+      if (options?.strictDietary) query.set("strictDietary", "true");
+      if (options?.pantryOnly) query.set("pantryOnly", "true");
+      if (options?.maxMinutes !== undefined) query.set("maxMinutes", String(options.maxMinutes));
+      const encoded = query.toString();
+      return send<{ ideas: PlanTogetherIdea[]; pantryCount: number }>(`/api/plan/together${encoded ? `?${encoded}` : ""}`);
+    },
 
     planAdd: (recipeId, date, slot, week) =>
       send<PlanResponse>("/api/plan", {

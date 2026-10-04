@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { createClient, foodLogDate, localFoodDate, parseFoodLogInput, type FoodLogInput, type FoodLogEntry, type FoodLogSource, type PlanTogetherIdea } from "@seconds/core/format";
+import { createClient, foodLogDate, localFoodDate, parseFoodLogInput, type FoodLogInput, type FoodLogEntry, type FoodLogSource, type PlanTogetherIdea, type PlanTogetherOptions } from "@seconds/core/format";
 import { actionFailure, signInReturnHref } from "@/lib/action-failure";
 import { Button, Callout, FieldRow, Panel, PanelHeader, TextField } from "@/ui";
 import styles from "./today.module.css";
@@ -37,6 +37,9 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
   const [ideas, setIdeas] = useState<PlanTogetherIdea[] | null>(null);
   const [ideasBusy, setIdeasBusy] = useState(false);
   const [ideasError, setIdeasError] = useState<string | null>(null);
+  const [maxMinutes, setMaxMinutes] = useState<PlanTogetherOptions["maxMinutes"]>();
+  const [pantryOnly, setPantryOnly] = useState(false);
+  const ideasAction = useRef(false);
   const [title, setTitle] = useState("");
   const [portion, setPortion] = useState("");
   const [source, setSource] = useState<FoodLogSource>("text");
@@ -216,21 +219,30 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
     finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) { action.current = false; setBusy(false); } }
   };
   const showIdeas = async () => {
+    if (ideasAction.current) return;
+    ideasAction.current = true; setIdeas(null);
     const account = owner.current; const epoch = accountEpoch.current; setIdeasBusy(true); setIdeasError(null);
     try {
-      const response = await api.planTogether({ strictDietary: true });
+      const response = await api.planTogether({ strictDietary: true, maxMinutes, pantryOnly });
       if (alive.current && accountEpoch.current === epoch && owner.current === account) setIdeas(response.ideas);
     } catch { if (alive.current && accountEpoch.current === epoch && owner.current === account) setIdeasError("Meal ideas could not load, including your saved dietary settings. Try again or use Feed me gently with temporary choices."); }
-    finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) setIdeasBusy(false); }
+    finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) { ideasAction.current = false; setIdeasBusy(false); } }
   };
   const todayNotes = dayNotes;
   const recent = notes.filter((note, index) => notes.findIndex(other => other.title === note.title && other.portion === note.portion) === index).slice(0, 3);
   return <div className={`${styles.page} ${styles.stack}`}>
     {showInvitation ? <Panel><PanelHeader title="Want to plan something to eat together?" hint="We can start with what your pantry thinks is still there. You can correct it, choose something else, or leave this for later." />
+      <fieldset className={styles.limits} disabled={ideasBusy}><legend>Optional limits for these ideas</legend>
+        <label>Time available <select value={maxMinutes ?? ""} onChange={event => { setMaxMinutes(event.target.value ? Number(event.target.value) as PlanTogetherOptions["maxMinutes"] : undefined); setIdeas(null); setIdeasError(null); }}>
+          <option value="">No time limit</option>{([10, 20, 30, 60] as const).map(minutes => <option key={minutes} value={minutes}>Up to {minutes} minutes</option>)}
+        </select></label>
+        <label className={styles.pantryToggle}><input type="checkbox" checked={pantryOnly} onChange={event => { setPantryOnly(event.target.checked); setIdeas(null); setIdeasError(null); }} /> No shopping today: match pantry names only</label>
+      </fieldset>
+      <p>Time uses the saved total; check the steps for waiting time. Unknown times are excluded when you choose a limit. No-shopping matches check every listed ingredient, including staples and optional items. Names do not confirm quantities or preparation. We check up to 40 saved recipe candidates; no match does not mean your whole library was checked.</p>
       <FieldRow><Button disabled={ideasBusy} onClick={() => void showIdeas()}>{ideasBusy ? "Finding ideas…" : "Show me some ideas"}</Button><Button variant="ghost" onClick={() => setShowInvitation(false)}>Not now</Button><Link href="/care">Feed me gently</Link></FieldRow>
       {ideasError ? <Callout tone="error" role="alert">{ideasError}</Callout> : null}
       {ideas?.length === 0 ? <p>No suitable saved recipes matched. <Link href="/discover">Browse starter recipes</Link> or <Link href="/care">choose something simple</Link>. Restrictions weren’t loosened.</p> : null}
-      {ideas?.map(idea => <article className={styles.idea} key={idea.recipeId}><h3><Link href={`/recipe/${idea.recipeId}`}>{idea.title}</Link></h3><p>{idea.reason}</p><p>Pantry names matched: {idea.have.join(", ") || "none"}. Still needed: {idea.missing.join(", ") || "no additional names identified"}.</p><Link href="/plan">Choose a meal slot in your plan</Link></article>)}
+      {ideas?.map(idea => <article className={styles.idea} key={idea.recipeId}><h3><Link href={`/recipe/${idea.recipeId}`}>{idea.title}</Link></h3><p>{idea.totalMinutes === null ? "Total time not recorded" : `${idea.totalMinutes} minutes total`}</p><p>{idea.reason}</p><p>Pantry names matched: {idea.have.join(", ") || "none"}. Still needed: {idea.missing.join(", ") || "no additional names identified"}.</p><Link href="/plan">Choose a meal slot in your plan</Link></article>)}
       {ideas?.length ? <p>Suggestions require the saved dietary tags to be explicitly present and exclude detected allergen conflicts. Tags can be wrong or incomplete. Matches use ingredient names, not quantities or preparation. Check what is actually available and your package labels. Suggestions do not verify allergy safety.</p> : null}
     </Panel> : <Button variant="ghost" onClick={() => setShowInvitation(true)}>Show the meal-planning invitation</Button>}
     <Panel><PanelHeader title="An optional food note" hint="A small memory aid, not a score. Record what you want to remember. No calorie goals, streaks, reminders or automatic pantry updates." />

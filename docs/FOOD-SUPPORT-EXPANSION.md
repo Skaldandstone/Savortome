@@ -111,3 +111,15 @@ Next acceptance work, deliberately deferred by tonight's instruction:
 - Reconcile the source checkpoint with Linear after connector reauthentication; Notion already contains the approved scope, but its source-delivery update remains pending. No tracker completion is claimed.
 
 No deployments, invitations, account/credential/signing changes, live billing, automatic inventory consumption or proactive reminders occurred.
+
+### Continued overnight parity increment: planning without another errand
+
+The coordinator supplied James's later overnight direction to keep implementing until 9 AM, researching official comparable products when the initial scope appears complete. That supersedes the earlier source-completion pause. The existing heartbeat is active again; no duplicate schedule or writer was created.
+
+Official comparison: [Samsung Food+](https://samsungfood.com/food-plus/) describes food-list-based recipe search and prioritizing items worth using soon; [Paprika's Android guide](https://www.paprikaapp.com/help/android/) connects pantry inventory, grocery lists and meal planning. Savortome already has source pantry resurfacing and planning. The bounded missing workflow selected under existing FUTURE-04 is explicit planning limits on Today.
+
+Web/mobile Today now offer optional saved-total limits of 10, 20, 30 or 60 minutes and a no-shopping toggle. Defaults remain unrestricted, and no effort/energy classification is inferred. Both call the same shared options contract. Server validation rejects unsupported or repeated selected fields; unknown fields are ignored. Filtering happens before the three-choice limit, preserves detected-allergen exclusions and strict dietary matching, and never fills empty results by relaxing limits. Unknown, non-finite or negative recorded times cannot satisfy a selected time limit. Search also applies the time bound before its 40-candidate cap.
+
+No-shopping matches require all indexed ingredient names to be in the saved pantry, including staples and optional ingredients. Empty ingredient indexes do not qualify. This conservative rule avoids assuming staples but may hide a recipe whose optional ingredient could be omitted. Visible copy explains that names cannot prove quantity or preparation, stored totals may omit waiting, and the candidate window is not a complete library search. Changing limits clears old ideas; fresh results require an explicit request. Request guards prevent duplicate immediate requests. Native selected controls expose selected state; web controls use native labels and fieldset, with existing theme tokens. No preference telemetry or persistence was added.
+
+The authenticated planning route now explicitly returns private/no-store and content-free unexpected-error logs. This is source implementation only: no tests, typechecks, builds, deployments, provider calls or visual/device claims. Formal ranking/parser/session/UI acceptance remains deferred. Linear SSE-145 reauthentication was reconfirmed; no tracker update or completion is claimed.
