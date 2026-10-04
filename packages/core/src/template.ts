@@ -1,5 +1,7 @@
 import type { Visibility } from "./shelves.js";
 import { isUuid } from "./ids.js";
+import { parseReviewedMeal } from "./reviewed-meal.js";
+import type { MealSlot } from "./plan.js";
 
 /**
  * A named, reusable meal — a main plus whichever side, drink, and dessert go
@@ -67,6 +69,24 @@ export function templateFoodNoteName(name: string): string | null {
 
 export function orderedTemplateItems(items: readonly TemplateItem[]): TemplateItem[] {
   return [...items].sort((a, b) => TEMPLATE_ROLES.indexOf(a.role) - TEMPLATE_ROLES.indexOf(b.role) || a.recipeId.localeCompare(b.recipeId));
+}
+
+export interface ReviewedTemplatePlanInput {
+  templateId: string;
+  /** Explicit distinct recipe snapshot; a changed combination requires review. */
+  recipeIds: string[];
+  date: string;
+  slot: MealSlot;
+}
+
+export function parseReviewedTemplatePlan(value: unknown): ReviewedTemplatePlanInput {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Review a saved combination, date and meal slot.");
+  const input = value as Record<string, unknown>;
+  if (!isUuid(input.templateId) || !Array.isArray(input.recipeIds) || input.recipeIds.length < 1 || input.recipeIds.length > 4 || !input.recipeIds.every(isUuid)) throw new Error("Choose a saved combination with one to four distinct recipes.");
+  const recipeIds = input.recipeIds.map(id => (id as string).toLowerCase()).sort();
+  if (new Set(recipeIds).size !== recipeIds.length) throw new Error("Review each distinct recipe only once.");
+  const reviewed = parseReviewedMeal({ recipeId: recipeIds[0], date: input.date, slot: input.slot });
+  return { templateId: (input.templateId as string).toLowerCase(), recipeIds, date: reviewed.date, slot: reviewed.slot };
 }
 
 /** What a stranger with the link sees — the recipes, not the owner's plan or shelves. */

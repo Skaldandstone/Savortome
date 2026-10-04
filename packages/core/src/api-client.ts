@@ -3,6 +3,7 @@ import type { PantryEntry, PantryEntryUpdate, PantryMatch } from "./pantry.js";
 import type { PantryIntakeInput, PantryIntakeResolution, PantryIntakeView } from "./pantry-intake.js";
 import type { PlanTogetherIdea, PlanTogetherOptions } from "./plan-together.js";
 import type { ReviewedMealInput } from "./reviewed-meal.js";
+import type { ReviewedTemplatePlanInput } from "./template.js";
 import type { BarcodeProductDraft } from "./barcode.js";
 import type { FoodLogEntry, FoodLogInput, FoodNoteDraft } from "./food-log.js";
 import type { ShoppingLine } from "./shopping.js";
@@ -272,6 +273,7 @@ export interface SecondsClient {
   planTogether: (options?: PlanTogetherOptions) => Promise<{ ideas: PlanTogetherIdea[]; pantryCount: number }>;
   planAdd: (recipeId: string, date: string, slot: MealSlot, week?: string) => Promise<PlanResponse>;
   reviewedPlanAdd: (input: ReviewedMealInput) => Promise<PlanResponse>;
+  reviewedTemplatePlanAdd: (input: ReviewedTemplatePlanInput) => Promise<{ confirmed: ReviewedTemplatePlanInput }>;
   planRemove: (recipeId: string, date: string, slot: MealSlot, week?: string) => Promise<PlanResponse>;
   planMove: (
     recipeId: string,
@@ -569,6 +571,7 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
     },
 
     reviewedPlanAdd: (input) => sendTimed<PlanResponse>("/api/plan/meal", { method: "POST", body: body(input) }, 12_000),
+    reviewedTemplatePlanAdd: (input) => sendTimed<{ confirmed: ReviewedTemplatePlanInput }>("/api/plan/combination", { method: "POST", body: body(input) }, 12_000),
     planAdd: (recipeId, date, slot, week) =>
       sendTimed<PlanResponse>("/api/plan", {
         method: "POST",
