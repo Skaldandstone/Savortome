@@ -5,6 +5,7 @@ import { orderedTemplateItems, templateFoodNoteName, TEMPLATE_ROLE_LABEL, type M
 import { Button, Callout, Panel, PanelHeader, space, type as typeScale, usePalette } from "@/ui";
 import { CombinationPlanReview } from "./CombinationPlanReview";
 import { MealRenameReview } from "./MealRenameReview";
+import { MealDeleteReview } from "./MealDeleteReview";
 
 export function FamiliarMeals({ client, disabled, onDraft, onPending }: {
   client: SecondsClient; disabled: boolean; onDraft: (title: string) => boolean | Promise<boolean>; onPending: (id: string, pending: boolean) => void;
@@ -65,6 +66,20 @@ export function FamiliarMeals({ client, disabled, onDraft, onPending }: {
             setMessage("Local rename retry discarded. Reload saved meals to review the name. The earlier request is not cancelled and may still finish; recheck before another change.");
           }} />
         <CombinationPlanReview meal={meal} client={client} disabled={locked || busy || preparing} onPending={pending => { pendingRef.current = { ...pendingRef.current, [meal.id]: pending }; setPlanPending(pendingRef.current); onPending(meal.id, pending); }} />
+        <MealDeleteReview meal={meal} client={client} disabled={locked || busy || preparing}
+          onPending={pending => {
+            const key = `delete:${meal.id}`;
+            pendingRef.current = { ...pendingRef.current, [key]: pending }; setPlanPending(pendingRef.current); onPending(key, pending);
+          }}
+          onConfirmed={() => {
+            setMeals(current => current?.filter(saved => saved.id !== meal.id) ?? current);
+            setMessage(`${meal.name} was deleted from saved combinations. Its recipes stay in your library.`);
+          }}
+          onReview={() => {
+            if (!focused.current || action.current) return;
+            setMeals(null); setFailed(false); setShown(6);
+            setMessage("Reload saved meals to review the unconfirmed deletion. This does not undo or cancel the earlier request; it may still finish. Recheck before making another change.");
+          }} />
         {!templateFoodNoteName(meal.name) ? <Text style={textStyle}>This name is too long or cannot be copied. Enter a short food name below instead; nothing is truncated.</Text> : null}
       </View>) : null}
       {meals && meals.length > shown ? <Button label="Show more saved meals" variant="ghost" disabled={locked || busy || preparing} onPress={() => setShown(value => value + 6)} /> : null}
