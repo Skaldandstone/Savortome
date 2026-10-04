@@ -1,9 +1,8 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { foodLogDate, localFoodDate, parseFoodLogInput, type FoodLogInput, type FoodLogEntry, type FoodLogSource, type PlanTogetherIdea } from "@seconds/core/format";
-import { api } from "@/lib/client";
+import { createClient, foodLogDate, localFoodDate, parseFoodLogInput, type FoodLogInput, type FoodLogEntry, type FoodLogSource, type PlanTogetherIdea } from "@seconds/core/format";
 import { actionFailure, signInReturnHref } from "@/lib/action-failure";
 import { Button, Callout, FieldRow, Panel, PanelHeader, TextField } from "@/ui";
 import styles from "./today.module.css";
@@ -13,8 +12,17 @@ const base64Of = (blob: Blob) => new Promise<string>((resolve, reject) => {
   reader.onload = () => resolve(String(reader.result).split(",")[1] ?? ""); reader.readAsDataURL(blob);
 });
 
-export function TodayScreen() {
-  const { userId } = useAuth();
+export function TodayScreen({ clerkEnabled = true }: { clerkEnabled?: boolean }) {
+  return clerkEnabled ? <AuthenticatedTodayScreen /> : <AccountTodayScreen />;
+}
+function AuthenticatedTodayScreen() {
+  const { userId, sessionId, isLoaded } = useAuth();
+  if (!isLoaded) return <p role="status">Loading your sign-in…</p>;
+  if (!sessionId || !userId) return <Callout tone="info"><Link href={signInReturnHref("/today")}>Sign in again to load your food notes.</Link></Callout>;
+  return <AccountTodayScreen key={sessionId ?? "signed-out"} userId={userId} sessionId={sessionId} />;
+}
+function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; sessionId?: string | null }) {
+  const api = useMemo(() => createClient({ expectedSessionId: sessionId ?? undefined }), [sessionId]);
   const owner = useRef(userId); const accountEpoch = useRef(0); if (owner.current !== userId) { owner.current = userId; ++accountEpoch.current; }
   const request = useRef(0);
   const alive = useRef(true);
@@ -81,7 +89,7 @@ export function TodayScreen() {
     } catch {
       if (alive.current && accountEpoch.current === epoch && owner.current === account && request.current === version) setLoadError("Your food notes could not load. Nothing has been deleted. Try loading them again before saving another note.");
     } finally { if (alive.current && accountEpoch.current === epoch && owner.current === account && request.current === version) setLoading(false); }
-  }, []);
+  }, [api]);
   useEffect(() => {
     ++accountEpoch.current; alive.current = true;
     pendingSave.current = null; action.current = false; setUnconfirmed(false);

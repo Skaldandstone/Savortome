@@ -1,14 +1,25 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { parseProductBarcode, type BarcodeProductDraft } from "@seconds/core/format";
-import { api } from "@/lib/client";
+import Link from "next/link";
+import { signInReturnHref } from "@/lib/action-failure";
+import { createClient, parseProductBarcode, type BarcodeProductDraft } from "@seconds/core/format";
 import { Button, Callout, FieldRow, Panel, PanelHeader, TextField } from "@/ui";
 import { BrowserBarcodeScanner } from "./BrowserBarcodeScanner";
 
 /** Barcode lookup never saves inventory. The separate review queue owns acceptance. */
-export function BarcodeCapture({ onQueued }: { onQueued: () => void }) {
-  const { userId } = useAuth();
+type CaptureProps = { onQueued: () => void; clerkEnabled?: boolean };
+export function BarcodeCapture({ onQueued, clerkEnabled = true }: CaptureProps) {
+  return clerkEnabled ? <AuthenticatedBarcodeCapture onQueued={onQueued} /> : <AccountBarcodeCapture onQueued={onQueued} />;
+}
+function AuthenticatedBarcodeCapture({ onQueued }: CaptureProps) {
+  const { userId, sessionId, isLoaded } = useAuth();
+  if (!isLoaded) return <p role="status">Loading your sign-in for pantry entry…</p>;
+  if (!sessionId || !userId) return <Callout tone="info"><Link href={signInReturnHref("/cook")}>Sign in again before adding pantry items.</Link></Callout>;
+  return <AccountBarcodeCapture key={sessionId ?? "signed-out"} onQueued={onQueued} userId={userId} sessionId={sessionId} />;
+}
+function AccountBarcodeCapture({ onQueued, userId, sessionId }: CaptureProps & { userId?: string | null; sessionId?: string | null }) {
+  const api = useMemo(() => createClient({ expectedSessionId: sessionId ?? undefined }), [sessionId]);
   const owner = useRef(userId); owner.current = userId;
   const version = useRef(0);
   const [enabled, setEnabled] = useState<boolean | null>(null);
@@ -32,7 +43,7 @@ export function BarcodeCapture({ onQueued }: { onQueued: () => void }) {
     void api.barcodeLookupStatus().then(result => { if (active) setEnabled(result.enabled); })
       .catch(() => { if (active) setAvailabilityError(true); });
     return () => { active = false; ++version.current; };
-  }, [userId]);
+  }, [userId, api]);
   const lookup = async () => {
     if (action.current || uncertain || !enabled) return;
     action.current = true; setCamera(false);

@@ -95,6 +95,8 @@ export interface ApiClientConfig {
   baseUrl?: string;
   /** Supplies a Clerk session token per request. Omit on web — the cookie does it. */
   getToken?: () => Promise<string | null>;
+  /** Comparison with server-verified auth only; never an authentication credential. */
+  expectedSessionId?: string;
 }
 
 export class ApiError extends Error {
@@ -304,6 +306,7 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
       headers: {
         "content-type": "application/json",
         ...(token ? { authorization: `Bearer ${token}` } : {}),
+        ...(config.expectedSessionId ? { "x-savortome-expected-session": config.expectedSessionId } : {}),
         ...(init.headers ?? {}),
       },
     });

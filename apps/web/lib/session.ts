@@ -1,5 +1,6 @@
 import "server-only";
 import { auth, currentUser } from "@clerk/nextjs/server";
+import { headers } from "next/headers";
 import { db, ensureDevUser, upsertUserFromClerk, type Database } from "@seconds/db";
 
 /**
@@ -48,8 +49,14 @@ export async function currentUserId(database: Database = db()): Promise<string |
     );
   }
 
-  const { userId: clerkId } = await auth();
+  const { userId: clerkId, sessionId } = await auth();
   if (!clerkId) return null;
+  const expectedSession = (await headers()).get("x-savortome-expected-session");
+  // The header never selects an account. Compare independently verified auth
+  // before reading/upserting account-scoped database rows.
+  if (expectedSession !== null && (!sessionId || expectedSession !== sessionId)) {
+    throw new NotSignedInError("Your sign-in changed. Reload this screen before continuing.");
+  }
 
   const user = await currentUser();
   const address = user?.primaryEmailAddress ?? user?.emailAddresses[0] ?? null;

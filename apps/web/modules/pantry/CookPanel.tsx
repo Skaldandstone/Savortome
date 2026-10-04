@@ -24,7 +24,7 @@ const EXAMPLES = [
  * Searching with an empty box deliberately falls back to the saved pantry, so
  * the common case is one tap rather than retyping the same ingredients.
  */
-export function CookPanel() {
+export function CookPanel({ clerkEnabled = true }: { clerkEnabled?: boolean }) {
   const pantry = usePantry();
   const { response, searching, error, search } = usePantrySearch();
   const [query, setQuery] = useState("");
@@ -90,7 +90,7 @@ export function CookPanel() {
 
         {showPantry ? (
           <div className={styles.pantryPanel}>
-            <BarcodeCapture onQueued={pantry.retryIntakes} />
+            <BarcodeCapture clerkEnabled={clerkEnabled} onQueued={pantry.retryIntakes} />
             {pantry.loading && !pantry.loaded ? (
               <p className={styles.empty} role="status">
                 Loading pantry…
