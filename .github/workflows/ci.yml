@@ -50,6 +50,8 @@ jobs:
         run: node scripts/check-mobile-sentry.mjs
       - name: Mobile receipt recovery
         run: node scripts/check-mobile-receipts.mjs
+      - name: Pantry review recovery
+        run: node scripts/check-pantry-review-recovery.mjs
 
   database:
     name: Database checks
