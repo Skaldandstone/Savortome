@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { createClient, foodLogDate, localFoodDate, parseFoodLogInput, planIngredientName, type FoodLogInput, type FoodLogEntry, type FoodLogSource, type PantryEntry, type PlanTogetherIdea, type PlanTogetherOptions } from "@seconds/core/format";
+import { createClient, foodLogDate, foodLogReceiptMatches, localFoodDate, parseFoodLogInput, planIngredientName, type FoodLogInput, type FoodLogEntry, type FoodLogSource, type PantryEntry, type PlanTogetherIdea, type PlanTogetherOptions } from "@seconds/core/format";
 import { actionFailure, signInReturnHref } from "@/lib/action-failure";
 import { Button, Callout, FieldRow, Panel, PanelHeader, TextField } from "@/ui";
 import styles from "./today.module.css";
@@ -99,7 +99,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
       const savedDay = pending ? await api.listFoodNotes(pending.date) : [];
       if (alive.current && accountEpoch.current === epoch && owner.current === account && request.current === version) {
         setNotes(result); setLoaded(true);
-        if (pending && pendingSave.current === pending && savedDay.some(note => note.id === pending.id && note.date === pending.date && note.title === pending.title && note.portion === pending.portion && note.source === pending.source)) {
+        if (pending && pendingSave.current === pending && savedDay.some(note => foodLogReceiptMatches(pending, note))) {
           pendingSave.current = null; setUnconfirmed(false); draftId.current = pending.id;
           setError(""); setNeedsSignIn(false);
           setStatus("Reload confirmed your note was saved. You can edit this draft; discarding it will not remove the saved note.");
@@ -214,6 +214,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
     setBusy(true); setError(""); setStatus(""); setNeedsSignIn(false);
     try {
       const entry = await api.saveFoodNote(input);
+      if (!foodLogReceiptMatches(input, entry)) throw new Error("Unconfirmed food note");
       if (!alive.current || accountEpoch.current !== epoch || owner.current !== account) return;
       setNotes(current => [entry, ...current.filter(note => note.id !== entry.id)]); setStatus("Food note saved. Your pantry was not changed.");
       pendingSave.current = null; setUnconfirmed(false);

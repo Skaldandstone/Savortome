@@ -4,7 +4,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { useAuth } from "@clerk/expo";
 import * as Crypto from "expo-crypto";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { foodLogDate, localFoodDate, parseFoodLogInput, planIngredientName, type FoodLogInput, type FoodLogEntry, type FoodLogSource, type PantryEntry, type PlanTogetherIdea, type PlanTogetherOptions } from "@seconds/core/format";
+import { foodLogDate, foodLogReceiptMatches, localFoodDate, parseFoodLogInput, planIngredientName, type FoodLogInput, type FoodLogEntry, type FoodLogSource, type PantryEntry, type PlanTogetherIdea, type PlanTogetherOptions } from "@seconds/core/format";
 import { createAccountClient } from "@/lib/client";
 import { Button, Callout, Field, Panel, PanelHeader, space, type as typeScale, usePalette } from "@/ui";
 import { FoodNoteCapture } from "./FoodNoteCapture";
@@ -79,7 +79,7 @@ function AccountTodayScreen() {
       const savedDay = pending ? await client.listFoodNotes(pending.date) : [];
       if (current(version) && readVersion.current === read) {
         setNotes(result); setLoaded(true);
-        if (pending && pendingSave.current === pending && savedDay.some(note => note.id === pending.id && note.date === pending.date && note.title === pending.title && note.portion === pending.portion && note.source === pending.source)) {
+        if (pending && pendingSave.current === pending && savedDay.some(note => foodLogReceiptMatches(pending, note))) {
           pendingSave.current = null; setUnconfirmed(false); id.current = pending.id;
           setError(null);
           setMessage("Reload confirmed your note was saved. The draft is still here if you want to edit it; discarding it will not remove the saved note.");
@@ -120,6 +120,7 @@ function AccountTodayScreen() {
     const version = generation.current; setBusy(true); setError(null); setMessage(null);
     try {
       const entry = await client.saveFoodNote(input);
+      if (!foodLogReceiptMatches(input, entry)) throw new Error("Unconfirmed food note");
       if (!current(version)) return;
       setNotes(existing => [entry, ...existing.filter(note => note.id !== entry.id)]);
       pendingSave.current = null; setUnconfirmed(false);

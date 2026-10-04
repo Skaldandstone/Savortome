@@ -36,3 +36,18 @@ export function parseFoodLogInput(value: unknown): FoodLogInput {
   if (!FOOD_LOG_SOURCES.includes(body.source as FoodLogSource)) throw new FoodLogValidationError("Choose a known food-note source.");
   return { id: foodLogId(body.id), date: foodLogDate(body.date), title: body.title.trim(), portion: typeof body.portion === "string" ? body.portion.trim() || null : null, source: body.source as FoodLogSource };
 }
+
+/** A resolved request alone is not proof that the reviewed note was saved. */
+export function foodLogReceiptMatches(expected: FoodLogInput, received: unknown): received is FoodLogEntry {
+  try {
+    const input = parseFoodLogInput(expected);
+    if (!received || typeof received !== "object" || Array.isArray(received)) return false;
+    const entry = received as Record<string, unknown>;
+    const timestamp = (value: unknown) => typeof value === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value) && Number.isFinite(Date.parse(value)) && new Date(value).toISOString() === value;
+    // UUID case is formatting only. Other fields must match the reviewed
+    // normalized request exactly; missing/trimmed/different values fail.
+    return typeof entry.id === "string" && foodLogId(entry.id).toLowerCase() === input.id.toLowerCase()
+      && entry.date === input.date && entry.title === input.title && entry.portion === input.portion && entry.source === input.source
+      && timestamp(entry.createdAt) && timestamp(entry.updatedAt);
+  } catch { return false; }
+}
