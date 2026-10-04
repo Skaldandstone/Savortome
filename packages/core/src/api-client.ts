@@ -307,6 +307,11 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
   async function send<T>(path: string, init: RequestInit = {}): Promise<T> {
     const token = config.getToken ? await config.getToken() : null;
 
+    // Token acquisition may finish after sendTimed has already expired. Do
+    // not invoke native/custom fetch at all with a cancelled write; relying
+    // only on its handling of an already-aborted signal is insufficient.
+    if (init.signal?.aborted) throw new ApiError("The request timed out. Reload to check whether a save completed.", 408);
+
     const res = await fetch(`${base}${path}`, {
       ...init,
       headers: {
