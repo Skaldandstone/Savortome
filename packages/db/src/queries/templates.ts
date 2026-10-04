@@ -2,6 +2,7 @@ import { and, eq, inArray } from "drizzle-orm";
 import {
   canView,
   isUuid,
+  parseMealTemplateCreate,
   type MealTemplate,
   type SharedTemplateView,
   type TemplateItem,
@@ -34,29 +35,47 @@ export async function createTemplate(
   ownerId: string,
   name: string,
   items: { role: TemplateRole; recipeId: string }[],
+  requestId?: string,
 ): Promise<string> {
-  const recipeIds = items.map((i) => i.recipeId);
-  if (recipeIds.length === 0) throw new SaveTemplateError("A template needs at least one dish.");
+  let input;
+  try { input = parseMealTemplateCreate({ id: requestId, name, items }); }
+  catch (cause) { throw new SaveTemplateError(cause instanceof Error ? cause.message : "Review the meal before saving."); }
+  const recipeIds = [...new Set(input.items.map(i => i.recipeId))];
+  return database.transaction(async tx => {
+    // Lock the owned recipe rows through the template/item inserts so deletion
+    // or an ownership change cannot race the check. Share locks allow reads.
+    const owned = await tx
+      .select({ id: schema.recipes.id })
+      .from(schema.recipes)
+      .where(and(eq(schema.recipes.ownerId, ownerId), inArray(schema.recipes.id, recipeIds)))
+      .orderBy(schema.recipes.id)
+      .for("share");
+    if (owned.length !== recipeIds.length) {
+      throw new SaveTemplateError("A template can only be built from your own recipes.");
+    }
 
-  const owned = await database
-    .select({ id: schema.recipes.id })
-    .from(schema.recipes)
-    .where(and(eq(schema.recipes.ownerId, ownerId), inArray(schema.recipes.id, recipeIds)));
-  if (owned.length !== new Set(recipeIds).size) {
-    throw new SaveTemplateError("A template can only be built from your own recipes.");
-  }
+    const [created] = await tx
+      .insert(schema.mealTemplates)
+      .values({ ...(input.id ? { id: input.id } : {}), ownerId, name: input.name })
+      .onConflictDoNothing()
+      .returning({ id: schema.mealTemplates.id });
+    if (!created) {
+      if (!input.id) throw new SaveTemplateError("The meal could not be confirmed.");
+      const existing = await tx.query.mealTemplates.findFirst({ where: and(eq(schema.mealTemplates.id, input.id), eq(schema.mealTemplates.ownerId, ownerId)) });
+      const existingItems = existing ? await tx.query.mealTemplateItems.findMany({ where: eq(schema.mealTemplateItems.templateId, input.id) }) : [];
+      // Conflict waits for the earlier transaction. Only an exact same-owner
+      // name/role/recipe request can succeed as a retry; disclose no other row.
+      if (!existing || existing.name !== input.name || existingItems.length !== input.items.length || !input.items.every(item => existingItems.some(saved => saved.role === item.role && saved.recipeId === item.recipeId))) throw new SaveTemplateError("That meal request cannot be reused. Check your saved meals before making a new request.");
+      return existing.id;
+    }
+    const templateId = created.id;
 
-  const [created] = await database
-    .insert(schema.mealTemplates)
-    .values({ ownerId, name: name.trim() || "Untitled meal" })
-    .returning({ id: schema.mealTemplates.id });
-  const templateId = created!.id;
+    await tx
+      .insert(schema.mealTemplateItems)
+      .values(input.items.map(i => ({ templateId, role: i.role, recipeId: i.recipeId })));
 
-  await database
-    .insert(schema.mealTemplateItems)
-    .values(items.map((i) => ({ templateId, role: i.role, recipeId: i.recipeId })));
-
-  return templateId;
+    return templateId;
+  });
 }
 
 async function itemsFor(database: Database, templateIds: string[]): Promise<Map<string, TemplateItem[]>> {

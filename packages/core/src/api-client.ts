@@ -244,6 +244,7 @@ export interface SecondsClient {
   createTemplate: (
     name: string,
     items: { role: TemplateRole; recipeId: string }[],
+    requestId?: string,
   ) => Promise<{ id: string }>;
   deleteTemplate: (id: string) => Promise<{ ok: boolean }>;
   setTemplateVisibility: (id: string, visibility: Visibility) => Promise<{ visibility: Visibility | null }>;
@@ -483,8 +484,12 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
 
     myTemplates: () => sendTimed<{ templates: MealTemplate[] }>("/api/templates", {}, 12_000),
 
-    createTemplate: (name, items) =>
-      send<{ id: string }>("/api/templates", { method: "POST", body: body({ name, items }) }),
+    createTemplate: (name, items, requestId) => {
+      const request = { method: "POST", body: body({ id: requestId, name, items }) };
+      // A timed retry is safe only for a caller retaining a stable identity.
+      // Legacy callers keep their existing request behavior until adapted.
+      return requestId ? sendTimed<{ id: string }>("/api/templates", request, 12_000) : send<{ id: string }>("/api/templates", request);
+    },
 
     deleteTemplate: (id) => send<{ ok: boolean }>(`/api/templates/${id}`, { method: "DELETE" }),
 

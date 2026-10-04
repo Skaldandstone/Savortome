@@ -1,4 +1,5 @@
 import type { Visibility } from "./shelves.js";
+import { isUuid } from "./ids.js";
 
 /**
  * A named, reusable meal — a main plus whichever side, drink, and dessert go
@@ -29,6 +30,32 @@ export interface MealTemplate {
   name: string;
   visibility: Visibility;
   items: TemplateItem[];
+}
+
+export interface MealTemplateCreateInput {
+  /** Optional stable request identity for an identical retry. */
+  id?: string;
+  name: string;
+  items: { role: TemplateRole; recipeId: string }[];
+}
+
+export function parseMealTemplateCreate(value: unknown): MealTemplateCreateInput {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Review a meal before saving.");
+  const body = value as Record<string, unknown>;
+  if (body.id !== undefined && !isUuid(body.id)) throw new Error("That meal request could not be identified.");
+  if (typeof body.name !== "string" || body.name.length > 160 || /[\u0000-\u001f\u007f]/.test(body.name)) throw new Error("Use a meal name up to 160 characters.");
+  if (!Array.isArray(body.items) || body.items.length === 0 || body.items.length > TEMPLATE_ROLES.length) throw new Error("Choose between one and four dishes.");
+  const roles = new Set<TemplateRole>();
+  const items = body.items.map(value => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Choose a saved recipe for each dish.");
+    const item = value as Record<string, unknown>;
+    if (!TEMPLATE_ROLES.includes(item.role as TemplateRole) || !isUuid(item.recipeId)) throw new Error("Choose a known role and saved recipe for each dish.");
+    const role = item.role as TemplateRole;
+    if (roles.has(role)) throw new Error("Choose only one dish for each role.");
+    roles.add(role);
+    return { role, recipeId: item.recipeId.toLowerCase() };
+  });
+  return { id: typeof body.id === "string" ? body.id.toLowerCase() : undefined, name: body.name.trim() || "Untitled meal", items };
 }
 
 /** Copy only a reviewable name into a note, never quantities or nutrition. */
