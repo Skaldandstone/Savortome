@@ -43,7 +43,7 @@ export function FamiliarMeals({ client, disabled, onDraft }: {
       <Button label={busy ? "Loading saved meals…" : meals !== null ? "Refresh saved meals" : "Load my saved meals"} variant="ghost" disabled={disabled || busy || preparing} onPress={() => void load()} />
       {busy ? <Text accessibilityLiveRegion="polite" style={textStyle}>Loading your combinations…</Text> : null}
       {failed ? <Callout tone="error">Saved meals could not load. Try again before deciding this list is empty.</Callout> : null}
-      {meals?.length === 0 ? <Text style={textStyle}>No saved combinations yet. Save one from a recipe's companion-dishes section in the web version, then reload here.</Text> : null}
+      {meals?.length === 0 ? <Text style={textStyle}>No saved combinations yet. Open a saved recipe and choose Keep a familiar meal, or use the web recipe's companion-dishes section. Then reload here.</Text> : null}
       {meals ? meals.slice(0, shown).map(meal => <View key={meal.id} style={{ borderTopWidth: 1, borderColor: c.border, paddingTop: space.sm, gap: space.sm }}>
         <Text accessibilityRole="header" style={{ color: c.text, fontSize: typeScale.title }}>{meal.name}</Text>
         {meal.items.length ? orderedTemplateItems(meal.items).map((item, index) => <Button key={`${item.role}:${item.recipeId}:${index}`} label={`${TEMPLATE_ROLE_LABEL[item.role]}: ${item.title}`} variant="ghost" disabled={disabled || preparing} onPress={() => router.push({ pathname: "/recipe/[id]", params: { id: item.recipeId } })} />) : <Text style={textStyle}>No dishes remain in this combination. You can still review its name.</Text>}

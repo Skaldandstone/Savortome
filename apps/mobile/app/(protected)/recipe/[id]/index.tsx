@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { isUuid, type OwnedRecipe, type SecondsClient } from "@seconds/core/format";
 import { createAccountClient } from "@/lib/client";
 import { RecipeCard } from "@/modules/recipe";
+import { SavedMealReview } from "@/modules/recipe/SavedMealReview";
 import { ShareControl } from "@/modules/sharing";
 import { Button, Callout, space, usePalette } from "@/ui";
 
@@ -28,6 +29,7 @@ function AccountRecipeScreen({ id, client }: { id: string; client: SecondsClient
   const [listBusy, setListBusy] = useState(false);
   const [listUnconfirmed, setListUnconfirmed] = useState(false);
   const [listMessage, setListMessage] = useState("");
+  const [mealPending, setMealPending] = useState(false);
   const focused = useRef(false); const generation = useRef(0); const action = useRef(false);
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -59,7 +61,7 @@ function AccountRecipeScreen({ id, client }: { id: string; client: SecondsClient
   }, [id, client, attempt]));
 
   const addToList = async () => {
-    if (!recipe || loading || action.current || added || listUnconfirmed || !focused.current) return;
+    if (!recipe || loading || action.current || added || listUnconfirmed || mealPending || !focused.current) return;
     const visit = generation.current; action.current = true; setListBusy(true); setListMessage("");
     // Treat every dispatched write as uncertain until a response confirms it.
     setListUnconfirmed(true);
@@ -99,7 +101,7 @@ function AccountRecipeScreen({ id, client }: { id: string; client: SecondsClient
               <Button
                 label={listBusy ? "Adding ingredients…" : added ? "Ingredients added ✓" : listUnconfirmed ? "Check unconfirmed addition" : "Add ingredients to shopping list"}
                 variant="ghost"
-                disabled={added || listBusy || listUnconfirmed}
+                disabled={added || listBusy || listUnconfirmed || mealPending}
                 onPress={() => void addToList()}
               />
               <Button
@@ -115,6 +117,7 @@ function AccountRecipeScreen({ id, client }: { id: string; client: SecondsClient
             <ActivityIndicator accessibilityLabel="Loading recipe" color={c.accent} />
           </View>
         )}
+        <SavedMealReview recipeId={id} title={recipe?.title ?? "the selected recipe"} available={recipe !== null && !loading && !listBusy && !listUnconfirmed} client={client} onPending={setMealPending} />
         {listMessage ? <Callout tone={listUnconfirmed ? "warn" : "info"}>{listMessage}</Callout> : null}
         {recipe || listUnconfirmed || added ? <Button label="Review my shopping list" variant="ghost" onPress={() => router.push("/(protected)/(tabs)/list")} /> : null}
         {listUnconfirmed && !listBusy ? <Button label="I checked the list; allow another addition" variant="ghost" onPress={() => {
