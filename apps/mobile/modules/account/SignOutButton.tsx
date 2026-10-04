@@ -45,7 +45,7 @@ export function SignOutButton() {
     ], { cancelable: true, onDismiss: cancel });
   };
   return <View style={{ flexShrink: 1, maxWidth: 240 }}>
-    <Button label={busy ? "Signing out…" : "Sign out"} variant="ghost" disabled={busy || !userId || !sessionId} onPress={begin} />
+    <Button label={busy ? "Signing out…" : "Sign out"} busy={busy} variant="ghost" disabled={busy || !userId || !sessionId} onPress={begin} />
     {error ? <Callout tone="error">{error}</Callout> : null}
   </View>;
 }

@@ -9,6 +9,7 @@ export function Button({
   onPress,
   variant = "primary",
   disabled,
+  busy,
   selected,
   accessibilityLabel,
 }: {
@@ -16,10 +17,12 @@ export function Button({
   onPress: () => void;
   variant?: ButtonVariant;
   disabled?: boolean;
+  busy?: boolean;
   selected?: boolean;
   accessibilityLabel?: string;
 }) {
   const c = usePalette();
+  const inactive = !!disabled || !!busy;
 
   const background =
     variant === "primary" ? c.accent : selected ? c.accentSoft : "transparent";
@@ -41,14 +44,14 @@ export function Button({
   return (
     <Pressable
       onPress={onPress}
-      disabled={disabled}
+      disabled={inactive}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? label}
-      accessibilityState={{ disabled: !!disabled, selected }}
+      accessibilityState={{ disabled: inactive, selected, busy: !!busy }}
       style={({ pressed }) => [
         styles.base,
         variant === "primary" ? styles.primary : styles.compact,
-        { backgroundColor: background, borderColor, opacity: disabled ? 0.55 : pressed ? 0.8 : 1 },
+        { backgroundColor: background, borderColor, opacity: inactive ? 0.55 : pressed ? 0.8 : 1 },
       ]}
     >
       <Text style={[styles.label, { color }, variant !== "primary" && styles.compactLabel]}>

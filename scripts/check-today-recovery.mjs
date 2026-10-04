@@ -164,3 +164,12 @@ test('native local: expired discard keeps notes blocked after late local deletio
  const f=await ready();fill(f);await localConsent(f,'Keep this draft on this device');await restart(f);await localConsent(f);const gate=deferred();const original=f.state.localRemove;f.state.localRemove=async(...args)=>{await gate.promise;await original(...args);};await press(f,'Discard device recovery');f.decide(true);await flush();f.expire();await f.settle();assert.match(text(f.render()),/discard was not confirmed/);
  gate.resolve();await f.settle();assert.equal(f.state.localValues.size,0);assert.equal(field(f.render(),'Food name').props.editable,false);await localConsent(f);assert.match(text(f.render()),/No device copy found/);assert.equal(f.writes('delete').length,0);
 });
+test('native accessibility: device read exposes busy state and clears it after review',async()=>{
+ const f=await ready();const gate=deferred();f.state.localGet=()=>gate.promise;await press(f,'Check for a kept food note');f.decide(true);await flush();
+ assert.equal(button(f.render(),'Checking device recovery…').props.busy,true);assert.equal(button(f.render(),'Checking device recovery…').props.disabled,true);
+ gate.resolve(null);await f.settle();assert.equal(button(f.render(),'Check for a kept food note').props.busy,false);assert.equal(f.writes('save').length,0);
+});
+test('native accessibility: pending removal announces removing rather than saving',async()=>{
+ const f=await recent();const gate=deferred();f.state.remove=()=>gate.promise;await press(f,'Remove Toast note');f.decide(true);await flush();
+ assert.equal(button(f.render(),'Removing note…').props.busy,true);assert.doesNotMatch(text(f.render()),/Saving…/);gate.resolve({deleted:true});await f.settle();assert.match(text(f.render()),/Food note removed/);
+});

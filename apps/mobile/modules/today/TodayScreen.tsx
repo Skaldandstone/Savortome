@@ -316,7 +316,7 @@ function AccountTodayScreen() {
       <View style={styles.fields}>
         <Text style={textStyle}>Optional device recovery: keep a snapshot or check for a copy from an earlier visit. Secure device copies are separate from saved account notes. Sign-out does not erase them; discard here when finished. Original media is never kept.</Text>
         <View style={styles.row}>
-          <Button label={localBusy ? "Checking device recovery…" : "Check for a kept food note"} variant="ghost" disabled={busy || captureBusy || localBusy || loading || unconfirmed || deleteUnconfirmed} onPress={() => void deviceRecovery(false)} />
+          <Button label={localBusy ? "Checking device recovery…" : "Check for a kept food note"} busy={localBusy} variant="ghost" disabled={busy || captureBusy || localBusy || loading || unconfirmed || deleteUnconfirmed} onPress={() => void deviceRecovery(false)} />
           <Button label="Keep this draft on this device" variant="ghost" disabled={disabled || loading || !loaded || unconfirmed || deleteUnconfirmed || !title.trim()} onPress={() => void deviceRecovery(true)} />
         </View>
         {localOn ? <Text accessibilityLiveRegion="polite" style={textStyle}>Device recovery is enabled for this visit. Save/removal requests checkpoint before sending; they never retry themselves. Unsaved edits are not automatically kept.</Text> : null}
@@ -358,7 +358,7 @@ function AccountTodayScreen() {
         <Text style={textStyle}>Portion, if you know it (optional)</Text><Field value={portion} accessibilityLabel="Portion, optional" editable={!lockedDraft} maxLength={120} onChangeText={setPortion} placeholder="One bowl; leave blank if unsure" />
         {uncertainty ? <Callout tone="warn">{uncertainty} Photo portions stay unknown unless you enter one.</Callout> : null}
         {unconfirmed && !busy ? <Callout tone="warn">The save was not confirmed. This draft stays unchanged for a retry with the same reference. Reload first to check whether it already saved.</Callout> : null}
-        <View style={styles.row}><Button label={busy ? "Saving…" : unconfirmed ? "Retry the same food note" : id.current ? "Save reviewed edits" : "Save food note"} disabled={disabled || deleteUnconfirmed || loading || !loaded || !title.trim()} onPress={() => void save()} />
+        <View style={styles.row}><Button label={busy ? pendingDelete.current ? "Removing note…" : "Saving…" : unconfirmed ? "Retry the same food note" : id.current ? "Save reviewed edits" : "Save food note"} busy={busy} disabled={disabled || deleteUnconfirmed || loading || !loaded || !title.trim()} onPress={() => void save()} />
           <Button label="Discard draft" variant="ghost" disabled={disabled || !title} onPress={() => {
             const version = generation.current;
             void (async () => {
@@ -390,7 +390,7 @@ function AccountTodayScreen() {
       {dayState === "failed" ? <Callout tone="error">This day's notes could not load. Check the date or reload; an empty display does not mean notes were deleted.</Callout> : null}
       {dayState === "ready" && !todayNotes.length ? <Text style={textStyle}>No notes for this day. Leaving this empty is fine.</Text> : null}
       {todayNotes.map(note => <View style={[styles.note, { borderColor: c.border }]} key={note.id}><Text accessibilityRole="header" style={{ color: c.text, fontSize: typeScale.title }}>{note.title}</Text><Text style={textStyle}>{note.portion ?? "Portion not recorded"}</Text>
-        <View style={styles.row}><Button label={`Edit ${note.title} note`} variant="ghost" disabled={lockedDraft} onPress={() => void repeatOrEdit(note, true)} /><Button label={`Remove ${note.title} note`} variant="ghost" disabled={lockedDraft} onPress={() => void remove(note)} /></View>
+        <View style={styles.row}><Button label={`Edit ${note.title} note`} variant="ghost" disabled={lockedDraft} onPress={() => void repeatOrEdit(note, true)} /><Button label={busy && pendingDelete.current === note.id ? "Removing note…" : `Remove ${note.title} note`} busy={busy && pendingDelete.current === note.id} variant="ghost" disabled={lockedDraft} onPress={() => void remove(note)} /></View>
       </View>)}
     </Panel>
     {loaded && recent.length ? <Panel><PanelHeader title="Something familiar" hint="Copy a previous food note into a new draft. It only records another meal when you explicitly save." />
