@@ -9,6 +9,7 @@ import styles from "./today.module.css";
 import { MissingShoppingReview } from "./MissingShoppingReview";
 import { PlanIdeaReview } from "./PlanIdeaReview";
 import { PantryPlanningPicker } from "./PantryPlanningPicker";
+import { FamiliarMeals } from "./FamiliarMeals";
 
 const base64Of = (blob: Blob) => new Promise<string>((resolve, reject) => {
   const reader = new FileReader(); reader.onerror = () => reject(new Error("File could not be read."));
@@ -267,13 +268,20 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
       {ideas?.map(idea => <article className={styles.idea} key={idea.recipeId}><h3><Link href={`/recipe/${idea.recipeId}`}>{idea.title}</Link></h3><p>{idea.totalMinutes === null ? "Total time not recorded" : `${idea.totalMinutes} minutes total`}</p><p>{idea.reason}</p><p>Pantry names matched: {idea.have.join(", ") || "none"}. Still needed: {idea.missing.join(", ") || "no additional names identified"}.</p><MissingShoppingReview missing={idea.missing} client={api} onPending={pending => setShoppingPending(current => ({ ...current, [idea.recipeId]: pending }))} /><PlanIdeaReview recipeId={idea.recipeId} title={idea.title} client={api} onPending={pending => setShoppingPending(current => ({ ...current, [`plan:${idea.recipeId}`]: pending }))} /></article>)}
       {ideas?.length ? <p>Suggestions require the saved dietary tags to be explicitly present and exclude detected allergen conflicts. Tags can be wrong or incomplete. Matches use ingredient names, not quantities or preparation. Check what is actually available and your package labels. Suggestions do not verify allergy safety.</p> : null}
     </Panel> : <Button variant="ghost" onClick={() => setShowInvitation(true)}>Show the meal-planning invitation</Button>}
+    <FamiliarMeals client={api} disabled={busy || recording || unconfirmed || ideasBusy || hasShoppingPending} onDraft={name => {
+      if (action.current || pendingSave.current || recording) return false;
+      if ((title.trim() || portion.trim() || voiceBlob) && !window.confirm("Replace the current unsaved food-note draft with this meal name? Nothing will be saved.")) return false;
+      setTitle(name); setPortion(""); setSource("text"); setUncertainty(""); draftId.current = null; setError(""); setStatus("Saved meal name copied. Review the date and portion before saving. No eating or pantry change has been recorded.");
+      document.getElementById("today-food-name")?.focus();
+      return true;
+    }} />
     <Panel><PanelHeader title="An optional food note" hint="A small memory aid, not a score. Record what you want to remember. No calorie goals, streaks, reminders or automatic pantry updates." />
       {loading ? <p role="status">Loading your notes…</p> : null}
       {loadError ? <Callout tone="error" role="alert">{loadError}</Callout> : null}
       <Button variant="ghost" disabled={busy || loading} onClick={() => void load()}>Reload food notes</Button>
       <form className={styles.stack} onSubmit={event => { event.preventDefault(); void save(); }}>
         <label>Date<TextField type="date" value={date} disabled={busy || recording || unconfirmed} onChange={event => setDate(event.target.value)} /></label>
-        <label>Food name<TextField value={title} maxLength={160} disabled={busy || recording || unconfirmed} onChange={event => { setTitle(event.target.value); setSource("text"); }} /></label>
+        <label>Food name<TextField id="today-food-name" value={title} maxLength={160} disabled={busy || recording || unconfirmed} onChange={event => { setTitle(event.target.value); setSource("text"); }} /></label>
         <label>Portion, if you know it (optional)<TextField value={portion} maxLength={120} disabled={busy || recording || unconfirmed} onChange={event => setPortion(event.target.value)} placeholder="For example, one bowl; leave blank if unsure" /></label>
         {uncertainty ? <Callout tone="warn">{uncertainty} Photo portions are unknown; add one only if you know it.</Callout> : null}
         {unconfirmed && !busy ? <Callout tone="warn">The save was not confirmed. This draft stays unchanged for a retry with the same reference. Reload first to check whether it already saved.</Callout> : null}

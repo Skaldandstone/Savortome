@@ -481,7 +481,7 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
     saveSharedRecipe: (recipeId) =>
       send<{ recipeId: string }>(`/api/recipes/${recipeId}/save`, { method: "POST" }),
 
-    myTemplates: () => send<{ templates: MealTemplate[] }>("/api/templates"),
+    myTemplates: () => sendTimed<{ templates: MealTemplate[] }>("/api/templates", {}, 12_000),
 
     createTemplate: (name, items) =>
       send<{ id: string }>("/api/templates", { method: "POST", body: body({ name, items }) }),

@@ -11,6 +11,7 @@ import { FoodNoteCapture } from "./FoodNoteCapture";
 import { MissingShoppingReview } from "./MissingShoppingReview";
 import { PlanIdeaReview } from "./PlanIdeaReview";
 import { PantryPlanningPicker } from "./PantryPlanningPicker";
+import { FamiliarMeals } from "./FamiliarMeals";
 
 function ask(message: string, confirm: string): Promise<boolean> {
   return new Promise(resolve => Alert.alert("Check before continuing", message, [
@@ -200,6 +201,16 @@ function AccountTodayScreen() {
       {ideas?.length ? <Text style={textStyle}>Matches require explicit saved dietary tags and exclude detected allergen conflicts. Tags may be incomplete or wrong. Name matching ignores quantities and preparation. Check package labels; suggestions do not verify allergy safety.</Text> : null}
       <View style={styles.row}><Button label="Browse starter recipes" variant="ghost" onPress={() => router.push("/(protected)/(tabs)/discover")} /><Button label="Open meal plan" variant="ghost" onPress={() => router.push("/(protected)/(tabs)/plan")} /></View>
     </Panel> : <Button label="Show the meal-planning invitation" variant="ghost" onPress={() => setInvitation(true)} />}
+    {client ? <FamiliarMeals client={client} disabled={lockedDraft || ideasBusy || hasShoppingPending} onDraft={async name => {
+      if (action.current || captureBusy || pendingSave.current) return false;
+      const version = generation.current; action.current = true; setBusy(true);
+      try {
+        if ((title.trim() || portion.trim() || id.current || uncertainty) && !await ask("Replace the current unsaved food-note draft with this meal name? Nothing will be saved.", "Replace draft")) return false;
+        if (!current(version) || pendingSave.current) return false;
+        setTitle(name); setPortion(""); setSource("text"); setUncertainty(""); id.current = null; setError(null); setMessage("Saved meal name copied. Review the date and portion before saving. No eating or pantry change has been recorded.");
+        return true;
+      } finally { if (current(version)) { action.current = false; setBusy(false); } }
+    }} /> : null}
     <Panel>
       <PanelHeader title="An optional food note" hint="A memory aid, not a score. No calorie goals, streaks or automatic pantry updates." />
       <View style={styles.fields}>

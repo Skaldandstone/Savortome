@@ -31,6 +31,17 @@ export interface MealTemplate {
   items: TemplateItem[];
 }
 
+/** Copy only a reviewable name into a note, never quantities or nutrition. */
+export function templateFoodNoteName(name: string): string | null {
+  if (/[\u0000-\u001f\u007f]/.test(name)) return null;
+  const title = name.trim().replace(/\s+/g, " ");
+  return title.length > 0 && title.length <= 160 ? title : null;
+}
+
+export function orderedTemplateItems(items: readonly TemplateItem[]): TemplateItem[] {
+  return [...items].sort((a, b) => TEMPLATE_ROLES.indexOf(a.role) - TEMPLATE_ROLES.indexOf(b.role) || a.recipeId.localeCompare(b.recipeId));
+}
+
 /** What a stranger with the link sees — the recipes, not the owner's plan or shelves. */
 export interface SharedTemplateView {
   id: string;

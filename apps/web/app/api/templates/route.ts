@@ -6,7 +6,9 @@ export const runtime = "nodejs";
 
 /** Your saved meals — a main plus whichever side, drink, and dessert go with it. */
 export async function GET() {
-  return withUser(async (userId, database) => ({ templates: await listTemplates(database, userId) }));
+  const response = await withUser(async (userId, database) => ({ templates: await listTemplates(database, userId) }), { redactUnexpectedErrors: true });
+  response.headers.set("Cache-Control", "private, no-store");
+  return response;
 }
 
 interface Body {
