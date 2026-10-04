@@ -109,7 +109,12 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
         }
       }
     } catch {
-      if (alive.current && accountEpoch.current === epoch && owner.current === account && request.current === version) setLoadError("Your food notes could not load. This does not confirm whether an earlier save or removal finished. Reload before another change.");
+      if (alive.current && accountEpoch.current === epoch && owner.current === account && request.current === version) {
+        // Preserve local content while requiring a fresh successful review
+        // before writes; a previous read does not clear this failed reload.
+        setLoaded(false);
+        setLoadError("Your food notes could not load. This does not confirm whether an earlier save or removal finished. Reload before another change.");
+      }
     } finally { if (alive.current && accountEpoch.current === epoch && owner.current === account && request.current === version) setLoading(false); }
   }, [api]);
   useEffect(() => {

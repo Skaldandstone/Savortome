@@ -89,7 +89,12 @@ function AccountTodayScreen() {
         }
       }
     }
-    catch { if (current(version) && readVersion.current === read) setLoadError("Food notes could not load. This does not confirm whether an earlier save or removal finished. Reload before another change."); }
+    catch { if (current(version) && readVersion.current === read) {
+      // Keep the draft and last-seen notes, but an earlier successful read
+      // cannot authorize writes after this review failed.
+      setLoaded(false);
+      setLoadError("Food notes could not load. This does not confirm whether an earlier save or removal finished. Reload before another change.");
+    } }
     finally { if (current(version) && readVersion.current === read) setLoading(false); }
   }, [client]);
   useEffect(() => {
