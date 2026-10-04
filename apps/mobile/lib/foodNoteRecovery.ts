@@ -14,7 +14,7 @@ const lifetime = 24 * 60 * 60 * 1000;
 // Serialize across store instances, so an old pending write cannot overtake a
 // later discard. Different account/environment keys never share data or queues.
 const queues = new Map<string, Promise<unknown>>();
-const failure = () => new Error("Local recovery could not be confirmed. Review your account and try again; nothing retries automatically.");
+const failure = () => new Error("Local recovery could not be confirmed. An earlier local operation may still finish. Review your account and try again; nothing retries automatically.");
 function normalize(value: unknown): FoodNoteRecovery {
   if (!value || typeof value !== "object" || Array.isArray(value)) throw failure();
   const item = value as Record<string, unknown>;
@@ -47,18 +47,31 @@ export function createFoodNoteRecoveryStore(options: Options) {
   async function run<T>(consent: boolean, operation: (key: string) => Promise<T>): Promise<T> {
     if (consent !== true) throw failure();
     active();
-    const name = await scoped(); active();
-    const previous = queues.get(name) ?? Promise.resolve();
-    const task = previous.catch(() => undefined).then(async () => {
-      active();
-      const result = await operation(name);
-      active(); // Never expose late old-session data/results to a new session.
-      return result;
+    let expired = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const deadline = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => { expired = true; reject(failure()); }, 12000);
     });
-    queues.set(name, task);
-    try { return await task; }
+    const work = (async () => {
+      const name = await scoped(); active();
+      if (expired) throw failure();
+      const previous = queues.get(name) ?? Promise.resolve();
+      const task = previous.catch(() => undefined).then(async () => {
+        active();
+        if (expired) throw failure(); // Never dispatch a timed-out queued task.
+        const result = await operation(name);
+        active(); // Never expose late old-session data/results to a new session.
+        return result;
+      });
+      queues.set(name, task);
+      // Keep serialization until the real operation settles, even if its
+      // caller has timed out. SecureStore operations cannot be cancelled.
+      try { return await task; }
+      finally { if (queues.get(name) === task) queues.delete(name); }
+    })();
+    try { return await Promise.race([work, deadline]); }
     catch { throw failure(); }
-    finally { if (queues.get(name) === task) queues.delete(name); }
+    finally { if (timer !== undefined) clearTimeout(timer); }
   }
   return {
     async keep(value: FoodNoteRecovery, consent: boolean): Promise<void> {

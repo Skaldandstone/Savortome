@@ -16,7 +16,7 @@ const bundle = await build({ stdin: { resolveDir: process.cwd(), contents: `expo
   api.onResolve({ filter: /.*/ }, args => Object.hasOwn(mocks, args.path) ? { path: args.path, namespace: 'mock' } : undefined);
   api.onLoad({ filter: /.*/, namespace: 'mock' }, args => ({ contents: mocks[args.path], loader: 'js' }));
 } }] });
-const context = { native: {}, process: { env: { EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: 'synthetic-public-instance' } } }; runInNewContext(bundle.outputFiles[0].text, context);
+const context = { native: {}, setTimeout, clearTimeout, process: { env: { EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY: 'synthetic-public-instance' } } }; runInNewContext(bundle.outputFiles[0].text, context);
 const createStore = context.recoveryModule.createFoodNoteRecoveryStore;
 const input = { id: '00000000-0000-4000-8000-000000000001', date: '2026-10-04', title: 'Synthetic soup', portion: null, source: 'text', expectedUpdatedAt: '2026-10-04T12:00:00.000Z' };
 const draft = () => ({ kind: 'draft', input: { ...input }, uncertainty: 'Review the food name.' });
@@ -129,4 +129,67 @@ test('actual native adapter routes every operation through device-only SecureSto
   await store.discard(true); assert.equal(values.size, 0);
   for (const [, options] of calls) assert.deepEqual(options, { keychainAccessible: 'synthetic-device-only' });
   context.native.session = null; await assert.rejects(store.read(true));
+});
+function virtualDeadline() {
+  const timers = new Map(); let id = 0;
+  context.setTimeout = (fn, ms) => { assert.equal(ms, 12000); const key = ++id; timers.set(key, fn); return key; };
+  context.clearTimeout = key => timers.delete(key);
+  return {
+    timers,
+    expire: () => { const first = timers.entries().next().value; assert.ok(first, 'Expected request deadline'); const [key, fn] = first; timers.delete(key); fn(); },
+    restore: () => { context.setTimeout = setTimeout; context.clearTimeout = clearTimeout; },
+  };
+}
+test('stalled digest times out and late digest cannot dispatch storage', async () => {
+  const clock = virtualDeadline();
+  try {
+    const f = fixture(); const hash = deferred(); const store = createStore({ ...f.options, digest: () => hash.promise });
+    const outcome = assert.rejects(store.keep(draft(), true), /earlier local operation may still finish/);
+    await flush(); clock.expire(); await outcome; hash.resolve('a'.repeat(64)); await flush();
+    assert.equal(f.state.calls.length, 0); assert.equal(clock.timers.size, 0);
+  } finally { clock.restore(); }
+});
+test('a dispatched keep times out but remains serialized before a subsequent discard', async () => {
+  const clock = virtualDeadline();
+  try {
+    const f = fixture(); const gate = deferred(); const original = f.storage.set;
+    f.storage.set = async (...args) => { await gate.promise; await original(...args); };
+    const outcome = assert.rejects(f.store.keep(draft(), true), /Local recovery/);
+    await flush(); clock.expire(); await outcome;
+    const discard = createStore(f.options).discard(true); await flush(); assert.equal(f.state.calls.length, 0);
+    gate.resolve(); await discard; assert.equal(f.state.values.size, 0);
+    assert.deepEqual(f.state.calls.map(call => call[0]), ['set', 'remove']); assert.equal(clock.timers.size, 0);
+  } finally { clock.restore(); }
+});
+test('timed-out queued discard never dispatches later or silently clears late saved recovery', async () => {
+  const clock = virtualDeadline();
+  try {
+    const f = fixture(); const gate = deferred(); const original = f.storage.set;
+    f.storage.set = async (...args) => { await gate.promise; await original(...args); };
+    const keep = assert.rejects(f.store.keep(draft(), true)); await flush();
+    const discard = assert.rejects(createStore(f.options).discard(true)); await flush();
+    clock.expire(); clock.expire(); await Promise.all([keep, discard]); gate.resolve(); await flush();
+    assert.deepEqual(f.state.calls.map(call => call[0]), ['set']); assert.equal(f.state.values.size, 1);
+    // The caller must deliberately retry/review; completed old queue no longer blocks it.
+    await f.store.discard(true); assert.equal(f.state.values.size, 0); assert.equal(clock.timers.size, 0);
+  } finally { clock.restore(); }
+});
+test('late read after timeout is never returned as recovered data; explicit reread works', async () => {
+  const clock = virtualDeadline();
+  try {
+    const f = fixture(); await f.store.keep(draft(), true); const gate = deferred(); const original = f.storage.get;
+    f.storage.get = () => gate.promise; const outcome = assert.rejects(f.store.read(true));
+    await flush(); clock.expire(); await outcome; gate.resolve([...f.state.values.values()][0]); await flush();
+    f.storage.get = original; assert.equal((await f.store.read(true)).status, 'review'); assert.equal(clock.timers.size, 0);
+  } finally { clock.restore(); }
+});
+test('timed-out dispatched removal can still finish and never reports success to the expired caller', async () => {
+  const clock = virtualDeadline();
+  try {
+    const f = fixture(); await f.store.keep(draft(), true); const gate = deferred(); const original = f.storage.remove;
+    f.storage.remove = async (...args) => { await gate.promise; await original(...args); };
+    const outcome = assert.rejects(f.store.discard(true), /earlier local operation may still finish/);
+    await flush(); clock.expire(); await outcome; assert.equal(f.state.values.size, 1);
+    gate.resolve(); await flush(); assert.equal((await f.store.read(true)).status, 'empty'); assert.equal(clock.timers.size, 0);
+  } finally { clock.restore(); }
 });
