@@ -15,19 +15,21 @@ import {
   planForRange,
   removeFromPlan,
 } from "@seconds/db";
-import { readJson, withUser } from "@/lib/api";
+import { withUser } from "@/lib/api";
+import { boundedJson } from "@/lib/bounded-json";
 
 export const runtime = "nodejs";
+const privateResponse = (response: Response) => { response.headers.set("Cache-Control", "private, no-store"); return response; };
 
 /** A week's plan. Defaults to the week you're standing in. */
 export async function GET(request: Request) {
   const asked = new URL(request.url).searchParams.get("week");
   const start = weekStart(asked && isISODate(asked) ? asked : todayISO());
 
-  return withUser(async (userId, database) => ({
+  return privateResponse(await withUser(async (userId, database) => ({
     week: start,
     meals: await planForRange(database, userId, start, weekEnd(start)),
-  }));
+  }), { redactUnexpectedErrors: true }));
 }
 
 interface Body {
@@ -48,12 +50,12 @@ interface Body {
  * redraws from one shape however it was changed.
  */
 export async function POST(request: Request) {
-  const body = await readJson<Body>(request);
-  const start = weekStart(body.week && isISODate(body.week) ? body.week : todayISO());
-  const date = body.date && isISODate(body.date) ? body.date : todayISO();
-  const slot = mealSlotOr(body.slot);
+  return privateResponse(await withUser(async (userId, database) => {
+    const body = await boundedJson(request, 8192) as unknown as Body;
+    const start = weekStart(body.week && isISODate(body.week) ? body.week : todayISO());
+    const date = body.date && isISODate(body.date) ? body.date : todayISO();
+    const slot = mealSlotOr(body.slot);
 
-  return withUser(async (userId, database) => {
     let addedToList = 0;
 
     // A write without a recipe is a malformed request, not a reason to throw:
@@ -89,5 +91,5 @@ export async function POST(request: Request) {
       meals: await planForRange(database, userId, start, weekEnd(start)),
       addedToList,
     };
-  });
+  }, { redactUnexpectedErrors: true }));
 }

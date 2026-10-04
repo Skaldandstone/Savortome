@@ -7,9 +7,11 @@ export const runtime = "nodejs";
 
 /** The pending pile of meals your friends have proposed for your own plan. */
 export async function GET() {
-  return withUser(async (userId, database) => ({
+  const response = await withUser(async (userId, database) => ({
     suggestions: await pendingSuggestions(database, userId),
-  }));
+  }), { redactUnexpectedErrors: true });
+  response.headers.set("Cache-Control", "private, no-store");
+  return response;
 }
 
 interface Body {

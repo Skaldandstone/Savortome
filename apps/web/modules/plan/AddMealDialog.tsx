@@ -29,6 +29,7 @@ export function AddMealDialog({
   onRetry,
   onPick,
   onClose,
+  disabled = false,
 }: {
   date: string;
   slot: MealSlot;
@@ -39,6 +40,7 @@ export function AddMealDialog({
   onRetry: () => void;
   onPick: (recipeId: string) => void;
   onClose: () => void;
+  disabled?: boolean;
 }) {
   const [filter, setFilter] = useState("");
   const dialog = useRef<HTMLDialogElement>(null);
@@ -97,7 +99,7 @@ export function AddMealDialog({
       <ul className={styles.pickList}>
         {loaded ? shown.map((recipe) => (
           <li key={recipe.id}>
-            <button type="button" className={styles.pick} onClick={() => onPick(recipe.id)}>
+            <button type="button" className={styles.pick} disabled={disabled} onClick={() => onPick(recipe.id)}>
               <strong>{recipe.title}</strong>
               <span>{recipe.attribution}</span>
             </button>

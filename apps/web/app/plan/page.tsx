@@ -41,7 +41,7 @@ export default async function PlanPage({
   return (
     <main className="woodland-workspace" data-kitchen-page="plan">
       <KitchenPageHeading title="Your week at the table" description="Leave room for familiar favorites and changes of plan." icon="plan" />
-      <PlanWeek initialWeek={initialWeek} />
+      <PlanWeek initialWeek={initialWeek} clerkEnabled={clerkConfigured()} />
     </main>
   );
 }

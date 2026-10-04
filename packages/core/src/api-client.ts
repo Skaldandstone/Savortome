@@ -596,7 +596,7 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
         body: body({ action: "toShoppingList", week }),
       }, 12_000),
 
-    mySuggestions: () => send<{ suggestions: PlanSuggestion[] }>("/api/plan/suggestions"),
+    mySuggestions: () => sendTimed<{ suggestions: PlanSuggestion[] }>("/api/plan/suggestions", {}, 12_000),
 
     suggestForFriend: (ownerId, recipeId, date, slot) =>
       send<{ ok: boolean }>("/api/plan/suggestions", {
@@ -605,10 +605,10 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
       }),
 
     respondToSuggestion: (id, action) =>
-      send<{ ok: boolean }>(`/api/plan/suggestions/${id}`, {
+      sendTimed<{ ok: boolean }>(`/api/plan/suggestions/${id}`, {
         method: "POST",
         body: body({ action }),
-      }),
+      }, 12_000),
 
     krogerStatus: () => send<KrogerStatus>("/api/grocery/kroger"),
 
