@@ -50,9 +50,11 @@ export async function GET(_request: Request, { params }: Params) {
       },
       nutrition: row.nutrition,
     };
-  });
+  }, { redactUnexpectedErrors: true });
 
-  return notFoundIfNull(response);
+  const privateResponse = await notFoundIfNull(response);
+  privateResponse.headers.set("Cache-Control", "private, no-store");
+  return privateResponse;
 }
 
 /** Save corrections. Only the owner can, and a missing recipe answers the same. */

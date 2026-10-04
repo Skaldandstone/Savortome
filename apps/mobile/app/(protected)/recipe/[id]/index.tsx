@@ -1,39 +1,80 @@
-import { useEffect, useState } from "react";
-import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native";
-import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Stack, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { useAuth } from "@clerk/expo";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import type { OwnedRecipe } from "@seconds/core/format";
-import { api } from "@/lib/client";
+import { isUuid, type OwnedRecipe, type SecondsClient } from "@seconds/core/format";
+import { createAccountClient } from "@/lib/client";
 import { RecipeCard } from "@/modules/recipe";
 import { ShareControl } from "@/modules/sharing";
 import { Button, Callout, space, usePalette } from "@/ui";
 
 export default function RecipeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
+  const { userId, sessionId, isLoaded } = useAuth();
+  const client = useMemo(() => userId ? createAccountClient(userId) : null, [userId, sessionId]);
+  if (!isLoaded) return <Text accessibilityLiveRegion="polite">Loading your sign-in…</Text>;
+  if (!client || !sessionId) return <Text>Sign in again to load your saved recipe.</Text>;
+  if (typeof id !== "string" || !isUuid(id)) return <Text>This recipe link is not valid. Return to your library to choose a recipe.</Text>;
+  return <AccountRecipeScreen key={`${sessionId}:${id}`} id={id} client={client} />;
+}
+
+function AccountRecipeScreen({ id, client }: { id: string; client: SecondsClient }) {
   const [recipe, setRecipe] = useState<OwnedRecipe | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [added, setAdded] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [attempt, setAttempt] = useState(0);
+  const [listBusy, setListBusy] = useState(false);
+  const [listUnconfirmed, setListUnconfirmed] = useState(false);
+  const [listMessage, setListMessage] = useState("");
+  const focused = useRef(false); const generation = useRef(0); const action = useRef(false);
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const c = usePalette();
 
-  useEffect(() => {
-    if (!id) return;
-    let cancelled = false;
-
+  useFocusEffect(useCallback(() => {
+    focused.current = true;
+    const visit = ++generation.current;
+    action.current = false; setListBusy(false);
+    setLoading(true); setError(null); setRecipe(null);
     void (async () => {
       try {
-        const next = await api.getRecipe(id);
-        if (!cancelled) setRecipe(next);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Couldn't load that recipe.");
+        const next = await client.getRecipe(id);
+        if (next.id.toLowerCase() !== id.toLowerCase()) throw new Error("Unconfirmed recipe");
+        if (focused.current && generation.current === visit) setRecipe(next);
+      } catch {
+        if (focused.current && generation.current === visit) setError("We could not load this saved recipe. It may be unavailable, your sign-in may have expired, or the connection may have failed. Try again before using its ingredients.");
+      } finally {
+        if (focused.current && generation.current === visit) setLoading(false);
       }
     })();
-
     return () => {
-      cancelled = true;
+      focused.current = false; ++generation.current;
+      if (action.current) {
+        setListUnconfirmed(true); setListBusy(false);
+        setListMessage("The shopping-list write is unconfirmed. It may still complete. Check your list before trying another addition.");
+      }
     };
-  }, [id]);
+  }, [id, client, attempt]));
+
+  const addToList = async () => {
+    if (!recipe || loading || action.current || added || listUnconfirmed || !focused.current) return;
+    const visit = generation.current; action.current = true; setListBusy(true); setListMessage("");
+    // Treat every dispatched write as uncertain until a response confirms it.
+    setListUnconfirmed(true);
+    try {
+      await client.addRecipesToList([recipe.id]);
+      if (focused.current && generation.current === visit) {
+        setAdded(true); setListUnconfirmed(false);
+        setListMessage("Recipe ingredients added to your shopping list. Review the amounts there. No groceries were ordered and pantry stock was not changed.");
+      }
+    } catch {
+      if (focused.current && generation.current === visit) setListMessage("We could not confirm this addition. It may already be on your list. Check the list and its amounts; nothing will retry automatically.");
+    } finally {
+      if (focused.current && generation.current === visit) { action.current = false; setListBusy(false); }
+    }
+  };
 
   return (
     <>
@@ -43,9 +84,7 @@ export default function RecipeScreen() {
         contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + space.xxl }]}
       >
         {error ? (
-          <Callout tone="error" title="Couldn't load that recipe">
-            {error}
-          </Callout>
+          <View><Callout tone="error" title="Couldn't load that recipe">{error}</Callout><Button label="Try loading recipe again" variant="ghost" onPress={() => setAttempt(value => value + 1)} /></View>
         ) : recipe ? (
           <>
             <RecipeCard recipe={recipe} shelvedId={recipe.id} verifiedAt={recipe.verifiedAt} />
@@ -58,12 +97,10 @@ export default function RecipeScreen() {
             </View>
             <View style={styles.actions}>
               <Button
-                label={added ? "On your list ✓" : "Add to shopping list"}
+                label={listBusy ? "Adding ingredients…" : added ? "Ingredients added ✓" : listUnconfirmed ? "Check unconfirmed addition" : "Add ingredients to shopping list"}
                 variant="ghost"
-                disabled={added}
-                onPress={() => {
-                  void api.addRecipesToList([recipe.id]).then(() => setAdded(true));
-                }}
+                disabled={added || listBusy || listUnconfirmed}
+                onPress={() => void addToList()}
               />
               <Button
                 label="Edit recipe"
@@ -71,12 +108,22 @@ export default function RecipeScreen() {
                 onPress={() => router.push(`/recipe/${recipe.id}/edit`)}
               />
             </View>
+            <Callout>Adds ingredients through your existing shopping list. Review the amounts there. It does not order groceries or consume pantry stock. Leaving this recipe may lose local confirmation state; check your list before adding again.</Callout>
           </>
         ) : (
           <View style={styles.loading}>
             <ActivityIndicator accessibilityLabel="Loading recipe" color={c.accent} />
           </View>
         )}
+        {listMessage ? <Callout tone={listUnconfirmed ? "warn" : "info"}>{listMessage}</Callout> : null}
+        {recipe || listUnconfirmed || added ? <Button label="Review my shopping list" variant="ghost" onPress={() => router.push("/(protected)/(tabs)/list")} /> : null}
+        {listUnconfirmed && !listBusy ? <Button label="I checked the list; allow another addition" variant="ghost" onPress={() => {
+          const visit = generation.current;
+          Alert.alert("Allow another addition?", "Only continue after checking the list and amounts. An earlier request may still finish; adding again could increase quantities. This does not undo that request.", [
+            { text: "Keep paused", style: "cancel" },
+            { text: "Allow addition", onPress: () => { if (focused.current && generation.current === visit && !action.current) { setListUnconfirmed(false); setListMessage("Another addition is allowed after your review. Nothing has been resent. Check amounts carefully if you add again."); } } },
+          ]);
+        }} /> : null}
       </ScrollView>
     </>
   );
@@ -86,5 +133,5 @@ const styles = StyleSheet.create({
   content: { padding: space.lg },
   loading: { paddingVertical: space.xxl, alignItems: "center" },
   cookAction: { marginTop: space.lg, alignSelf: "stretch" },
-  actions: { flexDirection: "row", gap: space.sm, marginTop: space.md, alignSelf: "flex-start" },
+  actions: { flexDirection: "row", flexWrap: "wrap", gap: space.sm, marginTop: space.md, alignSelf: "flex-start" },
 });

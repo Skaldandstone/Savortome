@@ -433,7 +433,7 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
         body: body({ query: query ?? "" }),
       }),
 
-    getRecipe: (recipeId) => send<OwnedRecipe>(`/api/recipes/${recipeId}`),
+    getRecipe: (recipeId) => sendTimed<OwnedRecipe>(`/api/recipes/${recipeId}`, {}, 12_000),
 
     addRecipePhoto: (recipeId, imageBase64, imageMediaType) =>
       send<{ photos: RecipePhoto[] }>(`/api/recipes/${recipeId}/photos`, {
@@ -452,7 +452,7 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
     getList: () => sendTimed<ShoppingListView>("/api/list", {}, 12_000),
 
     addRecipesToList: (recipeIds) =>
-      send<ShoppingListView>("/api/list", { method: "POST", body: body({ recipeIds }) }),
+      sendTimed<ShoppingListView>("/api/list", { method: "POST", body: body({ recipeIds }) }, 12_000),
 
     addItemsToList: (items) =>
       sendTimed<ShoppingListView>("/api/list", { method: "POST", body: body({ items }) }, 12_000),
