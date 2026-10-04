@@ -31,7 +31,8 @@ export function PlanIdeaReview({ recipeId, title, client, onPending }: { recipeI
   const text = { color: c.textMuted, fontSize: typeScale.body, lineHeight: 23 };
   return <View style={{ gap: space.sm }}><Button label={expanded ? "Hide meal review" : `Choose a day and meal for ${title}`} variant="ghost" onPress={() => setExpanded(value => !value)} />
     {expanded ? <><Text style={text}>Adds a meal alongside existing meals. Planning is not a record of eating and does not consume ingredients.</Text>
-      <Field label="Date (YYYY-MM-DD)" value={date} editable={!busy && !pending && !done} onChangeText={setDate} autoCapitalize="none" />
+      <Text style={text}>Date (YYYY-MM-DD)</Text>
+      <Field accessibilityLabel="Meal date, YYYY-MM-DD" value={date} maxLength={10} editable={!busy && !pending && !done} onChangeText={setDate} autoCapitalize="none" />
       <Text style={text}>Choose a meal slot</Text><View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>{MEAL_SLOTS.map(value => <Button key={value} label={MEAL_SLOT_LABEL[value]} variant="toggle" selected={slot === value} disabled={busy || pending !== null || done} onPress={() => setSlot(value)} />)}</View>
       <Button label={busy ? "Adding meal…" : pending ? "Retry this exact meal" : "Add this meal to my plan"} disabled={busy || done || !date || !slot} onPress={() => void save()} />
       <Button label="Check this week in my plan" variant="ghost" onPress={openPlan} />
