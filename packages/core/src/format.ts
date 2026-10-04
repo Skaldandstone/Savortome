@@ -37,3 +37,4 @@ export * from "./units-convert.js";
 export * from "./shopping.js";
 export * from "./carts.js";
 export * from "./barcode.js";
+export * from "./food-log.js";

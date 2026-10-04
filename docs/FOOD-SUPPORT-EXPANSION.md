@@ -40,11 +40,24 @@ Savortome offers practical food support. Gamification is reserved for a potentia
 
 ## Delivery status, 4 October 2026
 
-Branch `codex/food-support-expansion`, based on `main` at `abf335f`. Current work adds the 24-recipe catalogue and shared barcode validation. Barcode lookup/capture UI, food-log storage/capture and the daily surface are still open. Existing receipt recovery PR124 and pantry review recovery PR125 remain independent; preserve both test suites when integrating.
+Branch `codex/food-support-expansion`, based on `main` at `abf335f`. The first checkpoint `e013f47` adds the 24-recipe catalogue and shared barcode validation. Existing receipt recovery PR124 and pantry review recovery PR125 remain independent; preserve both test suites when integrating.
 
 No new native binary, provider enablement, production database write, deployment or fitness-app change is implied by this checkpoint. Browser, assistive-technology, physical-device, provider and owner acceptance remain separate checks.
 
 Source checks: all 695 core tests passed, including barcode validation and catalogue timing/quality contracts; the isolated PGlite starter-seed idempotency/repair regression passed; core TypeScript and diff whitespace checks passed. The first root-level test command could not resolve `tsx`; rerunning from the core package resolved the runner and passed. No paid API calls were made. Recipe cooking trials and integration into a deployed catalogue remain open.
+
+### Overnight source iteration
+
+James clarified that he is sleeping, and authorized building/iteration until 9 AM Pacific on 4 October, while skipping tests, typechecks, release builds and deployments tonight. The later changes below are **source-only and unvalidated**; the 695-test result applies only to the first checkpoint.
+
+- Fixed-origin, bounded Open Food Facts product-label adapter; authenticated, default-off lookup route. Custom application/contact User-Agent required. Conservative process-local spacing is not a multi-instance egress quota. Provider licensing/usage registration, real response compatibility and a shared rate limiter remain enablement gates.
+- Web manual barcode/label entry and native Expo Camera barcode capture, explicit editable quantity, unknown quantity support, then the existing transactional review queue. No product images, nutrient scores, purchase inference or automatic inventory changes.
+- Shared food-note contract; account-scoped, retry-identifiable database storage; source-generated additive migration `0020_food-notes` (not applied anywhere); authenticated no-store list/save/delete endpoints.
+- Default-off OpenAI photo/voice drafts with bounded uploads, structured output, visible uncertainty, unknown photo portions and content-free audit records. No paid calls or provider configuration changes. Raw photo/audio/transcript are not food-log records.
+- Web `/today` surface: optional meal-planning invitation, Not now, strict dietary-tag matching and detected-allergen exclusions, named pantry matches/missing items, editable food notes, manual save, confirmation before removal, repeat drafts and photo/browser audio capture. No scheduled notifications, eating-compliance metrics or pantry decrement.
+- Exact Expo 57-compatible camera/audio/file-system dependencies. Camera and microphone are requested just in time, with no background recording/playback enabled. A new native binary is required later; no APK/OTA was built tonight.
+
+Still to implement/iterate: native Today/food-note/photo/voice surface and entry points; source review of late account-switch/unmount results, uncertain-write recovery, camera/audio lifecycle and privacy; compatibility review of provider formats and platform timeout support; themed component polish. Web camera barcode scanning is not yet implemented (manual entry works in source). No browser, native-device, provider or deployment success is claimed for these changes.
 
 Live SSE-145 was read and retains FUTURE-04/FUTURE-05 as In Progress. The Linear connector requires reauthentication, and the authenticated browser comment editor did not resolve reliably; no new Linear status or comment is claimed. Notion received the approved expansion and gamification exclusion on 3 October.
 

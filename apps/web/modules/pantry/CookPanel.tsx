@@ -9,6 +9,7 @@ import { PantryList } from "./PantryList";
 import { usePantry, usePantrySearch } from "./usePantry";
 import styles from "./pantry.module.css";
 import { PantryReviewQueue } from "./PantryReviewQueue";
+import { BarcodeCapture } from "./BarcodeCapture";
 
 const EXAMPLES = [
   "chicken thighs, rice, an onion",
@@ -89,6 +90,7 @@ export function CookPanel() {
 
         {showPantry ? (
           <div className={styles.pantryPanel}>
+            <BarcodeCapture onQueued={pantry.retryIntakes} />
             {pantry.loading && !pantry.loaded ? (
               <p className={styles.empty} role="status">
                 Loading pantry…

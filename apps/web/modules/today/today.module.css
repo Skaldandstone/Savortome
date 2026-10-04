@@ -1,0 +1,8 @@
+.stack { display: flex; flex-direction: column; gap: 1.25rem; min-width: 0; }
+.stack label { display: flex; flex-direction: column; gap: .4rem; min-width: 0; }
+.stack p { line-height: 1.6; max-width: 68ch; }
+.idea { border-top: 1px solid var(--border); margin-top: 1rem; padding-top: 1rem; overflow-wrap: anywhere; }
+.idea h3 { margin: 0 0 .5rem; }
+.capture { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.capture summary { cursor: pointer; min-height: 44px; display: list-item; padding-block: .5rem; }
+.capture input { max-width: 100%; }

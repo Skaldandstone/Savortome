@@ -7,6 +7,7 @@ import { MatchList, QueryReadback } from "./MatchList";
 import { PantryChips } from "./PantryChips";
 import { PantryReviewQueue } from "./PantryReviewQueue";
 import { ReceiptCapture } from "./ReceiptCapture";
+import { BarcodeCapture } from "./BarcodeCapture";
 import { usePantry, usePantrySearch } from "./usePantry";
 
 const EXAMPLES = ["chicken thighs, rice, an onion", "something quick and vegetarian", "dinner without dairy"];
@@ -32,6 +33,7 @@ export function CookScreen() {
     >
       <KitchenWelcome />
       <ReceiptCapture onScan={pantry.scanReceipt} />
+      <BarcodeCapture onQueued={pantry.queuedIntake} />
       <PantryReviewQueue intakes={pantry.intakes} onResolve={pantry.resolveIntake} />
       {pantry.error ? <Callout tone="error">{pantry.error}</Callout> : null}
       <Panel>

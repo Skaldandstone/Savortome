@@ -1,4 +1,5 @@
 import { relations, sql, type SQL } from "drizzle-orm";
+import type { FoodLogSource } from "@seconds/core";
 import {
   type AnyPgColumn,
   boolean,
@@ -18,6 +19,18 @@ import {
   uuid,
   vector,
 } from "drizzle-orm/pg-core";
+
+/** Optional food notes. No images, audio, calories, health history or inventory linkage. */
+export const foodLogEntries = pgTable("food_log_entries", {
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  id: uuid("id").notNull(),
+  date: date("date").notNull(),
+  title: text("title").notNull(),
+  portion: text("portion"),
+  source: text("source").$type<FoodLogSource>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [primaryKey({ columns: [table.userId, table.id] }), index("food_log_user_date_idx").on(table.userId, table.date)]);
 import type {
   CookTier,
   Ingredient,

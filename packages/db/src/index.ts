@@ -27,3 +27,4 @@ export * from "./queries/credits.js";
 export * from "./queries/admin.js";
 export * from "./queries/billing.js";
 export * from "./queries/starter-recipes.js";
+export * from "./queries/food-log.js";

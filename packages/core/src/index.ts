@@ -59,3 +59,6 @@ export * from "./onboarding.js";
 export * from "./generated-content.js";
 export * from "./starter-recipes.js";
 export * from "./barcode.js";
+export * from "./food-log.js";
+export * from "./food-note-extract.js";
+export * from "./barcode-lookup.js";

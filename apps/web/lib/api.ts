@@ -8,6 +8,10 @@ import {
   ReceiptExtractionError,
   RecipeValidationError,
   ShelfValidationError,
+  BarcodeValidationError,
+  BarcodeLookupError,
+  FoodLogValidationError,
+  FoodNoteExtractionError,
 } from "@seconds/core";
 import { FriendshipError } from "@seconds/core";
 import { PantryIntakeNotFoundError, SaveRecipeError, SaveTemplateError, SuggestionError } from "@seconds/db";
@@ -37,6 +41,8 @@ export class BadRequestError extends Error {
  * every route handler can be about its own job and nothing else.
  */
 export function errorResponse(err: unknown): NextResponse {
+  if (err instanceof FoodNoteExtractionError) return NextResponse.json({ error: err.message }, { status: 422 });
+  if (err instanceof BarcodeLookupError) return NextResponse.json({ error: err.message }, { status: err.status });
   if (err instanceof NotSignedInError) {
     return NextResponse.json({ error: err.message }, { status: 401 });
   }
@@ -48,6 +54,8 @@ export function errorResponse(err: unknown): NextResponse {
   }
   if (
     err instanceof BadRequestError ||
+    err instanceof BarcodeValidationError ||
+    err instanceof FoodLogValidationError ||
     err instanceof ShelfValidationError ||
     err instanceof SaveRecipeError ||
     err instanceof SaveTemplateError ||

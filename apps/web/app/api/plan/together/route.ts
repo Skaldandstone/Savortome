@@ -5,7 +5,7 @@ import { withUser } from "@/lib/api";
 export const runtime = "nodejs";
 
 /** Deterministic suggestions from the person's own pantry and recipe library. */
-export async function GET() {
+export async function GET(request: Request) {
   return withUser(async (userId, database) => {
     const [pantry, profile] = await Promise.all([
       listPantry(database, userId),
@@ -15,8 +15,10 @@ export async function GET() {
       ingredients: pantry.map(entry => entry.canonicalItem),
       limit: 40,
     });
+    const strictDietary = new URL(request.url).searchParams.get("strictDietary") === "true";
+    const eligible = strictDietary ? candidates.filter(candidate => profile.dietaryTags.every(tag => candidate.tags.includes(tag))) : candidates;
     return {
-      ideas: suggestPlanTogether(candidates, pantry, profile),
+      ideas: suggestPlanTogether(eligible, pantry, profile),
       pantryCount: pantry.length,
     };
   });

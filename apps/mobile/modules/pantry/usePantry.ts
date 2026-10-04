@@ -6,6 +6,7 @@ export interface PantryController {
   items: PantryEntry[];
   intakes: PantryIntakeView[];
   loading: boolean;
+  queuedIntake: (intake: PantryIntakeView) => void;
   error: string | null;
   add: (text: string) => Promise<void>;
   update: (entry: PantryEntryUpdate) => Promise<void>;
@@ -52,6 +53,7 @@ export function usePantry(): PantryController {
     items,
     intakes,
     loading,
+    queuedIntake: intake => setIntakes(current => [intake, ...current.filter(item => item.id !== intake.id)]),
     error,
     add: (text) => run(() => api.addPantry(text)),
     update: (entry) => run(() => api.updatePantry(entry)),

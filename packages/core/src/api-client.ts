@@ -2,6 +2,8 @@ import type { RecipeRating, RecipeShelfState, ShelfSummary, StatusShelf } from "
 import type { PantryEntry, PantryEntryUpdate, PantryMatch } from "./pantry.js";
 import type { PantryIntakeInput, PantryIntakeResolution, PantryIntakeView } from "./pantry-intake.js";
 import type { PlanTogetherIdea } from "./plan-together.js";
+import type { BarcodeProductDraft } from "./barcode.js";
+import type { FoodLogEntry, FoodLogInput, FoodNoteDraft } from "./food-log.js";
 import type { ShoppingLine } from "./shopping.js";
 import type { CartHandoff, CartProvider, CartProviderId } from "./carts.js";
 import type { Visibility } from "./shelves.js";
@@ -195,6 +197,13 @@ export interface SecondsClient {
   rateRecipe: (recipeId: string, stars: number, review?: string | null) => Promise<RecipeRating>;
   clearRating: (recipeId: string) => Promise<void>;
   listPantry: () => Promise<PantryEntry[]>;
+  listFoodNotes: (date?: string) => Promise<FoodLogEntry[]>;
+  foodNoteCaptureStatus: () => Promise<{ photo: boolean; voice: boolean }>;
+  foodNoteDraft: (source: "photo" | "voice", base64: string, mediaType: string) => Promise<{ draft: FoodNoteDraft }>;
+  saveFoodNote: (input: FoodLogInput) => Promise<FoodLogEntry>;
+  deleteFoodNote: (id: string) => Promise<{ deleted: boolean }>;
+  barcodeLookupStatus: () => Promise<{ enabled: boolean }>;
+  lookupProductBarcode: (barcode: string) => Promise<{ product: BarcodeProductDraft | null }>;
   addPantry: (text: string) => Promise<PantryEntry[]>;
   updatePantry: (update: PantryEntryUpdate) => Promise<PantryEntry[]>;
   listPantryIntakes: () => Promise<PantryIntakeView[]>;
@@ -256,7 +265,7 @@ export interface SecondsClient {
   credits: () => Promise<CreditsResponse>;
   library: (shelfId?: string, query?: string, sort?: LibrarySort) => Promise<LibraryResponse>;
   plan: (week?: string) => Promise<PlanResponse>;
-  planTogether: () => Promise<{ ideas: PlanTogetherIdea[]; pantryCount: number }>;
+  planTogether: (options?: { strictDietary?: boolean }) => Promise<{ ideas: PlanTogetherIdea[]; pantryCount: number }>;
   planAdd: (recipeId: string, date: string, slot: MealSlot, week?: string) => Promise<PlanResponse>;
   planRemove: (recipeId: string, date: string, slot: MealSlot, week?: string) => Promise<PlanResponse>;
   planMove: (
@@ -360,6 +369,15 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
     },
 
     listPantry: () => send<PantryEntry[]>("/api/pantry"),
+    listFoodNotes: (date) => send<FoodLogEntry[]>(`/api/food-log${date ? `?date=${encodeURIComponent(date)}` : ""}`, { signal: AbortSignal.timeout(12_000) }),
+    foodNoteCaptureStatus: () => send<{ photo: boolean; voice: boolean }>("/api/food-log/draft", { signal: AbortSignal.timeout(12_000) }),
+    foodNoteDraft: (source, base64, mediaType) => send<{ draft: FoodNoteDraft }>("/api/food-log/draft", { method: "POST", body: body({ source, base64, mediaType }), signal: AbortSignal.timeout(75_000) }),
+    saveFoodNote: (input) => send<FoodLogEntry>("/api/food-log", { method: "POST", body: body(input), signal: AbortSignal.timeout(12_000) }),
+    deleteFoodNote: (id) => send<{ deleted: boolean }>("/api/food-log", { method: "DELETE", body: body({ id }), signal: AbortSignal.timeout(12_000) }),
+    barcodeLookupStatus: () => send<{ enabled: boolean }>("/api/pantry/barcode"),
+    lookupProductBarcode: (barcode) => send<{ product: BarcodeProductDraft | null }>("/api/pantry/barcode", {
+      method: "POST", body: body({ barcode }), signal: AbortSignal.timeout(12_000),
+    }),
 
     addPantry: (text) =>
       send<PantryEntry[]>("/api/pantry", { method: "POST", body: body({ text }) }),
@@ -525,7 +543,7 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
 
     plan: (week) => send<PlanResponse>(`/api/plan${week ? `?week=${week}` : ""}`),
 
-    planTogether: () => send<{ ideas: PlanTogetherIdea[]; pantryCount: number }>("/api/plan/together"),
+    planTogether: (options) => send<{ ideas: PlanTogetherIdea[]; pantryCount: number }>(`/api/plan/together${options?.strictDietary ? "?strictDietary=true" : ""}`),
 
     planAdd: (recipeId, date, slot, week) =>
       send<PlanResponse>("/api/plan", {
