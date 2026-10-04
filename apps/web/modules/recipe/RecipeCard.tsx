@@ -29,12 +29,14 @@ export function RecipeCard({
   shelvedId = null,
   verifiedAt = null,
   headingLevel = 2,
+  clerkEnabled = true,
 }: {
   recipe: Recipe;
   trace?: string[];
   shelvedId?: string | null;
   verifiedAt?: string | null;
   headingLevel?: 1 | 2;
+  clerkEnabled?: boolean;
 }) {
   const { servings, canScale, increment, decrement, ingredients } = useServings(recipe);
 
@@ -104,6 +106,7 @@ export function RecipeCard({
         <RecipeExport recipe={recipe} ingredients={ingredients} servings={servings} />
 
         <PairingSuggestions
+          clerkEnabled={clerkEnabled}
           recipeId={shelvedId}
           mainNutrition={recipe.nutrition}
           servings={recipe.servings}

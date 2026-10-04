@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { librarySortOr } from '@seconds/core/format';
 import { loadLibrary } from '@/lib/library';
+import { clerkConfigured } from '@/lib/session';
 import { ImportPanel } from '@/modules/import';
 import { WebRecipeFinder } from '@/modules/discover';
 import { KitchenWelcome, RecipeImportLink } from '@/modules/woodland/Woodland';
@@ -36,7 +37,7 @@ export async function WoodlandLibrary({ shelfId, query, sort }: { shelfId?: stri
     </div>
     <details id="recipe-import" className={styles.importer}>
       <summary><KitchenIcon name="book" /><span>Bring a recipe into your kitchen<small>From a link, a note, or something you wrote.</small></span><KitchenIcon name="plus" /></summary>
-      <ImportPanel />
+      <ImportPanel clerkEnabled={clerkConfigured()} />
     </details>
   </main>;
 }

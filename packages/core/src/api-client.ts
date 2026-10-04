@@ -549,7 +549,7 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
 
     similarRecipes: (recipeId) => send<DiscoverCard[]>(`/api/recipes/${recipeId}/similar`),
 
-    pairings: (recipeId) => send<PairingSuggestions>(`/api/recipes/${recipeId}/pairings`),
+    pairings: (recipeId) => sendTimed<PairingSuggestions>(`/api/recipes/${recipeId}/pairings`, {}, 12_000),
 
     library: (shelfId, query, sort) => {
       const params = new URLSearchParams();
