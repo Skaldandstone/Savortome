@@ -89,6 +89,14 @@ export function parseReviewedTemplatePlan(value: unknown): ReviewedTemplatePlanI
   return { templateId: (input.templateId as string).toLowerCase(), recipeIds, date: reviewed.date, slot: reviewed.slot };
 }
 
+/** Confirm all reviewed fields; a partial/different receipt is still uncertain. */
+export function reviewedTemplatePlanMatches(expected: ReviewedTemplatePlanInput, received: unknown): boolean {
+  try {
+    const a = parseReviewedTemplatePlan(expected); const b = parseReviewedTemplatePlan(received);
+    return a.templateId === b.templateId && a.date === b.date && a.slot === b.slot && a.recipeIds.length === b.recipeIds.length && a.recipeIds.every((id, index) => id === b.recipeIds[index]);
+  } catch { return false; }
+}
+
 /** What a stranger with the link sees — the recipes, not the owner's plan or shelves. */
 export interface SharedTemplateView {
   id: string;

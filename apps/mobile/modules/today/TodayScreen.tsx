@@ -201,7 +201,7 @@ function AccountTodayScreen() {
       {ideas?.length ? <Text style={textStyle}>Matches require explicit saved dietary tags and exclude detected allergen conflicts. Tags may be incomplete or wrong. Name matching ignores quantities and preparation. Check package labels; suggestions do not verify allergy safety.</Text> : null}
       <View style={styles.row}><Button label="Browse starter recipes" variant="ghost" onPress={() => router.push("/(protected)/(tabs)/discover")} /><Button label="Open meal plan" variant="ghost" onPress={() => router.push("/(protected)/(tabs)/plan")} /></View>
     </Panel> : <Button label="Show the meal-planning invitation" variant="ghost" onPress={() => setInvitation(true)} />}
-    {client ? <FamiliarMeals client={client} disabled={lockedDraft || ideasBusy || hasShoppingPending} onDraft={async name => {
+    {client ? <FamiliarMeals client={client} disabled={lockedDraft || ideasBusy || hasShoppingPending} onPending={(id, pending) => setShoppingPending(current => ({ ...current, [`combination:${id}`]: pending }))} onDraft={async name => {
       if (action.current || captureBusy || pendingSave.current) return false;
       const version = generation.current; action.current = true; setBusy(true);
       try {
