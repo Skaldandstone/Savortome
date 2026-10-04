@@ -12,7 +12,8 @@ export function TemplateRenameControl({ templateId, name, client, disabled, onPe
   onConfirmed: (name: string) => void;
   onReview: () => void;
 }) {
-  const fieldId = useId(); const hintId = useId();
+  const fieldId = useId(); const hintId = useId(); const openerId = useId();
+  const restoreFocus = useRef(false);
   const alive = useRef(true); const action = useRef(false);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   const [open, setOpen] = useState(false);
@@ -20,6 +21,12 @@ export function TemplateRenameControl({ templateId, name, client, disabled, onPe
   const [pending, setPending] = useState<MealTemplateRenameInput | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  useEffect(() => {
+    if (!open && restoreFocus.current) {
+      restoreFocus.current = false;
+      document.getElementById(openerId)?.focus();
+    }
+  }, [open, openerId]);
 
   async function save() {
     if (action.current || (disabled && !pending)) return;
@@ -32,7 +39,7 @@ export function TemplateRenameControl({ templateId, name, client, disabled, onPe
       const result = await client.renameTemplate(templateId, exact);
       if (result.confirmed?.id !== templateId || result.confirmed.name !== exact.name) throw new Error("Unconfirmed");
       if (!alive.current) return;
-      onConfirmed(exact.name); onPending(false); setPending(null); setOpen(false);
+      onConfirmed(exact.name); onPending(false); setPending(null); restoreFocus.current = true; setOpen(false);
       setMessage("Meal name saved. Its dishes and sharing settings have not changed.");
     } catch {
       if (alive.current) setMessage("We could not confirm this name. It may already be saved, or the meal may have changed. Nothing retries automatically. Retry the identical request or reload to review before making another change.");
@@ -42,14 +49,14 @@ export function TemplateRenameControl({ templateId, name, client, disabled, onPe
   }
 
   return <div className={styles.rename}>
-    {!open ? <Button type="button" variant="ghost" disabled={disabled} onClick={() => { setDraft(name); setMessage(""); setOpen(true); }}>Rename meal</Button> : <form onSubmit={event => { event.preventDefault(); void save(); }}>
+    {!open ? <Button id={openerId} type="button" variant="ghost" disabled={disabled} onClick={() => { setDraft(name); setMessage(""); setOpen(true); }}>Rename {name}</Button> : <form onSubmit={event => { event.preventDefault(); void save(); }}>
       <label htmlFor={fieldId}>Meal name</label>
       <TextField id={fieldId} value={draft} maxLength={160} autoFocus disabled={disabled || busy || pending !== null} aria-describedby={hintId} onChange={event => setDraft(event.target.value)} />
       <p id={hintId}>Give this familiar combination a name you recognize. Changing it also changes the title on an existing shared link; who can see it stays the same.</p>
       {pending ? <p>Requested name: {pending.name}. Last confirmed name: {name}. The current saved name is not yet confirmed.</p> : null}
       <div className={styles.actions}>
         <Button type="submit" disabled={busy || (disabled && !pending)}>{busy ? "Saving name…" : pending ? "Retry identical name request" : "Save name"}</Button>
-        {!pending ? <Button type="button" variant="ghost" disabled={busy} onClick={() => { setOpen(false); setDraft(name); setMessage(""); }}>Cancel</Button> : <Button type="button" variant="ghost" disabled={busy} onClick={() => {
+        {!pending ? <Button type="button" variant="ghost" disabled={busy} onClick={() => { restoreFocus.current = true; setOpen(false); setDraft(name); setMessage(""); }}>Cancel</Button> : <Button type="button" variant="ghost" disabled={busy} onClick={() => {
           if (action.current || !window.confirm("Reload saved meals and discard only this local retry? The earlier rename is not cancelled and may still finish. Recheck the name before changing it again.")) return;
           onReview();
         }}>Reload to review name</Button>}

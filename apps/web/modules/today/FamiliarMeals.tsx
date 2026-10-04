@@ -5,6 +5,7 @@ import { orderedTemplateItems, templateFoodNoteName, TEMPLATE_ROLE_LABEL, type M
 import { Button, Callout, Panel, PanelHeader } from "@/ui";
 import styles from "./today.module.css";
 import { CombinationPlanReview } from "./CombinationPlanReview";
+import { TemplateRenameControl } from "../templates/TemplateRenameControl";
 
 export function FamiliarMeals({ client, disabled, onDraft, onPending }: {
   client: SecondsClient; disabled: boolean; onDraft: (title: string) => boolean | Promise<boolean>; onPending: (id: string, pending: boolean) => void;
@@ -44,11 +45,24 @@ export function FamiliarMeals({ client, disabled, onDraft, onPending }: {
         <h3>{meal.name}</h3>
         {meal.items.length ? <ul>{orderedTemplateItems(meal.items).map((item, index) => <li key={`${item.role}:${item.recipeId}:${index}`}>{TEMPLATE_ROLE_LABEL[item.role]}: {locked || preparing ? <span>{item.title}</span> : <Link href={`/recipe/${item.recipeId}`}>{item.title}</Link>}</li>)}</ul> : <p>No dishes remain in this combination. You can still review its name.</p>}
         <Button variant="ghost" disabled={locked || busy || preparing || !templateFoodNoteName(meal.name)} onClick={() => void draft(meal)}>Use {meal.name} as a food-note draft</Button>
+        <TemplateRenameControl templateId={meal.id} name={meal.name} client={client} disabled={locked || busy || preparing}
+          onPending={pending => {
+            const key = `rename:${meal.id}`;
+            setPlanPending(current => ({ ...current, [key]: pending })); onPending(key, pending);
+          }}
+          onConfirmed={name => setMeals(current => current?.map(saved => saved.id === meal.id ? { ...saved, name } : saved) ?? current)}
+          onReview={() => {
+            if (!alive.current || action.current) return;
+            const key = `rename:${meal.id}`;
+            setPlanPending(current => ({ ...current, [key]: false })); onPending(key, false);
+            ++sequence.current; setMeals(null); setFailed(false); setShown(6);
+            setMessage("Local rename retry discarded. Reload saved meals to review the name. The earlier request is not cancelled and may still finish; recheck before another change.");
+          }} />
         <CombinationPlanReview meal={meal} client={client} disabled={locked || busy || preparing} onPending={pending => { setPlanPending(current => ({ ...current, [meal.id]: pending })); onPending(meal.id, pending); }} />
         {!templateFoodNoteName(meal.name) ? <p>This name is too long or cannot be copied. Enter a short food name in the note below instead; nothing is truncated.</p> : null}
       </article>) : null}
       {meals && meals.length > shown ? <Button variant="ghost" disabled={locked || busy || preparing} onClick={() => setShown(value => value + 6)}>Show more saved meals</Button> : null}
-      <p>Copying a name does not record eating, add to your plan, change inventory or infer a portion. <Link href="/templates">Manage saved combinations</Link>.</p>
+      <p>Copying a name does not record eating, add to your plan, change inventory or infer a portion. {locked || busy || preparing ? <span>Manage saved combinations after reviewing pending actions.</span> : <Link href="/templates">Manage saved combinations</Link>}</p>
     </details>
     {message ? <Callout tone="info" role="status">{message}</Callout> : null}
   </Panel>;
