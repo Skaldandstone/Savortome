@@ -1,11 +1,11 @@
 import {
   isISODate,
-  mealSlotOr,
+  parsePlanAction,
+  type PlanAction,
   recipeIdsIn,
   todayISO,
   weekEnd,
   weekStart,
-  type MealSlot,
 } from "@seconds/core";
 import {
   addRecipesToList,
@@ -15,7 +15,7 @@ import {
   planForRange,
   removeFromPlan,
 } from "@seconds/db";
-import { withUser } from "@/lib/api";
+import { BadRequestError, withUser } from "@/lib/api";
 import { boundedJson } from "@/lib/bounded-json";
 
 export const runtime = "nodejs";
@@ -23,23 +23,13 @@ const privateResponse = (response: Response) => { response.headers.set("Cache-Co
 
 /** A week's plan. Defaults to the week you're standing in. */
 export async function GET(request: Request) {
-  const asked = new URL(request.url).searchParams.get("week");
-  const start = weekStart(asked && isISODate(asked) ? asked : todayISO());
-
-  return privateResponse(await withUser(async (userId, database) => ({
-    week: start,
-    meals: await planForRange(database, userId, start, weekEnd(start)),
-  }), { redactUnexpectedErrors: true }));
-}
-
-interface Body {
-  action: "add" | "remove" | "move" | "clearWeek" | "toShoppingList";
-  recipeId: string;
-  date: string;
-  slot: MealSlot;
-  /** Where a move came from. */
-  from: { date: string; slot: MealSlot };
-  week: string;
+  return privateResponse(await withUser(async (userId, database) => {
+    const params = new URL(request.url).searchParams;
+    const asked = params.get("week");
+    if (params.getAll("week").length > 1 || (asked !== null && !isISODate(asked))) throw new BadRequestError("Choose one valid calendar date for the requested week.");
+    const start = weekStart(asked ?? todayISO());
+    return { week: start, meals: await planForRange(database, userId, start, weekEnd(start)) };
+  }, { redactUnexpectedErrors: true }));
 }
 
 /**
@@ -51,29 +41,27 @@ interface Body {
  */
 export async function POST(request: Request) {
   return privateResponse(await withUser(async (userId, database) => {
-    const body = await boundedJson(request, 8192) as unknown as Body;
-    const start = weekStart(body.week && isISODate(body.week) ? body.week : todayISO());
-    const date = body.date && isISODate(body.date) ? body.date : todayISO();
-    const slot = mealSlotOr(body.slot);
+    const input = await boundedJson(request, 8192);
+    let body: PlanAction;
+    try { body = parsePlanAction(input); }
+    catch { throw new BadRequestError("Review the action, recipe, valid calendar dates and explicit meal slots. Week-wide changes require a chosen week."); }
+    const start = body.week;
 
     let addedToList = 0;
 
-    // A write without a recipe is a malformed request, not a reason to throw:
-    // the week reads back either way and the grid stays correct.
-    const recipeId = body.recipeId ?? "";
-
-    if (body.action === "add" && recipeId) {
-      await addToPlan(database, userId, recipeId, date, slot);
-    } else if (body.action === "remove" && recipeId) {
-      await removeFromPlan(database, userId, recipeId, date, slot);
-    } else if (body.action === "move" && body.from && recipeId) {
-      await movePlanEntry(
+    if (body.action === "add") {
+      if (!await addToPlan(database, userId, body.recipeId, body.date, body.slot)) throw new BadRequestError("That recipe is not available in your library. Nothing was added.");
+    } else if (body.action === "remove") {
+      await removeFromPlan(database, userId, body.recipeId, body.date, body.slot);
+    } else if (body.action === "move") {
+      const moved = await movePlanEntry(
         database,
         userId,
-        recipeId,
-        { date: body.from.date, slot: mealSlotOr(body.from.slot) },
-        { date, slot },
+        body.recipeId,
+        body.from,
+        { date: body.date, slot: body.slot },
       );
+      if (!moved) throw new BadRequestError("That meal could not be found at the chosen location. Reload your plan before moving it.");
     } else if (body.action === "clearWeek") {
       await clearPlanRange(database, userId, start, weekEnd(start));
     } else if (body.action === "toShoppingList") {

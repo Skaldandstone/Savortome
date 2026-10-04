@@ -105,10 +105,29 @@ export async function movePlanEntry(
   recipeId: string,
   from: { date: string; slot: MealSlot },
   to: { date: string; slot: MealSlot },
-): Promise<void> {
+): Promise<boolean> {
   // Insert-then-delete rather than an update: the destination may already hold
   // this recipe, and an update would collide with the primary key.
-  await database.transaction(async (tx) => {
+  return database.transaction(async (tx) => {
+    const owned = await tx.query.recipes.findFirst({
+      where: and(eq(schema.recipes.id, recipeId), eq(schema.recipes.ownerId, userId)),
+      columns: { id: true },
+    });
+    if (!owned) return false;
+    const source = await tx.select({ recipeId: schema.mealPlanEntries.recipeId })
+      .from(schema.mealPlanEntries)
+      .where(and(eq(schema.mealPlanEntries.userId, userId), eq(schema.mealPlanEntries.recipeId, recipeId), eq(schema.mealPlanEntries.date, from.date), eq(schema.mealPlanEntries.slot, from.slot)))
+      .for("update");
+    if (source.length === 0) {
+      // An identical retry can observe its already-created destination, but
+      // a missing source must never create a new calendar entry.
+      const destination = await tx.query.mealPlanEntries.findFirst({
+        where: and(eq(schema.mealPlanEntries.userId, userId), eq(schema.mealPlanEntries.recipeId, recipeId), eq(schema.mealPlanEntries.date, to.date), eq(schema.mealPlanEntries.slot, to.slot)),
+        columns: { recipeId: true },
+      });
+      return Boolean(destination);
+    }
+    if (from.date === to.date && from.slot === to.slot) return true;
     await tx
       .insert(schema.mealPlanEntries)
       .values({ userId, recipeId, date: to.date, slot: to.slot })
@@ -123,6 +142,7 @@ export async function movePlanEntry(
           eq(schema.mealPlanEntries.slot, from.slot),
         ),
       );
+    return true;
   });
 }
 
