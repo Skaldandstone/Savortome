@@ -11,6 +11,10 @@ export async function boundedJson(request: Request, maxBytes: number): Promise<R
       const { value, done } = await reader.read(); if (done) break;
       size += value.byteLength; if (size > maxBytes) throw new BadRequestError("That upload is too large."); chunks.push(value);
     }
+  } catch (cause) {
+    // Transport failures must not surface raw upload-reader diagnostics.
+    if (cause instanceof BadRequestError) throw cause;
+    throw new BadRequestError("That upload was interrupted. Please try again.");
   } finally { await reader.cancel().catch(() => {}); }
   const bytes = new Uint8Array(size); let offset = 0;
   for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }

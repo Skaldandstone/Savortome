@@ -43,10 +43,13 @@ export function TodayScreen() {
   const recorder = useRef<MediaRecorder | null>(null);
   const stream = useRef<MediaStream | null>(null);
   const stopTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const voiceGeneration = useRef(0);
+  const voiceOpening = useRef(false);
   const [recording, setRecording] = useState(false);
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
-  const stopCapture = useCallback(() => {
+  const stopCapture = useCallback((discard = false) => {
+    if (discard) { ++voiceGeneration.current; voiceOpening.current = false; setVoiceBlob(null); }
     if (stopTimer.current) clearTimeout(stopTimer.current);
     if (recorder.current?.state === "recording") recorder.current.stop();
     stream.current?.getTracks().forEach(track => track.stop());
@@ -65,18 +68,20 @@ export function TodayScreen() {
   }, []);
   useEffect(() => {
     ++accountEpoch.current; alive.current = true;
-    stopCapture(); setVoiceBlob(null); setCapture({ photo: false, voice: false });
+    stopCapture(true); setVoiceBlob(null); setCapture({ photo: false, voice: false });
     setNotes([]); setLoaded(false); setTitle(""); setPortion(""); setSource("text"); setUncertainty(""); draftId.current = null;
     setIdeas(null); setIdeasError(null); setIdeasBusy(false); setBusy(false); setError(""); setStatus(""); setNeedsSignIn(false); setShowInvitation(true);
     void load();
     const account = owner.current; const epoch = accountEpoch.current;
     void api.foodNoteCaptureStatus().then(result => { if (alive.current && accountEpoch.current === epoch && owner.current === account) setCapture(result); }).catch(() => {});
-    return () => { alive.current = false; ++accountEpoch.current; ++request.current; stopCapture(); };
+    return () => { alive.current = false; ++accountEpoch.current; ++request.current; stopCapture(true); };
   }, [userId, load, stopCapture]);
   useEffect(() => {
-    const hide = () => { if (document.visibilityState !== "visible") stopCapture(); };
+    const hide = () => { if (document.visibilityState !== "visible") stopCapture(true); };
+    const leave = () => stopCapture(true);
     document.addEventListener("visibilitychange", hide);
-    return () => document.removeEventListener("visibilitychange", hide);
+    window.addEventListener("pagehide", leave);
+    return () => { document.removeEventListener("visibilitychange", hide); window.removeEventListener("pagehide", leave); };
   }, [stopCapture]);
   useEffect(() => {
     let cancelled = false;
@@ -108,12 +113,16 @@ export function TodayScreen() {
     finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) { setBusy(false); if (kind === "voice") setVoiceBlob(null); } }
   };
   const startVoice = async () => {
+    if (voiceOpening.current || recorder.current?.state === "recording" || busy) return;
+    voiceOpening.current = true;
+    const voiceRun = ++voiceGeneration.current;
+    setBusy(true);
     setError(""); setVoiceBlob(null);
     const account = owner.current; const epoch = accountEpoch.current;
     try {
       if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") throw new Error("Recording is not supported here. Type a food note or use your keyboard's dictation.");
       const tracks = await navigator.mediaDevices.getUserMedia({ audio: true });
-      if (!alive.current || accountEpoch.current !== epoch || owner.current !== account) { tracks.getTracks().forEach(track => track.stop()); return; }
+      if (!alive.current || accountEpoch.current !== epoch || owner.current !== account || voiceGeneration.current !== voiceRun || document.hidden) { tracks.getTracks().forEach(track => track.stop()); return; }
       const mimeType = ["audio/webm", "audio/mp4"].find(type => MediaRecorder.isTypeSupported(type));
       if (!mimeType) { tracks.getTracks().forEach(track => track.stop()); throw new Error("This browser's audio format is unsupported. Type a note instead."); }
       stream.current = tracks;
@@ -122,12 +131,14 @@ export function TodayScreen() {
       captureRecorder.ondataavailable = event => { size += event.data.size; if (size <= 5_000_000) chunks.push(event.data); else stopCapture(); };
       captureRecorder.onstop = () => {
         tracks.getTracks().forEach(track => track.stop());
-        if (alive.current && accountEpoch.current === epoch && owner.current === account) { setRecording(false); if (size <= 5_000_000) setVoiceBlob(new Blob(chunks, { type: mimeType })); else setError("That recording was too large. Try a shorter note."); }
+        if (recorder.current === captureRecorder) { recorder.current = null; stream.current = null; }
+        if (alive.current && accountEpoch.current === epoch && owner.current === account && voiceGeneration.current === voiceRun) { setRecording(false); if (size > 0 && size <= 5_000_000) setVoiceBlob(new Blob(chunks, { type: mimeType })); else setError("That recording was empty or too large. Try a shorter note."); }
       };
-      captureRecorder.onerror = () => { stopCapture(); if (owner.current === account && alive.current) setError("Recording stopped unexpectedly. You can type the note instead."); };
+      captureRecorder.onerror = () => { if (voiceGeneration.current !== voiceRun) return; stopCapture(true); if (owner.current === account && alive.current && accountEpoch.current === epoch) setError("Recording stopped unexpectedly. You can type the note instead."); };
       captureRecorder.start(1000); setRecording(true);
-      stopTimer.current = setTimeout(stopCapture, 45_000);
-    } catch (cause) { stopCapture(); if (owner.current === account && alive.current) failure(cause, "Microphone unavailable. Type a note instead."); }
+      stopTimer.current = setTimeout(() => stopCapture(), 45_000);
+    } catch (cause) { if (voiceGeneration.current === voiceRun) { stopCapture(true); if (owner.current === account && alive.current && accountEpoch.current === epoch) failure(cause, "Microphone unavailable. Type a note instead."); } }
+    finally { if (owner.current === account && alive.current && accountEpoch.current === epoch) { voiceOpening.current = false; setBusy(false); } }
   };
   const save = async () => {
     const account = owner.current; const epoch = accountEpoch.current;
@@ -189,7 +200,7 @@ export function TodayScreen() {
         }} />
         {!capture.photo ? <p>Photo suggestions aren’t enabled in this build. You can type a note.</p> : null}
         {capture.voice ? <div className={styles.stack}>
-          <p>Record up to 45 seconds. Recording stops when you leave this screen or hide the app. Nothing is sent until you select Send for editable draft.</p>
+          <p>Record up to 45 seconds. Recording stops and is discarded when you leave this screen or hide the app. Nothing is sent until you select Send for editable draft.</p>
           <FieldRow><Button variant="ghost" disabled={busy || !loaded} onClick={() => recording ? stopCapture() : void startVoice()}>{recording ? "Stop recording" : "Record a voice note"}</Button>
             {voiceBlob ? <><Button disabled={busy} onClick={() => {
               if (title.trim() && !window.confirm("Replace the current unsaved food draft with a voice suggestion?")) return;
