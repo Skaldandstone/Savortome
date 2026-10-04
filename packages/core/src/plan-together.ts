@@ -165,10 +165,17 @@ export function suggestPlanTogether(
 
 /** A small, stable memory aid, never an assertion that food is fresh/present. */
 export function pantryPlanningItems(entries: readonly PantryEntry[], now: Date = new Date()): PantryEntry[] {
-  return [...entries].sort((a, b) =>
+  return pantryPlanningMatches(entries, "", now).slice(0, 6);
+}
+
+/** Literal local browse over saved names. Never normalizes a saved key again. */
+export function pantryPlanningMatches(entries: readonly PantryEntry[], query = "", now: Date = new Date()): PantryEntry[] {
+  if (query.length > 100 || /[\u0000-\u001f\u007f]/.test(query)) return [];
+  const needle = query.trim().toLowerCase();
+  return entries.filter(entry => !needle || entry.displayName.toLowerCase().includes(needle) || entry.canonicalItem.toLowerCase().includes(needle)).sort((a, b) =>
     Number(pantryAttention(b, now)?.shouldResurface === true) - Number(pantryAttention(a, now)?.shouldResurface === true) ||
     a.canonicalItem.localeCompare(b.canonicalItem)
-  ).slice(0, 6);
+  );
 }
 
 function planReason(candidate: PlanTogetherCandidate, resurfaceItems: string[]): string {
