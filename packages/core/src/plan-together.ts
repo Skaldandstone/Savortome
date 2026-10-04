@@ -31,6 +31,8 @@ export interface PlanTogetherOptions {
   /** Temporary names, normalized by the input parser before ranking; never saved as dietary settings. */
   useIngredient?: string;
   skipIngredient?: string;
+  /** Exact saved pantry key, checked against this account; not normalized again. */
+  pantryItem?: string;
 }
 
 export function planIngredientName(value: string | null | undefined): string | undefined {
@@ -42,14 +44,18 @@ export function planIngredientName(value: string | null | undefined): string | u
 }
 
 export function parsePlanTogetherOptions(params: URLSearchParams): PlanTogetherOptions {
-  if (["maxMinutes", "pantryOnly", "strictDietary", "useIngredient", "skipIngredient"].some(key => params.getAll(key).length > 1)) throw new Error("Choose one value for each meal-planning limit.");
+  if (["maxMinutes", "pantryOnly", "strictDietary", "useIngredient", "skipIngredient", "pantryItem"].some(key => params.getAll(key).length > 1)) throw new Error("Choose one value for each meal-planning limit.");
   const rawTime = params.get("maxMinutes");
   const rawPantry = params.get("pantryOnly");
   const rawDietary = params.get("strictDietary");
   if (rawTime !== null && !["10", "20", "30", "60"].includes(rawTime)) throw new Error("Choose a supported meal-planning time limit.");
   if (rawPantry !== null && rawPantry !== "true" && rawPantry !== "false") throw new Error("Choose whether to use pantry matches only.");
   if (rawDietary !== null && rawDietary !== "true" && rawDietary !== "false") throw new Error("Choose a valid dietary matching setting.");
-  return { strictDietary: rawDietary === "true", pantryOnly: rawPantry === "true", maxMinutes: rawTime === null ? undefined : Number(rawTime) as PlanTogetherOptions["maxMinutes"], useIngredient: planIngredientName(params.get("useIngredient")), skipIngredient: planIngredientName(params.get("skipIngredient")) };
+  const useIngredient = planIngredientName(params.get("useIngredient"));
+  const pantryItem = params.get("pantryItem") ?? undefined;
+  if (pantryItem !== undefined && (pantryItem.length === 0 || pantryItem.length > 200 || /[\u0000-\u001f\u007f]/.test(pantryItem))) throw new Error("Choose one saved pantry item.");
+  if (pantryItem && useIngredient) throw new Error("Choose a saved pantry item or enter an ingredient, not both.");
+  return { strictDietary: rawDietary === "true", pantryOnly: rawPantry === "true", maxMinutes: rawTime === null ? undefined : Number(rawTime) as PlanTogetherOptions["maxMinutes"], useIngredient, skipIngredient: planIngredientName(params.get("skipIngredient")), pantryItem };
 }
 
 /** JSON callers keep temporary food choices out of URLs and access-log queries. */
@@ -67,7 +73,7 @@ export function parsePlanTogetherInput(value: unknown): PlanTogetherOptions {
     if (typeof input.maxMinutes !== "number") throw new Error("Choose a supported time limit.");
     params.set("maxMinutes", String(input.maxMinutes));
   }
-  for (const key of ["useIngredient", "skipIngredient"] as const) {
+  for (const key of ["useIngredient", "skipIngredient", "pantryItem"] as const) {
     if (input[key] !== undefined) {
       if (typeof input[key] !== "string") throw new Error("Enter one ingredient name.");
       params.set(key, input[key]);
@@ -98,6 +104,7 @@ export function suggestPlanTogether(
   const skipIngredient = options.skipIngredient;
 
   return candidates
+    .filter(candidate => !options.pantryItem || (pantryByName.has(options.pantryItem) && candidate.ingredients.includes(options.pantryItem)))
     // A conflicting use/skip request deliberately returns no choices. Do not
     // weaken either preference or treat a name exclusion as allergy safety.
     .filter(candidate => !useIngredient || candidate.ingredients.includes(useIngredient))
@@ -142,6 +149,14 @@ export function suggestPlanTogether(
       resurfaceItems,
       reason: planReason(candidate, resurfaceItems),
     }));
+}
+
+/** A small, stable memory aid, never an assertion that food is fresh/present. */
+export function pantryPlanningItems(entries: readonly PantryEntry[], now: Date = new Date()): PantryEntry[] {
+  return [...entries].sort((a, b) =>
+    Number(pantryAttention(b, now)?.shouldResurface === true) - Number(pantryAttention(a, now)?.shouldResurface === true) ||
+    a.canonicalItem.localeCompare(b.canonicalItem)
+  ).slice(0, 6);
 }
 
 function planReason(candidate: PlanTogetherCandidate, resurfaceItems: string[]): string {

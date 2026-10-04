@@ -2,12 +2,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
-import { createClient, foodLogDate, localFoodDate, parseFoodLogInput, planIngredientName, type FoodLogInput, type FoodLogEntry, type FoodLogSource, type PlanTogetherIdea, type PlanTogetherOptions } from "@seconds/core/format";
+import { createClient, foodLogDate, localFoodDate, parseFoodLogInput, planIngredientName, type FoodLogInput, type FoodLogEntry, type FoodLogSource, type PantryEntry, type PlanTogetherIdea, type PlanTogetherOptions } from "@seconds/core/format";
 import { actionFailure, signInReturnHref } from "@/lib/action-failure";
 import { Button, Callout, FieldRow, Panel, PanelHeader, TextField } from "@/ui";
 import styles from "./today.module.css";
 import { MissingShoppingReview } from "./MissingShoppingReview";
 import { PlanIdeaReview } from "./PlanIdeaReview";
+import { PantryPlanningPicker } from "./PantryPlanningPicker";
 
 const base64Of = (blob: Blob) => new Promise<string>((resolve, reject) => {
   const reader = new FileReader(); reader.onerror = () => reject(new Error("File could not be read."));
@@ -44,6 +45,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
   const [useIngredient, setUseIngredient] = useState("");
   const [skipIngredient, setSkipIngredient] = useState("");
   const [ingredientSummary, setIngredientSummary] = useState("");
+  const [selectedPantry, setSelectedPantry] = useState<PantryEntry | null>(null);
   const ideasAction = useRef(false);
   const [shoppingPending, setShoppingPending] = useState<Record<string, boolean>>({});
   const hasShoppingPending = Object.values(shoppingPending).some(Boolean);
@@ -227,9 +229,9 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
   };
   const showIdeas = async () => {
     if (ideasAction.current || hasShoppingPending) return;
-    const ingredientOptions = { useIngredient: useIngredient.trim() || undefined, skipIngredient: skipIngredient.trim() || undefined };
+    const ingredientOptions = { useIngredient: selectedPantry ? undefined : useIngredient.trim() || undefined, skipIngredient: skipIngredient.trim() || undefined, pantryItem: selectedPantry?.canonicalItem };
     let normalizedIngredients;
-    try { normalizedIngredients = { useIngredient: planIngredientName(useIngredient), skipIngredient: planIngredientName(skipIngredient) }; }
+    try { normalizedIngredients = { useIngredient: selectedPantry?.canonicalItem ?? planIngredientName(useIngredient), skipIngredient: planIngredientName(skipIngredient) }; }
     catch { setIdeas(null); setIdeasError("Enter one ingredient name per field, up to 100 characters, without commas, semicolons or alternatives."); return; }
     ideasAction.current = true; setIdeas(null);
     const account = owner.current; const epoch = accountEpoch.current; setIdeasBusy(true); setIdeasError(null);
@@ -239,7 +241,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
         setIdeas(response.ideas);
         setIngredientSummary(`Ingredient names used for matching: use ${normalizedIngredients.useIngredient ?? "any"}; skip ${normalizedIngredients.skipIngredient ?? "none"}.`);
       }
-    } catch { if (alive.current && accountEpoch.current === epoch && owner.current === account) setIdeasError("Meal ideas could not load, including your saved dietary settings. Try again or use Feed me gently with temporary choices."); }
+    } catch { if (alive.current && accountEpoch.current === epoch && owner.current === account) setIdeasError("Meal ideas or saved dietary settings could not load, or the selected pantry item changed. Reload pantry choices and try again, or use Feed me gently with temporary choices."); }
     finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) { ideasAction.current = false; setIdeasBusy(false); } }
   };
   const todayNotes = dayNotes;
@@ -250,10 +252,12 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
         <label>Time available <select value={maxMinutes ?? ""} onChange={event => { setMaxMinutes(event.target.value ? Number(event.target.value) as PlanTogetherOptions["maxMinutes"] : undefined); setIdeas(null); setIdeasError(null); }}>
           <option value="">No time limit</option>{([10, 20, 30, 60] as const).map(minutes => <option key={minutes} value={minutes}>Up to {minutes} minutes</option>)}
         </select></label>
-        <label>Use this ingredient (optional)<TextField value={useIngredient} maxLength={100} placeholder="For example, bananas" onChange={event => { setUseIngredient(event.target.value); setIdeas(null); setIdeasError(null); }} /></label>
+        <label>Use this ingredient (optional)<TextField value={useIngredient} maxLength={100} placeholder="For example, bananas" onChange={event => { setSelectedPantry(null); setUseIngredient(event.target.value); setIdeas(null); setIdeasError(null); }} /></label>
         <label>Skip this ingredient today (optional)<TextField value={skipIngredient} maxLength={100} placeholder="For example, mushrooms" onChange={event => { setSkipIngredient(event.target.value); setIdeas(null); setIdeasError(null); }} /></label>
         <label className={styles.pantryToggle}><input type="checkbox" checked={pantryOnly} onChange={event => { setPantryOnly(event.target.checked); setIdeas(null); setIdeasError(null); }} /> No shopping today: match pantry names only</label>
       </fieldset>
+      {selectedPantry ? <p role="status">Selected from your saved pantry: {selectedPantry.displayName}. Check it, then choose Show me some ideas. <Button variant="ghost" disabled={ideasBusy || hasShoppingPending} onClick={() => { setSelectedPantry(null); setIdeas(null); setIdeasError(null); }}>Clear pantry choice</Button></p> : null}
+      <PantryPlanningPicker client={api} disabled={ideasBusy || hasShoppingPending} onChoose={item => { setSelectedPantry(item); setUseIngredient(""); setIdeas(null); setIdeasError(null); }} />
       <p>These ingredient choices apply only to this search. They do not change your pantry or dietary profile. Matching checks whether a recipe lists a normalized ingredient name, including optional ingredients. It does not confirm amounts, preparation or hidden ingredients; an optional ingredient may not be used. Skipping a name does not verify allergy safety; use your dietary profile for allergens and check labels.</p>
       <p>Time uses the saved total; check the steps for waiting time. Unknown times are excluded when you choose a limit. No-shopping matches check every listed ingredient, including staples and optional items. Names do not confirm quantities or preparation. We check up to 40 saved recipe candidates; no match does not mean your whole library was checked.</p>
       <FieldRow><Button disabled={ideasBusy || hasShoppingPending} onClick={() => void showIdeas()}>{ideasBusy ? "Finding ideas…" : "Show me some ideas"}</Button><Button variant="ghost" disabled={hasShoppingPending} onClick={() => setShowInvitation(false)}>Not now</Button><Link href="/care">Feed me gently</Link></FieldRow>

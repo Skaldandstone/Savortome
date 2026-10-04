@@ -25,10 +25,11 @@ async function planningResponse(request: Request, json: boolean) {
       listPantry(database, userId),
       getDietaryProfile(database, userId),
     ]);
+    if (options.pantryItem && !pantry.some(entry => entry.canonicalItem === options.pantryItem)) throw new BadRequestError("That item is no longer in your saved pantry. Reload the pantry choices or enter a temporary ingredient.");
     const candidates = await searchByPantry(database, userId, {
       ingredients: pantry.map(entry => entry.canonicalItem),
       maxMinutes: options.maxMinutes,
-      requireIngredients: options.useIngredient ? [options.useIngredient] : [],
+      requireIngredients: options.pantryItem ? [options.pantryItem] : options.useIngredient ? [options.useIngredient] : [],
       excludeIngredients: options.skipIngredient ? [options.skipIngredient] : [],
       limit: 40,
     });

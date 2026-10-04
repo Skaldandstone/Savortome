@@ -384,7 +384,7 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
       await send(`/api/recipes/${recipeId}/rating`, { method: "DELETE" });
     },
 
-    listPantry: () => send<PantryEntry[]>("/api/pantry"),
+    listPantry: () => sendTimed<PantryEntry[]>("/api/pantry", {}, 12_000),
     listFoodNotes: (date) => sendTimed<FoodLogEntry[]>(`/api/food-log${date ? `?date=${encodeURIComponent(date)}` : ""}`, {}, 12_000),
     foodNoteCaptureStatus: () => sendTimed<{ photo: boolean; voice: boolean }>("/api/food-log/draft", {}, 12_000),
     foodNoteDraft: (source, base64, mediaType) => sendTimed<{ draft: FoodNoteDraft }>("/api/food-log/draft", { method: "POST", body: body({ source, base64, mediaType }) }, 75_000),
