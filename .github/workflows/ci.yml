@@ -63,6 +63,7 @@ jobs:
           node scripts/check-food-recovery-accessibility.mjs
           node scripts/check-pantry-planning-recovery.mjs
           node scripts/check-meal-review-recovery.mjs
+          node scripts/check-clerk-webhook-recovery.mjs
       # Disposable PGlite fixtures are distinct from the full pgvector schema job.
       - name: Food-note tenant recovery and partial migrations
         run: |
