@@ -63,6 +63,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
   const [captureError, setCaptureError] = useState(false);
   const [captureVisit, setCaptureVisit] = useState(0);
   const draftId = useRef<string | null>(null);
+  const editRevision = useRef<string | undefined>(undefined);
   const pendingSave = useRef<FoodLogInput | null>(null);
   const action = useRef(false);
   const [unconfirmed, setUnconfirmed] = useState(false);
@@ -99,8 +100,10 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
       const savedDay = pending ? await api.listFoodNotes(pending.date) : [];
       if (alive.current && accountEpoch.current === epoch && owner.current === account && request.current === version) {
         setNotes(result); setLoaded(true);
-        if (pending && pendingSave.current === pending && savedDay.some(note => foodLogReceiptMatches(pending, note))) {
+        const confirmed = pending ? savedDay.find(note => foodLogReceiptMatches(pending, note)) : undefined;
+        if (pending && pendingSave.current === pending && confirmed) {
           pendingSave.current = null; setUnconfirmed(false); draftId.current = pending.id;
+          editRevision.current = confirmed.updatedAt;
           setError(""); setNeedsSignIn(false);
           setStatus("Reload confirmed your note was saved. You can edit this draft; discarding it will not remove the saved note.");
         }
@@ -113,7 +116,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
     ++accountEpoch.current; alive.current = true;
     pendingSave.current = null; pendingDelete.current = null; setDeleteUnconfirmed(false); action.current = false; setUnconfirmed(false);
     stopCapture(true); setVoiceBlob(null); setCapture(null); setCaptureError(false);
-    setNotes([]); setLoaded(false); setTitle(""); setPortion(""); setSource("text"); setUncertainty(""); draftId.current = null;
+    setNotes([]); setLoaded(false); setTitle(""); setPortion(""); setSource("text"); setUncertainty(""); draftId.current = null; editRevision.current = undefined;
     setIdeas(null); setIdeasError(null); setIdeasBusy(false); setBusy(false); setError(""); setStatus(""); setNeedsSignIn(false); setShowInvitation(true);
     void load();
     return () => { alive.current = false; ++accountEpoch.current; ++request.current; stopCapture(true); };
@@ -162,7 +165,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
       if (!alive.current || accountEpoch.current !== epoch || owner.current !== account) return;
       const { draft } = await api.foodNoteDraft(kind, data, mediaType);
       if (!alive.current || accountEpoch.current !== epoch || owner.current !== account) return;
-      setTitle(draft.title); setPortion(draft.portion ?? ""); setSource(kind); setUncertainty(draft.uncertainty); draftId.current = null;
+      setTitle(draft.title); setPortion(draft.portion ?? ""); setSource(kind); setUncertainty(draft.uncertainty); draftId.current = null; editRevision.current = undefined;
       setStatus("Draft ready. Check the food name and portion before saving. Nothing has been saved yet.");
     } catch (cause) { if (alive.current && accountEpoch.current === epoch && owner.current === account) failure(cause, "Could not prepare a draft. Type a food note instead."); }
     finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) { action.current = false; setBusy(false); if (kind === "voice") setVoiceBlob(null); } }
@@ -206,7 +209,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
     let input: FoodLogInput;
     try {
       draftId.current ??= crypto.randomUUID();
-      input = pendingSave.current ?? parseFoodLogInput({ id: draftId.current, date, title, portion: portion.trim() || null, source });
+      input = pendingSave.current ?? parseFoodLogInput({ id: draftId.current, date, title, portion: portion.trim() || null, source, expectedUpdatedAt: editRevision.current });
     } catch (cause) { failure(cause, "Review the food name and date before saving."); return; }
     action.current = true; ++request.current; setLoading(false);
     pendingSave.current = input; setUnconfirmed(true);
@@ -218,7 +221,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
       if (!alive.current || accountEpoch.current !== epoch || owner.current !== account) return;
       setNotes(current => [entry, ...current.filter(note => note.id !== entry.id)]); setStatus("Food note saved. Your pantry was not changed.");
       pendingSave.current = null; setUnconfirmed(false);
-      setTitle(""); setPortion(""); setUncertainty(""); setSource("text"); draftId.current = null;
+      setTitle(""); setPortion(""); setUncertainty(""); setSource("text"); draftId.current = null; editRevision.current = undefined;
     } catch (cause) { if (alive.current && accountEpoch.current === epoch && owner.current === account) failure(cause, "We could not confirm the note saved. Your draft is still here. Reload notes before retrying."); }
     finally { if (alive.current && accountEpoch.current === epoch && owner.current === account) { action.current = false; setBusy(false); } }
   };
@@ -280,7 +283,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
     <FamiliarMeals client={api} disabled={noteLocked || ideasBusy || hasShoppingPending} onPending={(id, pending) => setShoppingPending(current => ({ ...current, [`combination:${id}`]: pending }))} onDraft={name => {
       if (action.current || pendingSave.current || pendingDelete.current || loading || !loaded || recording) return false;
       if ((title.trim() || portion.trim() || voiceBlob) && !window.confirm("Replace the current unsaved food-note draft with this meal name? Nothing will be saved.")) return false;
-      setTitle(name); setPortion(""); setSource("text"); setUncertainty(""); draftId.current = null; setError(""); setStatus("Saved meal name copied. Review the date and portion before saving. No eating or pantry change has been recorded.");
+      setTitle(name); setPortion(""); setSource("text"); setUncertainty(""); draftId.current = null; editRevision.current = undefined; setError(""); setStatus("Saved meal name copied. Review the date and portion before saving. No eating or pantry change has been recorded.");
       document.getElementById("today-food-name")?.focus();
       return true;
     }} />
@@ -306,7 +309,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
         <Button type="submit" disabled={busy || recording || deleteUnconfirmed || loading || !loaded || !title.trim()}>{busy ? "Working…" : unconfirmed ? "Retry the same food note" : draftId.current ? "Save reviewed edits" : "Save food note"}</Button>
         <FieldRow><Button type="button" variant="ghost" disabled={busy || recording || !title} onClick={() => {
           if (action.current || (pendingSave.current && !window.confirm("The note may already have saved. Discard this local draft only? Reload notes before adding it again."))) return;
-          pendingSave.current = null; setUnconfirmed(false); setTitle(""); setPortion(""); setSource("text"); setUncertainty(""); draftId.current = null; setError(""); setStatus("Local draft discarded. Saved notes were not removed.");
+          pendingSave.current = null; setUnconfirmed(false); setTitle(""); setPortion(""); setSource("text"); setUncertainty(""); draftId.current = null; editRevision.current = undefined; setError(""); setStatus("Local draft discarded. Saved notes were not removed.");
         }}>Discard draft</Button></FieldRow>
       </form>
       <details className={styles.capture}><summary>Use a photo or voice note instead</summary>
@@ -342,7 +345,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
         <FieldRow><Button variant="ghost" aria-label={`Edit food note for ${note.title}`} disabled={noteLocked} onClick={() => {
           if (action.current || pendingSave.current || pendingDelete.current) return;
           if (title.trim() && !window.confirm("Replace your current unsaved draft with this note?")) return;
-          setTitle(note.title); setPortion(note.portion ?? ""); setDate(note.date); setSource(note.source); draftId.current = note.id; setUncertainty(""); setStatus("Editing an existing note. Save to confirm your changes.");
+          setTitle(note.title); setPortion(note.portion ?? ""); setDate(note.date); setSource(note.source); draftId.current = note.id; editRevision.current = note.updatedAt; setUncertainty(""); setStatus("Editing an existing note. Save to confirm your changes. A newer edit will require a fresh review.");
         }}>Edit note</Button><Button variant="ghost" aria-label={`Remove food note for ${note.title}`} disabled={noteLocked} onClick={() => setConfirmDelete(note.id)}>Remove note</Button></FieldRow>
         {confirmDelete === note.id ? <div role="group" aria-label={`Confirm removing ${note.title}`}><p>Remove this food note? Pantry and plans stay unchanged.</p><FieldRow><Button variant="danger" disabled={noteLocked} onClick={() => void remove(note.id)}>Confirm removal</Button><Button variant="ghost" disabled={busy} onClick={() => setConfirmDelete(null)}>Keep note</Button></FieldRow></div> : null}
       </article>)}
@@ -351,7 +354,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
       {recent.map(note => <Button key={note.id} variant="ghost" disabled={noteLocked} onClick={() => {
         if (action.current || pendingSave.current || pendingDelete.current) return;
         if (title.trim() && !window.confirm("Replace your current unsaved food draft?")) return;
-        setTitle(note.title); setPortion(note.portion ?? ""); setSource("repeat"); setUncertainty(""); draftId.current = null; setStatus("New repeat draft ready. Nothing saved yet.");
+        setTitle(note.title); setPortion(note.portion ?? ""); setSource("repeat"); setUncertainty(""); draftId.current = null; editRevision.current = undefined; setStatus("New repeat draft ready. Nothing saved yet.");
       }}>Use {note.title} as a new draft</Button>)}
     </Panel> : null}
   </div>;

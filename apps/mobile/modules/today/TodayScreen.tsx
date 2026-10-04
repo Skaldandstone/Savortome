@@ -56,6 +56,7 @@ function AccountTodayScreen() {
   const [shoppingPending, setShoppingPending] = useState<Record<string, boolean>>({});
   const hasShoppingPending = Object.values(shoppingPending).some(Boolean);
   const id = useRef<string | null>(null);
+  const editRevision = useRef<string | undefined>(undefined);
   const pendingSave = useRef<FoodLogInput | null>(null);
   const action = useRef(false);
   const readVersion = useRef(0);
@@ -79,8 +80,10 @@ function AccountTodayScreen() {
       const savedDay = pending ? await client.listFoodNotes(pending.date) : [];
       if (current(version) && readVersion.current === read) {
         setNotes(result); setLoaded(true);
-        if (pending && pendingSave.current === pending && savedDay.some(note => foodLogReceiptMatches(pending, note))) {
+        const confirmed = pending ? savedDay.find(note => foodLogReceiptMatches(pending, note)) : undefined;
+        if (pending && pendingSave.current === pending && confirmed) {
           pendingSave.current = null; setUnconfirmed(false); id.current = pending.id;
+          editRevision.current = confirmed.updatedAt;
           setError(null);
           setMessage("Reload confirmed your note was saved. The draft is still here if you want to edit it; discarding it will not remove the saved note.");
         }
@@ -92,7 +95,7 @@ function AccountTodayScreen() {
   useEffect(() => {
     mounted.current = true; ++generation.current;
     pendingSave.current = null; pendingDelete.current = null; setDeleteUnconfirmed(false); action.current = false; ++readVersion.current; setUnconfirmed(false);
-    setNotes([]); setLoaded(false); setTitle(""); setPortion(""); setDate(localFoodDate()); setSource("text"); setUncertainty(""); id.current = null;
+    setNotes([]); setLoaded(false); setTitle(""); setPortion(""); setDate(localFoodDate()); setSource("text"); setUncertainty(""); id.current = null; editRevision.current = undefined;
     setIdeas(null); setIdeasError(null); setMessage(null); setError(null); setInvitation(true); setBusy(false); setCaptureBusy(false);
     void load();
     return () => { mounted.current = false; ++generation.current; };
@@ -113,7 +116,7 @@ function AccountTodayScreen() {
     let input: FoodLogInput;
     try {
       id.current ??= Crypto.randomUUID();
-      input = pendingSave.current ?? parseFoodLogInput({ id: id.current, date, title, portion: portion.trim() || null, source });
+      input = pendingSave.current ?? parseFoodLogInput({ id: id.current, date, title, portion: portion.trim() || null, source, expectedUpdatedAt: editRevision.current });
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Review the name and date before saving."); return; }
     action.current = true; ++readVersion.current; setLoading(false);
     pendingSave.current = input; setUnconfirmed(true);
@@ -124,7 +127,7 @@ function AccountTodayScreen() {
       if (!current(version)) return;
       setNotes(existing => [entry, ...existing.filter(note => note.id !== entry.id)]);
       pendingSave.current = null; setUnconfirmed(false);
-      setTitle(""); setPortion(""); setUncertainty(""); setSource("text"); id.current = null;
+      setTitle(""); setPortion(""); setUncertainty(""); setSource("text"); id.current = null; editRevision.current = undefined;
       setMessage("Food note saved. Your pantry was not changed.");
     } catch { if (current(version)) setError("We could not confirm the note saved. Your draft is still here. Reload notes before retrying; you may need to sign in again."); }
     finally { if (current(version)) { action.current = false; setBusy(false); } }
@@ -153,8 +156,9 @@ function AccountTodayScreen() {
     action.current = false;
     setTitle(note.title); setPortion(note.portion ?? ""); setSource(edit ? note.source : "repeat"); setUncertainty("");
     id.current = edit ? note.id : null;
+    editRevision.current = edit ? note.updatedAt : undefined;
     if (edit) setDate(note.date);
-    setMessage(edit ? "Editing an existing note. Save to confirm changes." : "New repeat draft ready. Nothing saved yet.");
+    setMessage(edit ? "Editing an existing note. Save to confirm changes. A newer edit will require a fresh review." : "New repeat draft ready. Nothing saved yet.");
   };
   const showIdeas = async () => {
     if (!client || ideasAction.current || hasShoppingPending) return;
@@ -219,7 +223,7 @@ function AccountTodayScreen() {
       try {
         if ((title.trim() || portion.trim() || id.current || uncertainty) && !await ask("Replace the current unsaved food-note draft with this meal name? Nothing will be saved.", "Replace draft")) return false;
         if (!current(version) || pendingSave.current || pendingDelete.current) return false;
-        setTitle(name); setPortion(""); setSource("text"); setUncertainty(""); id.current = null; setError(null); setMessage("Saved meal name copied. Review the date and portion before saving. No eating or pantry change has been recorded.");
+        setTitle(name); setPortion(""); setSource("text"); setUncertainty(""); id.current = null; editRevision.current = undefined; setError(null); setMessage("Saved meal name copied. Review the date and portion before saving. No eating or pantry change has been recorded.");
         return true;
       } finally { if (current(version)) { action.current = false; setBusy(false); } }
     }} /> : null}
@@ -259,7 +263,7 @@ function AccountTodayScreen() {
               const discard = !pendingSave.current || await ask("The note may already have saved. Discard this local draft only? Reload notes before adding it again.", "Discard local draft");
               if (!current(version)) return;
               action.current = false; if (!discard) return;
-              pendingSave.current = null; setUnconfirmed(false); setTitle(""); setPortion(""); setSource("text"); setUncertainty(""); id.current = null; setMessage("Local draft discarded. Saved notes were not removed."); setError(null);
+              pendingSave.current = null; setUnconfirmed(false); setTitle(""); setPortion(""); setSource("text"); setUncertainty(""); id.current = null; editRevision.current = undefined; setMessage("Local draft discarded. Saved notes were not removed."); setError(null);
             })();
           }} /></View>
         {message ? <Callout tone="info">{message}</Callout> : null}{error ? <Callout tone="error">{error}</Callout> : null}
@@ -267,7 +271,7 @@ function AccountTodayScreen() {
     </Panel>
     {client ? <FoodNoteCapture key={userId} client={client} disabled={busy || unconfirmed || deleteUnconfirmed || loading || !loaded} onBusy={setCaptureBusy} confirmReplace={confirmReplace} onDraft={(draft, kind) => {
       if (pendingSave.current || pendingDelete.current || action.current) return;
-      setTitle(draft.title); setPortion(draft.portion ?? ""); setSource(kind); setUncertainty(draft.uncertainty); id.current = null;
+      setTitle(draft.title); setPortion(draft.portion ?? ""); setSource(kind); setUncertainty(draft.uncertainty); id.current = null; editRevision.current = undefined;
       setMessage("Draft ready. Check the name and portion before saving. Nothing has been saved.");
     }} /> : null}
     <Panel><PanelHeader title="Your recent notes for this day" hint="Up to 30 notes for the selected date. They record what you told us, not what remains in your pantry." />
