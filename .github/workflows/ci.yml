@@ -67,7 +67,8 @@ jobs:
       - name: Food-note tenant recovery and partial migrations
         run: |
           node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-food-note-recovery.mjs
-          node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-food-note-migration.mjs
+            node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-food-note-migration.mjs
+            node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-template-recovery.mjs
 
   database:
     name: Database checks
