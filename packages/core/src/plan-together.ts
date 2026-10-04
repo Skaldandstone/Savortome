@@ -1,6 +1,7 @@
 import { flagsForRecipe, type DietaryProfile } from "./dietary.js";
 import { pantryAttention } from "./pantry-guidance.js";
 import type { PantryEntry, PantryMatch } from "./pantry.js";
+import { canonicalize } from "./units.js";
 
 export interface PlanTogetherCandidate extends PantryMatch {
   title: string;
@@ -27,17 +28,52 @@ export interface PlanTogetherOptions {
   strictDietary?: boolean;
   maxMinutes?: 10 | 20 | 30 | 60;
   pantryOnly?: boolean;
+  /** Temporary names, normalized by the input parser before ranking; never saved as dietary settings. */
+  useIngredient?: string;
+  skipIngredient?: string;
+}
+
+export function planIngredientName(value: string | null | undefined): string | undefined {
+  if (value == null || value.trim() === "") return undefined;
+  if (value.length > 100 || /[\u0000-\u001f\u007f,;]|\bor\b/i.test(value)) throw new Error("Enter one ingredient name, up to 100 characters, without alternatives.");
+  const name = canonicalize(value.trim());
+  if (!name) throw new Error("Enter an ingredient name.");
+  return name;
 }
 
 export function parsePlanTogetherOptions(params: URLSearchParams): PlanTogetherOptions {
-  if (["maxMinutes", "pantryOnly", "strictDietary"].some(key => params.getAll(key).length > 1)) throw new Error("Choose one value for each meal-planning limit.");
+  if (["maxMinutes", "pantryOnly", "strictDietary", "useIngredient", "skipIngredient"].some(key => params.getAll(key).length > 1)) throw new Error("Choose one value for each meal-planning limit.");
   const rawTime = params.get("maxMinutes");
   const rawPantry = params.get("pantryOnly");
   const rawDietary = params.get("strictDietary");
   if (rawTime !== null && !["10", "20", "30", "60"].includes(rawTime)) throw new Error("Choose a supported meal-planning time limit.");
   if (rawPantry !== null && rawPantry !== "true" && rawPantry !== "false") throw new Error("Choose whether to use pantry matches only.");
   if (rawDietary !== null && rawDietary !== "true" && rawDietary !== "false") throw new Error("Choose a valid dietary matching setting.");
-  return { strictDietary: rawDietary === "true", pantryOnly: rawPantry === "true", maxMinutes: rawTime === null ? undefined : Number(rawTime) as PlanTogetherOptions["maxMinutes"] };
+  return { strictDietary: rawDietary === "true", pantryOnly: rawPantry === "true", maxMinutes: rawTime === null ? undefined : Number(rawTime) as PlanTogetherOptions["maxMinutes"], useIngredient: planIngredientName(params.get("useIngredient")), skipIngredient: planIngredientName(params.get("skipIngredient")) };
+}
+
+/** JSON callers keep temporary food choices out of URLs and access-log queries. */
+export function parsePlanTogetherInput(value: unknown): PlanTogetherOptions {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Review your meal-planning choices.");
+  const input = value as Record<string, unknown>;
+  const params = new URLSearchParams();
+  for (const key of ["strictDietary", "pantryOnly"] as const) {
+    if (input[key] !== undefined) {
+      if (typeof input[key] !== "boolean") throw new Error("Choose a valid matching setting.");
+      params.set(key, String(input[key]));
+    }
+  }
+  if (input.maxMinutes !== undefined) {
+    if (typeof input.maxMinutes !== "number") throw new Error("Choose a supported time limit.");
+    params.set("maxMinutes", String(input.maxMinutes));
+  }
+  for (const key of ["useIngredient", "skipIngredient"] as const) {
+    if (input[key] !== undefined) {
+      if (typeof input[key] !== "string") throw new Error("Enter one ingredient name.");
+      params.set(key, input[key]);
+    }
+  }
+  return parsePlanTogetherOptions(params);
 }
 
 /**
@@ -55,8 +91,17 @@ export function suggestPlanTogether(
 ): PlanTogetherIdea[] {
   const pantryByName = new Map(pantry.map(entry => [entry.canonicalItem, entry]));
   const taggedPreferences = new Set<string>(profile.dietaryTags);
+  // The boundary parser already canonicalizes names. Do not singularize an
+  // already-normalized name a second time (normalization is not idempotent for
+  // every possible user-supplied word).
+  const useIngredient = options.useIngredient;
+  const skipIngredient = options.skipIngredient;
 
   return candidates
+    // A conflicting use/skip request deliberately returns no choices. Do not
+    // weaken either preference or treat a name exclusion as allergy safety.
+    .filter(candidate => !useIngredient || candidate.ingredients.includes(useIngredient))
+    .filter(candidate => !skipIngredient || !candidate.ingredients.includes(skipIngredient))
     // Search normally assumes staples. A no-shopping request cannot rely on
     // that assumption: require every indexed name, even optional ingredients.
     // An empty ingredient index is not evidence that nothing is needed.

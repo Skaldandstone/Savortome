@@ -4,7 +4,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { useAuth } from "@clerk/expo";
 import * as Crypto from "expo-crypto";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { foodLogDate, localFoodDate, parseFoodLogInput, type FoodLogInput, type FoodLogEntry, type FoodLogSource, type PlanTogetherIdea, type PlanTogetherOptions } from "@seconds/core/format";
+import { foodLogDate, localFoodDate, parseFoodLogInput, planIngredientName, type FoodLogInput, type FoodLogEntry, type FoodLogSource, type PlanTogetherIdea, type PlanTogetherOptions } from "@seconds/core/format";
 import { createAccountClient } from "@/lib/client";
 import { Button, Callout, Field, Panel, PanelHeader, space, type as typeScale, usePalette } from "@/ui";
 import { FoodNoteCapture } from "./FoodNoteCapture";
@@ -45,6 +45,9 @@ function AccountTodayScreen() {
   const [ideasBusy, setIdeasBusy] = useState(false); const [ideasError, setIdeasError] = useState<string | null>(null);
   const [maxMinutes, setMaxMinutes] = useState<PlanTogetherOptions["maxMinutes"]>();
   const [pantryOnly, setPantryOnly] = useState(false);
+  const [useIngredient, setUseIngredient] = useState("");
+  const [skipIngredient, setSkipIngredient] = useState("");
+  const [ingredientSummary, setIngredientSummary] = useState("");
   const ideasAction = useRef(false);
   const [shoppingPending, setShoppingPending] = useState<Record<string, boolean>>({});
   const hasShoppingPending = Object.values(shoppingPending).some(Boolean);
@@ -143,9 +146,16 @@ function AccountTodayScreen() {
   };
   const showIdeas = async () => {
     if (!client || ideasAction.current || hasShoppingPending) return;
+    const ingredientOptions = { useIngredient: useIngredient.trim() || undefined, skipIngredient: skipIngredient.trim() || undefined };
+    let normalizedIngredients;
+    try { normalizedIngredients = { useIngredient: planIngredientName(useIngredient), skipIngredient: planIngredientName(skipIngredient) }; }
+    catch { setIdeas(null); setIdeasError("Enter one ingredient name per field, up to 100 characters, without commas, semicolons or alternatives."); return; }
     ideasAction.current = true; setIdeas(null);
     const version = generation.current; setIdeasBusy(true); setIdeasError(null);
-    try { const result = await client.planTogether({ strictDietary: true, maxMinutes, pantryOnly }); if (current(version)) setIdeas(result.ideas); }
+    try { const result = await client.planTogether({ strictDietary: true, maxMinutes, pantryOnly, ...ingredientOptions }); if (current(version)) {
+      setIdeas(result.ideas);
+      setIngredientSummary(`Ingredient names used for matching: use ${normalizedIngredients.useIngredient ?? "any"}; skip ${normalizedIngredients.skipIngredient ?? "none"}.`);
+    } }
     catch { if (current(version)) setIdeasError("Meal ideas or saved dietary settings could not load. Try again or use Feed me gently with temporary choices."); }
     finally { if (current(version)) { ideasAction.current = false; setIdeasBusy(false); } }
   };
@@ -164,10 +174,16 @@ function AccountTodayScreen() {
       <View style={styles.row}><Button label="No time limit" variant="toggle" selected={maxMinutes === undefined} disabled={ideasBusy || hasShoppingPending} onPress={() => { setMaxMinutes(undefined); setIdeas(null); setIdeasError(null); }} />
         {([10, 20, 30, 60] as const).map(minutes => <Button key={minutes} label={`Up to ${minutes} min`} variant="toggle" selected={maxMinutes === minutes} disabled={ideasBusy || hasShoppingPending} onPress={() => { setMaxMinutes(minutes); setIdeas(null); setIdeasError(null); }} />)}</View>
       <Button label="No shopping today: match pantry names only" variant="toggle" selected={pantryOnly} disabled={ideasBusy || hasShoppingPending} onPress={() => { setPantryOnly(value => !value); setIdeas(null); setIdeasError(null); }} />
+      <Text style={textStyle}>Use this ingredient (optional)</Text>
+      <Field accessibilityLabel="Use this ingredient for meal ideas" value={useIngredient} maxLength={100} placeholder="For example, bananas" editable={!ideasBusy && !hasShoppingPending} onChangeText={value => { setUseIngredient(value); setIdeas(null); setIdeasError(null); }} />
+      <Text style={textStyle}>Skip this ingredient today (optional)</Text>
+      <Field accessibilityLabel="Skip this ingredient for today's meal ideas" value={skipIngredient} maxLength={100} placeholder="For example, mushrooms" editable={!ideasBusy && !hasShoppingPending} onChangeText={value => { setSkipIngredient(value); setIdeas(null); setIdeasError(null); }} />
+      <Text style={textStyle}>These ingredient choices apply only to this search. They do not change your pantry or dietary profile. Matching checks whether a recipe lists a normalized ingredient name, including optional ingredients. It does not confirm amounts, preparation or hidden ingredients; an optional ingredient may not be used. Skipping a name does not verify allergy safety; use your dietary profile for allergens and check labels.</Text>
       <Text style={textStyle}>Time uses the saved total; check the steps for waiting time. Unknown times are excluded with a limit. No-shopping matches check every listed ingredient, including staples and optional items. Names do not confirm quantities or preparation. We check up to 40 saved recipe candidates, not necessarily your whole library.</Text>
       <View style={styles.row}><Button label={ideasBusy ? "Finding ideas…" : "Show me some ideas"} disabled={ideasBusy || hasShoppingPending} onPress={() => void showIdeas()} />
         <Button label="Not now" variant="ghost" disabled={hasShoppingPending} onPress={() => setInvitation(false)} /><Button label="Feed me gently" variant="ghost" onPress={() => router.push("/care")} /></View>
       {ideasError ? <Callout tone="error">{ideasError}</Callout> : null}
+      {ideas !== null ? <Text accessibilityLiveRegion="polite" style={textStyle}>{ingredientSummary}</Text> : null}
       {ideas?.length === 0 ? <Text style={textStyle}>No suitable saved recipe matched. Browse starter recipes or choose something simple. Restrictions weren’t loosened.</Text> : null}
       {ideas?.map(idea => <View key={idea.recipeId} style={[styles.note, { borderColor: c.border }]}>
         <Text accessibilityRole="header" style={{ color: c.text, fontSize: typeScale.title }}>{idea.title}</Text>

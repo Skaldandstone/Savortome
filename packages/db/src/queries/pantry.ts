@@ -160,6 +160,8 @@ export interface PantrySearchFilters {
   /** Canonical items on hand. Empty means "use my saved pantry". */
   ingredients?: string[];
   excludeIngredients?: string[];
+  /** Every requested canonical name must occur in the recipe's full index. */
+  requireIngredients?: string[];
   /** Recipe must carry at least one of these tags. */
   tags?: string[];
   maxMinutes?: number | null;
@@ -207,6 +209,7 @@ export async function searchByPantry(
   const {
     ingredients = [],
     excludeIngredients = [],
+    requireIngredients = [],
     tags = [],
     maxMinutes = null,
     course = null,
@@ -259,6 +262,17 @@ export async function searchByPantry(
     left join needed n on n.recipe_id = r.id
     left join ${schema.ratings} rt on rt.recipe_id = r.id and rt.user_id = ${userId}
     where r.owner_id = ${userId}
+      ${
+        requireIngredients.length > 0
+          ? sql`and not exists (
+              select 1 from unnest(${sql.param(requireIngredients)}::text[]) requested(item)
+              where not exists (
+                select 1 from ${schema.recipeIngredients} x
+                where x.recipe_id = r.id and x.canonical_item = requested.item
+              )
+            )`
+          : sql``
+      }
       ${
         excludeIngredients.length > 0
           ? sql`and not exists (

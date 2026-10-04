@@ -560,12 +560,7 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
     plan: (week) => sendTimed<PlanResponse>(`/api/plan${week ? `?week=${encodeURIComponent(week)}` : ""}`, {}, 12_000),
 
     planTogether: (options) => {
-      const query = new URLSearchParams();
-      if (options?.strictDietary) query.set("strictDietary", "true");
-      if (options?.pantryOnly) query.set("pantryOnly", "true");
-      if (options?.maxMinutes !== undefined) query.set("maxMinutes", String(options.maxMinutes));
-      const encoded = query.toString();
-      return sendTimed<{ ideas: PlanTogetherIdea[]; pantryCount: number }>(`/api/plan/together${encoded ? `?${encoded}` : ""}`, {}, 12_000);
+      return sendTimed<{ ideas: PlanTogetherIdea[]; pantryCount: number }>("/api/plan/together", { method: "POST", body: body(options ?? {}) }, 12_000);
     },
 
     reviewedPlanAdd: (input) => sendTimed<PlanResponse>("/api/plan/meal", { method: "POST", body: body(input) }, 12_000),
