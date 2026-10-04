@@ -155,6 +155,13 @@
       "when": 1791137645486,
       "tag": "0021_food-note-identities",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1791155582626,
+      "tag": "0022_meal-template-identities",
+      "breakpoints": true
     }
   ]
 }

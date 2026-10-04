@@ -1,4 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
+import { randomUUID } from "node:crypto";
 import {
   canView,
   isUuid,
@@ -43,7 +44,17 @@ export async function createTemplate(
   try { input = parseMealTemplateCreate({ id: requestId, name, items }); }
   catch (cause) { throw new SaveTemplateError(cause instanceof Error ? cause.message : "Review the meal before saving."); }
   const recipeIds = [...new Set(input.items.map(i => i.recipeId))];
+  const identityId = input.id ?? randomUUID();
   return database.transaction(async tx => {
+    // Create/delete lock the same content-free identity before the grouping.
+    const [claimed] = await tx.insert(schema.mealTemplateReferences)
+      .values({ id: identityId, ownerId }).onConflictDoNothing().returning({ id: schema.mealTemplateReferences.id });
+    const [identity] = await tx.select().from(schema.mealTemplateReferences)
+      .where(eq(schema.mealTemplateReferences.id, identityId)).for("update");
+    if (!identity || identity.ownerId !== ownerId || identity.deleted) {
+      throw new SaveTemplateError("That meal request cannot be reused. Check your saved meals before making a new request.");
+    }
+
     // Lock the owned recipe rows through the template/item inserts so deletion
     // or an ownership change cannot race the check. Share locks allow reads.
     const owned = await tx
@@ -56,20 +67,18 @@ export async function createTemplate(
       throw new SaveTemplateError("A template can only be built from your own recipes.");
     }
 
-    const [created] = await tx
-      .insert(schema.mealTemplates)
-      .values({ ...(input.id ? { id: input.id } : {}), ownerId, name: input.name })
-      .onConflictDoNothing()
-      .returning({ id: schema.mealTemplates.id });
-    if (!created) {
-      if (!input.id) throw new SaveTemplateError("The meal could not be confirmed.");
-      const existing = await tx.query.mealTemplates.findFirst({ where: and(eq(schema.mealTemplates.id, input.id), eq(schema.mealTemplates.ownerId, ownerId)) });
-      const existingItems = existing ? await tx.query.mealTemplateItems.findMany({ where: eq(schema.mealTemplateItems.templateId, input.id) }) : [];
-      // Conflict waits for the earlier transaction. Only an exact same-owner
-      // name/role/recipe request can succeed as a retry; disclose no other row.
+    const confirmExisting = async () => {
+      const existing = await tx.query.mealTemplates.findFirst({ where: and(eq(schema.mealTemplates.id, identityId), eq(schema.mealTemplates.ownerId, ownerId)) });
+      const existingItems = existing ? await tx.query.mealTemplateItems.findMany({ where: eq(schema.mealTemplateItems.templateId, identityId) }) : [];
       if (!existing || existing.name !== input.name || existingItems.length !== input.items.length || !input.items.every(item => existingItems.some(saved => saved.role === item.role && saved.recipeId === item.recipeId))) throw new SaveTemplateError("That meal request cannot be reused. Check your saved meals before making a new request.");
       return existing.id;
-    }
+    };
+    // A retained identity without its grouping is not permission to recreate it.
+    if (!claimed) return confirmExisting();
+    const [created] = await tx.insert(schema.mealTemplates)
+      .values({ id: identityId, ownerId, name: input.name })
+      .onConflictDoNothing().returning({ id: schema.mealTemplates.id });
+    if (!created) return confirmExisting();
     const templateId = created.id;
 
     await tx
@@ -145,11 +154,17 @@ export async function deleteTemplate(
   templateId: string,
 ): Promise<boolean> {
   if (!isUuid(templateId)) return false;
-  const [deleted] = await database
-    .delete(schema.mealTemplates)
-    .where(and(eq(schema.mealTemplates.id, templateId), eq(schema.mealTemplates.ownerId, ownerId)))
-    .returning({ id: schema.mealTemplates.id });
-  return Boolean(deleted);
+  return database.transaction(async tx => {
+    const [identity] = await tx.select().from(schema.mealTemplateReferences)
+      .where(and(eq(schema.mealTemplateReferences.id, templateId), eq(schema.mealTemplateReferences.ownerId, ownerId))).for("update");
+    if (!identity || identity.deleted) return false;
+    const [deleted] = await tx.delete(schema.mealTemplates)
+      .where(and(eq(schema.mealTemplates.id, templateId), eq(schema.mealTemplates.ownerId, ownerId)))
+      .returning({ id: schema.mealTemplates.id });
+    if (deleted) await tx.update(schema.mealTemplateReferences).set({ deleted: true })
+      .where(and(eq(schema.mealTemplateReferences.id, templateId), eq(schema.mealTemplateReferences.ownerId, ownerId)));
+    return Boolean(deleted);
+  });
 }
 
 /** Rename only an owned meal; lock the row through comparison and update. */

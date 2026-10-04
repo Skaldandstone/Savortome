@@ -722,6 +722,13 @@ export const mealTemplates = pgTable("meal_templates", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/** Content-free retry identity, retained after grouping deletion but not account deletion. */
+export const mealTemplateReferences = pgTable("meal_template_references", {
+  id: uuid("id").primaryKey(),
+  ownerId: uuid("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  deleted: boolean("deleted").notNull().default(false),
+});
+
 export const templateRole = pgEnum("template_role", ["main", "side", "drink", "dessert"]);
 
 /**
