@@ -24,7 +24,7 @@ export function CombinationPlanReview({ meal, client, disabled, onPending }: {
     let exact: ReviewedTemplatePlanInput;
     try { exact = pending ?? parseReviewedTemplatePlan({ templateId: meal.id, recipeIds: dishes.map(dish => dish.recipeId), date, slot }); }
     catch { setMessage("Review the dishes, a valid date and breakfast, lunch or dinner first."); return; }
-    const version = visit.current; action.current = true; setBusy(true); pendingRef.current = exact; setPending(exact); onPending(true); setMessage("");
+    const version = ++visit.current; action.current = true; setBusy(true); pendingRef.current = exact; setPending(exact); onPending(true); setMessage("");
     try {
       const result = await client.reviewedTemplatePlanAdd(exact);
       if (!reviewedTemplatePlanMatches(exact, result.confirmed)) throw new Error("Unconfirmed");
@@ -47,8 +47,9 @@ export function CombinationPlanReview({ meal, client, disabled, onPending }: {
       <Button label={busy ? "Planning combination…" : pending ? "Retry this exact combination" : "Add reviewed dishes to my plan"} disabled={busy || done || (!pending && (disabled || !eligible || !date || !slot))} onPress={() => void save()} />
       <Button label="Check this week in my plan" variant="ghost" onPress={openPlan} />
       {pending ? <><Text style={text}>Unconfirmed: {pending.recipeIds.length} distinct dishes, {pending.date}, {MEAL_SLOT_LABEL[pending.slot]}. Other saved-meal actions are paused. Leaving Today may lose local retry state while the earlier request still completes.</Text><Button label="Discard local planning request" variant="ghost" disabled={busy} onPress={() => {
+        if (!focused.current || action.current || !pendingRef.current) return;
         const version = visit.current;
-        Alert.alert("Discard local request?", "The dishes may already be planned. Nothing will be removed. Check your plan before choosing another date or slot.", [{ text: "Keep request", style: "cancel" }, { text: "Discard locally", onPress: () => { if (current(version) && !action.current) { pendingRef.current = null; setPending(null); onPending(false); setMessage("Local request discarded. No meal was removed. Review your plan before choosing a new date or slot."); } } }]);
+        Alert.alert("Discard local request?", "The dishes may already be planned. Nothing will be removed. Check your plan before choosing another date or slot.", [{ text: "Keep request", style: "cancel" }, { text: "Discard locally", onPress: () => { if (current(version) && !action.current && pendingRef.current) { pendingRef.current = null; setPending(null); onPending(false); setMessage("Local request discarded. No meal was removed. Review your plan before choosing a new date or slot."); } } }]);
       }} /></> : null}
     </> : null}
     {message ? <Callout tone={done ? "info" : "warn"}>{message}</Callout> : null}
