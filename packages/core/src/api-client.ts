@@ -493,13 +493,13 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
       return requestId ? sendTimed<{ id: string }>("/api/templates", request, 12_000) : send<{ id: string }>("/api/templates", request);
     },
 
-    deleteTemplate: (id) => send<{ ok: boolean }>(`/api/templates/${id}`, { method: "DELETE" }),
+    deleteTemplate: (id) => sendTimed<{ ok: boolean }>(`/api/templates/${id}`, { method: "DELETE" }, 12_000),
 
     setTemplateVisibility: (id, visibility) =>
-      send<{ visibility: Visibility | null }>(`/api/templates/${id}/share`, {
+      sendTimed<{ visibility: Visibility | null }>(`/api/templates/${id}/share`, {
         method: "PUT",
         body: body({ visibility }),
-      }),
+      }, 12_000),
 
     saveSharedTemplate: (id) => send<{ id: string }>(`/api/templates/${id}/save`, { method: "POST" }),
 
