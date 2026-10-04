@@ -8,10 +8,15 @@ export function SignOutButton() {
   const { signOut, userId, sessionId } = useAuth();
   const identity = useRef({ userId, sessionId }); identity.current = { userId, sessionId };
   const mounted = useRef(true); const action = useRef(false); const prompt = useRef(false);
+  const warningTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     mounted.current = true; action.current = false; prompt.current = false; setBusy(false); setError(null);
-    return () => { mounted.current = false; };
+    return () => {
+      mounted.current = false;
+      if (warningTimer.current !== null) clearTimeout(warningTimer.current);
+      warningTimer.current = null;
+    };
   }, [userId, sessionId]);
   const begin = () => {
     if (action.current || !userId || !sessionId) return;
@@ -27,16 +32,27 @@ export function SignOutButton() {
       if (!prompt.current || !current()) return;
       prompt.current = false; setBusy(true);
       let clearing = discard;
+      let timer: ReturnType<typeof setTimeout> | null = null;
       try {
         if (discard) await createNativeFoodNoteRecovery(owner, session).discard(true);
         if (!current()) return; // Never sign a replacement account/session out.
         clearing = false;
-        await signOut();
+        // This warns about a stalled SDK call; it cannot cancel it or permit a duplicate.
+        timer = setTimeout(() => {
+          if (current()) setError("Sign-out is still pending and may still finish. Another sign-out request will not be started while this one is pending. A confirmed device discard is not undone.");
+        }, 12_000);
+        warningTimer.current = timer;
+        await signOut({ sessionId: session });
+        if (current()) setError(null);
       } catch {
         if (current()) setError(clearing
           ? "Device-copy discard was not confirmed and may still finish. Sign-out was not started. Try again, or choose sign out without clearing. Saved account notes were not removed."
           : "Sign-out was not confirmed. Check your account before trying again. A confirmed device discard is not undone.");
-      } finally { if (current()) { action.current = false; setBusy(false); } }
+      } finally {
+        if (timer !== null) clearTimeout(timer);
+        if (warningTimer.current === timer) warningTimer.current = null;
+        if (current()) { action.current = false; setBusy(false); }
+      }
     };
     Alert.alert("Sign out of Savortome?", "Optional food-note device copies stay on this device unless discarded. Discard affects only this account in the current app environment, not saved account notes or other devices. Earlier account/local operations are not cancelled and may still finish. Check device recovery in Today when you return.", [
       { text: "Cancel", style: "cancel", onPress: cancel },
