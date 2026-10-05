@@ -73,6 +73,7 @@ jobs:
           node scripts/check-pantry-planning-recovery.mjs
           node scripts/check-meal-review-recovery.mjs
           node scripts/check-native-recipe-shopping.mjs
+          node scripts/check-web-recipe-shopping.mjs
           node scripts/check-clerk-webhook-recovery.mjs
           node scripts/check-photo-cleanup-adapter.mjs
           node scripts/check-photo-cleanup-operator.mjs
