@@ -207,12 +207,27 @@ function AccountTodayScreen() {
     finally { if (current(version)) { action.current = false; setLocalBusy(false); } }
   };
   const restoreDevice = async () => {
-    if (action.current || !localRead || localRead.status !== "review") return;
-    const version = generation.current; action.current = true;
+    if (!localStore || action.current || !localRead || localRead.status !== "review") return;
+    const version = generation.current; action.current = true; setLocalBusy(true);
     try {
       if ((title.trim() || portion.trim()) && !await ask("Replace the current on-screen draft with the kept copy? No account save or removal will run.", "Restore kept copy")) return;
       if (!current(version)) return;
-      const recovery = localRead.recovery;
+      const offered = localRead.recovery;
+      // A displayed offer is not a durable authorization to restore old data.
+      setLocalRead(null); setLocalBlocked(true); setLocalError(null);
+      const fresh = await localStore.read(true);
+      if (!current(version)) return;
+      if (fresh.status !== "review") {
+        setLocalRead(fresh); setLocalBlocked(fresh.status !== "empty");
+        if (fresh.status === "empty") setMessage("The kept device copy is no longer available. Your on-screen draft was not changed; nothing was retried.");
+        return;
+      }
+      if (JSON.stringify(fresh.recovery) !== JSON.stringify(offered)) {
+        setLocalRead(fresh);
+        setLocalError("The device copy changed since you checked it. Review the current copy before restoring; your on-screen draft was not changed.");
+        return;
+      }
+      const recovery = fresh.recovery;
       if (recovery.kind === "delete-unconfirmed") {
         pendingDelete.current = recovery.id; setDeleteUnconfirmed(true);
         setMessage("Restored an unconfirmed removal warning. Nothing was retried; review and reload notes before another change.");
@@ -226,7 +241,9 @@ function AccountTodayScreen() {
       }
       setLocalRead(null); setLocalBlocked(false); setLoaded(false);
       await load();
-    } finally { if (current(version)) action.current = false; }
+    } catch {
+      if (current(version)) { setLocalRead(null); setLocalBlocked(true); setLocalError("The kept device copy could not be checked again. Your draft was not changed. Check device recovery before restoring; nothing was retried."); }
+    } finally { if (current(version)) { action.current = false; setLocalBusy(false); } }
   };
   const discardDevice = async () => {
     if (!localStore || action.current || busy || captureBusy) return;
