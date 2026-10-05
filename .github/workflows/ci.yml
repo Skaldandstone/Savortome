@@ -56,6 +56,7 @@ jobs:
       - name: Food capture and recovery lifecycle
         run: |
           node scripts/check-food-capture-lifecycle.mjs
+          node scripts/check-food-capture-api.mjs
           node scripts/check-today-recovery.mjs
           node scripts/check-food-note-transport.mjs
           node scripts/check-food-note-local-recovery.mjs
