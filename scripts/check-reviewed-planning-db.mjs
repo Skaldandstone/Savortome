@@ -84,6 +84,21 @@ test('reviewed planning/shopping real-query retry and owner boundaries',async t=
    const [one,two]=await Promise.all([addItemsToList(db,C,[{canonicalItem:'synthetic rice'}]),addItemsToList(db,C,[{canonicalItem:'synthetic beans'}])]);
    const lists=await pg.query('SELECT id FROM shopping_lists WHERE user_id=$1',[C]);assert.equal(lists.rows.length,1);assert.equal(one.id,two.id);const saved=await getShoppingList(db,C,one.id);assert.deepEqual(saved.items.map(x=>x.canonicalItem).sort(),['synthetic beans','synthetic rice']);
   });
+  await t.test('failed recipe insertion restores saved rows and first-list creation, then permits retry',async()=>{
+   const H='00000000-0000-4000-8000-000000000018',I='00000000-0000-4000-8000-000000000019',RL='00000000-0000-4000-8000-000000000020',RM='00000000-0000-4000-8000-000000000021';await pg.query('INSERT INTO users VALUES ($1),($2)',[H,I]);
+   const ingredient={raw:'synthetic rejected item',quantity:2,quantityMax:null,unit:'count',item:'synthetic rejected item',canonicalItem:'synthetic rejected item',notes:null,optional:false,group:null};
+   await pg.query('INSERT INTO recipes(id,owner_id,title,ingredients) VALUES ($1,$2,$3,$4),($5,$6,$3,$4)',[RL,H,'Synthetic insertion fault',JSON.stringify([ingredient]),RM,I]);
+   const original=await addItemsToList(db,H,[{canonicalItem:'banana'}]);await pg.query('UPDATE shopping_list_items SET quantity=6,unit=$1,checked=true,recipe_ids=$2 WHERE list_id=$3',['count',[RL],original.id]);
+   const before=(await pg.query('SELECT * FROM shopping_list_items ORDER BY id')).rows;
+   await pg.exec(`CREATE FUNCTION reject_synthetic_shopping_insert() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN IF NEW.canonical_item = 'synthetic rejected item' THEN RAISE EXCEPTION 'synthetic insertion fault'; END IF; RETURN NEW; END $$; CREATE TRIGGER synthetic_shopping_fault BEFORE INSERT ON shopping_list_items FOR EACH ROW EXECUTE FUNCTION reject_synthetic_shopping_insert();`);
+   try{
+    const failed=error=>/synthetic insertion fault/.test(error.cause?.message??error.message);
+    await assert.rejects(addRecipesToList(db,H,[RL],{usePantry:false}),failed);assert.deepEqual((await pg.query('SELECT * FROM shopping_list_items ORDER BY id')).rows,before);
+    await assert.rejects(addRecipesToList(db,I,[RM],{usePantry:false}),failed);assert.equal((await pg.query('SELECT id FROM shopping_lists WHERE user_id=$1',[I])).rows.length,0);assert.deepEqual((await pg.query('SELECT * FROM shopping_list_items ORDER BY id')).rows,before);
+   }finally{await pg.exec('DROP TRIGGER synthetic_shopping_fault ON shopping_list_items; DROP FUNCTION reject_synthetic_shopping_insert();');}
+   const retry=await addRecipesToList(db,H,[RL],{usePantry:false});assert.equal(retry.id,original.id);const banana=retry.items.find(x=>x.canonicalItem==='banana');assert.equal(banana.quantity,6);assert.equal(banana.checked,true);assert.deepEqual(banana.recipeIds,[RL]);assert.equal(retry.items.find(x=>x.canonicalItem==='synthetic rejected item').quantity,2);
+   const fresh=await addRecipesToList(db,I,[RM],{usePantry:false});assert.equal(fresh.items.length,1);assert.equal(fresh.items[0].quantity,2);
+  });
   await t.test('outer fault rolls back both calendar and shopping additions',async()=>{
    await assert.rejects(db.transaction(async tx=>{await addToPlan(tx,A,RA,'2026-10-06','lunch');await addItemsToList(tx,A,[{canonicalItem:'synthetic oats'}]);throw Error('synthetic fault after both writes');}),/synthetic fault/);assert.equal((await planForRange(db,A,'2026-10-05','2026-10-11')).length,1);assert.deepEqual((await getShoppingList(db,A,list.id)).items.map(x=>x.canonicalItem),['banana']);
   });
