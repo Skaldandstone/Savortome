@@ -118,3 +118,40 @@ test('native reviews: old mount read cannot replace refreshed reviews or report 
 test('native reviews: stale refresh cannot undo confirmed acceptance or restore an old review',async()=>{
  const f=fixture();f.render();await flush();const stale=deferred();f.state.respond=()=>stale.promise;const refresh=f.render().refreshReviews();f.state.respond=async()=>({pantry:[{canonicalItem:'confirmed bananas'}],intakes:[]});assert.equal(await f.render().resolveIntake('original-review','accept',['original-line']),true);stale.resolve([{id:'old-review'}]);assert.equal(await refresh,false);assert.equal(f.render().items[0].canonicalItem,'confirmed bananas');assert.equal(f.render().intakes.length,0);
 });
+
+// Actual native screen composition; hooks and native UI are injected boundaries.
+const screenMocks={
+ react:`export const useState=initial=>[initial,()=>{}];`,
+ 'react/jsx-runtime':`export const jsx=(type,props,key)=>({type,props,key});export const jsxs=jsx;`,
+ '@clerk/expo':`export const useAuth=()=>state.auth;`,
+ 'expo-router':`export const useRouter=()=>({push:route=>state.routes.push(route)});`,
+ 'react-native':`export const Pressable='Pressable',ScrollView='ScrollView',Text='Text',View='View';export const StyleSheet={create:v=>v};`,
+ 'react-native-safe-area-context':`export const useSafeAreaInsets=()=>({top:0});`,
+ '@/ui':`export const Button='Button',Callout='Callout',Field='Field',Panel='Panel',PanelHeader='PanelHeader';export const radius={pill:9,sm:4},space={sm:4,md:8,lg:12,xxl:24},type={micro:12};export const usePalette=()=>({});`,
+ '@/modules/woodland/KitchenWelcome':`export const KitchenWelcome='KitchenWelcome';`,
+ './MatchList':`export const MatchList='MatchList',QueryReadback='QueryReadback';`,
+ './PantryChips':`export const PantryChips='PantryChips';`,
+ './PantryReviewQueue':`export const PantryReviewQueue='PantryReviewQueue';`,
+ './ReceiptCapture':`export const ReceiptCapture='ReceiptCapture';`,
+ './BarcodeCapture':`export const BarcodeCapture='BarcodeCapture';`,
+ './usePantry':`export const usePantry=()=>state.controller,usePantrySearch=()=>({response:null,searching:false,error:null,search:()=>{}});`,
+};
+const screenBundle=await build({bundle:true,write:false,format:'iife',globalName:'screen',jsx:'automatic',stdin:{resolveDir:process.cwd(),contents:"export {CookScreen} from './apps/mobile/modules/pantry/CookScreen.tsx';"},plugins:[{name:'native-cook-composition',setup(api){api.onResolve({filter:/.*/},args=>Object.hasOwn(screenMocks,args.path)?{path:args.path,namespace:'mock'}:undefined);api.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:screenMocks[args.path],loader:'js'}));}}]});
+function screenFixture(){
+ const state={auth:{userId:'account-a'},routes:[],reads:0,writes:0,controller:{items:[],intakes:[],loading:false,refreshingReviews:false,error:null,refreshReviews:async()=>{state.reads++;return true;},scanReceipt:async()=>{state.writes++;return false;},resolveIntake:async()=>{state.writes++;return false;},queuedIntake:()=>{state.writes++;}}};const ctx={state};runInNewContext(screenBundle.outputFiles[0].text,ctx);
+ const wrapper=()=>ctx.screen.CookScreen();const render=()=>{const shell=wrapper();return shell.type(shell.props);};return{state,render,wrapper};
+}
+const screenNodes=n=>Array.isArray(n)?n.flatMap(screenNodes):n&&typeof n==='object'?[n,...screenNodes(n.props?.children)]:[];
+const screenText=n=>Array.isArray(n)?n.map(screenText).join(' '):n&&typeof n==='object'?[n.props?.title,n.props?.hint,n.props?.label,screenText(n.props?.children)].filter(Boolean).join(' '):String(n??'');
+test('actual native CookScreen: explicit refresh invokes read handler without scan or acceptance',async()=>{
+ const f=screenFixture(),button=screenNodes(f.render()).find(n=>n.type==='Button'&&n.props.label==='Refresh grocery reviews');assert.ok(button);assert.equal(button.props.disabled,false);button.props.onPress();await flush();assert.equal(f.state.reads,1);assert.equal(f.state.writes,0);assert.match(screenText(f.render()),/empty review list does not prove/i);
+});
+test('actual native CookScreen: initial and refresh loading disable refresh, with pending label',()=>{
+ const f=screenFixture();for(const mode of ['initial','refresh']){f.state.controller.loading=mode==='initial';f.state.controller.refreshingReviews=mode==='refresh';const button=screenNodes(f.render()).find(n=>n.type==='Button'&&/grocery reviews/.test(n.props.label??''));assert.equal(button.props.disabled,true);if(mode==='refresh')assert.match(button.props.label,/Refreshing/);}
+});
+test('actual native CookScreen: uncertain failure remains visible and exact review/capture callbacks retained',()=>{
+ const f=screenFixture(),review={id:'original-review',digest:'original-digest',items:[{id:'original-line',quantity:6}]};f.state.controller.intakes=[review];f.state.controller.error='We could not confirm the latest grocery reviews.';const tree=f.render(),nodes=screenNodes(tree),queue=nodes.find(n=>n.type==='PantryReviewQueue');assert.equal(queue.props.intakes[0],review);assert.equal(queue.props.onResolve,f.state.controller.resolveIntake);assert.equal(nodes.find(n=>n.type==='ReceiptCapture').props.onScan,f.state.controller.scanReceipt);assert.match(screenText(tree),/could not confirm/);assert.equal(f.state.reads,0);assert.equal(f.state.writes,0);
+});
+test('actual native CookScreen: account replacement resets the private screen key',()=>{
+ const f=screenFixture();assert.equal(f.wrapper().key,'account-a');f.state.auth={userId:'account-b'};assert.equal(f.wrapper().key,'account-b');f.state.auth={userId:null};assert.equal(f.wrapper().key,'signed-out');
+});
