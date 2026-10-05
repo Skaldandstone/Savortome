@@ -80,7 +80,9 @@ export async function POST(request: NextRequest) {
           // failure here should 500 the whole webhook so Clerk retries,
           // rather than deleting the account and quietly losing the one
           // piece of information needed to stop the charges.
-          if (stripeConfigured() && user.stripeSubscriptionId) {
+          if (user.stripeSubscriptionId) {
+            // Configuration loss must not discard the only cancellation handle.
+            if (!stripeConfigured()) throw new Error("Billing cancellation is unavailable.");
             await cancelSubscription(user.stripeSubscriptionId);
           }
 
