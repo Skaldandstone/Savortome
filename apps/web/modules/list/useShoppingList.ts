@@ -1,10 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import type { CartHandoff, CartProvider, CartProviderId, ShoppingListView } from "@seconds/core/format";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { isUuid, type CartHandoff, type CartProvider, type CartProviderId, type ShoppingListView } from "@seconds/core/format";
 import { api } from "@/lib/client";
 import { actionFailure, type ActionFailure } from "@/lib/action-failure";
-import { listWithItemChecked } from "./list-state";
+
+function confirmedList(value: ShoppingListView): boolean {
+  return !!value && isUuid(value.id) && Array.isArray(value.items) &&
+    Number.isInteger(value.itemCount) && value.itemCount === value.items.length &&
+    Number.isInteger(value.checkedCount) && value.checkedCount === value.items.filter(item => item?.checked === true).length &&
+    value.items.every(item => !!item && isUuid(item.id) && typeof item.canonicalItem === "string" && !!item.canonicalItem.trim() &&
+      typeof item.displayName === "string" && typeof item.checked === "boolean" &&
+      (item.quantity === null || (typeof item.quantity === "number" && Number.isFinite(item.quantity))) &&
+      (item.unit === null || typeof item.unit === "string") && Array.isArray(item.recipeIds) && item.recipeIds.every(isUuid));
+}
 
 export interface ListController {
   list: ShoppingListView | null;
@@ -42,21 +51,30 @@ export function useShoppingList(): ListController {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<ActionFailure | null>(null);
   const [handoff, setHandoff] = useState<CartHandoff | null>(null);
+  const alive = useRef(true);
+  const action = useRef(false);
+  const reading = useRef(true);
+  const ready = useRef(false);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+
 
   useEffect(() => {
     let cancelled = false;
+    reading.current = true;
     setLoading(true);
     setListError(null);
     void (async () => {
       try {
         const nextList = await api.getList();
         if (cancelled) return;
+        if (!confirmedList(nextList)) throw new Error("Unconfirmed list");
+        ready.current = true;
         setList(nextList);
         setLoaded(true);
       } catch (err) {
-        if (!cancelled) setListError(actionFailure(err, "Couldn't load your list."));
+        if (!cancelled) { ready.current = false; setListError(actionFailure(err, "Couldn't load your list.")); }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) { reading.current = false; setLoading(false); }
       }
     })();
     return () => {
@@ -86,38 +104,39 @@ export function useShoppingList(): ListController {
   }, [providersAttempt]);
 
   const run = useCallback(async (write: () => Promise<ShoppingListView>): Promise<boolean> => {
+    if (!alive.current || action.current || reading.current || !ready.current) return false;
+    action.current = true;
     setBusy(true);
     setError(null);
+    setHandoff(null);
     try {
-      setList(await write());
+      const next = await write();
+      if (!alive.current) return false;
+      if (!confirmedList(next)) throw new Error("Unconfirmed list");
+      setList(next);
       return true;
     } catch (err) {
-      setError(actionFailure(err, "That didn't save."));
+      if (alive.current) setError({ ...actionFailure(err, ""), message: "This change is unconfirmed and may still finish. Review your list before trying again; nothing retries automatically." });
       return false;
     } finally {
-      setBusy(false);
+      action.current = false;
+      if (alive.current) setBusy(false);
     }
   }, []);
 
-  /** Ticking a box should feel instant; the server confirms after. */
-  const toggle = useCallback(
-    async (itemId: string, checked: boolean) => {
-      setList((current) => listWithItemChecked(current, itemId, checked));
-      const saved = await run(() => api.setListItemChecked(itemId, checked));
-      if (!saved) {
-        // The screen must not claim something reached the basket when the
-        // server rejected the write, especially after a session expires.
-        setList((current) => listWithItemChecked(current, itemId, !checked));
-      }
-    },
-    [run],
-  );
+  /** Keep the last confirmed checkbox and counts together until the response. */
+  const toggle = useCallback(async (itemId: string, checked: boolean) => {
+    await run(() => api.setListItemChecked(itemId, checked));
+  }, [run]);
 
   const sendToCart = useCallback(async (provider: CartProviderId) => {
+    if (!alive.current || action.current || reading.current || !ready.current) return;
+    action.current = true;
     setBusy(true);
     setError(null);
     try {
       const result = await api.sendToCart(provider);
+      if (!alive.current) return;
       setHandoff(result);
 
       // Every provider produces text, so the clipboard is always useful.
@@ -126,11 +145,12 @@ export function useShoppingList(): ListController {
           // Clipboard permission can be refused; the text is still on screen.
         });
       }
-      if (result.url) window.open(result.url, "_blank", "noopener,noreferrer");
+      if (alive.current && result.url) window.open(result.url, "_blank", "noopener,noreferrer");
     } catch (err) {
-      setError(actionFailure(err, "Couldn't send that list."));
+      if (alive.current) setError({ ...actionFailure(err, ""), message: "Couldn't confirm that list handoff. Check before trying again." });
     } finally {
-      setBusy(false);
+      action.current = false;
+      if (alive.current) setBusy(false);
     }
   }, []);
 
@@ -143,9 +163,13 @@ export function useShoppingList(): ListController {
     providersLoading,
     providersLoaded,
     providersError,
-    retryList: () => setListAttempt(current => current + 1),
-    retryProviders: () => setProvidersAttempt(current => current + 1),
-    busy,
+    retryList: () => {
+      if (!alive.current || action.current || reading.current) return;
+      reading.current = true;
+      setListAttempt(current => current + 1);
+    },
+    retryProviders: () => { if (alive.current) setProvidersAttempt(current => current + 1); },
+    busy: busy || loading || !ready.current,
     error,
     handoff,
     toggle,
