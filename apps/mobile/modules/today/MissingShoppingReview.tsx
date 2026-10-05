@@ -42,7 +42,7 @@ export function MissingShoppingReview({ missing, client, onPending }: { missing:
   return <View style={{ gap: space.sm }}><Button label={expanded ? "Hide missing-item review" : "Review missing items for my list"} variant="ghost" onPress={() => setExpanded(value => !value)} />
     {expanded ? <><Text style={text}>Choose names to add. Quantities are not inferred. Staples and optional ingredients are not included; check the full recipe too. This does not order groceries.</Text>
       {names.map(name => <Button key={name} label={name} variant="toggle" selected={selected.includes(name)} disabled={busy || pending !== null || done} onPress={() => setSelected(current => current.includes(name) ? current.filter(item => item !== name) : [...current, name])} />)}
-      <Button label={busy ? "Updating list…" : pending ? `Retry the same ${pending.length} names` : `Add ${selected.length} selected names to my list`} disabled={busy || done || !selected.length} onPress={() => void save()} />
+      <Button label={busy ? "Updating list…" : pending ? `Retry the same ${pending.length} names` : `Add ${selected.length} selected names to my list`} busy={busy} disabled={busy || done || !selected.length} onPress={() => void save()} />
       <Button label="Check my shopping list" variant="ghost" onPress={() => router.push("/(protected)/(tabs)/list")} />
       {pending ? <><Text style={text}>The result is unconfirmed. Changing ideas is paused to keep your selection. Leaving Today may lose this local retry state; check your list when you return.</Text><Button label="Discard local retry state" variant="ghost" disabled={busy} onPress={discardRetry} /></> : null}
       {message ? <Callout tone={done ? "info" : "error"}>{message}</Callout> : null}

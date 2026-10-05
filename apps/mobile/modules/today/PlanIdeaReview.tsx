@@ -46,7 +46,7 @@ export function PlanIdeaReview({ recipeId, title, client, onPending }: { recipeI
       <Text style={text}>Date (YYYY-MM-DD)</Text>
       <Field accessibilityLabel="Meal date, YYYY-MM-DD" value={date} maxLength={10} editable={!busy && !pending && !done} onChangeText={setDate} autoCapitalize="none" />
       <Text style={text}>Choose a meal slot</Text><View style={{ flexDirection: "row", flexWrap: "wrap", gap: space.sm }}>{MEAL_SLOTS.map(value => <Button key={value} label={MEAL_SLOT_LABEL[value]} variant="toggle" selected={slot === value} disabled={busy || pending !== null || done} onPress={() => setSlot(value)} />)}</View>
-      <Button label={busy ? "Adding meal…" : pending ? "Retry this exact meal" : "Add this meal to my plan"} disabled={busy || done || !date || !slot} onPress={() => void save()} />
+      <Button label={busy ? "Adding meal…" : pending ? "Retry this exact meal" : "Add this meal to my plan"} busy={busy} disabled={busy || done || !date || !slot} onPress={() => void save()} />
       <Button label="Check this week in my plan" variant="ghost" onPress={openPlan} />
       {pending ? <><Text style={text}>This selection is unconfirmed. Changing ideas is paused. Leaving Today may lose local retry state; check your plan when you return.</Text><Button label="Discard local retry state" variant="ghost" disabled={busy} onPress={discardRetry} /></> : null}
       {message ? <Callout tone={done ? "info" : "error"}>{message}</Callout> : null}
