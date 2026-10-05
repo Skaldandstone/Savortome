@@ -51,6 +51,14 @@ test('reviewed planning/shopping real-query retry and owner boundaries',async t=
    await pg.query('INSERT INTO recipes(id,owner_id,title,ingredients) VALUES ($1,$2,$3,$4)',[RD,D,'Synthetic carrots',JSON.stringify([ingredient])]);await pg.query('INSERT INTO pantry_items(user_id,canonical_item,display_name,quantity,unit) VALUES ($1,$2,$3,$4,$5)',[D,'carrot','Carrots',1,'count']);
    const added=await addRecipesToList(db,D,[RD]);assert.equal(added.items.length,1);assert.equal(added.items[0].quantity,2);assert.equal(added.items[0].unit,'count');assert.deepEqual(added.items[0].recipeIds,[RD]);
   });
+  await t.test('adding another recipe retains shared and untouched recipe explanations',async()=>{
+   const E='00000000-0000-4000-8000-000000000008',RE='00000000-0000-4000-8000-000000000009',RF='00000000-0000-4000-8000-000000000010';await pg.query('INSERT INTO users VALUES ($1)',[E]);
+   const ingredient=(item,quantity)=>({raw:item,quantity,quantityMax:null,unit:'count',item,canonicalItem:item,notes:null,optional:false,group:null});
+   await pg.query('INSERT INTO recipes(id,owner_id,title,ingredients) VALUES ($1,$2,$3,$4),($5,$2,$6,$7)',[RE,E,'Synthetic first',JSON.stringify([ingredient('carrot',3),ingredient('oat',2)]),RF,'Synthetic second',JSON.stringify([ingredient('carrot',1)])]);
+   const first=await addRecipesToList(db,E,[RE],{usePantry:false,skipStaples:false});await setItemChecked(db,E,first.items.find(x=>x.canonicalItem==='oat').id,true);
+   const second=await addRecipesToList(db,E,[RF],{usePantry:false,skipStaples:false});const carrot=second.items.find(x=>x.canonicalItem==='carrot'),oat=second.items.find(x=>x.canonicalItem==='oat');
+   assert.equal(carrot.quantity,4);assert.deepEqual(carrot.recipeIds.slice().sort(),[RE,RF].sort());assert.equal(oat.quantity,2);assert.deepEqual(oat.recipeIds,[RE]);assert.equal(oat.checked,true);assert.equal(second.items.some(x=>x.recipeIds.includes('__existing__')),false);
+  });
   await t.test('overlapping first shopping additions share one owner destination',async()=>{
    const C='00000000-0000-4000-8000-000000000005';await pg.query('INSERT INTO users VALUES ($1)',[C]);
    const [one,two]=await Promise.all([addItemsToList(db,C,[{canonicalItem:'synthetic rice'}]),addItemsToList(db,C,[{canonicalItem:'synthetic beans'}])]);

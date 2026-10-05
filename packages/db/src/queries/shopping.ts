@@ -218,6 +218,7 @@ export async function addRecipesToList(
 
   // Ticked-off items stay ticked when the list is rebuilt.
   const wasChecked = new Set(existing.filter((e) => e.checked).map((e) => e.canonicalItem));
+  const existingRecipeIds = new Map(existing.map((row) => [row.canonicalItem, row.recipeIds]));
 
   await database.transaction(async (tx) => {
     await tx
@@ -230,8 +231,14 @@ export async function addRecipesToList(
         displayName: line.displayName,
         quantity: line.quantity,
         unit: line.unit,
-        // The synthetic id used to fold existing items back in isn't a recipe.
-        recipeIds: line.recipeIds.filter((id) => id !== "__existing__"),
+        // Restore the saved explanations folded into the synthetic contribution.
+        // Keep each real recipe once; never persist the synthetic merge marker.
+        recipeIds: [...new Set([
+          ...line.recipeIds.filter((id) => id !== "__existing__"),
+          ...(line.recipeIds.includes("__existing__")
+            ? (existingRecipeIds.get(line.canonicalItem) ?? [])
+            : []),
+        ])],
         checked: wasChecked.has(line.canonicalItem),
       })),
     );
