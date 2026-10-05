@@ -207,7 +207,15 @@ export async function addRecipesToList(
   }
 
   const pantry = usePantry ? await listPantry(database, userId) : [];
-  const lines = buildShoppingList(byRecipe, { pantry, skipStaples, skipOptional });
+  // Saved quantities are already shopping shortfalls, not original recipe needs.
+  // Do not deduct the same pantry stock again or silently remove saved items
+  // after a pantry edit. Only newly introduced items receive a pantry deduction.
+  const savedItems = new Set(existing.map((row) => row.canonicalItem));
+  const lines = buildShoppingList(byRecipe, {
+    pantry: pantry.filter((entry) => !savedItems.has(entry.canonicalItem)),
+    skipStaples,
+    skipOptional,
+  });
 
   if (lines.length === 0) {
     await database

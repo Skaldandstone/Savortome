@@ -59,6 +59,15 @@ test('reviewed planning/shopping real-query retry and owner boundaries',async t=
    const second=await addRecipesToList(db,E,[RF],{usePantry:false,skipStaples:false});const carrot=second.items.find(x=>x.canonicalItem==='carrot'),oat=second.items.find(x=>x.canonicalItem==='oat');
    assert.equal(carrot.quantity,4);assert.deepEqual(carrot.recipeIds.slice().sort(),[RE,RF].sort());assert.equal(oat.quantity,2);assert.deepEqual(oat.recipeIds,[RE]);assert.equal(oat.checked,true);assert.equal(second.items.some(x=>x.recipeIds.includes('__existing__')),false);
   });
+  await t.test('later recipe additions do not subtract pantry twice from saved shortfalls',async()=>{
+   const F='00000000-0000-4000-8000-000000000011',RG='00000000-0000-4000-8000-000000000012',RH='00000000-0000-4000-8000-000000000013';await pg.query('INSERT INTO users VALUES ($1)',[F]);
+   const ingredient=(item,quantity)=>({raw:item,quantity,quantityMax:null,unit:'count',item,canonicalItem:item,notes:null,optional:false,group:null});
+   await pg.query('INSERT INTO recipes(id,owner_id,title,ingredients) VALUES ($1,$2,$3,$4),($5,$2,$6,$7)',[RG,F,'Synthetic first shortfall',JSON.stringify([ingredient('carrot',3),ingredient('oat',2)]),RH,'Synthetic next shortfall',JSON.stringify([ingredient('carrot',3),ingredient('banana',3)])]);
+   await pg.query('INSERT INTO pantry_items(user_id,canonical_item,display_name,quantity,unit) VALUES ($1,$2,$2,$3,$4),($1,$5,$5,$3,$4)',[F,'carrot',1,'count','banana']);
+   const first=await addRecipesToList(db,F,[RG],{skipStaples:false});assert.equal(first.items.find(x=>x.canonicalItem==='carrot').quantity,2);
+   await pg.query('INSERT INTO pantry_items(user_id,canonical_item,display_name,quantity,unit) VALUES ($1,$2,$2,$3,$4)',[F,'oat',100,'count']);
+   const second=await addRecipesToList(db,F,[RH],{skipStaples:false});assert.equal(second.items.find(x=>x.canonicalItem==='carrot').quantity,5);assert.equal(second.items.find(x=>x.canonicalItem==='banana').quantity,2);assert.equal(second.items.find(x=>x.canonicalItem==='oat').quantity,2);
+  });
   await t.test('overlapping first shopping additions share one owner destination',async()=>{
    const C='00000000-0000-4000-8000-000000000005';await pg.query('INSERT INTO users VALUES ($1)',[C]);
    const [one,two]=await Promise.all([addItemsToList(db,C,[{canonicalItem:'synthetic rice'}]),addItemsToList(db,C,[{canonicalItem:'synthetic beans'}])]);
