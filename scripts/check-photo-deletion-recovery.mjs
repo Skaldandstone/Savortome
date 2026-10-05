@@ -6,6 +6,7 @@ import {createRequire} from 'node:module';
 import {readFileSync} from 'node:fs';
 import {deleteRecipe,removeRecipePhoto} from '../packages/db/src/queries/recipes.ts';
 import {deleteUserById} from '../packages/db/src/queries/users.ts';
+import {processPendingPhotoDeletions} from '../packages/db/src/queries/photo-cleanup.ts';
 import * as schema from '../packages/db/src/schema.ts';
 const require=createRequire(new URL('../packages/db/package.json',import.meta.url));
 const {PGlite}=require('@electric-sql/pglite');
@@ -87,3 +88,42 @@ test('photo migration: snapshot adds only independent key/time ledger',()=>{
  const table=next.tables['public.pending_photo_deletions'];assert.deepEqual(Object.keys(table.columns),['key','created_at']);assert.deepEqual(table.foreignKeys,{});
  delete next.tables['public.pending_photo_deletions'];next.id=prior.id;next.prevId=prior.prevId;assert.deepEqual(next,prior);
 });
+test('photo consumer: partial failure retains failed key; explicit retry acknowledges only success',async()=>fixture(async({pg,db})=>{
+ await deleteRecipe(db,owner,recipe);
+ const calls=[];
+ assert.deepEqual(await processPendingPhotoDeletions(db,async key=>{calls.push(key);if(key===first)throw new Error('synthetic storage failure');}),{completed:1,failed:1,blocked:0});
+ assert.deepEqual(calls,[first,second]);assert.deepEqual(await rows(pg,'SELECT key FROM pending_photo_deletions'),[{key:first}]);
+ assert.deepEqual(await processPendingPhotoDeletions(db,async()=>{}),{completed:1,failed:0,blocked:0});
+ assert.deepEqual(await rows(pg,'SELECT * FROM pending_photo_deletions'),[]);
+}));
+test('photo consumer: timeout aborts, late completion cannot acknowledge; explicit retry is separate',async()=>fixture(async({pg,db})=>{
+ await removeRecipePhoto(db,owner,recipe,first);let finish,signal;
+ const result=await processPendingPhotoDeletions(db,async(_key,s)=>{signal=s;await new Promise(resolve=>{finish=resolve;});},{limit:1,timeoutMs:100});
+ assert.deepEqual(result,{completed:0,failed:1,blocked:0});assert.equal(signal.aborted,true);
+ finish();await new Promise(resolve=>setImmediate(resolve));
+ assert.deepEqual(await rows(pg,'SELECT key FROM pending_photo_deletions'),[{key:first}]);
+ assert.deepEqual(await processPendingPhotoDeletions(db,async()=>{}),{completed:1,failed:0,blocked:0});
+}));
+test('photo consumer: acknowledgement fault rolls ledger back despite provider success',async()=>fixture(async({pg,db})=>{
+ await deleteRecipe(db,owner,recipe);let calls=0;
+ await pg.exec(`CREATE FUNCTION reject_ack() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'fixture acknowledgement failure'; END $$; CREATE TRIGGER reject_ack BEFORE DELETE ON pending_photo_deletions FOR EACH ROW EXECUTE FUNCTION reject_ack();`);
+ await assert.rejects(processPendingPhotoDeletions(db,async()=>{calls++;}));assert.equal(calls,1);
+ assert.equal((await rows(pg,'SELECT * FROM pending_photo_deletions')).length,2);
+ await pg.exec('DROP TRIGGER reject_ack ON pending_photo_deletions');
+ assert.deepEqual(await processPendingPhotoDeletions(db,async()=>{calls++;}),{completed:2,failed:0,blocked:0});assert.equal(calls,3);
+}));
+test('photo consumer: live and malformed keys are blocked without storage calls or acknowledgement',async()=>fixture(async({pg,db})=>{
+ await pg.query('INSERT INTO pending_photo_deletions(key) VALUES ($1),($2)',[first,'recipes/not-a-valid-key']);let calls=0;
+ assert.deepEqual(await processPendingPhotoDeletions(db,async()=>{calls++;}),{completed:0,failed:0,blocked:2});
+ assert.equal(calls,0);assert.equal((await rows(pg,'SELECT * FROM pending_photo_deletions')).length,2);
+}));
+test('photo consumer: invalid limits refuse database/provider dispatch',async()=>{
+ for(const options of [{limit:0},{limit:11},{limit:1.5},{timeoutMs:99},{timeoutMs:3001},{timeoutMs:NaN}]){
+  await assert.rejects(processPendingPhotoDeletions({transaction(){throw new Error('database must not open');}},async()=>{throw new Error('provider must not dispatch');},options),/Invalid photo cleanup batch limits/);
+ }
+});
+test('photo consumer: maximum batch size is respected; remaining key waits for deliberate next call',async()=>fixture(async({pg,db})=>{
+ await deleteRecipe(db,owner,recipe);const calls=[];
+ assert.deepEqual(await processPendingPhotoDeletions(db,async key=>{calls.push(key);},{limit:1}),{completed:1,failed:0,blocked:0});
+ assert.deepEqual(calls,[first]);assert.deepEqual(await rows(pg,'SELECT key FROM pending_photo_deletions'),[{key:second}]);
+}));

@@ -29,3 +29,4 @@ export * from "./queries/admin.js";
 export * from "./queries/billing.js";
 export * from "./queries/starter-recipes.js";
 export * from "./queries/food-log.js";
+export * from "./queries/photo-cleanup.js";
