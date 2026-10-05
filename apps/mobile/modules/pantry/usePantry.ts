@@ -19,70 +19,86 @@ export interface PantryController {
 
 /** What's in the kitchen. Same shape as the web hook, over the network client. */
 export function usePantry(): PantryController {
-  const { userId } = useAuth();
-  const api = useMemo(() => createAccountClient(userId ?? ""), [userId]);
+  const { userId, sessionId } = useAuth();
+  const api = useMemo(() => createAccountClient(userId ?? ""), [userId, sessionId]);
+  // Invalidate retained handlers/results as soon as the auth scope renders,
+  // including the interval before its old effect cleanup runs.
+  const activeClient = useRef(api);
+  activeClient.current = api;
+  const dataClient = useRef(api);
+  const mounted = useRef(true);
+  const current = useCallback(() => mounted.current && activeClient.current === api, [api]);
   const [items, setItems] = useState<PantryEntry[]>([]);
   const [intakes, setIntakes] = useState<PantryIntakeView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    mounted.current = true;
+    dataClient.current = api;
     let cancelled = false;
     setItems([]); setIntakes([]); setLoading(true); setError(null);
     void (async () => {
       try {
         const [next, pending] = await Promise.all([api.listPantry(), api.listPantryIntakes()]);
-        if (!cancelled) { setItems(next); setIntakes(pending); }
+        if (!cancelled && current()) { setItems(next); setIntakes(pending); }
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Couldn't load your pantry.");
+        if (!cancelled && current()) setError(err instanceof Error ? err.message : "Couldn't load your pantry.");
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && current()) setLoading(false);
       }
     })();
     return () => {
       cancelled = true;
+      mounted.current = false;
     };
-  }, [api]);
+  }, [api, current]);
 
   const run = useCallback(async (write: () => Promise<PantryEntry[]>) => {
+    if (!current()) return;
     setError(null);
     try {
-      setItems(await write());
+      const next = await write();
+      if (current()) setItems(next);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That didn't save.");
+      if (current()) setError(err instanceof Error ? err.message : "That didn't save.");
     }
-  }, [api]);
+  }, [current]);
 
   return {
-    items,
-    intakes,
-    loading,
-    queuedIntake: intake => setIntakes(current => [intake, ...current.filter(item => item.id !== intake.id)]),
-    error,
+    items: dataClient.current === api ? items : [],
+    intakes: dataClient.current === api ? intakes : [],
+    loading: dataClient.current !== api || loading,
+    queuedIntake: intake => { if (current()) setIntakes(items => [intake, ...items.filter(item => item.id !== intake.id)]); },
+    error: dataClient.current === api ? error : null,
     add: (text) => run(() => api.addPantry(text)),
     update: (entry) => run(() => api.updatePantry(entry)),
     remove: (canonicalItem) => run(() => api.removePantry([canonicalItem])),
     clear: () => run(() => api.clearPantry()),
     scanReceipt: async (imageBase64, imageMediaType) => {
+      if (!current()) return false;
       setError(null);
       try {
         const result = await api.scanPantryReceipt(imageBase64, imageMediaType);
+        if (!current()) return false;
         setIntakes(result.intakes);
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "That receipt could not be read.");
+        if (current()) setError(err instanceof Error ? err.message : "That receipt could not be read.");
         return false;
       }
     },
     resolveIntake: async (intakeId, action, acceptedItemIds = []) => {
+      if (!current()) return false;
       setError(null);
       try {
         const result = await api.resolvePantryIntake({ intakeId, action, acceptedItemIds });
+        if (!current()) return false;
         setItems(result.pantry);
         setIntakes(result.intakes);
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "That grocery review did not save.");
+        if (current()) setError(err instanceof Error ? err.message : "That grocery review did not save.");
         return false;
       }
     },
