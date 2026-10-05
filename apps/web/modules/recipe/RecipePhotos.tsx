@@ -1,9 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { isPhotoMediaType, MAX_PHOTO_BYTES, type RecipePhoto } from "@seconds/core/format";
-import { Callout } from "@/ui";
-import { api } from "@/lib/client";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createClient, isPhotoMediaType, MAX_PHOTO_BYTES, MAX_RECIPE_PHOTOS, RecipePhotoSchema, type RecipePhoto } from "@seconds/core/format";
+import { Button, Callout } from "@/ui";
+import { useAuth } from "@clerk/nextjs";
 import { compressForUpload, readAsBase64 } from "@/lib/photo";
 import styles from "./recipe.module.css";
 
@@ -14,69 +14,110 @@ import styles from "./recipe.module.css";
 const MAX_PHOTO_BYTES_BEFORE_COMPRESSION = 50_000_000;
 
 /** Your own photos of the finished dish — separate from a source page's own image. */
-export function RecipePhotos({ recipeId, initial }: { recipeId: string; initial: RecipePhoto[] }) {
-  const [photos, setPhotos] = useState(initial);
+type Props = { recipeId: string; initial: RecipePhoto[]; clerkEnabled?: boolean };
+export function RecipePhotos({ clerkEnabled = true, ...props }: Props) {
+  return clerkEnabled ? <AuthenticatedPhotos {...props} /> : <AccountPhotos key={props.recipeId} {...props} />;
+}
+function AuthenticatedPhotos(props: Props) {
+  const { isLoaded, userId, sessionId } = useAuth();
+  if (!isLoaded) return <p role="status">Loading sign-in for your photos…</p>;
+  if (!userId || !sessionId) return <p role="status">Sign in again to load your saved photos.</p>;
+  // Fresh authenticated read, never reuse another session's initial gallery.
+  return <AccountPhotos key={`${sessionId}:${props.recipeId}`} {...props} sessionId={sessionId} />;
+}
+function AccountPhotos({ recipeId, initial, sessionId }: Props & { sessionId?: string }) {
+  const api = useMemo(() => createClient({ expectedSessionId: sessionId }), [sessionId]);
+  const [photos, setPhotos] = useState(sessionId ? [] : initial);
   const [busyKey, setBusyKey] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [loaded, setLoaded] = useState(!sessionId);
+  const [uncertain, setUncertain] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const alive = useRef(true);
+  const action = useRef(false);
+  const pending = useRef(false);
+  useEffect(() => { alive.current = true; if (sessionId) void refresh(); return () => { alive.current = false; }; }, []);
+
+  function checkedPhotos(value: unknown): RecipePhoto[] {
+    if (!Array.isArray(value) || value.length > MAX_RECIPE_PHOTOS) throw new Error("Unconfirmed photos.");
+    const entries = value.map(photo => RecipePhotoSchema.parse(photo));
+    if (new Set(entries.map(photo => photo.key)).size !== entries.length) throw new Error("Repeated photo reference.");
+    return entries;
+  }
+  async function refresh() {
+    if (action.current || !alive.current) return;
+    action.current = true; setChecking(true); setError(null); setMessage(null);
+    try {
+      const recipe = await api.getRecipe(recipeId);
+      if (!alive.current) return;
+      if (recipe?.id !== recipeId) throw new Error("Unconfirmed recipe.");
+      const updated = checkedPhotos(recipe.photos);
+      setPhotos(updated); setLoaded(true); setUncertain(false); pending.current = false;
+      setMessage("Saved photos refreshed. An earlier request may still finish; review the gallery before adding again.");
+    } catch {
+      if (alive.current) { setLoaded(false); setError("Couldn't check your saved photos. Sign in if needed, then try checking again. No new upload was started."); }
+    } finally { if (alive.current) { action.current = false; setChecking(false); } }
+  }
 
   async function pickPhoto(file: File | undefined) {
-    setError(null);
-    if (!file) return;
-    if (!isPhotoMediaType(file.type)) {
-      setError("That doesn't look like a photo. Try a JPEG, PNG, or WebP.");
-      return;
-    }
-    if (file.size > MAX_PHOTO_BYTES_BEFORE_COMPRESSION) {
-      setError("That photo is too large. Try a smaller image.");
-      return;
-    }
-    setUploading(true);
+    if (action.current || pending.current || !loaded || !alive.current || !file) return;
+    setError(null); setMessage(null);
+    if (!isPhotoMediaType(file.type)) { setError("That doesn't look like a photo. Try a JPEG, PNG, or WebP."); return; }
+    if (file.size > MAX_PHOTO_BYTES_BEFORE_COMPRESSION) { setError("That photo is too large. Try a smaller image."); return; }
+    action.current = true; setUploading(true);
+    let dispatched = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      // Downscale/re-encode first — most real phone photos shrink well
-      // under the limit this way, so the size check that matters is the one
-      // after compression, not the one on what the camera originally produced.
-      const compressed = await compressForUpload(file);
-      if (compressed.size > MAX_PHOTO_BYTES) {
-        setError("That photo is too large even compressed. Try a smaller image.");
-        return;
+      // Local preparation is bounded; abandoned work cannot submit an upload.
+      const prepared = await Promise.race([
+        (async () => { const compressed = await compressForUpload(file); return { compressed, base64: await readAsBase64(compressed) }; })(),
+        new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error("Photo preparation timed out.")), 30_000); }),
+      ]);
+      if (!alive.current) return;
+      if (prepared.compressed.size > MAX_PHOTO_BYTES || !isPhotoMediaType(prepared.compressed.type)) {
+        setError("Couldn't prepare that photo within the upload limit. Try a smaller JPEG, PNG, or WebP."); return;
       }
-      // compressForUpload only ever produces the original (already-validated)
-      // type or re-encodes to image/jpeg, but re-checking rather than casting
-      // keeps this honest if that ever changes.
-      if (!isPhotoMediaType(compressed.type)) {
-        setError("Couldn't prepare that photo for upload. Try again.");
-        return;
-      }
-      const base64 = await readAsBase64(compressed);
-      const { photos: updated } = await api.addRecipePhoto(recipeId, base64, compressed.type);
-      setPhotos(updated);
+      dispatched = true;
+      const result = await api.addRecipePhoto(recipeId, prepared.base64, prepared.compressed.type);
+      if (!alive.current) return;
+      const updated = checkedPhotos(result?.photos);
+      if (!updated.some(photo => !photos.some(existing => existing.key === photo.key))) throw new Error("Upload receipt contains no new photo.");
+      setPhotos(updated); setMessage("Photo added to your recipe.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't upload that photo.");
+      if (alive.current) {
+        if (dispatched && typeof err === "object" && err !== null && "status" in err && err.status === 501) {
+          setError("Photo uploads aren't available right now. No photo was confirmed as added.");
+        } else if (dispatched) { pending.current = true; setUncertain(true); setError("Couldn't confirm that photo was added. Check saved photos before choosing it again; the earlier request may still finish."); }
+        else setError("Couldn't prepare that photo. Nothing was uploaded; try a smaller photo.");
+      }
     } finally {
-      setUploading(false);
-      if (fileInput.current) fileInput.current.value = "";
+      if (timer !== undefined) clearTimeout(timer);
+      if (alive.current) { action.current = false; setUploading(false); if (fileInput.current) fileInput.current.value = ""; }
     }
   }
 
   async function remove(key: string) {
-    setError(null);
-    setBusyKey(key);
+    if (action.current || pending.current || !loaded || !alive.current) return;
+    action.current = true; setError(null); setMessage(null); setBusyKey(key);
     try {
-      const { photos: updated } = await api.removeRecipePhoto(recipeId, key);
-      setPhotos(updated);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't remove that photo.");
-    } finally {
-      setBusyKey(null);
-    }
+      const result = await api.removeRecipePhoto(recipeId, key);
+      if (!alive.current) return;
+      const updated = checkedPhotos(result?.photos);
+      if (updated.some(photo => photo.key === key)) throw new Error("Removal is unconfirmed.");
+      setPhotos(updated); setMessage("Photo removed from this recipe. Storage cleanup may still be pending.");
+    } catch {
+      if (alive.current) { pending.current = true; setUncertain(true); setError("Couldn't confirm the removal. Check saved photos before trying again; no automatic retry was sent."); }
+    } finally { if (alive.current) { action.current = false; setBusyKey(null); } }
   }
 
+  const busy = uploading || checking || busyKey !== null;
   return (
     <section className={styles.journalPage} aria-label="Your photos" data-print="hide">
       <h3 className={styles.sectionTitle}>Your photos</h3>
-      {photos.length > 0 ? (
+      {!loaded && photos.length === 0 ? <p className={styles.note}>Your saved photos are not confirmed yet. Check them before uploading.</p> : photos.length > 0 ? (
         <ul className={styles.photoGrid}>
           {photos.map((photo) => (
             <li key={photo.key} className={styles.photoTile}>
@@ -85,8 +126,8 @@ export function RecipePhotos({ recipeId, initial }: { recipeId: string; initial:
               <button
                 type="button"
                 className={styles.photoRemove}
-                aria-label="Remove this photo"
-                disabled={busyKey === photo.key}
+                aria-label={`Remove photo ${photos.indexOf(photo) + 1}`}
+                disabled={busy || uncertain || !loaded}
                 onClick={() => void remove(photo.key)}
               >
                 {busyKey === photo.key ? "…" : "×"}
@@ -97,16 +138,19 @@ export function RecipePhotos({ recipeId, initial }: { recipeId: string; initial:
       ) : (
         <p className={styles.note}>No photos yet — add one from your kitchen or your camera roll.</p>
       )}
+      {!loaded && photos.length > 0 ? <p className={styles.note}>Last seen photos. We could not confirm the current gallery.</p> : null}
       <input
         ref={fileInput}
         type="file"
         accept="image/jpeg,image/png,image/webp"
         capture="environment"
         aria-label="Add a photo of this dish"
-        disabled={uploading}
+        disabled={busy || uncertain || !loaded}
         onChange={(e) => void pickPhoto(e.target.files?.[0])}
       />
-      {uploading ? <p className={styles.note} role="status">Uploading…</p> : null}
+      <Button type="button" disabled={busy} onClick={() => void refresh()}>{checking ? "Checking saved photos…" : uncertain || !loaded ? "Check saved photos" : "Refresh saved photos"}</Button>
+      {uploading ? <p className={styles.note} role="status">Preparing or uploading your photo…</p> : null}
+      {message ? <p className={styles.note} role="status">{message}</p> : null}
       {error ? <Callout tone="error" role="alert">{error}</Callout> : null}
     </section>
   );

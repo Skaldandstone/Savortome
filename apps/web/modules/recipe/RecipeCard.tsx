@@ -74,7 +74,7 @@ export function RecipeCard({
             in-flight upload/remove can't be stomped by a stale refetch) —
             the key instead forces a clean remount if this same card instance
             is ever reused to show a different recipe. */}
-        {shelvedId ? <RecipePhotos key={shelvedId} recipeId={shelvedId} initial={recipe.photos} /> : null}
+        {shelvedId ? <RecipePhotos key={shelvedId} recipeId={shelvedId} initial={recipe.photos} clerkEnabled={clerkEnabled} /> : null}
 
         {recipe.equipment.length > 0 ? (
           <>

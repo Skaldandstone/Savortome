@@ -444,16 +444,16 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
     getRecipe: (recipeId) => sendTimed<OwnedRecipe>(`/api/recipes/${recipeId}`, {}, 12_000),
 
     addRecipePhoto: (recipeId, imageBase64, imageMediaType) =>
-      send<{ photos: RecipePhoto[] }>(`/api/recipes/${recipeId}/photos`, {
+      sendTimed<{ photos: RecipePhoto[] }>(`/api/recipes/${recipeId}/photos`, {
         method: "POST",
         body: body({ imageBase64, imageMediaType }),
-      }),
+      }, 20_000),
 
     removeRecipePhoto: (recipeId, key) =>
-      send<{ photos: RecipePhoto[] }>(`/api/recipes/${recipeId}/photos`, {
+      sendTimed<{ photos: RecipePhoto[] }>(`/api/recipes/${recipeId}/photos`, {
         method: "DELETE",
         body: body({ key }),
-      }),
+      }, 12_000),
 
     getSharedRecipe: (recipeId) => send<SharedRecipeResponse>(`/api/shared/${recipeId}`),
 
