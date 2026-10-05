@@ -69,6 +69,7 @@ jobs:
           node scripts/check-photo-upload-recovery.mjs
           node scripts/check-recipe-photo-ui.mjs
           node scripts/check-photo-preparation.mjs
+          node scripts/check-import-photo-recovery.mjs
       # Disposable PGlite fixtures are distinct from the full pgvector schema job.
       - name: Food-note tenant recovery and partial migrations
         run: |

@@ -431,3 +431,5 @@ Photo-removal keyboard focus source gap reproduced/fixed: focused removal or its
 
 
 Photo preparation lifecycle faults reproduced/fixed: compressed media/size validated before base64, abandoned late compression cannot start file read, FileReader settles abort/invalid result and releases handlers, bitmap closes on drawing faults and before possibly stalled encoding. Original fallback/EXIF/downscale retained.10helper+23gallery fixtures/webtypes pass; synthetic browser objects do not prove decoding/memory/device/provider behavior. Existing import helper benefits without model/provider changes; already-running local operations may finish after gallery deadline. No deployment.
+
+- October4 bounded import-capture recovery delta: recipe-import photo picks now keep the newest read, clear stale submit-ready bytes on replacement, discard/release previews on mode changes/unmount, expose polite reading status and permit explicit retry after a 30-second caller deadline. Nine synthetic actual-component cases and web types pass; no browser/device/OCR/provider acceptance or deployment claim.
