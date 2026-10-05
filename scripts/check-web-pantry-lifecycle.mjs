@@ -67,7 +67,7 @@ test('web pantry: old initial load cannot publish during a new-session render be
  const f=fixture(),reply=deferred();f.state.respond=()=>reply.promise;f.render();f.replace();f.render(false);const writes=f.state.writes;reply.resolve([]);await flush();assert.equal(f.state.writes,writes);f.unmount();
 });
 const shellMocks={
- react:`export const useMemo=fn=>fn();export const useState=()=>{throw Error('content unexpectedly rendered');};`,
+ react:`export const useMemo=fn=>fn();export const useState=initial=>{if(!state.content)throw Error('content unexpectedly rendered');const value=state.cursor++===1?true:initial;return[value,()=>{}];};`,
  'react/jsx-runtime':`export const jsx=(type,props)=>({type,props});export const jsxs=jsx;export const Fragment="fragment";`,
  '@clerk/nextjs':`export const useAuth=()=>{state.authReads++;return state.auth;};`,
  '@seconds/core/format':`export const createClient=config=>{state.configs.push(config);return{config};};`,
@@ -77,7 +77,7 @@ const shellMocks={
  '@/ui':`export const Button=()=>null,Callout=Button,FieldRow=Button,Panel=Button,PanelHeader=Button,TextField=Button;`,
  './MatchList':`export const MatchList=()=>null,QueryReadback=MatchList;`,
  './PantryList':`export const PantryList=()=>null;`,
- './usePantry':`export const usePantry=()=>{},usePantrySearch=()=>{};`,
+ './usePantry':`export const usePantry=()=>state.pantry,usePantrySearch=()=>({response:null,searching:false,error:null,search:()=>{}});`,
  './pantry.module.css':`export default {};`,
  './PantryReviewQueue':`export const PantryReviewQueue=()=>null;`,
  './BarcodeCapture':`export const BarcodeCapture=()=>null;`,
@@ -90,4 +90,26 @@ test('actual CookPanel: authenticated/loading/signed-out mode always pins a sess
  const state={authReads:0,configs:[],auth:{userId:'synthetic-account',sessionId:'synthetic-session'}},ctx={state};runInNewContext(shell.outputFiles[0].text,ctx);
  const wrapper=ctx.shell.CookPanel({clerkEnabled:true});assert.equal(wrapper.type(wrapper.props).props.api.config.expectedSessionId,'synthetic-session');
  state.auth={userId:null,sessionId:null};assert.equal(wrapper.type(wrapper.props).props.api.config.expectedSessionId,'signed-out');
+});
+
+test('web pantry: older review load cannot restore an accepted grocery review',async()=>{
+ const f=fixture(),initial=deferred();f.state.respond=async method=>method==='listPantryIntakes'?initial.promise:[];f.render();f.state.respond=async()=>({pantry:[{canonicalItem:'confirmed banana'}],intakes:[]});assert.equal(await f.render().resolveIntake('original-review','accept',['original-line']),true);initial.resolve([{id:'old-review'}]);await flush();assert.equal(f.render().intakes.length,0);assert.equal(f.render().items[0].canonicalItem,'confirmed banana');
+});
+test('web pantry: older pantry load cannot undo a confirmed write',async()=>{
+ const f=fixture(),initial=deferred();f.state.respond=async method=>method==='listPantry'?initial.promise:[];f.render();f.state.respond=async()=>[{canonicalItem:'confirmed banana'}];assert.equal(await f.render().add('synthetic'),true);initial.resolve([]);await flush();assert.equal(f.render().items[0].canonicalItem,'confirmed banana');
+});
+test('web pantry: retry invalidates previous read before effect cleanup',async()=>{
+ const f=fixture(),old=deferred();f.state.respond=method=>method==='listPantryIntakes'?old.promise:Promise.resolve([]);f.render();await flush();f.render().retryIntakes();const writes=f.state.writes;old.resolve([{id:'stale-review'}]);await flush();assert.equal(f.state.writes,writes);f.unmount();
+});
+test('web pantry: explicit reload reconciles lost review acknowledgement without replaying write',async()=>{
+ const f=fixture();f.state.respond=async method=>method==='listPantryIntakes'?[{id:'original-review',digest:'original-digest'}]:[];f.render();await flush();let persisted=false;f.state.respond=async method=>{if(method==='resolvePantryIntake'){persisted=true;throw Error('lost acknowledgement');}return method==='listPantry'?[{canonicalItem:'confirmed banana'}]:[];};assert.equal(await f.render().resolveIntake('original-review','accept',['original-line']),false);assert.equal(persisted,true);f.render().retryPantry();f.render().retryIntakes();f.render();await flush();assert.equal(f.render().items[0].canonicalItem,'confirmed banana');assert.equal(f.render().intakes.length,0);assert.equal(f.state.calls.filter(x=>x.method==='resolvePantryIntake').length,1);
+});
+
+
+test('actual CookPanel: refresh is available without read errors and invokes reads only',()=>{
+ const calls=[];const state={content:true,cursor:0,authReads:0,configs:[],pantry:{items:[],intakes:[],loaded:true,intakesLoaded:true,loading:false,intakesLoading:false,retryPantry:()=>calls.push('pantry-read'),retryIntakes:()=>calls.push('review-read')}};const ctx={state};runInNewContext(shell.outputFiles[0].text,ctx);
+ const walk=n=>!n||typeof n!=='object'?[]:[n,...[n.props?.children].flat(Infinity).flatMap(walk)];
+ const render=()=>{state.cursor=0;const content=ctx.shell.CookPanel({clerkEnabled:false});return walk(content.type(content.props));};
+ const action=render().find(n=>n.props?.children==='Refresh pantry and grocery reviews');assert.ok(action);assert.equal(action.props.disabled,false);action.props.onClick();assert.deepEqual(calls,['pantry-read','review-read']);
+ state.pantry.intakesLoading=true;assert.equal(render().find(n=>n.props?.children==='Refresh pantry and grocery reviews').props.disabled,true);
 });

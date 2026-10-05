@@ -43,6 +43,8 @@ export function usePantry(api = defaultApi): PantryController {
   const [intakesError, setIntakesError] = useState<ActionFailure | null>(null);
   const [pantryAttempt, setPantryAttempt] = useState(0);
   const [intakesAttempt, setIntakesAttempt] = useState(0);
+  const pantryVersion = useRef(0);
+  const intakesVersion = useRef(0);
 
   useEffect(() => {
     mounted.current = true; dataClient.current = api;
@@ -53,19 +55,20 @@ export function usePantry(api = defaultApi): PantryController {
 
   useEffect(() => {
     let cancelled = false;
+    const version = ++pantryVersion.current;
     setLoading(true);
     setPantryError(null);
     void (async () => {
       try {
         const next = await api.listPantry();
-        if (!cancelled && current()) {
+        if (!cancelled && current() && pantryVersion.current === version) {
           setItems(next);
           setLoaded(true);
         }
       } catch (err) {
-        if (!cancelled && current()) setPantryError(actionFailure(err, "Couldn't load your pantry."));
+        if (!cancelled && current() && pantryVersion.current === version) setPantryError(actionFailure(err, "Couldn't load your pantry."));
       } finally {
-        if (!cancelled && current()) setLoading(false);
+        if (!cancelled && current() && pantryVersion.current === version) setLoading(false);
       }
     })();
     return () => {
@@ -75,19 +78,20 @@ export function usePantry(api = defaultApi): PantryController {
 
   useEffect(() => {
     let cancelled = false;
+    const version = ++intakesVersion.current;
     setIntakesLoading(true);
     setIntakesError(null);
     void (async () => {
       try {
         const pending = await api.listPantryIntakes();
-        if (!cancelled && current()) {
+        if (!cancelled && current() && intakesVersion.current === version) {
           setIntakes(pending);
           setIntakesLoaded(true);
         }
       } catch (err) {
-        if (!cancelled && current()) setIntakesError(actionFailure(err, "Couldn't load recent grocery reviews."));
+        if (!cancelled && current() && intakesVersion.current === version) setIntakesError(actionFailure(err, "Couldn't load recent grocery reviews."));
       } finally {
-        if (!cancelled && current()) setIntakesLoading(false);
+        if (!cancelled && current() && intakesVersion.current === version) setIntakesLoading(false);
       }
     })();
     return () => {
@@ -105,6 +109,9 @@ export function usePantry(api = defaultApi): PantryController {
     try {
       const next = await api.resolvePantryIntake({ intakeId, action, acceptedItemIds });
       if (!current()) return false;
+      ++pantryVersion.current; ++intakesVersion.current;
+      setLoaded(true); setIntakesLoaded(true); setLoading(false); setIntakesLoading(false);
+      setPantryError(null); setIntakesError(null);
       setItems(next.pantry);
       setIntakes(next.intakes);
       return true;
@@ -120,6 +127,7 @@ export function usePantry(api = defaultApi): PantryController {
     try {
       const next = await write();
       if (!current()) return false;
+      ++pantryVersion.current; setLoaded(true); setLoading(false); setPantryError(null);
       setItems(next);
       return true;
     } catch (err) {
@@ -138,8 +146,8 @@ export function usePantry(api = defaultApi): PantryController {
     intakesLoading: dataClient.current === api ? intakesLoading : true,
     intakesLoaded: dataClient.current === api ? intakesLoaded : false,
     intakesError: dataClient.current === api ? intakesError : null,
-    retryPantry: () => { if (current()) setPantryAttempt(attempt => attempt + 1); },
-    retryIntakes: () => { if (current()) setIntakesAttempt(attempt => attempt + 1); },
+    retryPantry: () => { if (current()) { ++pantryVersion.current; setPantryAttempt(attempt => attempt + 1); } },
+    retryIntakes: () => { if (current()) { ++intakesVersion.current; setIntakesAttempt(attempt => attempt + 1); } },
     add: (text) => run(() => api.addPantry(text)),
     update: (update) => run(() => api.updatePantry(update)),
     remove: (canonicalItem) => run(() => api.removePantry([canonicalItem])),

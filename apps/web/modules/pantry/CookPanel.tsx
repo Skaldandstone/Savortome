@@ -127,6 +127,10 @@ function CookPanelContent({ clerkEnabled, api }: { clerkEnabled: boolean; api: t
                 <Button type="button" variant="ghost" onClick={pantry.retryPantry}>Try pantry again</Button>
               </Callout>
             ) : null}
+            <div>
+              <Button type="button" variant="ghost" disabled={pantry.loading || pantry.intakesLoading} onClick={() => { pantry.retryPantry(); pantry.retryIntakes(); }}>Refresh pantry and grocery reviews</Button>
+              <p className={styles.empty}>If an action was not confirmed, refresh before repeating it. Refresh only reads saved data. An empty review list does not prove an earlier request failed.</p>
+            </div>
             {pantry.intakesLoading && !pantry.intakesLoaded ? (
               <p className={styles.empty} role="status">Checking for groceries to review…</p>
             ) : null}
