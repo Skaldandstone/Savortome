@@ -22,7 +22,7 @@ const STAPLES = [...STAPLE_ITEMS];
 
 // ---------------------------------------------------------------- the pantry
 
-export async function listPantry(database: Database, userId: string): Promise<PantryEntry[]> {
+export async function listPantry(database: Pick<Database, "query">, userId: string): Promise<PantryEntry[]> {
   const rows = await database.query.pantryItems.findMany({
     where: eq(schema.pantryItems.userId, userId),
     orderBy: (p, { asc }) => [asc(p.displayName)],

@@ -7,9 +7,12 @@ import {
   type PantryEntry,
   type ShoppingLine,
 } from "@seconds/core";
-import type { Database } from "../client.js";
+import type { Database as RootDatabase } from "../client.js";
 import * as schema from "../schema.js";
 import { listPantry } from "./pantry.js";
+
+// Root connections and transactions share the query surface, not $client.
+type Database = Omit<RootDatabase, "$client">;
 
 /**
  * Shopping lists.
@@ -167,6 +170,17 @@ export async function addRecipesToList(
   recipeIds: string[],
   options: AddToListOptions = {},
 ): Promise<ShoppingListDetail> {
+  // currentShoppingList locks the owner inside this transaction. Retain that
+  // lock through the read/merge/write so another addition cannot overwrite it.
+  return database.transaction((tx) => addRecipesInTransaction(tx, userId, recipeIds, options));
+}
+
+async function addRecipesInTransaction(
+  database: Database,
+  userId: string,
+  recipeIds: string[],
+  options: AddToListOptions,
+): Promise<ShoppingListDetail> {
   const { skipStaples = true, skipOptional = true, usePantry = true } = options;
   const listId = await currentShoppingList(database, userId);
 
@@ -257,6 +271,15 @@ export async function addRecipesToList(
 
 /** Add loose items — typically the "missing" list from a pantry match. */
 export async function addItemsToList(
+  database: Database,
+  userId: string,
+  items: { canonicalItem: string; displayName?: string }[],
+): Promise<ShoppingListDetail> {
+  // Share the owner lock with recipe additions until the loose-item write ends.
+  return database.transaction((tx) => addItemsInTransaction(tx, userId, items));
+}
+
+async function addItemsInTransaction(
   database: Database,
   userId: string,
   items: { canonicalItem: string; displayName?: string }[],

@@ -68,6 +68,17 @@ test('reviewed planning/shopping real-query retry and owner boundaries',async t=
    await pg.query('INSERT INTO pantry_items(user_id,canonical_item,display_name,quantity,unit) VALUES ($1,$2,$2,$3,$4)',[F,'oat',100,'count']);
    const second=await addRecipesToList(db,F,[RH],{skipStaples:false});assert.equal(second.items.find(x=>x.canonicalItem==='carrot').quantity,5);assert.equal(second.items.find(x=>x.canonicalItem==='banana').quantity,2);assert.equal(second.items.find(x=>x.canonicalItem==='oat').quantity,2);
   });
+  await t.test('overlapping recipe additions retain both shopping contributions',async()=>{
+   const G='00000000-0000-4000-8000-000000000014',RI='00000000-0000-4000-8000-000000000015',RJ='00000000-0000-4000-8000-000000000016';await pg.query('INSERT INTO users VALUES ($1)',[G]);
+   const ingredient=item=>({raw:item,quantity:2,quantityMax:null,unit:'count',item,canonicalItem:item,notes:null,optional:false,group:null});
+   await pg.query('INSERT INTO recipes(id,owner_id,title,ingredients) VALUES ($1,$2,$3,$4),($5,$2,$6,$7)',[RI,G,'Synthetic concurrent carrots',JSON.stringify([ingredient('carrot')]),RJ,'Synthetic concurrent beans',JSON.stringify([ingredient('bean')])]);
+   await addItemsToList(db,G,[{canonicalItem:'banana'}]);
+   await Promise.all([addRecipesToList(db,G,[RI],{usePantry:false}),addRecipesToList(db,G,[RJ],{usePantry:false})]);
+   const lists=(await pg.query('SELECT id FROM shopping_lists WHERE user_id=$1',[G])).rows;assert.equal(lists.length,1);const saved=await getShoppingList(db,G,lists[0].id);assert.deepEqual(saved.items.map(x=>x.canonicalItem).sort(),['banana','bean','carrot']);
+   const RK='00000000-0000-4000-8000-000000000017';await pg.query('INSERT INTO recipes(id,owner_id,title,ingredients) VALUES ($1,$2,$3,$4)',[RK,G,'Synthetic concurrent tomato',JSON.stringify([ingredient('tomato')])]);
+   await Promise.all([addRecipesToList(db,G,[RK],{usePantry:false}),addItemsToList(db,G,[{canonicalItem:'melon'}])]);assert.deepEqual((await getShoppingList(db,G,lists[0].id)).items.map(x=>x.canonicalItem).sort(),['banana','bean','carrot','melon','tomato']);
+
+  });
   await t.test('overlapping first shopping additions share one owner destination',async()=>{
    const C='00000000-0000-4000-8000-000000000005';await pg.query('INSERT INTO users VALUES ($1)',[C]);
    const [one,two]=await Promise.all([addItemsToList(db,C,[{canonicalItem:'synthetic rice'}]),addItemsToList(db,C,[{canonicalItem:'synthetic beans'}])]);
