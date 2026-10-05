@@ -1,4 +1,4 @@
-// Actual native usePantry hook; React/Clerk/client boundaries are synthetic.
+// Actual native pantry/search hooks; React/Clerk/client boundaries are synthetic.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {runInNewContext} from 'node:vm';
@@ -10,15 +10,15 @@ const mocks={
  export const useCallback=(fn,deps)=>useMemo(()=>fn,deps);
  export const useEffect=(fn,deps)=>{const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){state.deps[i]=deps;state.effects.push(()=>{state.cleanups[i]?.();state.cleanups[i]=fn();});}};`,
  '@clerk/expo':'export const useAuth=()=>state.auth;',
- '@/lib/client':`export const createAccountClient=account=>Object.fromEntries(['listPantry','listPantryIntakes','addPantry','updatePantry','removePantry','clearPantry','scanPantryReceipt','resolvePantryIntake'].map(method=>[method,async(...args)=>{state.calls.push({account,method,args});return state.respond(method,...args);} ]));`,
+ '@/lib/client':`export const createAccountClient=account=>Object.fromEntries(['listPantry','listPantryIntakes','addPantry','updatePantry','removePantry','clearPantry','scanPantryReceipt','resolvePantryIntake','searchPantry'].map(method=>[method,async(...args)=>{state.calls.push({account,method,args});return state.respond(method,...args);} ]));`,
 };
-const bundle=await build({bundle:true,write:false,format:'iife',globalName:'pantry',stdin:{resolveDir:process.cwd(),contents:"export {usePantry} from './apps/mobile/modules/pantry/usePantry.ts';"},plugins:[{name:'pantry-lifecycle',setup(api){api.onResolve({filter:/.*/},args=>Object.hasOwn(mocks,args.path)?{path:args.path,namespace:'mock'}:undefined);api.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:mocks[args.path],loader:'js'}));}}]});
+const bundle=await build({bundle:true,write:false,format:'iife',globalName:'pantry',stdin:{resolveDir:process.cwd(),contents:"export {usePantry,usePantrySearch} from './apps/mobile/modules/pantry/usePantry.ts';"},plugins:[{name:'pantry-lifecycle',setup(api){api.onResolve({filter:/.*/},args=>Object.hasOwn(mocks,args.path)?{path:args.path,namespace:'mock'}:undefined);api.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:mocks[args.path],loader:'js'}));}}]});
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return{promise,resolve,reject};};
-function fixture(){
+function fixture(hookName='usePantry'){
  const state={cursor:0,values:[],refs:[],deps:[],memos:[],effects:[],cleanups:[],writes:0,calls:[],auth:{userId:'account-a',sessionId:'session-a'},respond:async()=>[]};
  const context={state};runInNewContext(bundle.outputFiles[0].text,context);
- const render=(commit=true)=>{state.cursor=0;const hook=context.pantry.usePantry();if(commit)state.effects.splice(0).forEach(fn=>fn());return hook;};
+ const render=(commit=true)=>{state.cursor=0;const hook=context.pantry[hookName]();if(commit)state.effects.splice(0).forEach(fn=>fn());return hook;};
  const unmount=()=>state.cleanups.filter(Boolean).forEach(fn=>fn());
  return{state,render,unmount};
 }
@@ -73,4 +73,22 @@ test('native pantry: auth render invalidates an old initial load before effect c
 test('native pantry: previous account data is hidden before new effect clears it',async()=>{
  const f=fixture(),old=f.render();await flush();f.state.respond=async()=>late;await old.resolveIntake('review','accept',['item']);assert.equal(f.render().items.length,1);
  f.state.auth={userId:'account-b',sessionId:'session-b'};const next=f.render(false);assert.deepEqual(Array.from(next.items),[]);assert.deepEqual(Array.from(next.intakes),[]);assert.equal(next.loading,true);assert.equal(next.error,null);f.unmount();
+});
+test('native pantry search: retained unmounted action cannot dispatch or mutate state',async()=>{
+ const f=fixture('usePantrySearch'),old=f.render();f.unmount();const calls=f.state.calls.length,writes=f.state.writes;await old.search('synthetic');assert.equal(f.state.calls.length,calls);assert.equal(f.state.writes,writes);
+});
+test('native pantry search: same-account session replacement invalidates pending result/error',async()=>{
+ for(const reject of [false,true]){const f=fixture('usePantrySearch'),old=f.render(),reply=deferred();f.state.respond=()=>reply.promise;const operation=old.search('synthetic');f.state.auth={userId:'account-a',sessionId:'session-new'};f.render();reject?reply.reject(Error('old-session diagnostic')):reply.resolve({marker:'old-session result'});await operation;
+  const current=f.render();assert.equal(current.response,null);assert.equal(current.error,null);assert.equal(current.searching,false);
+ }
+});
+test('native pantry search: retained old-account action cannot replace current results',async()=>{
+ const f=fixture('usePantrySearch'),old=f.render();f.state.auth={userId:'account-b',sessionId:'session-b'};const next=f.render();f.state.respond=async()=>({marker:'current result'});await next.search('current');const calls=f.state.calls.length;f.state.respond=async()=>({marker:'old result'});await old.search('old');assert.equal(f.state.calls.length,calls);assert.equal(f.render().response.marker,'current result');
+});
+test('native pantry search: old data hidden and pending result ignored before effect cleanup',async()=>{
+ const f=fixture('usePantrySearch'),old=f.render();f.state.respond=async()=>({marker:'old result'});await old.search('synthetic');assert.equal(f.render().response.marker,'old result');const reply=deferred();f.state.respond=()=>reply.promise;const operation=old.search('pending');f.state.auth={userId:'account-b',sessionId:'session-b'};const next=f.render(false);assert.equal(next.response,null);assert.equal(next.error,null);const writes=f.state.writes;reply.resolve({marker:'late old result'});await operation;assert.equal(f.state.writes,writes);f.unmount();
+});
+test('native pantry search: newer same-account search still wins out-of-order completion',async()=>{
+ const f=fixture('usePantrySearch'),current=f.render(),first=deferred(),second=deferred();f.state.respond=(_method,query)=>query==='first'?first.promise:second.promise;
+ const old=current.search('first'),next=current.search('second');second.resolve({marker:'second'});await next;first.resolve({marker:'first'});await old;assert.equal(f.render().response.marker,'second');assert.equal(f.render().searching,false);
 });

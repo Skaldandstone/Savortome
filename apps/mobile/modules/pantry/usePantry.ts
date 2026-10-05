@@ -113,30 +113,42 @@ export interface SearchController {
 }
 
 export function usePantrySearch(): SearchController {
-  const { userId } = useAuth();
-  const api = useMemo(() => createAccountClient(userId ?? ""), [userId]);
+  const { userId, sessionId } = useAuth();
+  const api = useMemo(() => createAccountClient(userId ?? ""), [userId, sessionId]);
+  const activeClient = useRef(api);
+  activeClient.current = api;
+  const dataClient = useRef(api);
+  const mounted = useRef(true);
+  const current = useCallback(() => mounted.current && activeClient.current === api, [api]);
   const request = useRef(0);
   const [response, setResponse] = useState<PantrySearchResponse | null>(null);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
+    mounted.current = true; dataClient.current = api;
     ++request.current; setResponse(null); setSearching(false); setError(null);
-    return () => { ++request.current; };
+    return () => { mounted.current = false; ++request.current; };
   }, [api]);
 
   const search = useCallback(async (query: string) => {
+    if (!current()) return;
     const version = ++request.current;
     setSearching(true);
     setError(null);
     try {
       const result = await api.searchPantry(query);
-      if (request.current === version) setResponse(result);
+      if (current() && request.current === version) setResponse(result);
     } catch (err) {
-      if (request.current === version) setError(err instanceof Error ? err.message : "That search didn't work.");
+      if (current() && request.current === version) setError(err instanceof Error ? err.message : "That search didn't work.");
     } finally {
-      if (request.current === version) setSearching(false);
+      if (current() && request.current === version) setSearching(false);
     }
-  }, [api]);
+  }, [api, current]);
 
-  return { response, searching, error, search };
+  return {
+    response: dataClient.current === api ? response : null,
+    searching: dataClient.current === api && searching,
+    error: dataClient.current === api ? error : null,
+    search,
+  };
 }
