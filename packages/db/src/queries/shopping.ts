@@ -121,18 +121,29 @@ export async function currentShoppingList(
   database: Database,
   userId: string,
 ): Promise<string> {
-  const existing = await database.query.shoppingLists.findFirst({
-    where: eq(schema.shoppingLists.userId, userId),
-    orderBy: [desc(schema.shoppingLists.createdAt)],
-    columns: { id: true },
-  });
-  if (existing) return existing.id;
+  return database.transaction(async (tx) => {
+    // Lock the stable owner row: there may be no shopping-list row to lock yet.
+    // Concurrent first additions must choose the same destination.
+    const [owner] = await tx
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.id, userId))
+      .for("update");
+    if (!owner) throw new Error("Shopping list owner unavailable");
 
-  const [created] = await database
-    .insert(schema.shoppingLists)
-    .values({ userId, name: "Shopping list" })
-    .returning({ id: schema.shoppingLists.id });
-  return created!.id;
+    const existing = await tx.query.shoppingLists.findFirst({
+      where: eq(schema.shoppingLists.userId, userId),
+      orderBy: [desc(schema.shoppingLists.createdAt)],
+      columns: { id: true },
+    });
+    if (existing) return existing.id;
+
+    const [created] = await tx
+      .insert(schema.shoppingLists)
+      .values({ userId, name: "Shopping list" })
+      .returning({ id: schema.shoppingLists.id });
+    return created!.id;
+  });
 }
 
 export interface AddToListOptions {
