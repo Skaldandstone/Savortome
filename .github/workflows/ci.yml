@@ -55,6 +55,7 @@ jobs:
           node scripts/check-pantry-review-recovery.mjs
           node scripts/check-native-pantry-lifecycle.mjs
           node scripts/check-web-pantry-lifecycle.mjs
+          node scripts/check-web-barcode-lifecycle.mjs
       # Local synthetic boundaries only: no provider keys, native builds or devices.
       - name: Food capture and recovery lifecycle
         run: |
