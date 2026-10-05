@@ -65,12 +65,16 @@ export function readAsBase64(file: File, signal?: AbortSignal): Promise<string> 
  */
 export async function compressForUpload(
   file: File,
-  { maxDimension = 1600, quality = 0.85 }: { maxDimension?: number; quality?: number } = {},
+  { maxDimension = 1600, quality = 0.85, signal }: { maxDimension?: number; quality?: number; signal?: AbortSignal } = {},
 ): Promise<File> {
+  const checkCancelled = () => { if (signal?.aborted) throw new Error("Photo preparation was cancelled."); };
+  checkCancelled();
   if (!file.type.startsWith("image/")) return file;
   let bitmap: ImageBitmap | undefined;
   try {
     bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    // The browser decoder is not abortable. Release a late bitmap without drawing.
+    checkCancelled();
     const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
@@ -86,12 +90,26 @@ export async function compressForUpload(
     bitmap.close();
     bitmap = undefined;
 
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", quality),
-    );
+    const blob = await new Promise<Blob | null>((resolve, reject) => {
+      let settled = false;
+      const finish = (error: Error | null, value: Blob | null = null) => {
+        if (settled) return;
+        settled = true;
+        signal?.removeEventListener("abort", cancel);
+        if (error) reject(error); else resolve(value);
+      };
+      const cancel = () => finish(new Error("Photo preparation was cancelled."));
+      if (signal?.aborted) { cancel(); return; }
+      signal?.addEventListener("abort", cancel, { once: true });
+      // Native encoding may continue; its late callback cannot resume preparation.
+      try { canvas.toBlob(value => finish(null, value), "image/jpeg", quality); }
+      catch { finish(new Error("Couldn't encode that photo.")); }
+    });
+    checkCancelled();
     if (!blob || blob.size >= file.size) return file;
     return new File([blob], file.name.replace(/\.\w+$/, ".jpg"), { type: "image/jpeg" });
   } catch {
+    checkCancelled();
     // A decode failure (corrupt file, unsupported format, no canvas support)
     // must fall back to the original rather than block the upload entirely —
     // the server's own type/size validation is still the real gate.

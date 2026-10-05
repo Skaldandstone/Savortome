@@ -10,7 +10,7 @@ const mocks={
  '@clerk/nextjs':`export const useAuth=()=>state.auth;`,
  '@/ui':`export const Button='Button',Callout='Callout';`,
  './recipe.module.css':`export default {};`,
- '@/lib/photo':`export const compressForUpload=file=>state.prepare(file);export const readAsBase64=file=>state.decode(file);`,
+ '@/lib/photo':`export const compressForUpload=(file,options)=>{state.preparationSignals.push(options?.signal);return state.prepare(file);};export const readAsBase64=(file,signal)=>{state.readSignals.push(signal);return state.decode(file);};`,
  '@seconds/core/format':`export {isPhotoMediaType,MAX_PHOTO_BYTES,MAX_RECIPE_PHOTOS,RecipePhotoSchema} from './packages/core/src/recipe.ts';export const createClient=config=>{state.config=config;return state.api;};`,
 };
 const bundle=await build({bundle:true,write:false,format:'iife',globalName:'app',jsx:'automatic',stdin:{resolveDir:process.cwd(),contents:`export {RecipePhotos} from './apps/web/modules/recipe/RecipePhotos.tsx';`},plugins:[{name:'photo-ui-boundaries',setup(api){api.onResolve({filter:/.*/},args=>Object.hasOwn(mocks,args.path)?{path:args.path,namespace:'mock'}:undefined);api.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:mocks[args.path],loader:'js',resolveDir:process.cwd()}));}}]});
@@ -21,11 +21,11 @@ const photo=n=>({key:`fixture/photo-${n}`,url:`https://fixture.invalid/${n}`,cre
 function nodes(t){return Array.isArray(t)?t.flatMap(nodes):t&&typeof t==='object'?[t,...nodes(t.props?.children)]:[];}
 function text(t){return Array.isArray(t)?t.map(text).join(' '):t&&typeof t==='object'?text(t.props?.children):t==null?'':String(t);}
 function fixture(authenticated=false){
- const state={focuses:[],cursor:0,values:[],deps:[],cleanups:[],effects:[],writes:0,calls:[],auth:{isLoaded:true,userId:'synthetic-account',sessionId:'synthetic-session'},timers:new Map(),timer:0};
+ const state={preparationSignals:[],readSignals:[],focuses:[],cursor:0,values:[],deps:[],cleanups:[],effects:[],writes:0,calls:[],auth:{isLoaded:true,userId:'synthetic-account',sessionId:'synthetic-session'},timers:new Map(),timer:0};
  state.document={body:{fixtureBody:true},activeElement:null};state.document.activeElement=state.document.body;state.removeButton={ownerDocument:state.document};
  state.prepare=async file=>file;state.decode=async()=>'aGVsbG8=';state.add=async()=>({photos:[photo(1),photo(2)]});state.remove=async()=>({photos:[]});state.read=async()=>({id,photos:[photo(1)]});
  state.api={addRecipePhoto:async(...args)=>{state.calls.push(['add',...args]);return state.add(...args);},removeRecipePhoto:async(...args)=>{state.calls.push(['remove',...args]);return state.remove(...args);},getRecipe:async(...args)=>{state.calls.push(['read',...args]);return state.read(...args);}};
- const context={state,setTimeout:(fn,ms)=>{assert.equal(ms,30000);state.timers.set(++state.timer,fn);return state.timer;},clearTimeout:i=>state.timers.delete(i)};runInNewContext(bundle.outputFiles[0].text,context);
+ const context={state,AbortController,setTimeout:(fn,ms)=>{assert.equal(ms,30000);state.timers.set(++state.timer,fn);return state.timer;},clearTimeout:i=>state.timers.delete(i)};runInNewContext(bundle.outputFiles[0].text,context);
  const props={recipeId:id,initial:[photo(1)],clerkEnabled:authenticated};
  function render(){state.cursor=0;let tree=context.app.RecipePhotos(props);while(typeof tree?.type==='function')tree=tree.type(tree.props);for(const node of nodes(tree)){if(node.type==='h3'&&node.props.ref)node.props.ref.current={focus:()=>{state.focuses.push('gallery-heading');state.document.activeElement='heading';}};}while(state.effects.length)state.effects.shift()();return tree;}
  const find=label=>nodes(render()).find(n=>n.type==='Button'&&text(n)===label);
@@ -64,3 +64,5 @@ test('photo UI focus: gallery exposes busy progress and target is programmatical
 test('photo UI preparation: oversized or unsupported compressed output is refused before base64 reading',async()=>{for(const compressed of [{type:'image/gif',size:10},{type:'image/jpeg',size:50000001}]){const f=fixture();let reads=0;f.state.prepare=async()=>compressed;f.state.decode=async()=>{reads++;return 'synthetic';};f.pick();await flush();assert.equal(reads,0);assert.equal(f.state.calls.length,0);}});
 
 test('photo UI preparation: late compression after timeout or unmount cannot start file reading',async()=>{for(const timeout of [false,true]){const f=fixture(),gate=deferred();let reads=0;f.state.prepare=()=>gate.promise;f.state.decode=async()=>{reads++;return 'synthetic';};f.pick();if(timeout){for(const fn of [...f.state.timers.values()])fn();await flush();}else f.unmount();gate.resolve({type:'image/jpeg',size:100});await flush();assert.equal(reads,0);assert.equal(f.state.calls.length,0);}});
+
+test('photo UI cancellation: timeout/unmount aborts compression and active read without dispatch',async()=>{for(const reason of ['timeout','unmount']){const f=fixture(),gate=deferred();f.state.decode=()=>gate.promise;f.pick();await flush();const signal=f.state.readSignals[0];assert.equal(signal,f.state.preparationSignals[0]);assert.equal(signal.aborted,false);if(reason==='timeout')for(const fn of [...f.state.timers.values()])fn();else f.unmount();assert.equal(signal.aborted,true);gate.resolve('late');await flush();assert.equal(f.state.calls.length,0);}});

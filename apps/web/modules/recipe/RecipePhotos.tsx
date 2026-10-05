@@ -42,7 +42,9 @@ function AccountPhotos({ recipeId, initial, sessionId }: Props & { sessionId?: s
   const alive = useRef(true);
   const action = useRef(false);
   const pending = useRef(false);
-  useEffect(() => { alive.current = true; if (sessionId) void refresh(); return () => { alive.current = false; }; }, []);
+  const preparation = useRef<AbortController | null>(null);
+  const preparationTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => { alive.current = true; if (sessionId) void refresh(); return () => { alive.current = false; preparation.current?.abort(); if (preparationTimer.current !== undefined) clearTimeout(preparationTimer.current); }; }, []);
   useEffect(() => {
     const origin = focusOrigin.current;
     focusOrigin.current = null;
@@ -87,23 +89,28 @@ function AccountPhotos({ recipeId, initial, sessionId }: Props & { sessionId?: s
     action.current = true; setUploading(true);
     let dispatched = false;
     let preparationActive = true;
+    const controller = new AbortController();
+    preparation.current = controller;
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       // Local preparation is bounded; abandoned work cannot submit an upload.
       const prepared = await Promise.race([
         (async () => {
-          const compressed = await compressForUpload(file);
+          const compressed = await compressForUpload(file, { signal: controller.signal });
           if (!alive.current || !preparationActive) throw new Error("Photo preparation was abandoned.");
           // Reject before FileReader creates a potentially large base64 string.
           if (compressed.size > MAX_PHOTO_BYTES || !isPhotoMediaType(compressed.type)) throw new Error("Photo exceeds the upload limit.");
-          return { compressed, base64: await readAsBase64(compressed) };
+          return { compressed, base64: await readAsBase64(compressed, controller.signal) };
         })(),
-        new Promise<never>((_, reject) => { timer = setTimeout(() => { preparationActive = false; reject(new Error("Photo preparation timed out.")); }, 30_000); }),
+        new Promise<never>((_, reject) => { timer = setTimeout(() => { preparationActive = false; controller.abort(); reject(new Error("Photo preparation timed out.")); }, 30_000); preparationTimer.current = timer; }),
       ]);
       if (!alive.current) return;
       if (prepared.compressed.size > MAX_PHOTO_BYTES || !isPhotoMediaType(prepared.compressed.type)) {
         setError("Couldn't prepare that photo within the upload limit. Try a smaller JPEG, PNG, or WebP."); return;
       }
+      if (timer !== undefined) clearTimeout(timer);
+      preparationTimer.current = undefined;
+      preparation.current = null;
       dispatched = true;
       const result = await api.addRecipePhoto(recipeId, prepared.base64, prepared.compressed.type);
       if (!alive.current) return;
@@ -119,6 +126,8 @@ function AccountPhotos({ recipeId, initial, sessionId }: Props & { sessionId?: s
       }
     } finally {
       preparationActive = false;
+      controller.abort();
+      if (preparation.current === controller) { preparation.current = null; preparationTimer.current = undefined; }
       if (timer !== undefined) clearTimeout(timer);
       if (alive.current) { action.current = false; setUploading(false); if (fileInput.current) fileInput.current.value = ""; }
     }
