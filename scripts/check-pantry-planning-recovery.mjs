@@ -21,15 +21,15 @@ function nodes(t){return Array.isArray(t)?t.flatMap(nodes):t&&typeof t==='object
 function text(t){return Array.isArray(t)?t.map(text).join(' '):t&&typeof t==='object'?text(t.props?.children):t==null?'':String(t);}
 function fixture(platform){
  const state={cursor:0,values:[],deps:[],cleanups:[],effects:[],calls:0,chosen:[],routes:[],disabled:false};
- state.load=async()=>[sample];const client={listPantry:()=>{state.calls++;return state.load();}};
+ state.load=async()=>[sample];let client={listPantry:()=>{state.calls++;return state.load();}};
  const context={state};runInNewContext(bundle.outputFiles[0].text,context);
- const render=()=>{state.cursor=0;const tree=context.app[platform]({client,disabled:state.disabled,onChoose:item=>state.chosen.push(item)});state.effects.splice(0).forEach(fn=>fn());return tree;};
+ const render=(commit=true)=>{state.cursor=0;const tree=context.app[platform]({client,disabled:state.disabled,onChoose:item=>state.chosen.push(item)});if(commit)state.effects.splice(0).forEach(fn=>fn());return tree;};
  const button=label=>{const found=nodes(render()).find(n=>n.type==='Button'&&(n.props.label??text(n)).replace(/\s+/g,' ').trim()===label);assert.ok(found,`Missing ${label}`);return found;};
  const press=label=>{const b=button(label);assert.equal(!!b.props.disabled,false);(b.props.onPress??b.props.onClick)();};
  const settle=async()=>{for(let i=0;i<3;i++){render();await flush();}return render();};
  const unmount=()=>state.cleanups.filter(Boolean).forEach(fn=>fn());
  render();if(platform==='Native')press('Check what your pantry thinks is still there');
- return{state,render,button,press,settle,unmount};
+ return{state,render,button,press,settle,unmount,replace:()=>{client={listPantry:()=>{state.calls++;return state.load();}};}};
 }
 for(const platform of ['Web','Native']){
  test(`${platform}: pantry check is opt-in; choosing only returns the saved item`,async()=>{const f=fixture(platform);assert.equal(f.state.calls,0);f.press('Check my pantry');await f.settle();assert.match(text(f.render()),/not a stock check/);f.press('Use Bananas for meal ideas');assert.equal(f.state.calls,1);assert.deepEqual(f.state.chosen,[sample]);assert.match(text(f.render()),/needs your review/);});
@@ -40,3 +40,16 @@ for(const platform of ['Web','Native']){
 test('Native: focus reentry clears old snapshot and ignores old pending read',async()=>{const f=fixture('Native'),gate=deferred();f.state.load=()=>gate.promise;f.press('Check my pantry');f.state.blur();f.state.blur=f.state.focus();gate.resolve([sample]);await f.settle();assert.doesNotMatch(text(f.render()),/Use Bananas/);assert.equal(f.button('Check my pantry').props.disabled,false);});
 test('Native: pending pantry read forwards accessible busy state',async()=>{const f=fixture('Native'),gate=deferred();f.state.load=()=>gate.promise;f.press('Check my pantry');assert.equal(f.button('Loading pantry choices…').props.busy,true);gate.resolve([]);await f.settle();});
 test('Web: pending read exposes aria-busy and clears it after settlement',async()=>{const f=fixture('Web'),gate=deferred();f.state.load=()=>gate.promise;f.press('Check my pantry');assert.equal(f.button('Loading pantry choices…').props['aria-busy'],true);gate.resolve([]);await f.settle();assert.equal(f.button('Refresh pantry choices').props['aria-busy'],false);});
+
+
+for(const platform of ['Web','Native']){
+ test(`${platform}: retained unmounted read and choice cannot dispatch`,async()=>{const f=fixture(platform);f.press('Check my pantry');await f.settle();const choose=f.button('Use Bananas for meal ideas'),load=f.button('Refresh pantry choices');f.unmount();const calls=f.state.calls;(choose.props.onClick??choose.props.onPress)();(load.props.onClick??load.props.onPress)();assert.equal(f.state.chosen.length,0);assert.equal(f.state.calls,calls);});
+ test(`${platform}: client replacement hides prior choices before reset and refuses retained choice`,async()=>{const f=fixture(platform);f.press('Check my pantry');await f.settle();const choose=f.button('Use Bananas for meal ideas');f.replace();assert.doesNotMatch(text(f.render(false)),/Use Bananas/);(choose.props.onClick??choose.props.onPress)();assert.equal(f.state.chosen.length,0);f.unmount();});
+ test(`${platform}: replacement client ignores old pending read and can check its own snapshot`,async()=>{const f=fixture(platform),gate=deferred();f.state.load=()=>gate.promise;f.press('Check my pantry');f.replace();f.render();gate.resolve([sample]);await f.settle();assert.doesNotMatch(text(f.render()),/Use Bananas/);f.state.load=async()=>[];f.press('Check my pantry');await f.settle();assert.match(text(f.render()),/No saved pantry items/);});
+}
+test('Native: retained choice after blur cannot change meal input',async()=>{const f=fixture('Native');f.press('Check my pantry');await f.settle();const choice=f.button('Use Bananas for meal ideas');f.state.blur();choice.props.onPress();assert.equal(f.state.chosen.length,0);});
+
+for(const platform of ['Web','Native']){
+ test(`${platform}: retained choice is inert after a refreshed snapshot or new disabled state`,async()=>{for(const mode of ['refresh','disabled']){const f=fixture(platform);f.press('Check my pantry');await f.settle();const choice=f.button('Use Bananas for meal ideas');if(mode==='refresh'){f.state.load=async()=>[];f.press('Refresh pantry choices');await f.settle();}else{f.state.disabled=true;f.render();}(choice.props.onClick??choice.props.onPress)();assert.equal(f.state.chosen.length,0);}});
+ test(`${platform}: retained old-client name editor cannot change replacement search`,async()=>{const f=fixture(platform);f.press('Check my pantry');await f.settle();const field=nodes(f.render()).find(n=>n.type===(platform==='Web'?'TextField':'Field'));f.replace();f.render();f.state.load=async()=>[sample];f.press('Check my pantry');await f.settle();platform==='Web'?field.props.onChange({target:{value:'stale old input'}}):field.props.onChangeText('stale old input');assert.match(text(f.render()),/Bananas/);assert.doesNotMatch(text(f.render()),/No saved name matches/);});
+}
