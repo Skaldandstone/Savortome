@@ -428,3 +428,6 @@ Recipe gallery recovery UI now serializes actions, bounds preparation/photo tran
 
 
 Photo-removal keyboard focus source gap reproduced/fixed: focused removal or its uncertain failure can return to the gallery heading after state commit, only while focus still belongs to the action/body fallback. Later focus movement/unmount is respected. Added polite removal progress/aria-busy and themed focus outline.21component+8accessibility fixture checks/webtypes pass; synthetic DOM is not rendered/browser/screen-reader acceptance. Backend/transport/provider/runtime unchanged.
+
+
+Photo preparation lifecycle faults reproduced/fixed: compressed media/size validated before base64, abandoned late compression cannot start file read, FileReader settles abort/invalid result and releases handlers, bitmap closes on drawing faults and before possibly stalled encoding. Original fallback/EXIF/downscale retained.10helper+23gallery fixtures/webtypes pass; synthetic browser objects do not prove decoding/memory/device/provider behavior. Existing import helper benefits without model/provider changes; already-running local operations may finish after gallery deadline. No deployment.

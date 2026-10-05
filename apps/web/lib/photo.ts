@@ -10,13 +10,24 @@
 export function readAsBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Couldn't read that photo."));
-    reader.onload = () => {
-      const result = reader.result as string;
-      const comma = result.indexOf(",");
-      resolve(comma === -1 ? result : result.slice(comma + 1));
+    let settled = false;
+    const finish = (error: Error | null, payload?: string) => {
+      if (settled) return;
+      settled = true;
+      reader.onload = reader.onerror = reader.onabort = null;
+      if (error) reject(error);
+      else resolve(payload!);
     };
-    reader.readAsDataURL(file);
+    reader.onerror = () => finish(new Error("Couldn't read that photo."));
+    reader.onabort = () => finish(new Error("Reading that photo was cancelled."));
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== "string") { finish(new Error("Couldn't read that photo.")); return; }
+      const comma = result.indexOf(",");
+      finish(null, comma === -1 ? result : result.slice(comma + 1));
+    };
+    try { reader.readAsDataURL(file); }
+    catch { finish(new Error("Couldn't read that photo.")); }
   });
 }
 
@@ -48,8 +59,9 @@ export async function compressForUpload(
   { maxDimension = 1600, quality = 0.85 }: { maxDimension?: number; quality?: number } = {},
 ): Promise<File> {
   if (!file.type.startsWith("image/")) return file;
+  let bitmap: ImageBitmap | undefined;
   try {
-    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
     const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
     const width = Math.max(1, Math.round(bitmap.width * scale));
     const height = Math.max(1, Math.round(bitmap.height * scale));
@@ -59,11 +71,11 @@ export async function compressForUpload(
     canvas.height = height;
     const ctx = canvas.getContext("2d");
     if (!ctx) {
-      bitmap.close();
       return file;
     }
     ctx.drawImage(bitmap, 0, 0, width, height);
     bitmap.close();
+    bitmap = undefined;
 
     const blob = await new Promise<Blob | null>((resolve) =>
       canvas.toBlob(resolve, "image/jpeg", quality),
@@ -75,5 +87,8 @@ export async function compressForUpload(
     // must fall back to the original rather than block the upload entirely —
     // the server's own type/size validation is still the real gate.
     return file;
+  } finally {
+    // Also release the decoded bitmap if canvas creation/drawing/encoding fails.
+    bitmap?.close();
   }
 }

@@ -86,12 +86,19 @@ function AccountPhotos({ recipeId, initial, sessionId }: Props & { sessionId?: s
     if (file.size > MAX_PHOTO_BYTES_BEFORE_COMPRESSION) { setError("That photo is too large. Try a smaller image."); return; }
     action.current = true; setUploading(true);
     let dispatched = false;
+    let preparationActive = true;
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
       // Local preparation is bounded; abandoned work cannot submit an upload.
       const prepared = await Promise.race([
-        (async () => { const compressed = await compressForUpload(file); return { compressed, base64: await readAsBase64(compressed) }; })(),
-        new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new Error("Photo preparation timed out.")), 30_000); }),
+        (async () => {
+          const compressed = await compressForUpload(file);
+          if (!alive.current || !preparationActive) throw new Error("Photo preparation was abandoned.");
+          // Reject before FileReader creates a potentially large base64 string.
+          if (compressed.size > MAX_PHOTO_BYTES || !isPhotoMediaType(compressed.type)) throw new Error("Photo exceeds the upload limit.");
+          return { compressed, base64: await readAsBase64(compressed) };
+        })(),
+        new Promise<never>((_, reject) => { timer = setTimeout(() => { preparationActive = false; reject(new Error("Photo preparation timed out.")); }, 30_000); }),
       ]);
       if (!alive.current) return;
       if (prepared.compressed.size > MAX_PHOTO_BYTES || !isPhotoMediaType(prepared.compressed.type)) {
@@ -111,6 +118,7 @@ function AccountPhotos({ recipeId, initial, sessionId }: Props & { sessionId?: s
         else setError("Couldn't prepare that photo. Nothing was uploaded; try a smaller photo.");
       }
     } finally {
+      preparationActive = false;
       if (timer !== undefined) clearTimeout(timer);
       if (alive.current) { action.current = false; setUploading(false); if (fileInput.current) fileInput.current.value = ""; }
     }
