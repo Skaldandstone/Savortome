@@ -241,6 +241,7 @@ async function addRecipesInTransaction(
   // Ticked-off items stay ticked when the list is rebuilt.
   const wasChecked = new Set(existing.filter((e) => e.checked).map((e) => e.canonicalItem));
   const existingRecipeIds = new Map(existing.map((row) => [row.canonicalItem, row.recipeIds]));
+  const existingItemIds = new Map(existing.map((row) => [row.canonicalItem, row.id]));
 
   await database.transaction(async (tx) => {
     await tx
@@ -248,6 +249,10 @@ async function addRecipesInTransaction(
       .where(eq(schema.shoppingListItems.listId, listId));
     await tx.insert(schema.shoppingListItems).values(
       lines.map((line) => ({
+        // Controls may still hold the displayed ID while another recipe is added.
+        id: line.recipeIds.includes("__existing__")
+          ? existingItemIds.get(line.canonicalItem)
+          : undefined,
         listId,
         canonicalItem: line.canonicalItem,
         displayName: line.displayName,

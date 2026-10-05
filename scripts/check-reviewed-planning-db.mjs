@@ -57,7 +57,7 @@ test('reviewed planning/shopping real-query retry and owner boundaries',async t=
    await pg.query('INSERT INTO recipes(id,owner_id,title,ingredients) VALUES ($1,$2,$3,$4),($5,$2,$6,$7)',[RE,E,'Synthetic first',JSON.stringify([ingredient('carrot',3),ingredient('oat',2)]),RF,'Synthetic second',JSON.stringify([ingredient('carrot',1)])]);
    const first=await addRecipesToList(db,E,[RE],{usePantry:false,skipStaples:false});await setItemChecked(db,E,first.items.find(x=>x.canonicalItem==='oat').id,true);
    const second=await addRecipesToList(db,E,[RF],{usePantry:false,skipStaples:false});const carrot=second.items.find(x=>x.canonicalItem==='carrot'),oat=second.items.find(x=>x.canonicalItem==='oat');
-   assert.equal(carrot.quantity,4);assert.deepEqual(carrot.recipeIds.slice().sort(),[RE,RF].sort());assert.equal(oat.quantity,2);assert.deepEqual(oat.recipeIds,[RE]);assert.equal(oat.checked,true);assert.equal(second.items.some(x=>x.recipeIds.includes('__existing__')),false);
+   assert.equal(carrot.id,first.items.find(x=>x.canonicalItem==='carrot').id);assert.equal(oat.id,first.items.find(x=>x.canonicalItem==='oat').id);assert.equal(carrot.quantity,4);assert.deepEqual(carrot.recipeIds.slice().sort(),[RE,RF].sort());assert.equal(oat.quantity,2);assert.deepEqual(oat.recipeIds,[RE]);assert.equal(oat.checked,true);assert.equal(second.items.some(x=>x.recipeIds.includes('__existing__')),false);
   });
   await t.test('later recipe additions do not subtract pantry twice from saved shortfalls',async()=>{
    const F='00000000-0000-4000-8000-000000000011',RG='00000000-0000-4000-8000-000000000012',RH='00000000-0000-4000-8000-000000000013';await pg.query('INSERT INTO users VALUES ($1)',[F]);
@@ -98,6 +98,13 @@ test('reviewed planning/shopping real-query retry and owner boundaries',async t=
    }finally{await pg.exec('DROP TRIGGER synthetic_shopping_fault ON shopping_list_items; DROP FUNCTION reject_synthetic_shopping_insert();');}
    const retry=await addRecipesToList(db,H,[RL],{usePantry:false});assert.equal(retry.id,original.id);const banana=retry.items.find(x=>x.canonicalItem==='banana');assert.equal(banana.quantity,6);assert.equal(banana.checked,true);assert.deepEqual(banana.recipeIds,[RL]);assert.equal(retry.items.find(x=>x.canonicalItem==='synthetic rejected item').quantity,2);
    const fresh=await addRecipesToList(db,I,[RM],{usePantry:false});assert.equal(fresh.items.length,1);assert.equal(fresh.items[0].quantity,2);
+  });
+  await t.test('displayed shopping item IDs remain actionable after a recipe addition',async()=>{
+   const J='00000000-0000-4000-8000-000000000022',RN='00000000-0000-4000-8000-000000000023';await pg.query('INSERT INTO users VALUES ($1)',[J]);
+   const ingredient={raw:'2 tomatoes',quantity:2,quantityMax:null,unit:'count',item:'tomato',canonicalItem:'tomato',notes:null,optional:false,group:null};await pg.query('INSERT INTO recipes(id,owner_id,title,ingredients) VALUES ($1,$2,$3,$4)',[RN,J,'Synthetic displayed shopping IDs',JSON.stringify([ingredient])]);
+   const displayed=await addItemsToList(db,J,[{canonicalItem:'carrot'},{canonicalItem:'bean'}]);const carrotId=displayed.items.find(x=>x.canonicalItem==='carrot').id,beanId=displayed.items.find(x=>x.canonicalItem==='bean').id;
+   await addRecipesToList(db,J,[RN],{usePantry:false});await setItemChecked(db,J,carrotId,true);await removeListItem(db,J,beanId);
+   const current=await getShoppingList(db,J,displayed.id);assert.equal(current.items.find(x=>x.canonicalItem==='carrot').checked,true);assert.equal(current.items.find(x=>x.canonicalItem==='carrot').id,carrotId);assert.equal(current.items.some(x=>x.canonicalItem==='bean'),false);assert.equal(current.items.find(x=>x.canonicalItem==='tomato').quantity,2);
   });
   await t.test('outer fault rolls back both calendar and shopping additions',async()=>{
    await assert.rejects(db.transaction(async tx=>{await addToPlan(tx,A,RA,'2026-10-06','lunch');await addItemsToList(tx,A,[{canonicalItem:'synthetic oats'}]);throw Error('synthetic fault after both writes');}),/synthetic fault/);assert.equal((await planForRange(db,A,'2026-10-05','2026-10-11')).length,1);assert.deepEqual((await getShoppingList(db,A,list.id)).items.map(x=>x.canonicalItem),['banana']);
