@@ -8,7 +8,7 @@ const mocks={
  '@/ui':`export const Button='Button',Callout='Callout',FieldRow='FieldRow',TextArea='TextArea',TextField='TextField';`,
  './ModeSwitch':`export const ModeSwitch='ModeSwitch';`,
  './import.module.css':`export default {};`,
- '@/lib/photo':`export const readAsBase64=file=>state.read(file);`,
+ '@/lib/photo':`export const readAsBase64=(file,signal)=>{state.signals.push(signal);return state.read(file);};`,
  '@seconds/core/format':`export {isPhotoMediaType,MAX_PHOTO_BYTES} from './packages/core/src/recipe.ts';export const hintForUrl=()=>undefined;`,
 };
 const bundle=await build({bundle:true,write:false,format:'iife',globalName:'app',jsx:'automatic',stdin:{resolveDir:process.cwd(),contents:`export {ImportForm} from './apps/web/modules/import/ImportForm.tsx';`},plugins:[{name:'import-photo-boundaries',setup(api){api.onResolve({filter:/.*/},args=>Object.hasOwn(mocks,args.path)?{path:args.path,namespace:'mock'}:undefined);api.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:mocks[args.path],loader:'js',resolveDir:process.cwd()}));}}]});
@@ -18,8 +18,8 @@ function nodes(t){return Array.isArray(t)?t.flatMap(nodes):t&&typeof t==='object
 function words(t){return Array.isArray(t)?t.map(words).join(' '):t&&typeof t==='object'?words(t.props?.children):t==null?'':String(t);}
 const file=name=>({name,type:'image/jpeg',size:100});
 function fixture(){
- const state={cursor:0,values:[],deps:[],effects:[],cleanups:[],writes:0,created:[],revoked:[],submitted:[],timers:new Map(),timer:0};state.read=async f=>'synthetic-'+f.name;
- const context={state,URL:{createObjectURL:f=>{const url='blob:synthetic/'+f.name;state.created.push(url);return url;},revokeObjectURL:url=>state.revoked.push(url)},setTimeout:(fn,ms)=>{assert.equal(ms,30000);state.timers.set(++state.timer,fn);return state.timer;},clearTimeout:i=>state.timers.delete(i)};
+ const state={signals:[],cursor:0,values:[],deps:[],effects:[],cleanups:[],writes:0,created:[],revoked:[],submitted:[],timers:new Map(),timer:0};state.read=async f=>'synthetic-'+f.name;
+ const context={state,AbortController,URL:{createObjectURL:f=>{const url='blob:synthetic/'+f.name;state.created.push(url);return url;},revokeObjectURL:url=>state.revoked.push(url)},setTimeout:(fn,ms)=>{assert.equal(ms,30000);state.timers.set(++state.timer,fn);return state.timer;},clearTimeout:i=>state.timers.delete(i)};
  runInNewContext(bundle.outputFiles[0].text,context);let busy=false;
  const render=()=>{state.cursor=0;const tree=context.app.ImportForm({busy,onSubmit:r=>state.submitted.push(r)});while(state.effects.length)state.effects.shift()();return tree;};
  const find=type=>nodes(render()).find(n=>n.type===type);
@@ -39,3 +39,5 @@ test('import photo: preparation timeout permits explicit retry without late repl
 test('import photo: stale failed read cannot erase newer success or expose old error',async()=>{const f=fixture(),gate=deferred();f.state.read=()=>gate.promise;f.pick(file('old'));f.state.read=async()=>'current';f.pick(file('current'));await flush();gate.reject(Error('private old failure'));await flush();f.submit();assert.equal(f.state.submitted[0]?.imageBase64,'current');assert.doesNotMatch(words(f.render()),/Couldn.t read/);});
 test('import photo: confirmed preview released once on mode change and unmount',async()=>{const f=fixture();f.pick(file('one'));await flush();f.mode('url');f.unmount();assert.deepEqual(f.state.revoked,['blob:synthetic/one']);});
 test('import photo: busy import rejects new picks and mode changes without losing selection',async()=>{const f=fixture();f.pick(file('one'));await flush();f.busy(true);let reads=0;f.state.read=async()=>{reads++;return 'two';};f.pick(file('two'));f.mode('text');await flush();assert.equal(reads,0);assert.deepEqual(f.state.revoked,[]);f.busy(false);f.submit();assert.equal(f.state.submitted[0]?.imageBase64,'synthetic-one');});
+
+test('import photo cancellation: replacement, mode switch, timeout and unmount abort associated reads',async()=>{for(const reason of ['replacement','mode','timeout','unmount']){const f=fixture(),gate=deferred();f.state.read=()=>gate.promise;f.pick(file('first'));const signal=f.state.signals[0];assert.equal(signal.aborted,false);if(reason==='replacement')f.pick(file('second'));if(reason==='mode')f.mode('text');if(reason==='timeout')for(const fn of [...f.state.timers.values()])fn();if(reason==='unmount')f.unmount();assert.equal(signal.aborted,true,reason);gate.resolve('late');await flush();assert.equal(f.state.submitted.length,0);f.unmount();}});

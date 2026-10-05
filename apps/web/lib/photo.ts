@@ -7,7 +7,7 @@
  */
 
 /** A data: URL's own base64 payload, stripped of the `data:<type>;base64,` prefix. */
-export function readAsBase64(file: File): Promise<string> {
+export function readAsBase64(file: File, signal?: AbortSignal): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     let settled = false;
@@ -15,9 +15,18 @@ export function readAsBase64(file: File): Promise<string> {
       if (settled) return;
       settled = true;
       reader.onload = reader.onerror = reader.onabort = null;
+      signal?.removeEventListener("abort", cancel);
       if (error) reject(error);
       else resolve(payload!);
     };
+    const cancel = () => {
+      if (settled) return;
+      finish(new Error("Reading that photo was cancelled."));
+      // Detach first: abort must not re-enter settlement or surface raw errors.
+      try { reader.abort(); } catch { /* already settled; nothing may submit */ }
+    };
+    if (signal?.aborted) { cancel(); return; }
+    signal?.addEventListener("abort", cancel, { once: true });
     reader.onerror = () => finish(new Error("Couldn't read that photo."));
     reader.onabort = () => finish(new Error("Reading that photo was cancelled."));
     reader.onload = () => {

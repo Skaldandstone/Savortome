@@ -34,10 +34,13 @@ export function ImportForm({
   const reading = useRef(false);
   const preview = useRef<string | null>(null);
   const selected = useRef<typeof photo>(null);
+  const preparation = useRef<AbortController | null>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   function discardPhoto() {
     generation.current++;
+    preparation.current?.abort();
+    preparation.current = null;
     reading.current = false;
     selected.current = null;
     if (timer.current !== undefined) clearTimeout(timer.current);
@@ -65,13 +68,15 @@ export function ImportForm({
       return;
     }
     const version = generation.current;
+    const controller = new AbortController();
+    preparation.current = controller;
     reading.current = true; setPreparing(true);
     try {
-      // Bound the caller; FileReader itself may finish after abandonment.
+      // Bound the caller and explicitly stop the associated FileReader.
       const base64 = await Promise.race([
-        readAsBase64(file),
+        readAsBase64(file, controller.signal),
         new Promise<never>((_, reject) => {
-          timer.current = setTimeout(() => reject(new Error("Photo read timed out.")), 30_000);
+          timer.current = setTimeout(() => { controller.abort(); reject(new Error("Photo read timed out.")); }, 30_000);
         }),
       ]);
       if (!alive.current || version !== generation.current) return;
@@ -83,6 +88,7 @@ export function ImportForm({
       if (alive.current && version === generation.current) {
         if (timer.current !== undefined) clearTimeout(timer.current);
         timer.current = undefined;
+        preparation.current = null;
         reading.current = false; setPreparing(false);
         if (fileInput.current) fileInput.current.value = "";
       }
