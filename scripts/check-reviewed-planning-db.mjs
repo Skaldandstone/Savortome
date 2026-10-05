@@ -106,6 +106,21 @@ test('reviewed planning/shopping real-query retry and owner boundaries',async t=
    await addRecipesToList(db,J,[RN],{usePantry:false});await setItemChecked(db,J,carrotId,true);await removeListItem(db,J,beanId);
    const current=await getShoppingList(db,J,displayed.id);assert.equal(current.items.find(x=>x.canonicalItem==='carrot').checked,true);assert.equal(current.items.find(x=>x.canonicalItem==='carrot').id,carrotId);assert.equal(current.items.some(x=>x.canonicalItem==='bean'),false);assert.equal(current.items.find(x=>x.canonicalItem==='tomato').quantity,2);
   });
+  await t.test('checking a displayed item during a paused recipe rebuild is not overwritten',async()=>{
+   const K='00000000-0000-4000-8000-000000000024',RO='00000000-0000-4000-8000-000000000025';await pg.query('INSERT INTO users VALUES ($1)',[K]);
+   const ingredient={raw:'2 tomatoes',quantity:2,quantityMax:null,unit:'count',item:'tomato',canonicalItem:'tomato',notes:null,optional:false,group:null};await pg.query('INSERT INTO recipes(id,owner_id,title,ingredients) VALUES ($1,$2,$3,$4)',[RO,K,'Synthetic paused rebuild',JSON.stringify([ingredient])]);const displayed=await addItemsToList(db,K,[{canonicalItem:'carrot'}]);const itemId=displayed.items[0].id;
+   let release,captured,paused=false;const gate=new Promise(resolve=>{release=resolve}),snapshotRead=new Promise(resolve=>{captured=resolve});
+   // Pause actual existing-row read after its result is obtained; no query data is mocked.
+   const wrap=target=>new Proxy(target,{get(object,key){
+    if(key==='transaction')return callback=>object.transaction(tx=>callback(wrap(tx)));
+    if(key==='query')return new Proxy(object.query,{get(queries,table){if(table!=='shoppingListItems')return queries[table];return new Proxy(queries[table],{get(query,method){if(method!=='findMany')return query[method];return async(...args)=>{const rows=await query.findMany(...args);if(!paused){paused=true;captured();await gate;}return rows;};}});}});
+    const value=Reflect.get(object,key);return typeof value==='function'?value.bind(object):value;
+   }});
+   const rebuilding=addRecipesToList(wrap(db),K,[RO],{usePantry:false});await snapshotRead;const checking=setItemChecked(db,K,itemId,true);
+   // PGlite may queue root operations behind a transaction; this is not independent-connection lock proof.
+   // Bound the wait so a queued mutation cannot deadlock the deliberately held read.
+   await Promise.race([checking,new Promise(resolve=>setTimeout(resolve,25))]);release();await Promise.all([rebuilding,checking]);const current=await getShoppingList(db,K,displayed.id);assert.equal(current.items.find(x=>x.id===itemId).checked,true);
+  });
   await t.test('outer fault rolls back both calendar and shopping additions',async()=>{
    await assert.rejects(db.transaction(async tx=>{await addToPlan(tx,A,RA,'2026-10-06','lunch');await addItemsToList(tx,A,[{canonicalItem:'synthetic oats'}]);throw Error('synthetic fault after both writes');}),/synthetic fault/);assert.equal((await planForRange(db,A,'2026-10-05','2026-10-11')).length,1);assert.deepEqual((await getShoppingList(db,A,list.id)).items.map(x=>x.canonicalItem),['banana']);
   });
