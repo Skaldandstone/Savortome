@@ -128,6 +128,7 @@ function AccountRecipeScreen({ id, client }: { id: string; client: SecondsClient
         {listMessage ? <Callout tone={listUnconfirmed ? "warn" : "info"}>{listMessage}</Callout> : null}
         {recipe || listUnconfirmed || added ? <Button label="Review my shopping list" variant="ghost" onPress={() => router.push("/(protected)/(tabs)/list")} /> : null}
         {listUnconfirmed && !listBusy ? <Button label="I checked the list; allow another addition" variant="ghost" onPress={() => {
+          if (!focused.current || action.current) return;
           const visit = generation.current;
           Alert.alert("Allow another addition?", "Only continue after checking the list and amounts. An earlier request may still finish; adding again could increase quantities. This does not undo that request.", [
             { text: "Keep paused", style: "cancel" },
