@@ -11,12 +11,12 @@ export function MissingShoppingReview({ missing, client, onPending }: { missing:
   const [pending, setPending] = useState<string[] | null>(null); const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(""); const [done, setDone] = useState(false);
   const alive = useRef(true); const action = useRef(false);
-  const visit = useRef(0); const focused = useRef(true);
+  const visit = useRef(0); const focused = useRef(false);
   useFocusEffect(useCallback(() => { focused.current = true; action.current = false; setBusy(false); return () => { focused.current = false; ++visit.current; }; }, []));
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   if (!names.length) return null;
   const save = async () => {
-    if (action.current || done || !selected.length) return;
+    if (!alive.current || !focused.current || action.current || done || !selected.length) return;
     action.current = true; setBusy(true); setMessage("");
     const exact = pending ?? [...selected]; setPending(exact); onPending(true);
     const version = ++visit.current;

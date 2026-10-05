@@ -15,7 +15,7 @@ export function MissingShoppingReview({ missing, client, onPending }: { missing:
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   if (!names.length) return null;
   const save = async () => {
-    if (action.current || done || !selected.length) return;
+    if (!alive.current || action.current || done || !selected.length) return;
     action.current = true; setBusy(true); setMessage("");
     const exact = pending ?? [...selected]; setPending(exact); onPending(true);
     try {

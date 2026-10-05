@@ -8,11 +8,11 @@ export function PlanIdeaReview({ recipeId, title, client, onPending }: { recipeI
   const c = usePalette(); const router = useRouter();
   const [expanded, setExpanded] = useState(false); const [date, setDate] = useState(localFoodDate); const [slot, setSlot] = useState<MealSlot | "">("");
   const [pending, setPending] = useState<ReviewedMealInput | null>(null); const [busy, setBusy] = useState(false); const [done, setDone] = useState(false); const [message, setMessage] = useState("");
-  const alive = useRef(true); const focused = useRef(true); const visit = useRef(0); const action = useRef(false);
+  const alive = useRef(true); const focused = useRef(false); const visit = useRef(0); const action = useRef(false);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   useFocusEffect(useCallback(() => { focused.current = true; action.current = false; setBusy(false); return () => { focused.current = false; ++visit.current; }; }, []));
   const save = async () => {
-    if (action.current || done) return;
+    if (!alive.current || !focused.current || action.current || done) return;
     let exact: ReviewedMealInput;
     try { exact = pending ?? parseReviewedMeal({ recipeId, date, slot }); }
     catch { setMessage("Choose a valid date and meal slot before adding this recipe."); return; }

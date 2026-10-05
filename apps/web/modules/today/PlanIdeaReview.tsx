@@ -11,7 +11,7 @@ export function PlanIdeaReview({ recipeId, title, client, onPending }: { recipeI
   const alive = useRef(true); const action = useRef(false);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
   const save = async () => {
-    if (action.current || done) return;
+    if (!alive.current || action.current || done) return;
     let exact: ReviewedMealInput;
     try { exact = pending ?? parseReviewedMeal({ recipeId, date, slot }); }
     catch { setMessage("Choose a valid date and meal slot before adding this recipe."); return; }
