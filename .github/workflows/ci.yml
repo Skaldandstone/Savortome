@@ -70,6 +70,7 @@ jobs:
           node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-food-note-recovery.mjs
           node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-food-note-migration.mjs
           node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-template-recovery.mjs
+          node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-photo-deletion-recovery.mjs
 
   database:
     name: Database checks

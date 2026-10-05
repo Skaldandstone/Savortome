@@ -162,6 +162,13 @@
       "when": 1791155582626,
       "tag": "0022_meal-template-identities",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791160021068,
+      "tag": "0023_pending-photo-deletions",
+      "breakpoints": true
     }
   ]
 }

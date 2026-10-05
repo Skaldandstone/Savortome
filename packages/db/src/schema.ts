@@ -20,6 +20,14 @@ import {
   vector,
 } from "drizzle-orm/pg-core";
 
+/** Pending storage erasure, independent of deleted accounts. No URLs or photo bytes.
+ * Migration 0023 captures removals transactionally. Not a public/user-facing queue.
+ */
+export const pendingPhotoDeletions = pgTable("pending_photo_deletions", {
+  key: text("key").primaryKey(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 /** Optional food notes. No images, audio, calories, health history or inventory linkage. */
 export const foodLogEntries = pgTable("food_log_entries", {
   userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
