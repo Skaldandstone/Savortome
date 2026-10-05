@@ -13,28 +13,37 @@ export function BrowserBarcodeScanner({ onCode, onClose }: { onCode: (code: stri
   const video = useRef<HTMLVideoElement>(null);
   const onCodeRef = useRef(onCode); onCodeRef.current = onCode;
   const onCloseRef = useRef(onClose); onCloseRef.current = onClose;
+  const close = useRef<() => void>(() => {});
   const [message, setMessage] = useState("Opening camera…");
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
+    let exited = false;
     let stream: MediaStream | null = null;
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let deadline: ReturnType<typeof setTimeout> | null = null;
     const stop = () => {
       active = false;
-      if (timer) clearTimeout(timer);
+      if (timer !== null) { clearTimeout(timer); timer = null; }
+      if (deadline !== null) { clearTimeout(deadline); deadline = null; }
       stream?.getTracks().forEach(track => track.stop());
+      stream = null;
       if (video.current) video.current.srcObject = null;
     };
     const fail = (text: string) => { if (active) { stop(); setError(text); } };
-    const hide = () => { if (document.hidden) { stop(); onCloseRef.current(); } };
-    const leave = () => { stop(); onCloseRef.current(); };
+    const leave = () => {
+      if (exited) return;
+      exited = true; stop(); onCloseRef.current();
+    };
+    close.current = leave;
+    const hide = () => { if (document.hidden) leave(); };
     const escape = (event: KeyboardEvent) => { if (event.key === "Escape") leave(); };
     document.addEventListener("visibilitychange", hide);
     document.addEventListener("keydown", escape);
     window.addEventListener("pagehide", leave);
     // Includes a stalled permission prompt/detector. A late camera grant is
     // immediately stopped, even when the user already closed this component.
-    const deadline = setTimeout(() => fail("Scanning paused. Try again or enter the barcode by hand."), 45000);
+    deadline = setTimeout(() => fail("Scanning paused. Try again or enter the barcode by hand."), 45000);
     void (async () => {
       try {
         const Constructor = (window as Window & { BarcodeDetector?: DetectorConstructor }).BarcodeDetector;
@@ -67,7 +76,7 @@ export function BrowserBarcodeScanner({ onCode, onClose }: { onCode: (code: stri
                 if (result.format === "itf" && result.rawValue.length !== 14) continue;
                 try {
                   const code = parseProductBarcode(result.rawValue);
-                  stop(); onCodeRef.current(code); return;
+                  exited = true; stop(); onCodeRef.current(code); return;
                 } catch { /* Keep scanning, without transmitting invalid data. */ }
               }
             }
@@ -78,7 +87,7 @@ export function BrowserBarcodeScanner({ onCode, onClose }: { onCode: (code: stri
       } catch { fail("Camera access was not available. You can still enter the barcode or product name by hand."); }
     })();
     return () => {
-      stop(); clearTimeout(deadline);
+      exited = true; stop(); close.current = () => {};
       document.removeEventListener("visibilitychange", hide);
       document.removeEventListener("keydown", escape);
       window.removeEventListener("pagehide", leave);
@@ -88,6 +97,6 @@ export function BrowserBarcodeScanner({ onCode, onClose }: { onCode: (code: stri
     <video ref={video} className={styles.preview} muted playsInline aria-label="Live product barcode preview" hidden={!!error} />
     {error ? <Callout tone="info" role="status">{error}</Callout> : <p role="status">{message}</p>}
     <p>Camera frames stay on this device. Finding a code does not look it up or save anything.</p>
-    <Button type="button" onClick={onClose}>Close camera and use manual entry</Button>
+    <Button type="button" onClick={() => close.current()}>Close camera and use manual entry</Button>
   </section>;
 }
