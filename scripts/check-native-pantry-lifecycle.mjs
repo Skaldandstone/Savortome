@@ -92,3 +92,29 @@ test('native pantry search: newer same-account search still wins out-of-order co
  const f=fixture('usePantrySearch'),current=f.render(),first=deferred(),second=deferred();f.state.respond=(_method,query)=>query==='first'?first.promise:second.promise;
  const old=current.search('first'),next=current.search('second');second.resolve({marker:'second'});await next;first.resolve({marker:'first'});await old;assert.equal(f.render().response.marker,'second');assert.equal(f.render().searching,false);
 });
+
+test('native reviews: lost receipt acknowledgement reconciles original review without another scan',async()=>{
+ const f=fixture(),hook=f.render();await flush();const review={id:'receipt-original',digest:'original-digest',status:'pending',items:[{id:'line-original',name:'synthetic bananas',quantity:6}]};let persisted=[];
+ f.state.respond=async(method)=>{if(method==='scanPantryReceipt'){persisted=[review];throw Error('acknowledgement lost');}if(method==='listPantryIntakes')return persisted;return [];};
+ assert.equal(await hook.scanReceipt('synthetic','image/jpeg'),false);assert.equal(f.render().intakes.length,0);assert.equal(await f.render().refreshReviews(),true);
+ assert.equal(f.render().intakes[0],review);assert.equal(f.render().items.length,0);assert.equal(f.state.calls.filter(x=>x.method==='scanPantryReceipt').length,1);assert.equal(f.state.calls.filter(x=>x.method==='resolvePantryIntake').length,0);
+});
+test('native reviews: failed refresh retains last confirmed reviews and stays uncertain',async()=>{
+ const f=fixture();f.render();await flush();const review={id:'original'};f.render().queuedIntake(review);f.state.respond=async()=>{throw Error('synthetic offline');};assert.equal(await f.render().refreshReviews(),false);assert.equal(f.render().intakes[0],review);assert.match(f.render().error,/could not confirm/i);
+});
+test('native reviews: retained refresh cannot dispatch after unmount or auth replacement',async()=>{
+ for(const replacement of ['unmount','account','session']){const f=fixture(),old=f.render();await flush();if(replacement==='unmount')f.unmount();else{f.state.auth={userId:replacement==='account'?'account-b':'account-a',sessionId:'new-session'};f.render(false);}const calls=f.state.calls.length;assert.equal(await old.refreshReviews(),false);assert.equal(f.state.calls.length,calls);}
+});
+test('native reviews: late refresh cannot overwrite newly queued review',async()=>{
+ const f=fixture();f.render();await flush();const reply=deferred();f.state.respond=()=>reply.promise;const operation=f.render().refreshReviews();const review={id:'new-original'};f.render().queuedIntake(review);reply.resolve([]);assert.equal(await operation,false);assert.equal(f.render().intakes[0],review);assert.equal(f.render().refreshingReviews,false);
+});
+test('native reviews: same-frame refresh is single flight and old-session settlement is inert',async()=>{
+ const f=fixture();f.render();await flush();const reply=deferred();f.state.respond=()=>reply.promise;const old=f.render(),operation=old.refreshReviews(),calls=f.state.calls.length;assert.equal(await old.refreshReviews(),false);assert.equal(f.state.calls.length,calls);f.state.auth={userId:'account-a',sessionId:'new-session'};f.state.respond=async()=>[];f.render();await flush();const writes=f.state.writes;reply.resolve([{id:'old-private'}]);assert.equal(await operation,false);assert.equal(f.state.writes,writes);assert.equal(f.render().intakes.length,0);
+});
+
+test('native reviews: old mount read cannot replace refreshed reviews or report old error',async()=>{
+ for(const reject of [false,true]){const f=fixture(),initial=deferred();f.state.respond=()=>initial.promise;f.render();const original={id:'refreshed-original',digest:'unchanged'};f.state.respond=async method=>method==='listPantryIntakes'?[original]:[];assert.equal(await f.render().refreshReviews(),true);reject?initial.reject(Error('old diagnostic')):initial.resolve([]);await flush();assert.equal(f.render().intakes[0],original);assert.equal(f.render().error,null);}
+});
+test('native reviews: stale refresh cannot undo confirmed acceptance or restore an old review',async()=>{
+ const f=fixture();f.render();await flush();const stale=deferred();f.state.respond=()=>stale.promise;const refresh=f.render().refreshReviews();f.state.respond=async()=>({pantry:[{canonicalItem:'confirmed bananas'}],intakes:[]});assert.equal(await f.render().resolveIntake('original-review','accept',['original-line']),true);stale.resolve([{id:'old-review'}]);assert.equal(await refresh,false);assert.equal(f.render().items[0].canonicalItem,'confirmed bananas');assert.equal(f.render().intakes.length,0);
+});

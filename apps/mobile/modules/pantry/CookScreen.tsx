@@ -44,6 +44,11 @@ function AccountCookScreen() {
       <Panel><PanelHeader title="A little help for today" hint="Meal ideas from your pantry, or an optional food note to help you remember." /><Button label="Open Today and food notes" onPress={() => router.push("/today")} /></Panel>
       <ReceiptCapture onScan={pantry.scanReceipt} />
       <BarcodeCapture onQueued={pantry.queuedIntake} />
+      <Panel>
+        <PanelHeader title="Check grocery reviews" hint="If a scan or review action was not confirmed, refresh before repeating it. Refresh only reads your pantry and reviews; it does not scan again or accept items." />
+        <Button label={pantry.refreshingReviews ? "Refreshing grocery reviews..." : "Refresh grocery reviews"} disabled={pantry.loading || pantry.refreshingReviews} onPress={() => void pantry.refreshReviews()} />
+        <Text style={{ color: c.textMuted, marginTop: space.sm }}>An empty review list does not prove an earlier request failed. If it is still uncertain, wait and refresh again.</Text>
+      </Panel>
       <PantryReviewQueue intakes={pantry.intakes} onResolve={pantry.resolveIntake} />
       {pantry.error ? <Callout tone="error">{pantry.error}</Callout> : null}
       <Panel>

@@ -7,6 +7,8 @@ export interface PantryController {
   items: PantryEntry[];
   intakes: PantryIntakeView[];
   loading: boolean;
+  refreshingReviews: boolean;
+  refreshReviews: () => Promise<boolean>;
   queuedIntake: (intake: PantryIntakeView) => void;
   error: string | null;
   add: (text: string) => Promise<void>;
@@ -32,18 +34,23 @@ export function usePantry(): PantryController {
   const [intakes, setIntakes] = useState<PantryIntakeView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshingReviews, setRefreshingReviews] = useState(false);
+  const reviewVersion = useRef(0);
+  const refreshFlight = useRef<object | null>(null);
 
   useEffect(() => {
     mounted.current = true;
     dataClient.current = api;
     let cancelled = false;
+    const version = ++reviewVersion.current;
+    refreshFlight.current = null; setRefreshingReviews(false);
     setItems([]); setIntakes([]); setLoading(true); setError(null);
     void (async () => {
       try {
         const [next, pending] = await Promise.all([api.listPantry(), api.listPantryIntakes()]);
-        if (!cancelled && current()) { setItems(next); setIntakes(pending); }
+        if (!cancelled && current() && reviewVersion.current === version) { setItems(next); setIntakes(pending); }
       } catch (err) {
-        if (!cancelled && current()) setError(err instanceof Error ? err.message : "Couldn't load your pantry.");
+        if (!cancelled && current() && reviewVersion.current === version) setError(err instanceof Error ? err.message : "Couldn't load your pantry.");
       } finally {
         if (!cancelled && current()) setLoading(false);
       }
@@ -56,10 +63,11 @@ export function usePantry(): PantryController {
 
   const run = useCallback(async (write: () => Promise<PantryEntry[]>) => {
     if (!current()) return;
+    ++reviewVersion.current;
     setError(null);
     try {
       const next = await write();
-      if (current()) setItems(next);
+      if (current()) { ++reviewVersion.current; setItems(next); }
     } catch (err) {
       if (current()) setError(err instanceof Error ? err.message : "That didn't save.");
     }
@@ -69,7 +77,25 @@ export function usePantry(): PantryController {
     items: dataClient.current === api ? items : [],
     intakes: dataClient.current === api ? intakes : [],
     loading: dataClient.current !== api || loading,
-    queuedIntake: intake => { if (current()) setIntakes(items => [intake, ...items.filter(item => item.id !== intake.id)]); },
+    refreshingReviews: dataClient.current === api && refreshingReviews,
+    refreshReviews: async () => {
+      if (!current() || refreshFlight.current) return false;
+      const flight = {}; refreshFlight.current = flight;
+      const version = ++reviewVersion.current;
+      setRefreshingReviews(true); setError(null);
+      try {
+        const [next, pending] = await Promise.all([api.listPantry(), api.listPantryIntakes()]);
+        if (!current() || reviewVersion.current !== version) return false;
+        setItems(next); setIntakes(pending);
+        return true;
+      } catch {
+        if (current() && reviewVersion.current === version) setError("We could not confirm the latest grocery reviews. Your last loaded reviews are still here. Refresh again before rescanning or repeating an uncertain action.");
+        return false;
+      } finally {
+        if (current() && refreshFlight.current === flight) { refreshFlight.current = null; setRefreshingReviews(false); }
+      }
+    },
+    queuedIntake: intake => { if (current()) { ++reviewVersion.current; setIntakes(items => [intake, ...items.filter(item => item.id !== intake.id)]); } },
     error: dataClient.current === api ? error : null,
     add: (text) => run(() => api.addPantry(text)),
     update: (entry) => run(() => api.updatePantry(entry)),
@@ -77,11 +103,12 @@ export function usePantry(): PantryController {
     clear: () => run(() => api.clearPantry()),
     scanReceipt: async (imageBase64, imageMediaType) => {
       if (!current()) return false;
+      ++reviewVersion.current;
       setError(null);
       try {
         const result = await api.scanPantryReceipt(imageBase64, imageMediaType);
         if (!current()) return false;
-        setIntakes(result.intakes);
+        ++reviewVersion.current; setIntakes(result.intakes);
         return true;
       } catch (err) {
         if (current()) setError(err instanceof Error ? err.message : "That receipt could not be read.");
@@ -90,11 +117,12 @@ export function usePantry(): PantryController {
     },
     resolveIntake: async (intakeId, action, acceptedItemIds = []) => {
       if (!current()) return false;
+      ++reviewVersion.current;
       setError(null);
       try {
         const result = await api.resolvePantryIntake({ intakeId, action, acceptedItemIds });
         if (!current()) return false;
-        setItems(result.pantry);
+        ++reviewVersion.current; setItems(result.pantry);
         setIntakes(result.intakes);
         return true;
       } catch (err) {
