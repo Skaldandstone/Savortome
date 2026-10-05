@@ -1,4 +1,4 @@
-// Actual deletion queries + exact 0023 migration, disposable partial PGlite only.
+// Actual deletion queries + exact 0023/0024 migrations, disposable partial PGlite only.
 // No storage client, DATABASE_URL, hosted data or multi-connection proof.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
@@ -79,7 +79,7 @@ test('photo migration: missing source column rolls DDL/journal back and explicit
  assert.equal((await rows(pg,"SELECT to_regclass('public.pending_photo_deletions') AS table"))[0].table,null);
  assert.equal((await rows(pg,'SELECT * FROM drizzle.__drizzle_migrations')).length,1);
  await pg.exec("ALTER TABLE recipes ADD COLUMN photos jsonb NOT NULL DEFAULT '[]'::jsonb");await migrateExact();await migrateExact();
- assert.equal((await rows(pg,'SELECT * FROM drizzle.__drizzle_migrations')).length,2);
+ assert.equal((await rows(pg,'SELECT * FROM drizzle.__drizzle_migrations')).length,3);
  assert.deepEqual(await rows(pg,'SELECT * FROM pending_photo_deletions'),[]);
 },{migrate:false,photos:false}));
 test('photo migration: snapshot adds only independent key/time ledger',()=>{
@@ -93,6 +93,7 @@ test('photo consumer: partial failure retains failed key; explicit retry acknowl
  const calls=[];
  assert.deepEqual(await processPendingPhotoDeletions(db,async key=>{calls.push(key);if(key===first)throw new Error('synthetic storage failure');}),{completed:1,failed:1,blocked:0});
  assert.deepEqual(calls,[first,second]);assert.deepEqual(await rows(pg,'SELECT key FROM pending_photo_deletions'),[{key:first}]);
+ await pg.exec("UPDATE pending_photo_deletions SET retry_after=CURRENT_TIMESTAMP - interval '1 second'");
  assert.deepEqual(await processPendingPhotoDeletions(db,async()=>{}),{completed:1,failed:0,blocked:0});
  assert.deepEqual(await rows(pg,'SELECT * FROM pending_photo_deletions'),[]);
 }));
@@ -102,6 +103,7 @@ test('photo consumer: timeout aborts, late completion cannot acknowledge; explic
  assert.deepEqual(result,{completed:0,failed:1,blocked:0});assert.equal(signal.aborted,true);
  finish();await new Promise(resolve=>setImmediate(resolve));
  assert.deepEqual(await rows(pg,'SELECT key FROM pending_photo_deletions'),[{key:first}]);
+ await pg.exec("UPDATE pending_photo_deletions SET retry_after=CURRENT_TIMESTAMP - interval '1 second'");
  assert.deepEqual(await processPendingPhotoDeletions(db,async()=>{}),{completed:1,failed:0,blocked:0});
 }));
 test('photo consumer: acknowledgement fault rolls ledger back despite provider success',async()=>fixture(async({pg,db})=>{
@@ -127,3 +129,53 @@ test('photo consumer: maximum batch size is respected; remaining key waits for d
  assert.deepEqual(await processPendingPhotoDeletions(db,async key=>{calls.push(key);},{limit:1}),{completed:1,failed:0,blocked:0});
  assert.deepEqual(calls,[first]);assert.deepEqual(await rows(pg,'SELECT key FROM pending_photo_deletions'),[{key:second}]);
 }));
+test('photo consumer: a failed oldest key must not starve the next explicit batch',async()=>fixture(async({db})=>{
+ await deleteRecipe(db,owner,recipe);const calls=[];
+ const erase=async key=>{calls.push(key);if(key===first)throw new Error('synthetic persistent storage failure');};
+ assert.deepEqual(await processPendingPhotoDeletions(db,erase,{limit:1}),{completed:0,failed:1,blocked:0});
+ assert.deepEqual(await processPendingPhotoDeletions(db,erase,{limit:1}),{completed:1,failed:0,blocked:0});
+ assert.deepEqual(calls,[first,second]);
+}));
+test('photo consumer: blocked oldest entry defers without losing key or starving eligible entries',async()=>fixture(async({pg,db})=>{
+ await deleteRecipe(db,owner,recipe);
+ await pg.query("INSERT INTO pending_photo_deletions(key,created_at) VALUES ($1,'2000-01-01T00:00:00Z')",['malformed-key']);const calls=[];
+ assert.deepEqual(await processPendingPhotoDeletions(db,async key=>{calls.push(key);},{limit:1}),{completed:0,failed:0,blocked:1});
+ assert.deepEqual(await processPendingPhotoDeletions(db,async key=>{calls.push(key);},{limit:1}),{completed:1,failed:0,blocked:0});assert.deepEqual(calls,[first]);
+ const [blocked]=await rows(pg,"SELECT key,attempts,created_at,EXTRACT(epoch FROM retry_after-last_attempt_at) AS delay FROM pending_photo_deletions WHERE key='malformed-key'");
+ assert.equal(blocked.attempts,1);assert.equal(new Date(blocked.created_at).getUTCFullYear(),2000);assert.equal(Number(blocked.delay),900);
+}));
+test('photo consumer: deferral-write fault rolls metadata back and never acknowledges a failed erase',async()=>fixture(async({pg,db})=>{
+ await deleteRecipe(db,owner,recipe);
+ await pg.exec(`CREATE FUNCTION reject_deferral() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'fixture deferral failure'; END $$; CREATE TRIGGER reject_deferral BEFORE UPDATE ON pending_photo_deletions FOR EACH ROW EXECUTE FUNCTION reject_deferral();`);
+ await assert.rejects(processPendingPhotoDeletions(db,async()=>{throw new Error('synthetic erase failure');}));
+ const pending=await rows(pg,'SELECT attempts,last_attempt_at FROM pending_photo_deletions');assert.equal(pending.length,2);assert.ok(pending.every(p=>p.attempts===0&&p.last_attempt_at===null));
+}));
+test('photo consumer: retries use DB time, preserve capture age, cap delay and never expire references',async()=>fixture(async({pg,db})=>{
+ await removeRecipePhoto(db,owner,recipe,first);const [before]=await rows(pg,'SELECT created_at FROM pending_photo_deletions');let calls=0;
+ const erase=async()=>{calls++;throw new Error('synthetic failure');};
+ assert.deepEqual(await processPendingPhotoDeletions(db,erase),{completed:0,failed:1,blocked:0});
+ assert.deepEqual(await processPendingPhotoDeletions(db,erase),{completed:0,failed:0,blocked:0});assert.equal(calls,1);
+ let [entry]=await rows(pg,'SELECT created_at,attempts,EXTRACT(epoch FROM retry_after-last_attempt_at) AS delay FROM pending_photo_deletions');
+ assert.equal(entry.attempts,1);assert.equal(Number(entry.delay),60);assert.equal(new Date(entry.created_at).getTime(),new Date(before.created_at).getTime());
+ await pg.exec("UPDATE pending_photo_deletions SET attempts=1000000,retry_after=CURRENT_TIMESTAMP - interval '1 second'");
+ await processPendingPhotoDeletions(db,erase);
+ [entry]=await rows(pg,'SELECT created_at,attempts,EXTRACT(epoch FROM retry_after-last_attempt_at) AS delay FROM pending_photo_deletions');assert.equal(entry.attempts,1000000);assert.equal(Number(entry.delay),3600);assert.equal(new Date(entry.created_at).getTime(),new Date(before.created_at).getTime());
+}));
+test('photo retry migration: snapshot changes only retry metadata, with no identities/content/errors',()=>{
+ const prior=JSON.parse(readFileSync('packages/db/migrations/meta/0023_snapshot.json','utf8'));
+ const next=JSON.parse(readFileSync('packages/db/migrations/meta/0024_snapshot.json','utf8'));
+ for(const column of ['attempts','last_attempt_at','retry_after']){assert.ok(next.tables['public.pending_photo_deletions'].columns[column]);delete next.tables['public.pending_photo_deletions'].columns[column];}
+ next.id=prior.id;next.prevId=prior.prevId;assert.deepEqual(next,prior);
+});
+test('photo retry migration: partial DDL fault preserves pending keys/journal and explicit repair permits retry',async()=>fixture(async({pg,migrateExact})=>{
+ await pg.exec(readFileSync('packages/db/migrations/0023_pending-photo-deletions.sql','utf8'));
+ await pg.query('INSERT INTO drizzle.__drizzle_migrations(hash,created_at) VALUES ($1,$2)',[migrations[migrationIndex].hash,migrations[migrationIndex].folderMillis]);
+ await pg.query("INSERT INTO pending_photo_deletions(key,created_at) VALUES ($1,'2000-01-01T00:00:00Z')",[first]);
+ await pg.exec('ALTER TABLE pending_photo_deletions ADD COLUMN retry_after timestamp with time zone');
+ await assert.rejects(migrateExact());
+ const columns=await rows(pg,"SELECT column_name FROM information_schema.columns WHERE table_name='pending_photo_deletions' ORDER BY ordinal_position");
+ assert.deepEqual(columns.map(c=>c.column_name),['key','created_at','retry_after']);assert.equal((await rows(pg,'SELECT * FROM drizzle.__drizzle_migrations')).length,2);
+ assert.equal((await rows(pg,'SELECT key FROM pending_photo_deletions'))[0].key,first);
+ await pg.exec('ALTER TABLE pending_photo_deletions DROP COLUMN retry_after');await migrateExact();await migrateExact();
+ const [entry]=await rows(pg,'SELECT key,created_at,attempts,last_attempt_at,retry_after FROM pending_photo_deletions');assert.equal(entry.key,first);assert.equal(new Date(entry.created_at).getUTCFullYear(),2000);assert.equal(entry.attempts,0);assert.equal(entry.last_attempt_at,null);assert.ok(entry.retry_after);assert.equal((await rows(pg,'SELECT * FROM drizzle.__drizzle_migrations')).length,3);
+},{migrate:false}));

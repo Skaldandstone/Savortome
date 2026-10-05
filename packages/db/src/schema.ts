@@ -26,6 +26,9 @@ import {
 export const pendingPhotoDeletions = pgTable("pending_photo_deletions", {
   key: text("key").primaryKey(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  attempts: integer("attempts").notNull().default(0),
+  lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+  retryAfter: timestamp("retry_after", { withTimezone: true }).notNull().defaultNow(),
 });
 
 /** Optional food notes. No images, audio, calories, health history or inventory linkage. */

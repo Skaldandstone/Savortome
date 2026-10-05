@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, lte, sql } from "drizzle-orm";
 import type { Database } from "../client.js";
 import * as schema from "../schema.js";
 
@@ -25,12 +25,24 @@ export async function processPendingPhotoDeletions(
     await tx.execute(sql`SET LOCAL statement_timeout = '5s'`);
     await tx.execute(sql`SET LOCAL lock_timeout = '1s'`);
     const pending = await tx.select().from(schema.pendingPhotoDeletions)
+      .where(lte(schema.pendingPhotoDeletions.retryAfter, sql`CURRENT_TIMESTAMP`))
       .orderBy(asc(schema.pendingPhotoDeletions.createdAt), asc(schema.pendingPhotoDeletions.key))
       .limit(limit).for("update", { skipLocked: true });
     const result = { completed: 0, failed: 0, blocked: 0 };
+    const defer = async (key: string, blocked: boolean) => {
+      await tx.update(schema.pendingPhotoDeletions).set({
+        attempts: sql`least(${schema.pendingPhotoDeletions.attempts} + 1, 1000000)`,
+        lastAttemptAt: sql`statement_timestamp()`,
+        // Failure delay: 1,2,4,8,16,32,60 minutes, capped without dropping.
+        // Blocked references wait 15 minutes for deliberate operator review.
+        retryAfter: blocked
+          ? sql`statement_timestamp() + interval '15 minutes'`
+          : sql`statement_timestamp() + interval '1 minute' * least(60, power(2, least(${schema.pendingPhotoDeletions.attempts}, 6)))`,
+      }).where(eq(schema.pendingPhotoDeletions.key, key));
+    };
     for (const entry of pending) {
       const parts = PHOTO_KEY.exec(entry.key);
-      if (!parts) { result.blocked++; continue; }
+      if (!parts) { result.blocked++; await defer(entry.key, true); continue; }
       // Lock a surviving recipe while checking it. A corrupt/stale pending
       // entry must not delete a photo still used by that same recipe. Lock
       // contention aborts the transaction, leaving all references retryable.
@@ -38,7 +50,7 @@ export async function processPendingPhotoDeletions(
         .where(and(eq(schema.recipes.ownerId, parts[1]!), eq(schema.recipes.id, parts[2]!)))
         .for("share", { noWait: true });
       if (recipe?.photos.some((photo) => photo.key === entry.key)) {
-        result.blocked++; continue;
+        result.blocked++; await defer(entry.key, true); continue;
       }
       const controller = new AbortController();
       let timer: ReturnType<typeof setTimeout> | undefined;
@@ -65,6 +77,9 @@ export async function processPendingPhotoDeletions(
         // roll back, never be mistaken for a successful batch completion.
         await tx.delete(schema.pendingPhotoDeletions).where(eq(schema.pendingPhotoDeletions.key, entry.key));
         result.completed++;
+      } else {
+        // Outside the provider catch, so a deferral-write fault rolls back.
+        await defer(entry.key, false);
       }
     }
     return result;

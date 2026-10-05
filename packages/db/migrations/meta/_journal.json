@@ -169,6 +169,13 @@
       "when": 1791160021068,
       "tag": "0023_pending-photo-deletions",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791163557976,
+      "tag": "0024_photo-cleanup-retry",
+      "breakpoints": true
     }
   ]
 }
