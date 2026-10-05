@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { useAuth } from "@clerk/expo";
 import * as ImagePicker from "expo-image-picker";
 import { isPhotoMediaType, type PhotoMediaType } from "@seconds/core/format";
 import { api } from "@/lib/client";
@@ -17,6 +18,7 @@ function mediaTypeForAsset(asset: ImagePicker.ImagePickerAsset): PhotoMediaType 
 export function ReceiptCapture({ onScan }: {
   onScan: (imageBase64: string, imageMediaType: PhotoMediaType) => Promise<boolean>;
 }) {
+  const { userId, sessionId } = useAuth();
   const c = usePalette();
   const [availability, setAvailability] = useState<"loading" | "enabled" | "disabled" | "failed">("loading");
   const [attempt, setAttempt] = useState(0);
@@ -24,29 +26,44 @@ export function ReceiptCapture({ onScan }: {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  const scope = useMemo(() => ({}), [userId, sessionId]);
+  const activeScope = useRef(scope); activeScope.current = scope;
+  const dataScope = useRef(scope);
+  const mounted = useRef(true);
+  const action = useRef(false);
+  const current = () => mounted.current && activeScope.current === scope;
+  useEffect(() => {
+    mounted.current = true; dataScope.current = scope; action.current = false;
+    setBusy(false); setMessage(null); setError(null);
+    return () => { mounted.current = false; };
+  }, [scope]);
+
   useEffect(() => {
     let cancelled = false;
     setAvailability("loading");
     const timeout = setTimeout(() => {
-      if (!cancelled) {
+      if (!cancelled && current()) {
         cancelled = true;
         setAvailability("failed");
       }
     }, 12_000);
     void api.receiptScanStatus()
-      .then(result => { if (!cancelled) setAvailability(result.enabled ? "enabled" : "disabled"); })
-      .catch(() => { if (!cancelled) setAvailability("failed"); })
+      .then(result => { if (!cancelled && current()) setAvailability(result.enabled ? "enabled" : "disabled"); })
+      .catch(() => { if (!cancelled && current()) setAvailability("failed"); })
       .finally(() => clearTimeout(timeout));
     return () => { cancelled = true; clearTimeout(timeout); };
-  }, [attempt]);
+  }, [attempt, scope]);
 
   const scan = async (source: "camera" | "library") => {
+    if (!current() || action.current || availability !== "enabled") return;
+    action.current = true;
     setError(null);
     setMessage(null);
     setBusy(true);
     try {
       if (source === "camera") {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!current()) return;
         if (!permission.granted) {
           setError("Camera access was not granted. You can choose an existing receipt photo instead.");
           return;
@@ -55,25 +72,28 @@ export function ReceiptCapture({ onScan }: {
       const result = source === "camera"
         ? await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], base64: true, quality: 0.8 })
         : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], base64: true, quality: 0.8 });
-      if (result.canceled) return;
+      if (!current() || result.canceled) return;
       const asset = result.assets[0];
       const mediaType = asset ? mediaTypeForAsset(asset) : null;
       if (!asset?.base64 || !mediaType) {
         setError("Use a JPEG, PNG, or WebP receipt photo.");
         return;
       }
-      if (await onScan(asset.base64, mediaType)) {
+      const saved = await onScan(asset.base64, mediaType);
+      if (!current()) return;
+      if (saved) {
         setMessage("Receipt ready to review below. Nothing was added to your pantry yet.");
       } else {
         setError("The receipt was not saved for review. Check your connection and account, then try again. Nothing was added to your pantry.");
       }
     } catch {
-      setError("That receipt could not be read. Try again, or choose an existing receipt photo. Nothing was added to your pantry.");
+      if (current()) setError("That receipt could not be read. Try again, or choose an existing receipt photo. Nothing was added to your pantry.");
     } finally {
-      setBusy(false);
+      if (current()) { action.current = false; setBusy(false); }
     }
   };
 
+  if (dataScope.current !== scope) return <Text accessibilityLiveRegion="polite">Checking receipt scanning for your sign-in…</Text>;
   return (
     <Panel>
       <PanelHeader
@@ -90,7 +110,7 @@ export function ReceiptCapture({ onScan }: {
       ) : availability === "failed" ? (
         <>
           <Callout tone="error" title="Could not check receipt scanning">Check your connection and account, then try again. Your pantry has not changed.</Callout>
-          <Button label="Try receipt scanning again" variant="ghost" onPress={() => setAttempt(value => value + 1)} />
+          <Button label="Try receipt scanning again" variant="ghost" onPress={() => { if (current()) setAttempt(value => value + 1); }} />
         </>
       ) : (
         <Text style={[styles.unavailable, { color: c.textMuted }]}>Receipt scanning is currently unavailable. You can still add pantry items by hand.</Text>
