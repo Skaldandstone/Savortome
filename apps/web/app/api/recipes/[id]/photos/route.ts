@@ -1,8 +1,10 @@
+import { performance } from "node:perf_hooks";
 import { NextResponse } from "next/server";
-import { isPhotoMediaType, MAX_PHOTO_BASE64_CHARS, PHOTO_MEDIA_TYPES } from "@seconds/core";
-import { addRecipePhoto, removeRecipePhoto } from "@seconds/db";
+import { isPhotoMediaType, isUuid, MAX_PHOTO_BASE64_CHARS, PHOTO_MEDIA_TYPES } from "@seconds/core/format";
+import { attachReservedRecipePhoto, reserveRecipePhotoUpload, removeRecipePhoto } from "@seconds/db";
 import { BadRequestError, readJson, withUser } from "@/lib/api";
-import { deleteRecipePhoto, r2Configured, uploadRecipePhoto } from "@/lib/r2";
+import { NotConfiguredError } from "@/lib/session";
+import { createRecipePhotoKey, deleteRecipePhoto, r2Configured, uploadReservedRecipePhoto } from "@/lib/r2";
 
 /** Your own photos of a recipe — separate from the one image a source page published. */
 export const runtime = "nodejs";
@@ -17,16 +19,11 @@ interface PhotoBody {
 export async function POST(request: Request, { params }: Params) {
   const { id } = await params;
 
-  if (!r2Configured()) {
-    return NextResponse.json(
-      { error: "Photo uploads aren't set up yet. Set the R2_* variables in .env.local." },
-      { status: 501 },
-    );
-  }
-
-  const body = await readJson<PhotoBody>(request);
   const response = await withUser(async (userId, database) => {
-    const imageBase64 = body.imageBase64?.trim();
+    if (!r2Configured()) throw new NotConfiguredError("Photo uploads aren't set up yet.");
+    if (!isUuid(id)) throw new BadRequestError("Choose a valid recipe.");
+    const body = (await readJson<PhotoBody>(request)) ?? {};
+    const imageBase64 = typeof body.imageBase64 === "string" ? body.imageBase64.trim() : "";
     if (!imageBase64) throw new BadRequestError("Send a photo to upload.");
     if (!isPhotoMediaType(body.imageMediaType)) {
       throw new BadRequestError(`imageMediaType must be one of: ${PHOTO_MEDIA_TYPES.join(", ")}`);
@@ -35,27 +32,34 @@ export async function POST(request: Request, { params }: Params) {
       throw new BadRequestError("That photo is too large. Try a smaller image.");
     }
 
+    if (request.signal.aborted) throw new BadRequestError("Photo upload was cancelled.");
+    const key = createRecipePhotoKey(userId, id, body.imageMediaType);
+    const reservationStarted = performance.now();
+    const reserved = await reserveRecipePhotoUpload(database, userId, id, key);
+    if (!reserved.ok) {
+      if (reserved.reason === "at_limit") throw new BadRequestError("This recipe already has as many photos as it can hold, including uploads in progress.");
+      return null;
+    }
+    // Do not start PUT after an unusually delayed reservation. DB completion
+    // remains uncertain on disconnection; its key still belongs to recovery.
+    if (performance.now() - reservationStarted > 30_000) {
+      throw new Error("Photo upload reservation took too long; confirmation is unavailable.");
+    }
+    // Registration committed before SDK dispatch. Every later failure retains it.
     const bytes = Buffer.from(imageBase64, "base64");
-    const { key, url } = await uploadRecipePhoto(userId, id, bytes, body.imageMediaType);
-
-    const result = await addRecipePhoto(database, userId, id, {
-      key,
-      url,
-      createdAt: new Date().toISOString(),
+    const { url } = await uploadReservedRecipePhoto(key, bytes, body.imageMediaType, request.signal);
+    const result = await attachReservedRecipePhoto(database, userId, id, {
+      key, url, createdAt: new Date().toISOString(),
     });
     if (!result.ok) {
-      // Either the recipe vanished (or was never this user's) between the
-      // upload and the write, or it's already at MAX_RECIPE_PHOTOS. Either
-      // way the upload already happened, so clean up rather than leave an
-      // orphaned object nothing will ever list or delete.
-      await deleteRecipePhoto(key).catch(() => undefined);
-      if (result.reason === "at_limit") {
-        throw new BadRequestError("This recipe already has as many photos as it can hold.");
-      }
+      // Never erase here: an uncertain attachment commit may already be live.
+      // The durable ledger and later live-reference check own reconciliation.
+      if (result.reason === "at_limit") throw new BadRequestError("This recipe already has as many photos as it can hold.");
       return null;
     }
     return { photos: result.photos };
-  });
+  }, { redactUnexpectedErrors: true });
+  response.headers.set("Cache-Control", "no-store");
   return notFoundIfNull(response);
 }
 
@@ -87,7 +91,7 @@ export async function DELETE(request: Request, { params }: Params) {
  */
 async function notFoundIfNull(response: NextResponse): Promise<NextResponse> {
   if (response.ok && (await response.clone().json()) === null) {
-    return NextResponse.json({ error: "No such recipe." }, { status: 404 });
+    return NextResponse.json({ error: "No such recipe." }, { status: 404, headers: { "Cache-Control": "no-store" } });
   }
   return response;
 }

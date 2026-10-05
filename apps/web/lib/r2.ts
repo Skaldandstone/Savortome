@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { DeleteObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import type { PhotoMediaType, RecipePhoto } from "@seconds/core";
+import { isUuid, type PhotoMediaType, type RecipePhoto } from "@seconds/core/format";
 import { NotConfiguredError } from "./session.js";
 
 /**
@@ -72,31 +72,54 @@ const PHOTO_EXTENSIONS: Record<PhotoMediaType, string> = {
   "image/webp": "webp",
 };
 
-/** Upload one recipe photo. Returns the object key and its public URL. */
-export async function uploadRecipePhoto(
-  ownerId: string,
-  recipeId: string,
+/** Generate a server-owned key without touching storage; reserve it before PUT. */
+export function createRecipePhotoKey(ownerId: string, recipeId: string, mediaType: PhotoMediaType): string {
+  if (!isUuid(ownerId) || !isUuid(recipeId)) throw new Error("Invalid photo owner or recipe.");
+  return `recipes/${ownerId}/${recipeId}/${randomUUID()}.${PHOTO_EXTENSIONS[mediaType]}`;
+}
+
+/** PUT only a previously reserved key. Caller must durably reserve before invoking.
+ * A 12s caller deadline aborts SDK work; late completion is never attachment proof.
+ * Real provider cancellation/late-write behavior remains an acceptance requirement.
+ */
+export async function uploadReservedRecipePhoto(
+  key: string,
   bytes: Buffer,
   mediaType: PhotoMediaType,
+  signal?: AbortSignal,
 ): Promise<{ key: string; url: string }> {
+  const parts = key.split("/");
   const ext = PHOTO_EXTENSIONS[mediaType];
-
-  // Namespaced by owner, not just recipe: a deleted account's cleanup job (if
-  // one is ever written) can find everything under one prefix instead of
-  // scanning the whole bucket for a matching recipeId.
-  const key = `recipes/${ownerId}/${recipeId}/${randomUUID()}.${ext}`;
-
-  await r2().send(
-    new PutObjectCommand({
-      Bucket: process.env.R2_BUCKET_NAME,
-      Key: key,
-      Body: bytes,
-      ContentType: mediaType,
-    }),
-  );
-
-  const base = process.env.R2_PUBLIC_URL_BASE!.replace(/\/$/, "");
-  return { key, url: `${base}/${key}` };
+  if (parts.length !== 4 || parts[0] !== "recipes" || !isUuid(parts[1]) || !isUuid(parts[2]) ||
+      !ext || !parts[3]?.endsWith(`.${ext}`) || !isUuid(parts[3].slice(0, -(ext.length + 1)))) {
+    throw new Error("Invalid reserved photo key.");
+  }
+  if (signal?.aborted) throw new Error("Photo upload was aborted.");
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let abort: (() => void) | undefined;
+  try {
+    const interrupted = new Promise<never>((_, reject) => {
+      abort = () => {
+        controller.abort();
+        reject(new Error("Photo upload was interrupted; confirmation is unavailable."));
+      };
+      signal?.addEventListener("abort", abort, { once: true });
+      timer = setTimeout(abort, 12_000);
+    });
+    await Promise.race([
+      r2().send(new PutObjectCommand({
+        Bucket: process.env.R2_BUCKET_NAME, Key: key, Body: bytes, ContentType: mediaType,
+      }), { abortSignal: controller.signal }),
+      interrupted,
+    ]);
+    if (controller.signal.aborted) throw new Error("Photo upload confirmation is unavailable.");
+    const base = process.env.R2_PUBLIC_URL_BASE!.replace(/\/$/, "");
+    return { key, url: `${base}/${key}` };
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+    if (abort) signal?.removeEventListener("abort", abort);
+  }
 }
 
 /** Delete one recipe photo. Not fatal if it's already gone. */
