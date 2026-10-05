@@ -7,6 +7,8 @@ import {readFileSync} from 'node:fs';
 import {deleteRecipe,removeRecipePhoto} from '../packages/db/src/queries/recipes.ts';
 import {deleteUserById} from '../packages/db/src/queries/users.ts';
 import {processPendingPhotoDeletions} from '../packages/db/src/queries/photo-cleanup.ts';
+import {reserveRecipePhotoUpload,attachReservedRecipePhoto} from '../packages/db/src/queries/photo-upload.ts';
+import {MAX_RECIPE_PHOTOS} from '../packages/core/src/recipe.ts';
 import * as schema from '../packages/db/src/schema.ts';
 const require=createRequire(new URL('../packages/db/package.json',import.meta.url));
 const {PGlite}=require('@electric-sql/pglite');
@@ -179,3 +181,41 @@ test('photo retry migration: partial DDL fault preserves pending keys/journal an
  await pg.exec('ALTER TABLE pending_photo_deletions DROP COLUMN retry_after');await migrateExact();await migrateExact();
  const [entry]=await rows(pg,'SELECT key,created_at,attempts,last_attempt_at,retry_after FROM pending_photo_deletions');assert.equal(entry.key,first);assert.equal(new Date(entry.created_at).getUTCFullYear(),2000);assert.equal(entry.attempts,0);assert.equal(entry.last_attempt_at,null);assert.ok(entry.retry_after);assert.equal((await rows(pg,'SELECT * FROM drizzle.__drizzle_migrations')).length,3);
 },{migrate:false}));
+test('photo upload protocol: reserve holds cleanup; atomic attachment acknowledges and identical retry confirms',async()=>fixture(async({pg,db})=>{
+ const upload=key(owner,recipe,8);assert.deepEqual(await reserveRecipePhotoUpload(db,owner,recipe,upload),{ok:true});
+ assert.deepEqual(await processPendingPhotoDeletions(db,async()=>{throw Error('must not erase active reservation');}),{completed:0,failed:0,blocked:0});
+ const result=await attachReservedRecipePhoto(db,owner,recipe,photo(upload));assert.equal(result.ok,true);assert.equal(result.photos.length,3);assert.deepEqual(await rows(pg,'SELECT * FROM pending_photo_deletions'),[]);
+ assert.equal((await attachReservedRecipePhoto(db,owner,recipe,photo(upload))).photos.length,3);
+ await assert.rejects(attachReservedRecipePhoto(db,owner,recipe,{...photo(upload),url:'https://fixture.invalid/changed'}));
+}));
+test('photo upload protocol: reserve write and attachment acknowledgement faults retain recoverable state',async()=>fixture(async({pg,db})=>{
+ const upload=key(owner,recipe,8);
+ await pg.exec(`CREATE FUNCTION fail_reserve() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'fixture reserve failure'; END $$; CREATE TRIGGER fail_reserve BEFORE INSERT ON pending_photo_deletions FOR EACH ROW EXECUTE FUNCTION fail_reserve();`);
+ await assert.rejects(reserveRecipePhotoUpload(db,owner,recipe,upload));assert.deepEqual(await rows(pg,'SELECT * FROM pending_photo_deletions'),[]);
+ await pg.exec('DROP TRIGGER fail_reserve ON pending_photo_deletions');await reserveRecipePhotoUpload(db,owner,recipe,upload);
+ await pg.exec(`CREATE FUNCTION fail_attach_ack() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'fixture attach acknowledgement failure'; END $$; CREATE TRIGGER fail_attach_ack BEFORE DELETE ON pending_photo_deletions FOR EACH ROW EXECUTE FUNCTION fail_attach_ack();`);
+ await assert.rejects(attachReservedRecipePhoto(db,owner,recipe,photo(upload)));assert.equal((await rows(pg,'SELECT photos FROM recipes WHERE id=\''+recipe+'\''))[0].photos.length,2);assert.equal((await rows(pg,'SELECT * FROM pending_photo_deletions')).length,1);
+ await pg.exec('DROP TRIGGER fail_attach_ack ON pending_photo_deletions');assert.equal((await attachReservedRecipePhoto(db,owner,recipe,photo(upload))).photos.length,3);
+}));
+test('photo upload protocol: account deletion retains unattached reservation and refuses late attachment',async()=>fixture(async({pg,db})=>{
+ const upload=key(owner,recipe,8);await reserveRecipePhotoUpload(db,owner,recipe,upload);await deleteUserById(db,owner);
+ assert.equal((await rows(pg,'SELECT * FROM pending_photo_deletions')).length,3);assert.deepEqual(await attachReservedRecipePhoto(db,owner,recipe,photo(upload)),{ok:false,reason:'not_found'});
+ await pg.exec("UPDATE pending_photo_deletions SET retry_after=statement_timestamp() - interval '1 second'");const erased=[];assert.deepEqual(await processPendingPhotoDeletions(db,async key=>{erased.push(key);}),{completed:3,failed:0,blocked:0});assert.ok(erased.includes(upload));assert.ok(!erased.includes(foreignKey));
+}));
+test('photo upload protocol: removed or expired reservation cannot recreate an attachment',async()=>fixture(async({pg,db})=>{
+ const upload=key(owner,recipe,8);await reserveRecipePhotoUpload(db,owner,recipe,upload);await attachReservedRecipePhoto(db,owner,recipe,photo(upload));await removeRecipePhoto(db,owner,recipe,upload);
+ await assert.rejects(attachReservedRecipePhoto(db,owner,recipe,photo(upload)),/reservation is unavailable/);
+ const expired=key(owner,recipe,9);await reserveRecipePhotoUpload(db,owner,recipe,expired);await pg.query("UPDATE pending_photo_deletions SET retry_after=statement_timestamp() - interval '1 second' WHERE key=$1",[expired]);
+ await assert.rejects(attachReservedRecipePhoto(db,owner,recipe,photo(expired)),/reservation is unavailable/);assert.equal((await rows(pg,'SELECT * FROM pending_photo_deletions')).length,2);
+}));
+test('photo upload protocol: ownership/key reuse refuses reservation and live plus in-flight cap is enforced',async()=>fixture(async({pg,db})=>{
+ await assert.rejects(reserveRecipePhotoUpload(db,owner,recipe,foreignKey));assert.deepEqual(await reserveRecipePhotoUpload(db,other,recipe,key(other,recipe,8)),{ok:false,reason:'not_found'});await assert.rejects(reserveRecipePhotoUpload(db,owner,recipe,first));
+ const upload=key(owner,recipe,8);await reserveRecipePhotoUpload(db,owner,recipe,upload);await assert.rejects(reserveRecipePhotoUpload(db,owner,recipe,upload));
+ for(let n=1;n<MAX_RECIPE_PHOTOS-2;n++)await reserveRecipePhotoUpload(db,owner,recipe,key(owner,recipe,100+n));
+ assert.deepEqual(await reserveRecipePhotoUpload(db,owner,recipe,key(owner,recipe,999)),{ok:false,reason:'at_limit'});assert.equal((await rows(pg,'SELECT * FROM pending_photo_deletions')).length,MAX_RECIPE_PHOTOS-2);
+}));
+test('photo upload protocol: cap reached after reservation refuses attachment but keeps cleanup key',async()=>fixture(async({pg,db})=>{
+ const upload=key(owner,recipe,8);await reserveRecipePhotoUpload(db,owner,recipe,upload);
+ await pg.query('UPDATE recipes SET photos=$1 WHERE id=$2',[JSON.stringify([photo(first),photo(second),...Array.from({length:MAX_RECIPE_PHOTOS-2},(_,i)=>photo(key(owner,recipe,100+i)))]),recipe]);
+ assert.deepEqual(await attachReservedRecipePhoto(db,owner,recipe,photo(upload)),{ok:false,reason:'at_limit'});assert.equal((await rows(pg,'SELECT * FROM pending_photo_deletions')).length,1);
+}));
