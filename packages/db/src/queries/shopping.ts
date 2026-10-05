@@ -175,6 +175,12 @@ export async function addRecipesToList(
     columns: { id: true, ingredients: true },
   });
 
+  // An empty/unavailable selection contributes nothing. Rebuilding the saved
+  // shortfall would subtract pantry stock again and replace existing line IDs.
+  if (recipes.length === 0) {
+    return (await getShoppingList(database, userId, listId))!;
+  }
+
   const byRecipe = new Map<string, Ingredient[]>(recipes.map((r) => [r.id, r.ingredients]));
 
   // Existing items rejoin the merge as pseudo-ingredients so quantities add up

@@ -4,7 +4,7 @@ import {test} from 'node:test';
 import {createRequire} from 'node:module';
 import {readFileSync} from 'node:fs';
 import {addToPlan,planForRange,removeFromPlan,clearPlanRange} from '../packages/db/src/queries/plan.ts';
-import {addItemsToList,getShoppingList,setItemChecked,removeListItem} from '../packages/db/src/queries/shopping.ts';
+import {addRecipesToList,addItemsToList,getShoppingList,setItemChecked,removeListItem} from '../packages/db/src/queries/shopping.ts';
 import * as schema from '../packages/db/src/schema.ts';
 const require=createRequire(new URL('../packages/db/package.json',import.meta.url));
 const {PGlite}=require('@electric-sql/pglite');const {drizzle}=require('drizzle-orm/pglite');
@@ -14,7 +14,7 @@ const sql=name=>readFileSync(new URL('../packages/db/migrations/'+name,import.me
 test('reviewed planning/shopping real-query retry and owner boundaries',async t=>{
  const pg=new PGlite();try{
   await pg.exec(`CREATE TABLE users(id uuid PRIMARY KEY);INSERT INTO users VALUES ('${A}'),('${B}');
-   CREATE TABLE recipes(id uuid PRIMARY KEY,owner_id uuid NOT NULL REFERENCES users(id),title text NOT NULL,image_url text,total_minutes integer);
+   CREATE TABLE recipes(id uuid PRIMARY KEY,owner_id uuid NOT NULL REFERENCES users(id),title text NOT NULL,image_url text,total_minutes integer,ingredients jsonb NOT NULL DEFAULT '[]');
    INSERT INTO recipes(id,owner_id,title) VALUES ('${RA}','${A}','Synthetic soup'),('${RB}','${B}','Other soup');
    CREATE TABLE pantry_items(user_id uuid REFERENCES users(id),canonical_item text,display_name text NOT NULL,quantity real,unit text,is_staple boolean NOT NULL DEFAULT false,updated_at timestamptz NOT NULL DEFAULT now(),PRIMARY KEY(user_id,canonical_item));`);
   // Selected exact initial shopping statements; all other baseline DDL is synthetic.
@@ -38,6 +38,18 @@ test('reviewed planning/shopping real-query retry and owner boundaries',async t=
   });
   await t.test('another account cannot read, check or remove the owner shopping line',async()=>{
    assert.equal(await getShoppingList(db,B,list.id),null);await setItemChecked(db,B,line.id,false);await removeListItem(db,B,line.id);const own=await getShoppingList(db,A,list.id);assert.equal(own.items.length,1);assert.equal(own.items[0].checked,true);const other=await addItemsToList(db,B,[{canonicalItem:'banana'}]);assert.notEqual(other.id,list.id);assert.equal(other.items[0].quantity,null);
+  });
+  await t.test('foreign or empty recipe selection cannot rebuild existing shopping amounts',async()=>{
+   await pg.query('INSERT INTO pantry_items(user_id,canonical_item,display_name,quantity,unit) VALUES ($1,$2,$3,$4,$5)',[A,'banana','Bananas',2,'count']);
+   const before=(await pg.query('SELECT * FROM shopping_list_items WHERE list_id=$1 ORDER BY id',[list.id])).rows;
+   const foreign=await addRecipesToList(db,A,[RB]);assert.equal(foreign.items[0].quantity,6);assert.deepEqual((await pg.query('SELECT * FROM shopping_list_items WHERE list_id=$1 ORDER BY id',[list.id])).rows,before);
+   await addRecipesToList(db,A,[]);assert.deepEqual((await pg.query('SELECT * FROM shopping_list_items WHERE list_id=$1 ORDER BY id',[list.id])).rows,before);
+  });
+  await t.test('owned recipe selection still adds its pantry shortfall',async()=>{
+   const D='00000000-0000-4000-8000-000000000006',RD='00000000-0000-4000-8000-000000000007';await pg.query('INSERT INTO users VALUES ($1)',[D]);
+   const ingredient={raw:'3 carrots',quantity:3,quantityMax:null,unit:'count',item:'carrot',canonicalItem:'carrot',notes:null,optional:false,group:null};
+   await pg.query('INSERT INTO recipes(id,owner_id,title,ingredients) VALUES ($1,$2,$3,$4)',[RD,D,'Synthetic carrots',JSON.stringify([ingredient])]);await pg.query('INSERT INTO pantry_items(user_id,canonical_item,display_name,quantity,unit) VALUES ($1,$2,$3,$4,$5)',[D,'carrot','Carrots',1,'count']);
+   const added=await addRecipesToList(db,D,[RD]);assert.equal(added.items.length,1);assert.equal(added.items[0].quantity,2);assert.equal(added.items[0].unit,'count');assert.deepEqual(added.items[0].recipeIds,[RD]);
   });
   await t.test('overlapping first shopping additions share one owner destination',async()=>{
    const C='00000000-0000-4000-8000-000000000005';await pg.query('INSERT INTO users VALUES ($1)',[C]);
