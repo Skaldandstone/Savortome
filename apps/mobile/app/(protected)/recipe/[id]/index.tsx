@@ -66,10 +66,16 @@ function AccountRecipeScreen({ id, client }: { id: string; client: SecondsClient
     // Treat every dispatched write as uncertain until a response confirms it.
     setListUnconfirmed(true);
     try {
-      await client.addRecipesToList([recipe.id]);
+      const result = await client.addRecipesToList([recipe.id]);
+      if (!result || !isUuid(result.id) || !Array.isArray(result.items) || result.items.some(item =>
+        !item || !isUuid(item.id) || typeof item.canonicalItem !== "string" || !item.canonicalItem.trim() ||
+        (item.quantity !== null && (typeof item.quantity !== "number" || !Number.isFinite(item.quantity))) ||
+        (item.unit !== null && typeof item.unit !== "string") || typeof item.checked !== "boolean" ||
+        !Array.isArray(item.recipeIds) || !item.recipeIds.every(isUuid)
+      )) throw new Error("Unconfirmed shopping list");
       if (focused.current && generation.current === visit) {
         setAdded(true); setListUnconfirmed(false);
-        setListMessage("Recipe ingredients added to your shopping list. Review the amounts there. No groceries were ordered and pantry stock was not changed.");
+        setListMessage("Shopping-list request completed. Review your list and amounts; pantry, staple or optional-item settings may leave some ingredients off. No groceries were ordered and pantry stock was not changed.");
       }
     } catch {
       if (focused.current && generation.current === visit) setListMessage("We could not confirm this addition. It may already be on your list. Check the list and its amounts; nothing will retry automatically.");
@@ -99,9 +105,10 @@ function AccountRecipeScreen({ id, client }: { id: string; client: SecondsClient
             </View>
             <View style={styles.actions}>
               <Button
-                label={listBusy ? "Adding ingredients…" : added ? "Ingredients added ✓" : listUnconfirmed ? "Check unconfirmed addition" : "Add ingredients to shopping list"}
+                label={listBusy ? "Adding ingredients…" : added ? "List ready to review ✓" : listUnconfirmed ? "Check unconfirmed addition" : "Add ingredients to shopping list"}
                 variant="ghost"
                 disabled={added || listBusy || listUnconfirmed || mealPending}
+                busy={listBusy}
                 onPress={() => void addToList()}
               />
               <Button
