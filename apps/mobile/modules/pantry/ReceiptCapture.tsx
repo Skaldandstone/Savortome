@@ -54,12 +54,14 @@ export function ReceiptCapture({ onScan }: {
     return () => { cancelled = true; clearTimeout(timeout); };
   }, [attempt, scope]);
 
+  const unconfirmedReview = "We could not confirm that the receipt review saved. Check grocery reviews below before scanning again. Nothing enters your pantry until you confirm those items.";
   const scan = async (source: "camera" | "library") => {
     if (!current() || action.current || availability !== "enabled") return;
     action.current = true;
     setError(null);
     setMessage(null);
     setBusy(true);
+    let dispatched = false;
     try {
       if (source === "camera") {
         const permission = await ImagePicker.requestCameraPermissionsAsync();
@@ -79,15 +81,16 @@ export function ReceiptCapture({ onScan }: {
         setError("Use a JPEG, PNG, or WebP receipt photo.");
         return;
       }
+      dispatched = true;
       const saved = await onScan(asset.base64, mediaType);
       if (!current()) return;
       if (saved) {
         setMessage("Receipt ready to review below. Nothing was added to your pantry yet.");
       } else {
-        setError("The receipt was not saved for review. Check your connection and account, then try again. Nothing was added to your pantry.");
+        setError(unconfirmedReview);
       }
     } catch {
-      if (current()) setError("That receipt could not be read. Try again, or choose an existing receipt photo. Nothing was added to your pantry.");
+      if (current()) setError(dispatched ? unconfirmedReview : "That receipt could not be read. Try again, or choose an existing receipt photo. Nothing was added to your pantry.");
     } finally {
       if (current()) { action.current = false; setBusy(false); }
     }
@@ -116,7 +119,7 @@ export function ReceiptCapture({ onScan }: {
         <Text style={[styles.unavailable, { color: c.textMuted }]}>Receipt scanning is currently unavailable. You can still add pantry items by hand.</Text>
       )}
       {message ? <Callout tone="info">{message}</Callout> : null}
-      {error ? <Callout tone="error" title="Receipt not scanned">{error}</Callout> : null}
+      {error ? <Callout tone="error" title="Receipt scan needs attention">{error}</Callout> : null}
     </Panel>
   );
 }
