@@ -155,3 +155,18 @@ test('actual native CookScreen: uncertain failure remains visible and exact revi
 test('actual native CookScreen: account replacement resets the private screen key',()=>{
  const f=screenFixture();assert.equal(f.wrapper().key,'account-a');f.state.auth={userId:'account-b'};assert.equal(f.wrapper().key,'account-b');f.state.auth={userId:null};assert.equal(f.wrapper().key,'signed-out');
 });
+
+test('actual native CookScreen: pending refresh exposes busy semantics to shared Button',()=>{
+ const f=screenFixture();f.state.controller.refreshingReviews=true;const button=screenNodes(f.render()).find(n=>n.type==='Button'&&/Refreshing grocery/.test(n.props.label??''));assert.equal(button.props.busy,true);
+});
+
+const buttonMocks={
+ 'react/jsx-runtime':screenMocks['react/jsx-runtime'],
+ 'react-native':screenMocks['react-native'],
+ './theme':`export const radius={sm:4},type={body:16,small:14};`,
+ './ThemeProvider':`export const usePalette=()=>({});`,
+};
+const sharedButton=await build({bundle:true,write:false,format:'iife',globalName:'shared',jsx:'automatic',stdin:{resolveDir:process.cwd(),contents:"export {Button} from './apps/mobile/ui/Button.tsx';"},plugins:[{name:'native-button-semantics',setup(api){api.onResolve({filter:/.*/},args=>Object.hasOwn(buttonMocks,args.path)?{path:args.path,namespace:'mock'}:undefined);api.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:buttonMocks[args.path],loader:'js'}));}}]});
+test('actual native Button: pending work maps to busy and disabled accessibility state',()=>{
+ const ctx={};runInNewContext(sharedButton.outputFiles[0].text,ctx);for(const busy of [true,false]){const tree=ctx.shared.Button({label:'Review groceries',busy,onPress:()=>{}});assert.equal(tree.props.accessibilityRole,'button');assert.equal(tree.props.accessibilityLabel,'Review groceries');assert.equal(tree.props.accessibilityState.busy,busy);assert.equal(tree.props.accessibilityState.disabled,busy);assert.equal(tree.props.disabled,busy);}
+});

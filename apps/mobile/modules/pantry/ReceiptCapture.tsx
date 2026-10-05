@@ -96,7 +96,7 @@ export function ReceiptCapture({ onScan }: {
     }
   };
 
-  if (dataScope.current !== scope) return <Text accessibilityLiveRegion="polite">Checking receipt scanning for your sign-in�</Text>;
+  if (dataScope.current !== scope) return <Text accessibilityLiveRegion="polite">Checking receipt scanning for your sign-in…</Text>;
   return (
     <Panel>
       <PanelHeader
@@ -105,8 +105,8 @@ export function ReceiptCapture({ onScan }: {
       />
       {availability === "enabled" ? (
         <View style={styles.actions}>
-          <Button label={busy ? "Reading receipt…" : "Take receipt photo"} disabled={busy} onPress={() => void scan("camera")} />
-          <Button label="Choose receipt photo" variant="ghost" disabled={busy} onPress={() => void scan("library")} />
+          <Button label={busy ? "Reading receipt…" : "Take receipt photo"} busy={busy} disabled={busy} onPress={() => void scan("camera")} />
+          <Button label="Choose receipt photo" variant="ghost" busy={busy} disabled={busy} onPress={() => void scan("library")} />
         </View>
       ) : availability === "loading" ? (
         <Text accessibilityLiveRegion="polite" style={[styles.unavailable, { color: c.textMuted }]}>Checking receipt scanning… You can still add pantry items by hand.</Text>

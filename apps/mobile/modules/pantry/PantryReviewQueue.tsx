@@ -75,14 +75,14 @@ function ReviewCard({ intake, onResolve }: {
       })}
       <Text style={[styles.note, { color: c.textMuted }]}>Confirming replaces an existing displayed quantity. You can correct it afterward.</Text>
       <View style={styles.actions}>
-        <Button label={busy ? "Saving review…" : "Add selected items"} disabled={busy || completed || confirmDismiss || selected.length === 0} onPress={() => void resolve("accept")} />
+        <Button label={busy ? "Saving review…" : "Add selected items"} busy={busy} disabled={busy || completed || confirmDismiss || selected.length === 0} onPress={() => void resolve("accept")} />
         <Button label="Dismiss" variant="ghost" disabled={busy || completed} onPress={() => { setConfirmDismiss(true); setError(""); }} />
       </View>
       {confirmDismiss ? (
         <View style={{ gap: space.sm }}>
           <Text style={{ color: c.text }}>Dismiss this review without adding any items? You can keep it here to review later.</Text>
           <View style={styles.actions}>
-            <Button label="Dismiss this review" disabled={busy} onPress={() => void resolve("dismiss")} />
+            <Button label="Dismiss this review" busy={busy} disabled={busy} onPress={() => void resolve("dismiss")} />
             <Button label="Keep reviewing" variant="ghost" disabled={busy} onPress={() => { setConfirmDismiss(false); setError(""); }} />
           </View>
         </View>

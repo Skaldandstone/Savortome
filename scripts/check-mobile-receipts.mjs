@@ -83,3 +83,7 @@ test('receipt: a persisted review with lost acknowledgement is never called not 
 test('receipt: thrown response loss after simulated persistence communicates uncertainty',async()=>{
  const f=await enabled();let persisted=false;f.state.scan=async()=>{persisted=true;throw Error('synthetic acknowledgement lost');};button(f.render(),'Choose receipt photo').props.onPress();await flush();assert.equal(persisted,true);assert.match(text(f.render()),/could not confirm.*review saved/);assert.doesNotMatch(text(f.render()),/could not be read|synthetic acknowledgement lost|Receipt ready/);
 });
+
+test('receipt: pending permission exposes busy semantics to both capture alternatives',async()=>{
+ const f=await enabled(),reply=deferred();f.state.permission=()=>reply.promise;const operation=button(f.render(),'Take receipt photo').props.onPress();assert.ok(nodes(f.render()).filter(n=>n.type==='Button').every(n=>n.props.busy===true));reply.resolve({granted:false});await operation;await flush();assert.equal(button(f.render(),'Choose receipt photo').props.busy,false);
+});
