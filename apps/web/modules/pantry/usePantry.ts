@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { PantryEntry, PantryEntryUpdate, PantryIntakeView, PantrySearchResponse } from "@seconds/core/format";
-import { api } from "@/lib/client";
+import { api as defaultApi } from "@/lib/client";
 import { actionFailure, type ActionFailure } from "@/lib/action-failure";
 
 export interface PantryController {
@@ -25,7 +25,13 @@ export interface PantryController {
 }
 
 /** What's in the kitchen. Kept separate from searching so either can be used alone. */
-export function usePantry(): PantryController {
+export function usePantry(api = defaultApi): PantryController {
+  const activeClient = useRef(api);
+  activeClient.current = api;
+  const dataClient = useRef(api);
+  const mounted = useRef(true);
+  const current = useCallback(() => mounted.current && activeClient.current === api, [api]);
+
   const [items, setItems] = useState<PantryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [loaded, setLoaded] = useState(false);
@@ -39,26 +45,33 @@ export function usePantry(): PantryController {
   const [intakesAttempt, setIntakesAttempt] = useState(0);
 
   useEffect(() => {
+    mounted.current = true; dataClient.current = api;
+    setItems([]); setIntakes([]); setLoaded(false); setIntakesLoaded(false);
+    setError(null); setPantryError(null); setIntakesError(null);
+    return () => { mounted.current = false; };
+  }, [api]);
+
+  useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setPantryError(null);
     void (async () => {
       try {
         const next = await api.listPantry();
-        if (!cancelled) {
+        if (!cancelled && current()) {
           setItems(next);
           setLoaded(true);
         }
       } catch (err) {
-        if (!cancelled) setPantryError(actionFailure(err, "Couldn't load your pantry."));
+        if (!cancelled && current()) setPantryError(actionFailure(err, "Couldn't load your pantry."));
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && current()) setLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [pantryAttempt]);
+  }, [api, current, pantryAttempt]);
 
   useEffect(() => {
     let cancelled = false;
@@ -67,61 +80,66 @@ export function usePantry(): PantryController {
     void (async () => {
       try {
         const pending = await api.listPantryIntakes();
-        if (!cancelled) {
+        if (!cancelled && current()) {
           setIntakes(pending);
           setIntakesLoaded(true);
         }
       } catch (err) {
-        if (!cancelled) setIntakesError(actionFailure(err, "Couldn't load recent grocery reviews."));
+        if (!cancelled && current()) setIntakesError(actionFailure(err, "Couldn't load recent grocery reviews."));
       } finally {
-        if (!cancelled) setIntakesLoading(false);
+        if (!cancelled && current()) setIntakesLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [intakesAttempt]);
+  }, [api, current, intakesAttempt]);
 
   const resolveIntake = useCallback(async (
     intakeId: string,
     action: "accept" | "dismiss",
     acceptedItemIds: string[] = [],
   ) => {
+    if (!current()) return false;
     setError(null);
     try {
       const next = await api.resolvePantryIntake({ intakeId, action, acceptedItemIds });
+      if (!current()) return false;
       setItems(next.pantry);
       setIntakes(next.intakes);
       return true;
     } catch (err) {
-      setError(actionFailure(err, "That pantry review did not save."));
+      if (current()) setError(actionFailure(err, "That pantry review did not save."));
       return false;
     }
-  }, []);
+  }, [api, current]);
 
   const run = useCallback(async (write: () => Promise<PantryEntry[]>): Promise<boolean> => {
+    if (!current()) return false;
     setError(null);
     try {
-      setItems(await write());
+      const next = await write();
+      if (!current()) return false;
+      setItems(next);
       return true;
     } catch (err) {
-      setError(actionFailure(err, "That didn't save."));
+      if (current()) setError(actionFailure(err, "That didn't save."));
       return false;
     }
-  }, []);
+  }, [current]);
 
   return {
-    items,
-    loading,
-    loaded,
-    pantryError,
-    error,
-    intakes,
-    intakesLoading,
-    intakesLoaded,
-    intakesError,
-    retryPantry: () => setPantryAttempt(current => current + 1),
-    retryIntakes: () => setIntakesAttempt(current => current + 1),
+    items: dataClient.current === api ? items : [],
+    loading: dataClient.current === api ? loading : true,
+    loaded: dataClient.current === api ? loaded : false,
+    pantryError: dataClient.current === api ? pantryError : null,
+    error: dataClient.current === api ? error : null,
+    intakes: dataClient.current === api ? intakes : [],
+    intakesLoading: dataClient.current === api ? intakesLoading : true,
+    intakesLoaded: dataClient.current === api ? intakesLoaded : false,
+    intakesError: dataClient.current === api ? intakesError : null,
+    retryPantry: () => { if (current()) setPantryAttempt(attempt => attempt + 1); },
+    retryIntakes: () => { if (current()) setIntakesAttempt(attempt => attempt + 1); },
     add: (text) => run(() => api.addPantry(text)),
     update: (update) => run(() => api.updatePantry(update)),
     remove: (canonicalItem) => run(() => api.removePantry([canonicalItem])),
@@ -138,22 +156,41 @@ export interface SearchController {
 }
 
 /** "What can I make" — either from typed text or from the saved pantry. */
-export function usePantrySearch(): SearchController {
+export function usePantrySearch(api = defaultApi): SearchController {
+  const activeClient = useRef(api);
+  activeClient.current = api;
+  const dataClient = useRef(api);
+  const mounted = useRef(true);
+  const current = useCallback(() => mounted.current && activeClient.current === api, [api]);
+  const request = useRef(0);
   const [response, setResponse] = useState<PantrySearchResponse | null>(null);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<ActionFailure | null>(null);
+  useEffect(() => {
+    mounted.current = true; dataClient.current = api;
+    ++request.current; setResponse(null); setSearching(false); setError(null);
+    return () => { mounted.current = false; ++request.current; };
+  }, [api]);
 
   const search = useCallback(async (query: string) => {
+    if (!current()) return;
+    const version = ++request.current;
     setSearching(true);
     setError(null);
     try {
-      setResponse(await api.searchPantry(query));
+      const result = await api.searchPantry(query);
+      if (current() && request.current === version) setResponse(result);
     } catch (err) {
-      setError(actionFailure(err, "That search didn't work."));
+      if (current() && request.current === version) setError(actionFailure(err, "That search didn't work."));
     } finally {
-      setSearching(false);
+      if (current() && request.current === version) setSearching(false);
     }
-  }, []);
+  }, [api, current]);
 
-  return { response, searching, error, search };
+  return {
+    response: dataClient.current === api ? response : null,
+    searching: dataClient.current === api && searching,
+    error: dataClient.current === api ? error : null,
+    search,
+  };
 }

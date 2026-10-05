@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@clerk/nextjs";
+import { createClient } from "@seconds/core/format";
+import { api as localApi } from "@/lib/client";
 import { signInReturnHref } from "@/lib/action-failure";
 import { Button, Callout, FieldRow, Panel, PanelHeader, TextField } from "@/ui";
 import { MatchList, QueryReadback } from "./MatchList";
@@ -25,8 +28,20 @@ const EXAMPLES = [
  * the common case is one tap rather than retyping the same ingredients.
  */
 export function CookPanel({ clerkEnabled = true }: { clerkEnabled?: boolean }) {
-  const pantry = usePantry();
-  const { response, searching, error, search } = usePantrySearch();
+  return clerkEnabled ? <AuthenticatedCookPanel /> : <CookPanelContent clerkEnabled={false} api={localApi} />;
+}
+
+function AuthenticatedCookPanel() {
+  const { userId, sessionId } = useAuth();
+  // The server compares this header with its independently verified Clerk session.
+  // A loading/signed-out screen must never fall back to an unpinned cookie request.
+  const api = useMemo(() => createClient({ expectedSessionId: sessionId ?? "signed-out" }), [userId, sessionId]);
+  return <CookPanelContent clerkEnabled api={api} />;
+}
+
+function CookPanelContent({ clerkEnabled, api }: { clerkEnabled: boolean; api: typeof localApi }) {
+  const pantry = usePantry(api);
+  const { response, searching, error, search } = usePantrySearch(api);
   const [query, setQuery] = useState("");
   const [showPantry, setShowPantry] = useState(false);
 
