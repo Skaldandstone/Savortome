@@ -100,8 +100,12 @@ export async function uploadRecipePhoto(
 }
 
 /** Delete one recipe photo. Not fatal if it's already gone. */
-export async function deleteRecipePhoto(key: string): Promise<void> {
-  await r2().send(new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: key }));
+export async function deleteRecipePhoto(key: string, signal?: AbortSignal): Promise<void> {
+  // Refuse an already-expired operation before even creating a storage client.
+  if (signal?.aborted) throw new Error("Photo deletion was aborted.");
+  await r2().send(new DeleteObjectCommand({ Bucket: process.env.R2_BUCKET_NAME, Key: key }), {
+    abortSignal: signal,
+  });
 }
 
 /**
