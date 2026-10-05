@@ -27,14 +27,17 @@ const bundle = await build({bundle:true,write:false,platform:'node',format:'iife
 }}]});
 function fixture() {
   const state={database:true,signedIn:true,calls:[],logs:[],extract:async()=>({description:'Review this suggestion',items:[]})};
+  const controller=new AbortController();
+  const deadlines=[];
   const env={FOOD_PHOTO_ENABLED:'true',FOOD_VOICE_ENABLED:'true',OPENAI_API_KEY:'synthetic-not-a-key'};
-  const context={state,process:{env},Response,Buffer,AbortSignal,TextDecoder,Uint8Array,DataView,setTimeout,clearTimeout,console:{error:(...args)=>state.logs.push(args.join(' '))}};
+  const signals={any:AbortSignal.any,timeout:ms=>{const deadline=new AbortController();deadlines.push({ms,controller:deadline});return deadline.signal;}};
+  const context={state,process:{env},Response,Buffer,AbortSignal:signals,TextDecoder,Uint8Array,DataView,setTimeout,clearTimeout,console:{error:(...args)=>state.logs.push(args.join(' '))}};
   runInNewContext(bundle.outputFiles[0].text,context);
   const request=(body,headers={})=>{
     const bytes=Buffer.from(typeof body==='string'?body:JSON.stringify(body));let done=false;
-    return {headers:new Headers(headers),body:{getReader(){state.calls.push('body');return{read:async()=>done?{done:true}:(done=true,{done:false,value:bytes}),cancel:async()=>{state.calls.push('cancel');}}}}};
+    return {signal:controller.signal,headers:new Headers(headers),body:{getReader(){state.calls.push('body');return{read:async()=>{state.onRead?.();return done?{done:true}:(done=true,{done:false,value:bytes});},cancel:async()=>{state.calls.push('cancel');}}}}};
   };
-  return{state,env,api:context.capture,request};
+  return{state,env,api:context.capture,request,controller,deadlines};
 }
 function media(type,size=32) {
   const bytes=Buffer.alloc(size);
@@ -71,7 +74,7 @@ test('capture API: advertised and actual streamed upload bounds refuse extractio
   for(const advertised of [true,false]){const f=fixture();await check(await f.api.POST(f.request(advertised?body():' '.repeat(12_000_001),advertised?{'content-length':'12000001'}:{})),400);noExtraction(f);assert.equal(f.state.calls.includes('body'),!advertised);}
 });
 test('capture API: reader diagnostics are redacted and cancellation is requested',async()=>{
-  const f=fixture();const request={headers:new Headers(),body:{getReader:()=>({read:async()=>{throw Error('private transport diagnostic');},cancel:async()=>f.state.calls.push('cancel')})}};
+  const f=fixture();const request={signal:f.controller.signal,headers:new Headers(),body:{getReader:()=>({read:async()=>{throw Error('private transport diagnostic');},cancel:async()=>f.state.calls.push('cancel')})}};
   const result=await check(await f.api.POST(request),400);assert.equal(JSON.stringify(result).includes('private transport'),false);assert.ok(f.state.calls.includes('cancel'));noExtraction(f);
 });
 test('capture API: malformed base64 never reaches extraction',async()=>{
@@ -94,4 +97,16 @@ test('capture API: approved headers dispatch only matching synthetic extractor a
 });
 test('capture API: unexpected auth and extraction diagnostics stay out of response and logs',async()=>{
   for(const auth of [true,false]){const f=fixture();f.state.authError=auth;f.state.extract=async()=>{throw Error('private food transcript and provider diagnostic');};assert.deepEqual(await check(await f.api.POST(f.request(body())),500),{error:'Something went wrong on our end.'});assert.deepEqual(f.state.logs,['Unhandled food-support API error; details withheld.']);if(auth)noExtraction(f);}
+});
+test('capture API: already-aborted request refuses before upload access',async()=>{
+  const f=fixture();f.controller.abort();await check(await f.api.POST({signal:f.controller.signal,get headers(){throw Error('must not read');}}),400);noExtraction(f);assert.equal(f.state.calls.includes('body'),false);
+});
+test('capture API: abort during body reading prevents extraction for both capture sources',async()=>{
+  for(const source of ['photo','voice']){const f=fixture();f.state.onRead=()=>f.controller.abort();await check(await f.api.POST(f.request(body(source,source==='photo'?'image/jpeg':'audio/wav'))),400);noExtraction(f);}
+});
+test('capture API: in-flight abort reaches extractor and late draft is withheld',async()=>{
+  for(const source of ['photo','voice']){const f=fixture();let finish;f.state.extract=()=>new Promise(resolve=>{finish=resolve;});const operation=f.api.POST(f.request(body(source,source==='photo'?'image/jpeg':'audio/wav')));for(let i=0;i<20&&!finish;i++)await Promise.resolve();assert.ok(finish);f.controller.abort();assert.equal(f.state.args[2].signal.aborted,true);finish({description:'late private draft',items:[]});const response=await check(await operation,400);assert.equal(JSON.stringify(response).includes('late private'),false);assert.equal(Object.hasOwn(response,'draft'),false);}
+});
+test('capture API: source-specific deadline still aborts and withholds late draft',async()=>{
+  for(const source of ['photo','voice']){const f=fixture();let finish;f.state.extract=()=>new Promise(resolve=>{finish=resolve;});const operation=f.api.POST(f.request(body(source,source==='photo'?'image/jpeg':'audio/wav')));for(let i=0;i<20&&!finish;i++)await Promise.resolve();assert.ok(finish);assert.equal(f.deadlines.length,1);assert.equal(f.deadlines[0].ms,source==='photo'?40_000:70_000);f.deadlines[0].controller.abort();assert.equal(f.state.args[2].signal.aborted,true);assert.equal(f.controller.signal.aborted,false);finish({description:'late private draft',items:[]});const response=await check(await operation,400);assert.equal(Object.hasOwn(response,'draft'),false);}
 });
