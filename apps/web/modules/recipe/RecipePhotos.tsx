@@ -36,10 +36,27 @@ function AccountPhotos({ recipeId, initial, sessionId }: Props & { sessionId?: s
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
+  const galleryHeading = useRef<HTMLHeadingElement>(null);
+  const focusOrigin = useRef<HTMLButtonElement | null>(null);
+  const [focusVersion, setFocusVersion] = useState(0);
   const alive = useRef(true);
   const action = useRef(false);
   const pending = useRef(false);
   useEffect(() => { alive.current = true; if (sessionId) void refresh(); return () => { alive.current = false; }; }, []);
+  useEffect(() => {
+    const origin = focusOrigin.current;
+    focusOrigin.current = null;
+    if (!alive.current || !origin) return;
+    const doc = origin.ownerDocument;
+    // A removed/disabled focused button may fall back to body. Never pull
+    // focus back if the user already moved to another control while waiting.
+    if (doc.activeElement === origin || doc.activeElement === doc.body) galleryHeading.current?.focus();
+  }, [focusVersion]);
+  function recoverRemovalFocus(origin: HTMLButtonElement | undefined, hadFocus: boolean) {
+    if (!origin || !hadFocus || !alive.current) return;
+    focusOrigin.current = origin;
+    setFocusVersion(version => version + 1);
+  }
 
   function checkedPhotos(value: unknown): RecipePhoto[] {
     if (!Array.isArray(value) || value.length > MAX_RECIPE_PHOTOS) throw new Error("Unconfirmed photos.");
@@ -99,8 +116,9 @@ function AccountPhotos({ recipeId, initial, sessionId }: Props & { sessionId?: s
     }
   }
 
-  async function remove(key: string) {
+  async function remove(key: string, origin?: HTMLButtonElement) {
     if (action.current || pending.current || !loaded || !alive.current) return;
+    const hadFocus = !!origin && origin.ownerDocument.activeElement === origin;
     action.current = true; setError(null); setMessage(null); setBusyKey(key);
     try {
       const result = await api.removeRecipePhoto(recipeId, key);
@@ -110,13 +128,13 @@ function AccountPhotos({ recipeId, initial, sessionId }: Props & { sessionId?: s
       setPhotos(updated); setMessage("Photo removed from this recipe. Storage cleanup may still be pending.");
     } catch {
       if (alive.current) { pending.current = true; setUncertain(true); setError("Couldn't confirm the removal. Check saved photos before trying again; no automatic retry was sent."); }
-    } finally { if (alive.current) { action.current = false; setBusyKey(null); } }
+    } finally { if (alive.current) { action.current = false; setBusyKey(null); recoverRemovalFocus(origin, hadFocus); } }
   }
 
   const busy = uploading || checking || busyKey !== null;
   return (
-    <section className={styles.journalPage} aria-label="Your photos" data-print="hide">
-      <h3 className={styles.sectionTitle}>Your photos</h3>
+    <section className={styles.journalPage} aria-label="Your photos" aria-busy={busy} data-print="hide">
+      <h3 ref={galleryHeading} tabIndex={-1} className={styles.sectionTitle}>Your photos</h3>
       {!loaded && photos.length === 0 ? <p className={styles.note}>Your saved photos are not confirmed yet. Check them before uploading.</p> : photos.length > 0 ? (
         <ul className={styles.photoGrid}>
           {photos.map((photo) => (
@@ -128,7 +146,7 @@ function AccountPhotos({ recipeId, initial, sessionId }: Props & { sessionId?: s
                 className={styles.photoRemove}
                 aria-label={`Remove photo ${photos.indexOf(photo) + 1}`}
                 disabled={busy || uncertain || !loaded}
-                onClick={() => void remove(photo.key)}
+                onClick={(event) => void remove(photo.key, event.currentTarget)}
               >
                 {busyKey === photo.key ? "…" : "×"}
               </button>
@@ -150,6 +168,7 @@ function AccountPhotos({ recipeId, initial, sessionId }: Props & { sessionId?: s
       />
       <Button type="button" disabled={busy} onClick={() => void refresh()}>{checking ? "Checking saved photos…" : uncertain || !loaded ? "Check saved photos" : "Refresh saved photos"}</Button>
       {uploading ? <p className={styles.note} role="status">Preparing or uploading your photo…</p> : null}
+      {busyKey !== null ? <p className={styles.note} role="status">Removing your photo…</p> : null}
       {message ? <p className={styles.note} role="status">{message}</p> : null}
       {error ? <Callout tone="error" role="alert">{error}</Callout> : null}
     </section>

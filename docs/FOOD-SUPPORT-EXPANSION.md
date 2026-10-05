@@ -425,3 +425,6 @@ Actual web photo route now wires durable reservation-before-PUT and atomic attac
 
 
 Recipe gallery recovery UI now serializes actions, bounds preparation/photo transport, checks saved photos explicitly after uncertainty, validates basic receipts and avoids raw errors/false saved claims. Session-keyed authenticated mounts read fresh photos with expected-session pin; late/unmounted results suppressed.14synthetic actual-component+10transport+15server boundary checks and core/web/mobile types pass. Themed controls/44px numbered removal targets retained; no real rendered/account/device/provider acceptance. Explicit refresh does not prove an earlier write stopped, and uncertainty is not durable across navigation. Native gallery parity, receipt/provider/retention/hosted migration remain separate gates; no deployment.
+
+
+Photo-removal keyboard focus source gap reproduced/fixed: focused removal or its uncertain failure can return to the gallery heading after state commit, only while focus still belongs to the action/body fallback. Later focus movement/unmount is respected. Added polite removal progress/aria-busy and themed focus outline.21component+8accessibility fixture checks/webtypes pass; synthetic DOM is not rendered/browser/screen-reader acceptance. Backend/transport/provider/runtime unchanged.

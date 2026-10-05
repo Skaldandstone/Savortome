@@ -21,15 +21,16 @@ const photo=n=>({key:`fixture/photo-${n}`,url:`https://fixture.invalid/${n}`,cre
 function nodes(t){return Array.isArray(t)?t.flatMap(nodes):t&&typeof t==='object'?[t,...nodes(t.props?.children)]:[];}
 function text(t){return Array.isArray(t)?t.map(text).join(' '):t&&typeof t==='object'?text(t.props?.children):t==null?'':String(t);}
 function fixture(authenticated=false){
- const state={cursor:0,values:[],deps:[],cleanups:[],effects:[],writes:0,calls:[],auth:{isLoaded:true,userId:'synthetic-account',sessionId:'synthetic-session'},timers:new Map(),timer:0};
+ const state={focuses:[],cursor:0,values:[],deps:[],cleanups:[],effects:[],writes:0,calls:[],auth:{isLoaded:true,userId:'synthetic-account',sessionId:'synthetic-session'},timers:new Map(),timer:0};
+ state.document={body:{fixtureBody:true},activeElement:null};state.document.activeElement=state.document.body;state.removeButton={ownerDocument:state.document};
  state.prepare=async file=>file;state.decode=async()=>'aGVsbG8=';state.add=async()=>({photos:[photo(1),photo(2)]});state.remove=async()=>({photos:[]});state.read=async()=>({id,photos:[photo(1)]});
  state.api={addRecipePhoto:async(...args)=>{state.calls.push(['add',...args]);return state.add(...args);},removeRecipePhoto:async(...args)=>{state.calls.push(['remove',...args]);return state.remove(...args);},getRecipe:async(...args)=>{state.calls.push(['read',...args]);return state.read(...args);}};
  const context={state,setTimeout:(fn,ms)=>{assert.equal(ms,30000);state.timers.set(++state.timer,fn);return state.timer;},clearTimeout:i=>state.timers.delete(i)};runInNewContext(bundle.outputFiles[0].text,context);
  const props={recipeId:id,initial:[photo(1)],clerkEnabled:authenticated};
- function render(){state.cursor=0;let tree=context.app.RecipePhotos(props);while(typeof tree?.type==='function')tree=tree.type(tree.props);while(state.effects.length)state.effects.shift()();return tree;}
+ function render(){state.cursor=0;let tree=context.app.RecipePhotos(props);while(typeof tree?.type==='function')tree=tree.type(tree.props);for(const node of nodes(tree)){if(node.type==='h3'&&node.props.ref)node.props.ref.current={focus:()=>{state.focuses.push('gallery-heading');state.document.activeElement='heading';}};}while(state.effects.length)state.effects.shift()();return tree;}
  const find=label=>nodes(render()).find(n=>n.type==='Button'&&text(n)===label);
  const pick=(file={type:'image/jpeg',size:100})=>nodes(render()).find(n=>n.type==='input').props.onChange({target:{files:[file]}});
- const remove=()=>nodes(render()).find(n=>n.type==='button').props.onClick();
+ const remove=()=>nodes(render()).find(n=>n.type==='button').props.onClick({currentTarget:state.removeButton});
  const press=label=>find(label).props.onClick();
  const unmount=()=>state.cleanups.forEach(fn=>fn?.());
  return{state,props,render,pick,remove,press,find,unmount,key:()=>{const outer=context.app.RecipePhotos(props);return outer.type(outer.props).key;}};
@@ -50,3 +51,12 @@ test('photo UI: malformed/oversized preparation and invalid selections never upl
 test('photo UI: fresh authenticated load cannot claim empty gallery before confirmed read',async()=>{const f=fixture(true),gate=deferred();f.state.read=()=>gate.promise;assert.match(text(f.render()),/not confirmed yet/);assert.doesNotMatch(text(f.render()),/No photos yet/);gate.resolve({id,photos:[]});await flush();assert.match(text(f.render()),/No photos yet/);});
 
 test('photo UI: provider unavailable stays explicit without exposing raw configuration',async()=>{const f=fixture();f.state.add=async()=>{throw {status:501,message:'private storage configuration'};};f.pick();await flush();assert.match(text(f.render()),/uploads aren't available/);assert.doesNotMatch(text(f.render()),/private storage/);assert.doesNotMatch(text(f.render()),/Photo added/);assert.equal(f.state.calls.length,1);});
+
+test('photo UI focus: confirmed keyboard removal returns to gallery heading after rendering',async()=>{const f=fixture();f.state.document.activeElement=f.state.removeButton;f.remove();await flush();f.render();assert.deepEqual(f.state.focuses,['gallery-heading']);});
+test('photo UI focus: an unconfirmed focused removal exposes recovery from gallery heading',async()=>{const f=fixture();f.state.document.activeElement=f.state.removeButton;f.state.remove=async()=>{throw Error('synthetic failure');};f.remove();await flush();f.render();assert.deepEqual(f.state.focuses,['gallery-heading']);assert.ok(f.find('Check saved photos'));});
+test('photo UI focus: unfocused action or user-moved focus is never stolen',async()=>{for(const moved of [false,true]){const f=fixture(),gate=deferred();f.state.remove=()=>gate.promise;if(moved)f.state.document.activeElement=f.state.removeButton;f.remove();if(moved)f.state.document.activeElement={otherControl:true};gate.resolve({photos:[]});await flush();f.render();assert.deepEqual(f.state.focuses,[]);}});
+test('photo UI focus: unmount during deletion cannot schedule later focus',async()=>{const f=fixture(),gate=deferred();f.state.document.activeElement=f.state.removeButton;f.state.remove=()=>gate.promise;f.remove();f.unmount();gate.resolve({photos:[]});await flush();assert.deepEqual(f.state.focuses,[]);});
+
+test('photo UI focus: body fallback after disabled removal returns to heading',async()=>{const f=fixture(),gate=deferred();f.state.document.activeElement=f.state.removeButton;f.state.remove=()=>gate.promise;f.remove();f.state.document.activeElement=f.state.document.body;gate.resolve({photos:[]});await flush();f.render();assert.deepEqual(f.state.focuses,['gallery-heading']);});
+test('photo UI focus: movement after settlement but before commit effect is respected',async()=>{const f=fixture();f.state.document.activeElement=f.state.removeButton;f.remove();await flush();f.state.document.activeElement={otherControl:true};f.render();assert.deepEqual(f.state.focuses,[]);});
+test('photo UI focus: gallery exposes busy progress and target is programmatically focusable',async()=>{const f=fixture(),gate=deferred();f.state.remove=()=>gate.promise;f.remove();const tree=f.render();assert.equal(tree.props['aria-busy'],true);assert.match(text(tree),/Removing your photo/);assert.ok(nodes(tree).some(n=>n.type==='h3'&&n.props.tabIndex===-1));gate.resolve({photos:[]});await flush();assert.equal(f.render().props['aria-busy'],false);});
