@@ -679,3 +679,12 @@ Provider contract reference: [Instacart Create shopping list page](https://docs.
 At a7f16f5, PR126 CI run 37579656134 passed all three jobs. The new `check-web-list-panel.mjs` bundles the actual ListPanel plus actual shopping hook, with a component/key-aware synthetic renderer and mocked Clerk/client/child widgets. All five cases pass: local mode without Clerk construction, loading/signed-out privacy, immediate account replacement before effects, session-key reset of destructive confirmation with retained old action refusal, and delayed old response rejection before passive cleanup. It is included in static CI. No production change was needed in this iteration.
 
 This provides wrapper integration evidence beyond the hook-only fixture, but is not DOM rendering, real React scheduling, cookie/session revocation, accessibility or signed-in hosted acceptance. CartButtons, ListItems and KrogerConnection children are mocked. The existing KrogerConnection source uses its own unscoped client and requires separate stale-session/response review before its configured provider workflow can be accepted. No provider call, cloud write or deployment occurred.
+
+
+### October 6 release iteration: Kroger child recovery
+
+At 6789772, PR126 CI run 37580732623 passed all three jobs. The actual KrogerConnection child initially reproduced duplicate search, unmounted late update/retained dispatch and stale account display failures (2/6, with the initial private-error case using a cross-realm Error). Its fixture now uses matching Error identity and memoized callbacks to reflect the used hook semantics. Final 12 component cases pass with web typechecking.
+
+The existing session-pinned ListPanel client is now forwarded to KrogerConnection. The child hides old account data synchronously, refuses stale/unmounted actions and responses, serializes actions, checks status/store response fields and selected/disconnected identity, and withholds raw provider errors. Uncertain failures pause writes until an explicit connection-status read; the read does not resend a store/disconnect operation. Failed replacement reads offer recovery without exposing prior account/store data. Unconfigured providers remain hidden.
+
+This is synthetic React/client/source integration evidence, not OAuth, credentials, a real provider store/cart or browser/session acceptance. No provider call, hosted configuration, credential, account or deployment change occurred. The OAuth navigation link and server authorization contract are unchanged and still need actual acceptance.

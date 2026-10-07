@@ -1,11 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { GroceryStore, KrogerStatus } from "@seconds/core/format";
-import { api } from "@/lib/client";
+import { api as localApi } from "@/lib/client";
 import { Button, Callout, TextField } from "@/ui";
 import styles from "./list.module.css";
+
+function confirmedStore(value: GroceryStore): boolean {
+  return !!value && typeof value.locationId === "string" && !!value.locationId.trim() &&
+    typeof value.name === "string" && (value.address === undefined || typeof value.address === "string") &&
+    (value.chain === undefined || typeof value.chain === "string");
+}
+function confirmedStatus(value: KrogerStatus): boolean {
+  return !!value && typeof value.configured === "boolean" && typeof value.connected === "boolean" &&
+    (value.store === null || confirmedStore(value.store));
+}
 
 /**
  * Connecting a Kroger account, and choosing which store the cart belongs to.
@@ -15,7 +25,7 @@ import styles from "./list.module.css";
  * then a store, because price, stock, and even what's carried differ between
  * one Fred Meyer and the next.
  */
-export function KrogerConnection() {
+export function KrogerConnection({ api = localApi }: { api?: typeof localApi }) {
   const [status, setStatus] = useState<KrogerStatus | null>(null);
   const [zipCode, setZipCode] = useState("");
   const [stores, setStores] = useState<GroceryStore[] | null>(null);
@@ -24,58 +34,67 @@ export function KrogerConnection() {
   const params = useSearchParams();
   const returned = params.get("kroger");
 
+  const alive = useRef(true);
+  const activeClient = useRef(api); activeClient.current = api;
+  const dataClient = useRef(api);
+  const action = useRef(false);
+  const ready = useRef(false);
+  const current = () => alive.current && activeClient.current === api;
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+
   const load = useCallback(async () => {
+    if (!current() || action.current) return;
+    action.current = true; ready.current = false;
+    setBusy(true); setError(null);
     try {
-      setStatus(await api.krogerStatus());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't check your Kroger connection.");
+      const next = await api.krogerStatus();
+      if (!current()) return;
+      if (!confirmedStatus(next)) throw new Error("Unconfirmed connection");
+      dataClient.current = api; setStatus(next); ready.current = true;
+    } catch {
+      if (current()) {
+        if (dataClient.current !== api) { dataClient.current = api; setStatus(null); }
+        setError("Couldn't confirm your Kroger connection. Check again before making changes.");
+      }
+    } finally {
+      if (current()) { action.current = false; setBusy(false); }
     }
-  }, []);
+  }, [api]);
 
   useEffect(() => {
+    action.current = false; ready.current = false;
+    setStatus(null); setStores(null); setZipCode(""); setError(null);
     void load();
-  }, [load]);
+  }, [api, load]);
 
-  // Nothing to show at all when the server has no Kroger credentials — an
-  // empty box inviting you to connect to something that can't work is worse
-  // than no box.
-  if (!status?.configured) return null;
-
-  const findStores = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      setStores(await api.krogerStores(zipCode.trim()));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't look up stores.");
-    } finally {
-      setBusy(false);
-    }
+  const change = async (write: () => Promise<void>, failure: string) => {
+    if (!current() || dataClient.current !== api || !ready.current || action.current) return;
+    action.current = true; setBusy(true); setError(null);
+    try { await write(); }
+    catch { if (current()) { ready.current = false; setError(failure); } }
+    finally { if (current()) { action.current = false; setBusy(false); } }
   };
+  const findStores = () => change(async () => {
+    const next = await api.krogerStores(zipCode.trim());
+    if (!current()) return;
+    if (!Array.isArray(next) || !next.every(confirmedStore)) throw new Error("Unconfirmed stores");
+    setStores(next);
+  }, "Couldn't confirm stores. Check your connection before trying again.");
+  const chooseStore = (store: GroceryStore) => change(async () => {
+    const next = await api.setKrogerStore(store);
+    if (!current()) return;
+    if (!confirmedStatus(next) || !next.connected || next.store?.locationId !== store.locationId) throw new Error("Unconfirmed connection");
+    setStatus(next); setStores(null);
+  }, "Your store change is unconfirmed and may still finish. Check your connection before trying again.");
+  const disconnect = () => change(async () => {
+    const next = await api.disconnectKroger();
+    if (!current()) return;
+    if (!confirmedStatus(next) || next.connected || next.store !== null) throw new Error("Unconfirmed connection");
+    setStatus(next); setStores(null);
+  }, "Disconnecting is unconfirmed and may still finish. Check your connection before trying again.");
 
-  const chooseStore = async (store: GroceryStore) => {
-    setBusy(true);
-    try {
-      setStatus(await api.setKrogerStore(store));
-      setStores(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't set that store.");
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const disconnect = async () => {
-    setBusy(true);
-    try {
-      setStatus(await api.disconnectKroger());
-      setStores(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Couldn't disconnect.");
-    } finally {
-      setBusy(false);
-    }
-  };
+  if (dataClient.current !== api) return null;
+  if (!status?.configured) return error ? <Callout tone="error" role="alert">{error} <Button type="button" disabled={busy} onClick={() => void load()}>Check connection again</Button></Callout> : null;
 
   return (
     <div className={styles.kroger}>
@@ -116,9 +135,9 @@ export function KrogerConnection() {
                   inputMode="numeric"
                   placeholder="ZIP code"
                   aria-label="ZIP code"
-                  onChange={(e) => setZipCode(e.target.value)}
+                  onChange={(e) => { if (current()) setZipCode(e.target.value); }}
                 />
-                <Button type="button" disabled={busy || !zipCode.trim()} onClick={() => void findStores()}>
+                <Button type="button" disabled={busy || !ready.current || !zipCode.trim()} onClick={() => void findStores()}>
                   Find stores
                 </Button>
               </div>
@@ -133,7 +152,7 @@ export function KrogerConnection() {
                     <button
                       type="button"
                       className={styles.store}
-                      disabled={busy}
+                      disabled={busy || !ready.current}
                       onClick={() => void chooseStore(store)}
                     >
                       <strong>{store.name}</strong>
@@ -145,10 +164,10 @@ export function KrogerConnection() {
             </>
           ) : (
             <div className={styles.krogerActions}>
-              <Button type="button" variant="ghost" disabled={busy} onClick={() => setStores([])}>
+              <Button type="button" variant="ghost" disabled={busy || !ready.current} onClick={() => { if (current() && ready.current && !action.current) setStores([]); }}>
                 Change store
               </Button>
-              <Button type="button" variant="ghost" disabled={busy} onClick={() => void disconnect()}>
+              <Button type="button" variant="ghost" disabled={busy || !ready.current} onClick={() => void disconnect()}>
                 Disconnect
               </Button>
             </div>
@@ -158,7 +177,7 @@ export function KrogerConnection() {
 
       {error ? (
         <Callout tone="error" role="alert">
-          {error}
+          {error}{" "}<Button type="button" disabled={busy} onClick={() => void load()}>Check connection again</Button>
         </Callout>
       ) : null}
     </div>

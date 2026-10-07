@@ -28,10 +28,10 @@ function AuthenticatedListPanel() {
   const shopping = useShoppingList(api);
   if (!isLoaded) return <p role="status">Loading your sign-in for the shopping list.</p>;
   if (!userId || !sessionId) return <Callout tone="info"><Link href={signInReturnHref("/list")}>Sign in again to load your shopping list.</Link></Callout>;
-  return <ListPanelView key={`${userId}:${sessionId}`} shopping={shopping} />;
+  return <ListPanelView key={`${userId}:${sessionId}`} shopping={shopping} api={api} />;
 }
 
-export function ListPanelView({ shopping }: { shopping: ListController }) {
+export function ListPanelView({ shopping, api }: { shopping: ListController; api?: ReturnType<typeof createClient> }) {
   const [confirmingClear, setConfirmingClear] = useState(false);
   const { list, providers, loading, loaded, busy, error, handoff, toggle, remove, clear, sendToCart } = shopping;
 
@@ -123,7 +123,7 @@ export function ListPanelView({ shopping }: { shopping: ListController }) {
               <Button type="button" variant="ghost" onClick={shopping.retryProviders}>Try list options again</Button>
             </Callout>
           ) : null}
-          <KrogerConnection />
+          <KrogerConnection api={api} />
         </>
       ) : null}
     </>

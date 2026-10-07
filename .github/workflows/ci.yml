@@ -78,6 +78,7 @@ jobs:
           node scripts/check-web-recipe-shopping.mjs
           node scripts/check-web-list-lifecycle.mjs
           node scripts/check-web-list-panel.mjs
+          node scripts/check-web-kroger-lifecycle.mjs
           node scripts/check-clerk-webhook-recovery.mjs
           node scripts/check-photo-cleanup-adapter.mjs
           node scripts/check-photo-cleanup-operator.mjs
