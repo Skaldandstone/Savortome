@@ -18,8 +18,8 @@ const initial={id:'10000000-0000-4000-8000-000000000001',itemCount:1,checkedCoun
 const flush=async()=>{for(let n=0;n<15;n++)await Promise.resolve();};
 function fixture(){
  const state={writes:0,cursor:0,values:[],deps:[],cleanups:[],effects:[],calls:[]};state.read=async()=>initial;state.save=async()=>initial;
- state.cart=async()=>({provider:'copy',text:'tomato',url:null});state.clipboard=[];state.windows=[];
- const context={state,navigator:{clipboard:{writeText:text=>{state.clipboard.push(text);return state.copy?.()??Promise.resolve();}}},window:{open:(...args)=>state.windows.push(args)}};runInNewContext(bundle.outputFiles[0].text,context);
+ state.cart=async()=>({provider:'clipboard',kind:'handoff',text:'tomato',url:'',unmatched:[],note:'List ready.'});state.clipboard=[];state.windows=[];
+ const context={state,URL,navigator:{clipboard:{writeText:text=>{state.clipboard.push(text);return state.copy?.()??Promise.resolve();}}},window:{open:(...args)=>state.windows.push(args)}};runInNewContext(bundle.outputFiles[0].text,context);
  let client=context.app.api;const render=(effects=true)=>{state.cursor=0;const result=context.app.useShoppingList(client);if(effects)while(state.effects.length)state.effects.shift()();return result;};
  render();return{state,render,replaceClient:()=>{client={...context.app.api};},unmount:()=>state.cleanups.forEach(fn=>fn?.())};
 }
@@ -45,19 +45,19 @@ test('failed checkbox save preserves confirmed state and warns of uncertainty',a
 
 test('provider handoff shares the mutation lock and blocks list refresh',async()=>{
  const f=fixture();await flush();let finish;f.state.cart=()=>new Promise(resolve=>finish=resolve);
- const c=f.render(),pending=c.sendToCart('copy');await c.clear();c.retryList();f.render();assert.equal(f.state.calls.length,1);
- finish({provider:'copy',text:'tomato',url:null});await pending;assert.equal(f.state.clipboard.length,1);assert.equal(f.render().busy,false);
+ const c=f.render(),pending=c.sendToCart('clipboard');await c.clear();c.retryList();f.render();assert.equal(f.state.calls.length,1);
+ finish({provider:'clipboard',kind:'handoff',text:'tomato',url:'',unmatched:[],note:'List ready.'});await pending;assert.equal(f.state.clipboard.length,1);assert.equal(f.render().busy,false);
 });
 test('provider response after unmount cannot copy, navigate or update',async()=>{
  const f=fixture();await flush();let finish;f.state.cart=()=>new Promise(resolve=>finish=resolve);
- const c=f.render(),pending=c.sendToCart('copy');f.unmount();const writes=f.state.writes;
- finish({provider:'copy',text:'tomato',url:'https://example.invalid/review'});await pending;
- assert.equal(f.state.writes,writes);assert.equal(f.state.clipboard.length,0);assert.equal(f.state.windows.length,0);await c.sendToCart('copy');assert.equal(f.state.calls.length,1);
+ const c=f.render(),pending=c.sendToCart('clipboard');f.unmount();const writes=f.state.writes;
+ finish({provider:'doordash',kind:'handoff',text:'tomato',url:'https://www.doordash.com/convenience/',unmatched:[],note:'List ready.'});await pending;
+ assert.equal(f.state.writes,writes);assert.equal(f.state.clipboard.length,0);assert.equal(f.state.windows.length,0);await c.sendToCart('clipboard');assert.equal(f.state.calls.length,1);
 });
 test('unmount during clipboard wait suppresses subsequent navigation',async()=>{
  const f=fixture();await flush();let finish;f.state.copy=()=>new Promise(resolve=>finish=resolve);
- f.state.cart=async()=>({provider:'copy',text:'tomato',url:'https://example.invalid/review'});
- const pending=f.render().sendToCart('copy');await flush();assert.equal(f.state.clipboard.length,1);f.unmount();const writes=f.state.writes;
+ f.state.cart=async()=>({provider:'doordash',kind:'handoff',text:'tomato',url:'https://www.doordash.com/convenience/',unmatched:[],note:'List ready.'});
+ const pending=f.render().sendToCart('doordash');await flush();assert.equal(f.state.clipboard.length,1);f.unmount();const writes=f.state.writes;
  finish();await pending;assert.equal(f.state.windows.length,0);assert.equal(f.state.writes,writes);
 });
 test('malformed write retains prior confirmed list and reports uncertainty',async()=>{
@@ -70,7 +70,7 @@ test('failed read blocks retained writes until deliberate successful refresh',as
  f.state.read=async()=>initial;f.render().retryList();f.render();await flush();await f.render().clear();assert.equal(f.state.calls.length,1);
 });
 test('rejected provider does not expose private transport detail',async()=>{
- const f=fixture();await flush();f.state.cart=async()=>{throw Error('private provider detail');};await f.render().sendToCart('copy');
+ const f=fixture();await flush();f.state.cart=async()=>{throw Error('private provider detail');};await f.render().sendToCart('clipboard');
  assert.doesNotMatch(f.render().error.message,/private provider detail/);assert.equal(f.render().busy,false);assert.equal(f.state.windows.length,0);
 });
 
@@ -86,7 +86,7 @@ test('pending old write cannot confirm into replacement scope before effect clea
 });
 test('pending old provider cannot copy or navigate after scope replacement',async()=>{
  const f=fixture();await flush();let finish;f.state.cart=()=>new Promise(resolve=>finish=resolve);
- const pending=f.render().sendToCart('copy');f.replaceClient();f.render(false);
+ const pending=f.render().sendToCart('clipboard');f.replaceClient();f.render(false);
  finish({provider:'copy',text:'private list',url:'https://example.invalid/review'});await pending;
  assert.equal(f.state.clipboard.length,0);assert.equal(f.state.windows.length,0);
 });
@@ -103,5 +103,24 @@ test('replacement read failure hides prior data but exposes recoverable error',a
 });
 
 test('replacement actions cannot dispatch before replacement read begins',async()=>{
- const f=fixture();await flush();f.replaceClient();const next=f.render(false);await next.clear();await next.sendToCart('copy');assert.equal(f.state.calls.length,0);
+ const f=fixture();await flush();f.replaceClient();const next=f.render(false);await next.clear();await next.sendToCart('clipboard');assert.equal(f.state.calls.length,0);
+});
+
+const handoff={provider:'doordash',kind:'handoff',text:'tomato',url:'https://www.doordash.com/convenience/',unmatched:[],note:'List ready.'};
+test('invalid handoff cannot copy, navigate, or publish a success notice',async()=>{
+ const bad=[null,{}, {...handoff,provider:'safeway'},{...handoff,kind:'api'},{...handoff,text:[]},{...handoff,unmatched:[42]},{...handoff,note:null},
+ ...['javascript:alert(1)','data:text/html,hello','/relative','http://www.doordash.com/convenience/','https://www.doordash.com.evil.invalid/convenience/','https://user@www.doordash.com/convenience/','https://www.doordash.com:8443/convenience/','https://www.doordash.com/other'].map(url=>({...handoff,url}))];
+ for(const result of bad){const f=fixture();await flush();f.state.cart=async()=>result;await f.render().sendToCart('doordash');assert.equal(f.state.clipboard.length,0);assert.equal(f.state.windows.length,0);assert.equal(f.render().handoff,null);assert.ok(f.render().error);assert.equal(f.render().busy,false);}
+});
+test('valid store handoff copies and opens only its confirmed destination',async()=>{
+ const f=fixture();await flush();f.state.cart=async()=>handoff;await f.render().sendToCart('doordash');assert.equal(f.state.clipboard.length,1);assert.equal(f.state.windows[0][0],handoff.url);assert.equal(f.state.windows[0][2],'noopener,noreferrer');
+});
+test('failed new handoff clears the previous success notice',async()=>{
+ const f=fixture();await flush();await f.render().sendToCart('clipboard');assert.ok(f.render().handoff);f.state.cart=async()=>{throw Error('fixture unavailable');};await f.render().sendToCart('clipboard');assert.equal(f.render().handoff,null);assert.ok(f.render().error);
+});
+
+test('configured provider destinations admit HTTPS only and reject domain impersonation',async()=>{
+ const cases=[['instacart','api','https://www.instacart.com/store/shopping_lists/example'],['kroger','api','https://www.kroger.com/cart'],['ubereats','handoff','https://www.ubereats.com/category/grocery'],['safeway','handoff','https://www.safeway.com/shop/search-results.html?q=tomato%20sauce']];
+ for(const [provider,kind,url] of cases){const f=fixture();await flush();f.state.cart=async()=>({...handoff,provider,kind,url});await f.render().sendToCart(provider);assert.equal(f.state.windows.length,1);assert.equal(f.state.clipboard.length,1);assert.equal(f.render().error,null);}
+ for(const url of ['https://instacart.com.evil.invalid/list','https://evilinstacart.com/list','https://user:password@www.instacart.com/list','javascript:alert(1)','https://www.instacart.com:8443/list','https://www.instacart.com/list#fragment','https://www.instacart.com/\\evil.invalid',' https://www.instacart.com/list']){const f=fixture();await flush();f.state.cart=async()=>({...handoff,provider:'instacart',kind:'api',url});await f.render().sendToCart('instacart');assert.equal(f.state.windows.length,0);assert.equal(f.state.clipboard.length,0);assert.ok(f.render().error);}
 });

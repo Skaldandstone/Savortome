@@ -15,6 +15,31 @@ function confirmedList(value: ShoppingListView): boolean {
       (item.unit === null || typeof item.unit === "string") && Array.isArray(item.recipeIds) && item.recipeIds.every(isUuid));
 }
 
+/** Admit only the selected provider's response before any browser side effect. */
+function confirmedHandoff(value: CartHandoff, provider: CartProviderId): boolean {
+  if (!value || value.provider !== provider || typeof value.text !== "string" ||
+    typeof value.note !== "string" || typeof value.url !== "string" ||
+    !Array.isArray(value.unmatched) || !value.unmatched.every(item => typeof item === "string")) return false;
+  const expectedKind = provider === "instacart" || provider === "kroger" ? "api" : "handoff";
+  if (value.kind !== expectedKind) return false;
+  if (provider === "clipboard") return value.url === "";
+  if (value.url !== value.url.trim() || /[\\\u0000-\u0020]/.test(value.url)) return false;
+  try {
+    const url = new URL(value.url);
+    if (url.protocol !== "https:" || url.username || url.password || url.port || url.hash) return false;
+    switch (provider) {
+      // Other returned domains need explicit provider review before admission.
+      case "instacart": return url.hostname === "instacart.com" || url.hostname.endsWith(".instacart.com");
+      case "kroger": return url.hostname === "www.kroger.com" && url.pathname === "/cart" && !url.search;
+      case "doordash": return url.hostname === "www.doordash.com" && url.pathname === "/convenience/" && !url.search;
+      case "ubereats": return url.hostname === "www.ubereats.com" && url.pathname === "/category/grocery" && !url.search;
+      case "safeway": return url.hostname === "www.safeway.com" && url.pathname === "/shop/search-results.html" &&
+        [...url.searchParams.keys()].every(key => key === "q");
+      default: return false;
+    }
+  } catch { return false; }
+}
+
 export interface ListController {
   list: ShoppingListView | null;
   providers: CartProvider[];
@@ -147,9 +172,11 @@ export function useShoppingList(api: typeof localApi = localApi): ListController
     action.current = true;
     setBusy(true);
     setError(null);
+    setHandoff(null);
     try {
       const result = await api.sendToCart(provider);
       if (!current()) return;
+      if (!confirmedHandoff(result, provider)) throw new Error("Unconfirmed handoff");
       setHandoff(result);
 
       // Every provider produces text, so the clipboard is always useful.

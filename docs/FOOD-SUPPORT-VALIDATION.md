@@ -661,3 +661,14 @@ PR126run37576960497all3jobsPASS; no actualsigned-in/hostedacceptance inferred. M
 Final18actualcomponentcasesPASS, webTypeScriptPASS, shoppinghook16/pantry19/photoUI24PASS, UTF8775/whitespacePASS. Intermediatetypecheck caught missing API props onthreeMatchRows; correctedallthree andreranwebtypesclean. FixturesmockClerk/React/client/router; pendingoldsessionreply/retainedhandler/sessionheaderconfiguration covered butNOTrealcookiechange/Clerkrevocation/browser/device/serveracceptance. No quantities/orders/inventory inferred. No authpolicy/schema/runtime/provider/customerdata changes. ProviderURL/schema validation and ListPanelwrapper renderedscope acceptance remainnext; hostedmigration/rollback/source/digest gates stillopen. ExistingPRCIreruns onpush/no manualdispatch/mainmerge.
 
 Hygiene34repos/14unchanged findings/199.22GiB; no cleanup. ExistingLinearreconnect/Chromeapprovedaccount prompts outstanding; no repeatedauthprobes.
+
+
+### October 6 release iteration: shopping handoff admission
+
+PR126 CI run 37578206802 passed all three jobs at source 86dd275. This is source/full-schema/build/browser evidence; the signed-in acceptance gate remains separate.
+
+The actual web shopping hook now rejects a response with a different provider, wrong integration kind, malformed display/clipboard fields or unsafe destination before copying or opening anything. Non-API destinations match the existing generated store paths; clipboard accepts no URL. HTTPS Instacart-domain URLs are admitted; other returned domains remain unavailable until explicit provider review. No purchase or pantry update is inferred. A failed later handoff clears the prior success notice without retrying.
+
+The expanded synthetic hook fixture first reproduced two regressions (17/19), then passed 20/20 after the fix, including provider/domain impersonation, credentials, ports, script/relative URLs, stale-session and unmount boundaries. Web typechecking passed. Browser globals, clients and React are synthetic: these checks do not establish a live provider cart, clipboard permissions, popup behavior, real Clerk sessions or device acceptance. No provider calls or runtime deployment occurred.
+
+Provider contract reference: [Instacart Create shopping list page](https://docs.instacart.com/developer_platform_api/api/products/create_shopping_list_page), reviewed October 7 UTC. Its generated-link response is not proof of checkout or inventory.
