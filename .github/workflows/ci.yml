@@ -196,6 +196,31 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Production connectionOptions deliberately requires verified TLS even
+      # for localhost. Supply it in this disposable service, rather than
+      # weakening the app policy or letting browser checks hide SQL failures.
+      - name: Enable verified TLS on disposable E2E PostgreSQL
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          cert_dir="$RUNNER_TEMP/savortome-e2e-tls"
+          mkdir -p "$cert_dir"
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -sha256 -subj '/CN=Savortome disposable CI CA' -keyout "$cert_dir/ca.key" -out "$cert_dir/ca.crt" -addext 'basicConstraints=critical,CA:TRUE' -addext 'keyUsage=critical,keyCertSign,cRLSign' 2>/dev/null
+          openssl req -newkey rsa:2048 -nodes -sha256 -subj '/CN=localhost' -keyout "$cert_dir/server.key" -out "$cert_dir/server.csr" 2>/dev/null
+          printf '%s\n' 'basicConstraints=critical,CA:FALSE' 'keyUsage=critical,digitalSignature,keyEncipherment' 'extendedKeyUsage=serverAuth' 'subjectAltName=DNS:localhost,IP:127.0.0.1' > "$cert_dir/server.ext"
+          openssl x509 -req -in "$cert_dir/server.csr" -CA "$cert_dir/ca.crt" -CAkey "$cert_dir/ca.key" -CAcreateserial -days 1 -sha256 -extfile "$cert_dir/server.ext" -out "$cert_dir/server.crt" 2>/dev/null
+          docker cp "$cert_dir/server.key" "$PG_CONTAINER:/tmp/savortome-server.key"
+          docker cp "$cert_dir/server.crt" "$PG_CONTAINER:/tmp/savortome-server.crt"
+          docker exec "$PG_CONTAINER" chown postgres:postgres /tmp/savortome-server.key /tmp/savortome-server.crt
+          docker exec "$PG_CONTAINER" chmod 600 /tmp/savortome-server.key
+          docker exec "$PG_CONTAINER" psql -U postgres -d savortome_e2e -c "ALTER SYSTEM SET ssl_cert_file='/tmp/savortome-server.crt'" -c "ALTER SYSTEM SET ssl_key_file='/tmp/savortome-server.key'" -c "ALTER SYSTEM SET ssl=on"
+          docker exec "$PG_CONTAINER" psql -U postgres -d savortome_e2e -c 'SELECT pg_reload_conf()'
+          echo "NODE_EXTRA_CA_CERTS=$cert_dir/ca.crt" >> "$GITHUB_ENV"
+      - name: Verify production-mode database transport
+        run: node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-ci-postgres-tls.mjs
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/savortome_e2e
       - name: Apply migrations
         run: pnpm --filter @seconds/db migrate
         env:
