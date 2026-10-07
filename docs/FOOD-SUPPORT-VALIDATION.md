@@ -652,3 +652,12 @@ PR126run37575598228 passes static/fullPostgreSQL/productionbuild/E2Ejobs. Browse
 Final16actualhookcasesPASS, webTypeScriptPASS/UTF8all775trackedfiles/whitespacePASS. Hook/client/browser synthetic; ListPanelwrapper source/type reviewed only, not renderedoractualClerkaccountswitch. No provider/order/inventory/securitypolicy/credentials/schema/runtime changes. Other recipe/AddMissingbuttons remainunscoped and require followup before release; providerresponse URL/schema validation stillopen. Hostedmigrations/rollback/immutableimage/source admission/authenticatedflows separate. ExistingCI reruns onpush, no manualdispatch/mainmerge.
 
 Read-only hygiene34repos/14unchanged findings/199.35GiB; no cleanup. Existing-account Chrome signed-in acceptance prompt sent once; no login initiated or credential/account change.
+
+
+### October 6 release boundary: recipe and missing-ingredient additions
+
+PR126run37576960497all3jobsPASS; no actualsigned-in/hostedacceptance inferred. Missing-actionclientreplacement fixture initially15/16PASS reproducedlateoldcompletioncallingonAdded/writingstate. CookPanel now passes its existingexpected-session client throughMatchList/MatchRow toAddMissingButton; activeclientguard suppressesretainedoldhandlers/completion/navigation/callbacks and hidesresets old localstatus onscopechange. Savedrecipe action wraps existingClerkuseAuth/memoexpectedSessionId pattern; loading/signedoutshowstatus/noaddition, localnonClerk branch preserved viaRecipeCardclerkEnabled. Bothactionsguardinitiatingclient andretain reviewedlist/noautoretry semantics; serverheaderownershipcheck unchanged.
+
+Final18actualcomponentcasesPASS, webTypeScriptPASS, shoppinghook16/pantry19/photoUI24PASS, UTF8775/whitespacePASS. Intermediatetypecheck caught missing API props onthreeMatchRows; correctedallthree andreranwebtypesclean. FixturesmockClerk/React/client/router; pendingoldsessionreply/retainedhandler/sessionheaderconfiguration covered butNOTrealcookiechange/Clerkrevocation/browser/device/serveracceptance. No quantities/orders/inventory inferred. No authpolicy/schema/runtime/provider/customerdata changes. ProviderURL/schema validation and ListPanelwrapper renderedscope acceptance remainnext; hostedmigration/rollback/source/digest gates stillopen. ExistingPRCIreruns onpush/no manualdispatch/mainmerge.
+
+Hygiene34repos/14unchanged findings/199.22GiB; no cleanup. ExistingLinearreconnect/Chromeapprovedaccount prompts outstanding; no repeatedauthprobes.

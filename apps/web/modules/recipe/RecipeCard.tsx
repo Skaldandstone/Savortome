@@ -93,7 +93,7 @@ export function RecipeCard({
               Start cooking
             </Link>
           ) : null}
-          <AddToListButton recipeId={shelvedId} />
+          <AddToListButton recipeId={shelvedId} clerkEnabled={clerkEnabled} />
           {shelvedId ? (
             <Link className={styles.edit} href={`/recipe/${shelvedId}/edit`}>
               Edit recipe

@@ -169,7 +169,7 @@ function CookPanelContent({ clerkEnabled, api }: { clerkEnabled: boolean; api: t
             interpreted={response.interpreted}
             usedPantry={response.usedPantry}
           />
-          <MatchList results={response.results} />
+          <MatchList results={response.results} api={api} />
         </section>
       ) : null}
     </>
