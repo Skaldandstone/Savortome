@@ -3,6 +3,11 @@
 // No DATABASE_URL, hosted data, provider calls or multi-connection proof.
 // node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-template-recovery.mjs
 import {test} from 'node:test';
+import {createHash} from 'node:crypto';
+import {transformSync} from 'esbuild';
+import {runInNewContext} from 'node:vm';
+
+import {isUuid} from '../packages/core/src/ids.ts';
 import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {readFileSync} from 'node:fs';
@@ -12,6 +17,7 @@ import {saveFoodNote,deleteFoodNote,listFoodNotes} from '../packages/db/src/quer
 import * as schema from '../packages/db/src/schema.ts';
 const require=createRequire(new URL('../packages/db/package.json',import.meta.url));
 const {PGlite}=require('@electric-sql/pglite');
+const {and,eq}=require('drizzle-orm');
 const {drizzle}=require('drizzle-orm/pglite');
 const {readMigrationFiles}=require('drizzle-orm/migrator');
 const journal=JSON.parse(readFileSync('packages/db/migrations/meta/_journal.json','utf8'));
@@ -213,4 +219,54 @@ test('actual account deletion query: food/template identities cascade atomically
  assert.deepEqual(await deleteUserById(db,owner),{photos:[]});
  assert.deepEqual((await rows(pg,'SELECT photos FROM recipes'))[0].photos,[otherPhoto]);
  await assert.rejects(saveFoodNote(db,owner,note));
+}));
+
+
+// Execute the exact delete function from the historical release-label source.
+// Other old module functions/providers are not imported or invoked.
+const legacySource=readFileSync('scripts/fixtures/legacy-template-delete.ts.txt','utf8').replace(/\r\n/g,'\n');
+// Exact owned source fixture, not dependent on CI's shallow Git history.
+assert.equal(createHash('sha256').update(legacySource).digest('hex'),'02e58ec7c405786099fabad7e9b9cf9bfb09febd54c2d4d11015db68432d04bd');
+const legacyJs=transformSync(legacySource.replace('export async function','async function')+'\nlegacy.deleteTemplate=deleteTemplate;', {loader:'ts',format:'cjs'});
+const legacy={};runInNewContext(legacyJs.code,{legacy,and,eq,schema,isUuid});
+test('historical writer delete cannot permit current exact-ID recreation after migration',async()=>fixture(async({pg,db})=>{
+ await createTemplate(db,owner,'Soup',items,request);
+ assert.equal(await legacy.deleteTemplate(db,other,request),false);
+ assert.equal(await legacy.deleteTemplate(db,owner,request),true);
+ // Old writer cannot update the ledger, but current create also refuses a
+ // retained non-deleted identity whose corresponding grouping is gone.
+ assert.deepEqual(await rows(pg,'SELECT * FROM meal_template_references'),[{id:request,owner_id:owner,deleted:false}]);
+ await assert.rejects(createTemplate(db,owner,'Soup',items,request));
+ assert.deepEqual(await rows(pg,'SELECT * FROM meal_templates'),[]);
+ assert.deepEqual(await rows(pg,'SELECT * FROM meal_template_items'),[]);
+ assert.equal((await rows(pg,'SELECT * FROM recipes')).length,2);
+ assert.equal((await rows(pg,'SELECT * FROM pantry_items')).length,1);
+ assert.equal(await createTemplate(db,owner,'Soup',items,'00000000-0000-4000-8000-000000000006'),'00000000-0000-4000-8000-000000000006');
+}));
+
+test('old-writer post-migration grouping can still be deleted by the current owner',async()=>fixture(async({pg,db})=>{
+ // The historical creator inserts a fresh grouping/items without a ledger.
+ await pg.query(`INSERT INTO meal_templates(id,owner_id,name) VALUES ($1,$2,'Soup')`,[request,owner]);
+ await pg.query(`INSERT INTO meal_template_items(template_id,role,recipe_id) VALUES ($1,'main',$2)`,[request,recipe]);
+ assert.deepEqual(await rows(pg,'SELECT * FROM meal_template_references'),[]);
+ assert.equal(await deleteTemplate(db,other,request),false);
+ assert.equal(await deleteTemplate(db,owner,request),true);
+ await assert.rejects(createTemplate(db,owner,'Soup',items,request));
+}));
+
+test('legacy adoption neither reserves missing/foreign IDs nor survives failed deletion',async()=>fixture(async({pg,db})=>{
+ assert.equal(await deleteTemplate(db,owner,request),false);
+ assert.deepEqual(await rows(pg,'SELECT * FROM meal_template_references'),[]);
+ await pg.query(`INSERT INTO meal_templates(id,owner_id,name) VALUES ($1,$2,'Soup')`,[request,owner]);
+ await pg.query(`INSERT INTO meal_template_items(template_id,role,recipe_id) VALUES ($1,'main',$2)`,[request,recipe]);
+ assert.equal(await deleteTemplate(db,other,request),false);
+ assert.deepEqual(await rows(pg,'SELECT * FROM meal_template_references'),[]);
+ await pg.exec(`CREATE FUNCTION legacy_delete_fault() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'fixture deletion fault'; END $$; CREATE TRIGGER legacy_delete_fault BEFORE DELETE ON meal_template_items FOR EACH ROW EXECUTE FUNCTION legacy_delete_fault();`);
+ await assert.rejects(deleteTemplate(db,owner,request));
+ assert.deepEqual(await rows(pg,'SELECT * FROM meal_template_references'),[]);
+ assert.equal((await rows(pg,'SELECT * FROM meal_templates')).length,1);
+ assert.equal((await rows(pg,'SELECT * FROM meal_template_items')).length,1);
+ await pg.exec('DROP TRIGGER legacy_delete_fault ON meal_template_items');
+ assert.equal(await deleteTemplate(db,owner,request),true);
+ assert.deepEqual(await rows(pg,'SELECT * FROM meal_template_references'),[{id:request,owner_id:owner,deleted:true}]);
 }));

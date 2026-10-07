@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { randomUUID } from "node:crypto";
 import {
   canView,
@@ -155,6 +155,13 @@ export async function deleteTemplate(
 ): Promise<boolean> {
   if (!isUuid(templateId)) return false;
   return database.transaction(async tx => {
+    // Older writers can create groupings after the migration's backfill. Adopt
+    // only an existing owned row, never an arbitrary or another owner's ID.
+    // Reserve the identity before deleting, using the same lock order as create.
+    await tx.execute(sql`INSERT INTO meal_template_references (id, owner_id)
+      SELECT id, owner_id FROM meal_templates
+      WHERE id = ${templateId}::uuid AND owner_id = ${ownerId}::uuid
+      ON CONFLICT (id) DO NOTHING`);
     const [identity] = await tx.select().from(schema.mealTemplateReferences)
       .where(and(eq(schema.mealTemplateReferences.id, templateId), eq(schema.mealTemplateReferences.ownerId, ownerId))).for("update");
     if (!identity || identity.deleted) return false;

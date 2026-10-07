@@ -699,3 +699,12 @@ The current Dockerfile starts Next directly; it does not apply migrations. Hoste
 The source at the previously observed live release label c1cc0c7 has older template writers which do not use the new identity ledger. Current writers use `meal_template_references`. Mixed-version deletes and rollback to an older writer need an exact compatibility fixture and an enforcing strategy before rollout; a pinned image alone is not data-integrity rollback proof. Source inspection does not prove that old implementation is currently executing inside the running digest.
 
 An attempted local source-sealing command was rejected by the execution tool's policy before execution. No file edit, archive, cloud upload or image was produced by that attempt, and no alternate route was attempted. Existing source-sealing script remains unchanged. Admission is still open for sealed candidate provenance, compatible rollback, hosted migrations and authenticated critical flows. No deployment is claimed.
+
+
+### October 7: mixed template writer compatibility
+
+A new disposable fixture runs the exact delete function from repository source c1cc0c7 (stored as a small owned-code fixture with normalized SHA256 verification, so CI does not require full Git history). Historical deletion leaves a live marker, but current exact-ID retry already refuses a retained marker without its grouping. That scenario passed and does not require a new database trigger.
+
+The post-migration older-create scenario did reproduce a regression: a live grouping created without a ledger after migration backfill could not be deleted by current code (13/14). Current deletion now adopts only an existing owned grouping's content-free identity in the same transaction before locking and deletion. Missing/foreign IDs reserve nothing; cascade failure rolls adoption and deletion back. Successful deletion tombstones the identity and refuses old retry recreation. Final 15 disposable template/account/migration cases and database TypeScript pass.
+
+An initial fixture setup failed package resolution; Drizzle now resolves through the database workspace. A later fixture hash failed due to Windows CRLF; the reviewed fixture normalizes line endings before hashing. No production data or migrations were changed. PGlite serializes operations and does not establish independent-connection concurrency or full hosted/mixed-writer rollback acceptance. Sealed image provenance, hosted adoption and real authenticated flows remain required before deployment.
