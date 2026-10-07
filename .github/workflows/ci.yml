@@ -153,6 +153,8 @@ jobs:
         run: node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-template-postgres-concurrency.mjs
       - name: Independent food-note writer recovery
         run: node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-food-note-postgres-concurrency.mjs
+      - name: Independent shopping writer recovery
+        run: node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-shopping-postgres-concurrency.mjs
       - name: Editor and grocery
         run: |
           pnpm check:editor
