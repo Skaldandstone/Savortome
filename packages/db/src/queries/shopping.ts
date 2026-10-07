@@ -120,6 +120,15 @@ export async function getShoppingList(
 }
 
 /** The list a new addition goes onto: the newest one, or a fresh one. */
+async function lockShoppingOwner(database: Database, userId: string): Promise<boolean> {
+  const [owner] = await database
+    .select({ id: schema.users.id })
+    .from(schema.users)
+    .where(eq(schema.users.id, userId))
+    .for("update");
+  return Boolean(owner);
+}
+
 export async function currentShoppingList(
   database: Database,
   userId: string,
@@ -127,12 +136,7 @@ export async function currentShoppingList(
   return database.transaction(async (tx) => {
     // Lock the stable owner row: there may be no shopping-list row to lock yet.
     // Concurrent first additions must choose the same destination.
-    const [owner] = await tx
-      .select({ id: schema.users.id })
-      .from(schema.users)
-      .where(eq(schema.users.id, userId))
-      .for("update");
-    if (!owner) throw new Error("Shopping list owner unavailable");
+    if (!(await lockShoppingOwner(tx, userId))) throw new Error("Shopping list owner unavailable");
 
     const existing = await tx.query.shoppingLists.findFirst({
       where: eq(schema.shoppingLists.userId, userId),
@@ -338,12 +342,13 @@ export async function setItemChecked(
   itemId: string,
   checked: boolean,
 ): Promise<void> {
-  if (!(await ownsItem(database, userId, itemId))) return;
-
-  await database
-    .update(schema.shoppingListItems)
-    .set({ checked })
-    .where(eq(schema.shoppingListItems.id, itemId));
+  await database.transaction(async tx => {
+    // Serialize with the addition's existing-row snapshot and rebuild. Lock
+    // owner first everywhere, including ownership checks and account cascades.
+    if (!(await lockShoppingOwner(tx, userId)) || !(await ownsItem(tx, userId, itemId))) return;
+    await tx.update(schema.shoppingListItems).set({ checked })
+      .where(eq(schema.shoppingListItems.id, itemId));
+  });
 }
 
 export async function removeListItem(
@@ -351,8 +356,10 @@ export async function removeListItem(
   userId: string,
   itemId: string,
 ): Promise<void> {
-  if (!(await ownsItem(database, userId, itemId))) return;
-  await database.delete(schema.shoppingListItems).where(eq(schema.shoppingListItems.id, itemId));
+  await database.transaction(async tx => {
+    if (!(await lockShoppingOwner(tx, userId)) || !(await ownsItem(tx, userId, itemId))) return;
+    await tx.delete(schema.shoppingListItems).where(eq(schema.shoppingListItems.id, itemId));
+  });
 }
 
 export async function clearShoppingList(
@@ -360,12 +367,15 @@ export async function clearShoppingList(
   userId: string,
   listId: string,
 ): Promise<void> {
-  const list = await database.query.shoppingLists.findFirst({
-    where: and(eq(schema.shoppingLists.id, listId), eq(schema.shoppingLists.userId, userId)),
-    columns: { id: true },
+  await database.transaction(async tx => {
+    if (!(await lockShoppingOwner(tx, userId))) return;
+    const list = await tx.query.shoppingLists.findFirst({
+      where: and(eq(schema.shoppingLists.id, listId), eq(schema.shoppingLists.userId, userId)),
+      columns: { id: true },
+    });
+    if (!list) return;
+    await tx.delete(schema.shoppingListItems).where(eq(schema.shoppingListItems.listId, listId));
   });
-  if (!list) return;
-  await database.delete(schema.shoppingListItems).where(eq(schema.shoppingListItems.listId, listId));
 }
 
 /** Record where a list was sent, so the history reads the same for every provider. */

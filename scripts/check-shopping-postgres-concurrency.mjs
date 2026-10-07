@@ -64,6 +64,10 @@ try{
   if(operation==='clear')assert.deepEqual(current.items,[]);
   assert.equal(blocked,true,operation+' must wait until the addition completes its snapshot/rebuild');
   assert.equal(settledBeforeRelease,false);
+  await setItemChecked(dbB,other,item.id,false);
+  await removeListItem(dbB,other,item.id);
+  await clearShoppingList(dbB,other,displayed.id);
+  assert.deepEqual(await getShoppingList(dbA,owner,displayed.id),current);
   assert.deepEqual((await getShoppingList(dbB,other,otherList.id)).items.map(x=>x.canonicalItem),['bean']);
   assert.equal(await getShoppingList(dbB,other,displayed.id),null);
   console.log('PASS: independent PostgreSQL shopping '+operation+' preserves reviewed intent after rebuild');
