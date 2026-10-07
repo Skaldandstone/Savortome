@@ -708,3 +708,10 @@ A new disposable fixture runs the exact delete function from repository source c
 The post-migration older-create scenario did reproduce a regression: a live grouping created without a ledger after migration backfill could not be deleted by current code (13/14). Current deletion now adopts only an existing owned grouping's content-free identity in the same transaction before locking and deletion. Missing/foreign IDs reserve nothing; cascade failure rolls adoption and deletion back. Successful deletion tombstones the identity and refuses old retry recreation. Final 15 disposable template/account/migration cases and database TypeScript pass.
 
 An initial fixture setup failed package resolution; Drizzle now resolves through the database workspace. A later fixture hash failed due to Windows CRLF; the reviewed fixture normalizes line endings before hashing. No production data or migrations were changed. PGlite serializes operations and does not establish independent-connection concurrency or full hosted/mixed-writer rollback acceptance. Sealed image provenance, hosted adoption and real authenticated flows remain required before deployment.
+
+
+### October 7: independent PostgreSQL compatibility admission
+
+CI run 37585106130 at c6a097d passed all three jobs. A new database-job fixture uses two independent PostgreSQL clients plus an observer on the full migrated CI pgvector schema, rather than PGlite's queued connection. It holds current deletion/adoption uncommitted, observes the second creator's real PostgreSQL lock wait, then requires exact-ID recreation to fail after commit while preserving recipes and tenant separation.
+
+The fixture refuses anything other than CI=true and a postgres localhost/127.0.0.1 URL for the exact disposable savortome_ci database. It inserts only generated synthetic owner/recipe/grouping identities and cleans only those owners; there is no table truncation or hosted connection. Statements, locks and connections have bounded timeouts. Syntax and three-job CI YAML parsing passed locally. The new PostgreSQL execution result is pending CI; no local or hosted execution is claimed.

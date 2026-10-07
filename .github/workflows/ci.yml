@@ -149,6 +149,8 @@ jobs:
           pnpm check:pantry
           pnpm check:sharing
           pnpm check:friends
+      - name: Independent template writer compatibility
+        run: node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-template-postgres-concurrency.mjs
       - name: Editor and grocery
         run: |
           pnpm check:editor
