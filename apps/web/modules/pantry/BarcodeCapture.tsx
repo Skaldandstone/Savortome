@@ -88,7 +88,7 @@ function AccountBarcodeCapture({ onQueued, userId, sessionId }: CaptureProps & {
       if (current() && run === version.current) { setUncertain(true); setError("We could not confirm that this review saved. Your entry is kept unchanged for a safe retry. Check the grocery reviews below first."); }
     } finally { if (current() && run === version.current) { action.current = false; setBusy(false); } }
   };
-  if (dataClient.current !== api) return <p role="status">Refreshing pantry entry for your sign-in…</p>;
+  if (dataClient.current !== api) return <p role="status">Refreshing pantry entry for your sign-inâ€¦</p>;
   return <Panel>
     <PanelHeader title="Add a packaged item" hint="Look up a product barcode or enter the label yourself. Nothing goes into your pantry until you review it." />
     <form onSubmit={event => { event.preventDefault(); void lookup(); }}>

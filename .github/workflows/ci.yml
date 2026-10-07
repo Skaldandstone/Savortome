@@ -38,6 +38,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Source encoding
+        run: node scripts/check-source-encoding.mjs
       - name: Typecheck every workspace
         run: pnpm typecheck
       - name: Unit tests

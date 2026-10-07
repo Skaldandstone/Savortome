@@ -112,7 +112,7 @@ export function BarcodeCapture({ onQueued }: { onQueued: (intake: PantryIntakeVi
   };
   const previewRun = cameraRun.current;
   const currentPreview = () => current() && focused.current && !scannerLock.current && camera && previewRun === cameraRun.current && AppState.currentState === "active";
-  if (dataClient.current !== client) return <Text accessibilityLiveRegion="polite">Refreshing pantry entry for your sign-in…</Text>;
+  if (dataClient.current !== client) return <Text accessibilityLiveRegion="polite">Refreshing pantry entry for your sign-inâ€¦</Text>;
   return <Panel>
     <PanelHeader title="Add a packaged item" hint="Scan its barcode or type the label. You confirm the quantity and review it before inventory changes." />
     <View style={styles.fields}>

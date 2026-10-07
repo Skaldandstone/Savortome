@@ -634,3 +634,12 @@ Renewed authorized release run targets October7 09:00Pacific; old source-only/cu
 Read-only AWS current account051722405355/us-east-2: secondbreakfast-web on skaldandstone-production, desired/running1 pending0, primaryrolloutCOMPLETED, tasksecondbreakfast-private-beta-candidate:29. Webimage sha256:15a175cd086be9e2c95f1ce54f2f86cf70c18d454aa2a5f845d1c52174f5c811 and runtime releasec1cc0c7ad1c974692a53678c33ad39c1812e8863. Existingsecondbreakfast-web-build usessealedS3source/manifestverification andartifact-freeECRpipeline. Older runbook absence statements stale; use current guardedbeta-release path, not deploy-aws unchanged. No cloud writes/builds/provider/customerdata/credentials/signing/securitypolicy changes in this increment.
 
 LinearSSE145 connector returnedUNAUTHORIZED; exact reconnect prompt sent once, no retry or trackercompletion claim. GitHub access worked. Hygiene34repos/15unchanged findings/203.87GiB/no cleanup. PendingfullCI/postgres/build/E2E, account/session replacement, providerresponsevalidation, hostedmigration/rollback/immutable-source admission and authenticatedcriticalflows; no deployment/native/device acceptance claimed.
+
+
+### October 6 release build blocker: source encoding
+
+PR126 run37574540100 completed static and fullPostgreSQL jobs successfully (including fullpgvector migrations); End-to-end job failed during Nextproduction compilation before browser tests. SWC rejected apps/web/modules/pantry/BarcodeCapture.tsx as nonUTF8. Strict decoding of all774tracked textual source/configuration files found exactly two invalid files: web and nativeBarcodeCapture, each containing one isolatedCP1252byte85 among otherwiseUTF8 text. Replaced only that byte with UTF8ellipsis, preserving all other bytes/logic. Added fatalUTF8 validation for tracked ts/tsx/js/mjs/json/yml/yaml/css/sql to staticCI; no encoding fallback or build bypass.
+
+Webbarcode10/nativebarcode13actualcomponent casesPASS, CIYAML3jobsPASS, whitespacePASS. Fullworkspace types repeated separately. PriorfullPostgreSQL success is distinct from current hostedmigration or independent multi-connection race acceptance; browserE2E has not run, productionbuild has not passed at this checkpoint. No provider/device/buildservice/cloud/configuration/customerdata changes, no mainmerge. Linearreconnect prompt remainsopen; no speculative auth probes.
+
+Allfourworkspace typesPASS. Hygiene34repos/14findings/202.28GiB, changed from prior15 findings; reviewed read-only, no cleanup or checkout retirement.
