@@ -715,3 +715,12 @@ An initial fixture setup failed package resolution; Drizzle now resolves through
 CI run 37585106130 at c6a097d passed all three jobs. A new database-job fixture uses two independent PostgreSQL clients plus an observer on the full migrated CI pgvector schema, rather than PGlite's queued connection. It holds current deletion/adoption uncommitted, observes the second creator's real PostgreSQL lock wait, then requires exact-ID recreation to fail after commit while preserving recipes and tenant separation.
 
 The fixture refuses anything other than CI=true and a postgres localhost/127.0.0.1 URL for the exact disposable savortome_ci database. It inserts only generated synthetic owner/recipe/grouping identities and cleans only those owners; there is no table truncation or hosted connection. Statements, locks and connections have bounded timeouts. Syntax and three-job CI YAML parsing passed locally. The new PostgreSQL execution result is pending CI; no local or hosted execution is claimed.
+
+
+### October 7: independent PostgreSQL recovery evidence
+
+PR126 CI run 37586506180 at d933c09 passed all three jobs. The exact independent-template step passed with an observed PostgreSQL lock wait, committed legacy-group adoption/deletion, rejected delayed recreation, retained tombstone and isolated foreign owner. This closes that narrowly defined two-writer fixture, not all historical writers, rollback adoption or hosted database acceptance. Signed-in acceptance remains separate from CI success.
+
+Added a similarly guarded independent food-note fixture on the disposable, fully migrated CI database: delete before delayed creation, conflicting edits from the same reviewed revision, and delete before a retained edit. Each requires an actual observed second-connection lock wait before the first transaction commits; final rows, exact accepted retry and another owner's same ID are checked. Statements/connections/locks have bounded timeouts. Only generated synthetic owners are created/removed; no hosted connection or table truncation is admitted. Local syntax, three-job CI YAML and whitespace checks passed. Execution of these new PostgreSQL cases is pending CI and must not yet be reported as passed.
+
+No product source or migration changed in this iteration. Sealed source/image provenance, hosted journal/adoption, compatible rollback, real authenticated flows, retention and device acceptance remain release gates. The earlier source-sealing policy denial was not retried or bypassed. No deployment occurred.
