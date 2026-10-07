@@ -688,3 +688,14 @@ At 6789772, PR126 CI run 37580732623 passed all three jobs. The actual KrogerCon
 The existing session-pinned ListPanel client is now forwarded to KrogerConnection. The child hides old account data synchronously, refuses stale/unmounted actions and responses, serializes actions, checks status/store response fields and selected/disconnected identity, and withholds raw provider errors. Uncertain failures pause writes until an explicit connection-status read; the read does not resend a store/disconnect operation. Failed replacement reads offer recovery without exposing prior account/store data. Unconfigured providers remain hidden.
 
 This is synthetic React/client/source integration evidence, not OAuth, credentials, a real provider store/cart or browser/session acceptance. No provider call, hosted configuration, credential, account or deployment change occurred. The OAuth navigation link and server authorization contract are unchanged and still need actual acceptance.
+
+
+### October 6 release admission review (October 7 06:45 UTC run)
+
+PR126 CI run 37582240309 at 06b5f65 passed all three jobs. Read-only established `beta-release.ps1 -Mode Inspect` refreshed account 051722405355, ECS task `secondbreakfast-private-beta-candidate:29`, desired/running 1, and the existing pinned web digest `15a175cd086be9e2c95f1ce54f2f86cf70c18d454aa2a5f845d1c52174f5c811`. This did not deploy or establish signed-in acceptance.
+
+The current Dockerfile starts Next directly; it does not apply migrations. Hosted migration journal/schema adoption must therefore be established separately before the new food-note/template/photo query code is admitted. Disposable CI PostgreSQL success does not prove hosted adoption.
+
+The source at the previously observed live release label c1cc0c7 has older template writers which do not use the new identity ledger. Current writers use `meal_template_references`. Mixed-version deletes and rollback to an older writer need an exact compatibility fixture and an enforcing strategy before rollout; a pinned image alone is not data-integrity rollback proof. Source inspection does not prove that old implementation is currently executing inside the running digest.
+
+An attempted local source-sealing command was rejected by the execution tool's policy before execution. No file edit, archive, cloud upload or image was produced by that attempt, and no alternate route was attempted. Existing source-sealing script remains unchanged. Admission is still open for sealed candidate provenance, compatible rollback, hosted migrations and authenticated critical flows. No deployment is claimed.
