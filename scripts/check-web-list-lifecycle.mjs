@@ -12,7 +12,7 @@ const mocks={
  '@seconds/core/format':`export {isUuid} from './packages/core/src/ids.ts';`,
  '@/lib/client':`export const api={getList:()=>state.read(),cartProviders:async()=>[],setListItemChecked:(...args)=>{state.calls.push(['toggle',...args]);return state.save();},removeListItem:id=>{state.calls.push(['remove',id]);return state.save();},clearList:()=>{state.calls.push(['clear']);return state.save();},addRecipesToList:ids=>{state.calls.push(['recipes',ids]);return state.save();},addItemsToList:items=>{state.calls.push(['items',items]);return state.save();},sendToCart:provider=>{state.calls.push(['cart',provider]);return state.cart();}};`,
 };
-const bundle=await build({bundle:true,write:false,format:'iife',globalName:'app',jsx:'automatic',stdin:{resolveDir:process.cwd(),contents:"export {useShoppingList} from './apps/web/modules/list/useShoppingList.ts';"},plugins:[{name:'web-recipe-shopping',setup(api){api.onResolve({filter:/.*/},args=>Object.hasOwn(mocks,args.path)?{path:args.path,namespace:'mock'}:undefined);api.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:mocks[args.path],loader:'js',resolveDir:process.cwd()}));}}]});
+const bundle=await build({bundle:true,write:false,format:'iife',globalName:'app',jsx:'automatic',stdin:{resolveDir:process.cwd(),contents:"export {useShoppingList} from './apps/web/modules/list/useShoppingList.ts'; export {api} from '@/lib/client';"},plugins:[{name:'web-recipe-shopping',setup(api){api.onResolve({filter:/.*/},args=>Object.hasOwn(mocks,args.path)?{path:args.path,namespace:'mock'}:undefined);api.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:mocks[args.path],loader:'js',resolveDir:process.cwd()}));}}]});
 
 const initial={id:'10000000-0000-4000-8000-000000000001',itemCount:1,checkedCount:0,items:[{id:'10000000-0000-4000-8000-000000000002',canonicalItem:'tomato',displayName:'tomato',quantity:null,unit:null,checked:false,recipeIds:[]}]};
 const flush=async()=>{for(let n=0;n<15;n++)await Promise.resolve();};
@@ -20,8 +20,8 @@ function fixture(){
  const state={writes:0,cursor:0,values:[],deps:[],cleanups:[],effects:[],calls:[]};state.read=async()=>initial;state.save=async()=>initial;
  state.cart=async()=>({provider:'copy',text:'tomato',url:null});state.clipboard=[];state.windows=[];
  const context={state,navigator:{clipboard:{writeText:text=>{state.clipboard.push(text);return state.copy?.()??Promise.resolve();}}},window:{open:(...args)=>state.windows.push(args)}};runInNewContext(bundle.outputFiles[0].text,context);
- const render=()=>{state.cursor=0;const result=context.app.useShoppingList();while(state.effects.length)state.effects.shift()();return result;};
- render();return{state,render,unmount:()=>state.cleanups.forEach(fn=>fn?.())};
+ let client=context.app.api;const render=(effects=true)=>{state.cursor=0;const result=context.app.useShoppingList(client);if(effects)while(state.effects.length)state.effects.shift()();return result;};
+ render();return{state,render,replaceClient:()=>{client={...context.app.api};},unmount:()=>state.cleanups.forEach(fn=>fn?.())};
 }
 test('pending different list actions dispatch only once',async()=>{
  const f=fixture();await flush();let finish;f.state.save=()=>new Promise(resolve=>finish=resolve);const c=f.render();
@@ -72,4 +72,36 @@ test('failed read blocks retained writes until deliberate successful refresh',as
 test('rejected provider does not expose private transport detail',async()=>{
  const f=fixture();await flush();f.state.cart=async()=>{throw Error('private provider detail');};await f.render().sendToCart('copy');
  assert.doesNotMatch(f.render().error.message,/private provider detail/);assert.equal(f.render().busy,false);assert.equal(f.state.windows.length,0);
+});
+
+test('replacement client immediately hides old private data and blocks retained writes before cleanup',async()=>{
+ const f=fixture();await flush();const old=f.render();f.replaceClient();const next=f.render(false);
+ assert.equal(next.list,null);assert.equal(next.loaded,false);await old.clear();assert.equal(f.state.calls.length,0);
+ f.render();await flush();assert.equal(f.render().loaded,true);
+});
+test('pending old write cannot confirm into replacement scope before effect cleanup',async()=>{
+ const f=fixture();await flush();let finish;f.state.save=()=>new Promise(resolve=>finish=resolve);
+ const pending=f.render().clear();f.replaceClient();f.render(false);const writes=f.state.writes;
+ finish({...initial,itemCount:0,checkedCount:0,items:[]});await pending;assert.equal(f.state.writes,writes);assert.equal(f.render(false).list,null);
+});
+test('pending old provider cannot copy or navigate after scope replacement',async()=>{
+ const f=fixture();await flush();let finish;f.state.cart=()=>new Promise(resolve=>finish=resolve);
+ const pending=f.render().sendToCart('copy');f.replaceClient();f.render(false);
+ finish({provider:'copy',text:'private list',url:'https://example.invalid/review'});await pending;
+ assert.equal(f.state.clipboard.length,0);assert.equal(f.state.windows.length,0);
+});
+
+test('older settlement cannot unlock a replacement-scope pending write',async()=>{
+ const f=fixture();await flush();let finishOld;f.state.save=()=>new Promise(resolve=>finishOld=resolve);const old=f.render().clear();
+ f.replaceClient();f.render();await flush();let finishNew;f.state.save=()=>new Promise(resolve=>finishNew=resolve);const current=f.render().clear();
+ finishOld(initial);await old;await f.render().remove(initial.items[0].id);assert.equal(f.state.calls.length,2);assert.equal(f.render().busy,true);
+ finishNew(initial);await current;
+});
+test('replacement read failure hides prior data but exposes recoverable error',async()=>{
+ const f=fixture();await flush();f.replaceClient();f.state.read=async()=>{throw Error('fixture failure');};f.render();await flush();
+ assert.equal(f.render().list,null);assert.equal(f.render().loaded,false);assert.ok(f.render().listError);assert.equal(f.render().loading,false);
+});
+
+test('replacement actions cannot dispatch before replacement read begins',async()=>{
+ const f=fixture();await flush();f.replaceClient();const next=f.render(false);await next.clear();await next.sendToCart('copy');assert.equal(f.state.calls.length,0);
 });

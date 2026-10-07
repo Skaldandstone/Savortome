@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isUuid, type CartHandoff, type CartProvider, type CartProviderId, type ShoppingListView } from "@seconds/core/format";
-import { api } from "@/lib/client";
+import { api as localApi } from "@/lib/client";
 import { actionFailure, type ActionFailure } from "@/lib/action-failure";
 
 function confirmedList(value: ShoppingListView): boolean {
@@ -37,7 +37,7 @@ export interface ListController {
   sendToCart: (provider: CartProviderId) => Promise<void>;
 }
 
-export function useShoppingList(): ListController {
+export function useShoppingList(api: typeof localApi = localApi): ListController {
   const [list, setList] = useState<ShoppingListView | null>(null);
   const [providers, setProviders] = useState<CartProvider[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,32 +55,42 @@ export function useShoppingList(): ListController {
   const action = useRef(false);
   const reading = useRef(true);
   const ready = useRef(false);
+  const activeClient = useRef(api); activeClient.current = api;
+  const dataClient = useRef(api);
+  const providersClient = useRef(api);
+  const current = () => alive.current && activeClient.current === api;
+
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
 
   useEffect(() => {
     let cancelled = false;
     reading.current = true;
+    ready.current = false; action.current = false;
+    setBusy(false); setError(null); setHandoff(null);
     setLoading(true);
     setListError(null);
     void (async () => {
       try {
         const nextList = await api.getList();
-        if (cancelled) return;
+        if (cancelled || !current()) return;
         if (!confirmedList(nextList)) throw new Error("Unconfirmed list");
+        dataClient.current = api;
         ready.current = true;
         setList(nextList);
         setLoaded(true);
       } catch (err) {
-        if (!cancelled) { ready.current = false; setListError(actionFailure(err, "Couldn't load your list.")); }
+        if (!cancelled && current()) {
+          if (dataClient.current !== api) { dataClient.current = api; setList(null); setLoaded(false); }
+          ready.current = false; setListError(actionFailure(err, "Couldn't load your list.")); }
       } finally {
-        if (!cancelled) { reading.current = false; setLoading(false); }
+        if (!cancelled && current()) { reading.current = false; setLoading(false); }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [listAttempt]);
+  }, [api, listAttempt]);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,40 +99,43 @@ export function useShoppingList(): ListController {
     void (async () => {
       try {
         const nextProviders = await api.cartProviders();
-        if (cancelled) return;
+        if (cancelled || !current()) return;
+        providersClient.current = api;
         setProviders(nextProviders);
         setProvidersLoaded(true);
       } catch (err) {
-        if (!cancelled) setProvidersError(actionFailure(err, "Couldn't load ways to use your list."));
+        if (!cancelled && current()) {
+          if (providersClient.current !== api) { providersClient.current = api; setProviders([]); setProvidersLoaded(false); }
+          setProvidersError(actionFailure(err, "Couldn't load ways to use your list."));
+        }
       } finally {
-        if (!cancelled) setProvidersLoading(false);
+        if (!cancelled && current()) setProvidersLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [providersAttempt]);
+  }, [api, providersAttempt]);
 
   const run = useCallback(async (write: () => Promise<ShoppingListView>): Promise<boolean> => {
-    if (!alive.current || action.current || reading.current || !ready.current) return false;
+    if (!current() || dataClient.current !== api || action.current || reading.current || !ready.current) return false;
     action.current = true;
     setBusy(true);
     setError(null);
     setHandoff(null);
     try {
       const next = await write();
-      if (!alive.current) return false;
+      if (!current()) return false;
       if (!confirmedList(next)) throw new Error("Unconfirmed list");
       setList(next);
       return true;
     } catch (err) {
-      if (alive.current) setError({ ...actionFailure(err, ""), message: "This change is unconfirmed and may still finish. Review your list before trying again; nothing retries automatically." });
+      if (current()) setError({ ...actionFailure(err, ""), message: "This change is unconfirmed and may still finish. Review your list before trying again; nothing retries automatically." });
       return false;
     } finally {
-      action.current = false;
-      if (alive.current) setBusy(false);
+      if (current()) { action.current = false; setBusy(false); }
     }
-  }, []);
+  }, [api]);
 
   /** Keep the last confirmed checkbox and counts together until the response. */
   const toggle = useCallback(async (itemId: string, checked: boolean) => {
@@ -130,13 +143,13 @@ export function useShoppingList(): ListController {
   }, [run]);
 
   const sendToCart = useCallback(async (provider: CartProviderId) => {
-    if (!alive.current || action.current || reading.current || !ready.current) return;
+    if (!current() || dataClient.current !== api || action.current || reading.current || !ready.current) return;
     action.current = true;
     setBusy(true);
     setError(null);
     try {
       const result = await api.sendToCart(provider);
-      if (!alive.current) return;
+      if (!current()) return;
       setHandoff(result);
 
       // Every provider produces text, so the clipboard is always useful.
@@ -145,33 +158,34 @@ export function useShoppingList(): ListController {
           // Clipboard permission can be refused; the text is still on screen.
         });
       }
-      if (alive.current && result.url) window.open(result.url, "_blank", "noopener,noreferrer");
+      if (current() && result.url) window.open(result.url, "_blank", "noopener,noreferrer");
     } catch (err) {
-      if (alive.current) setError({ ...actionFailure(err, ""), message: "Couldn't confirm that list handoff. Check before trying again." });
+      if (current()) setError({ ...actionFailure(err, ""), message: "Couldn't confirm that list handoff. Check before trying again." });
     } finally {
-      action.current = false;
-      if (alive.current) setBusy(false);
+      if (current()) { action.current = false; setBusy(false); }
     }
-  }, []);
+  }, [api]);
 
+  const scoped = dataClient.current === api;
+  const scopedProviders = providersClient.current === api;
   return {
-    list,
-    providers,
-    loading,
-    loaded,
-    listError,
-    providersLoading,
-    providersLoaded,
-    providersError,
+    list: scoped ? list : null,
+    providers: scopedProviders ? providers : [],
+    loading: !scoped || loading,
+    loaded: scoped && loaded,
+    listError: scoped ? listError : null,
+    providersLoading: !scopedProviders || providersLoading,
+    providersLoaded: scopedProviders && providersLoaded,
+    providersError: scopedProviders ? providersError : null,
     retryList: () => {
-      if (!alive.current || action.current || reading.current) return;
+      if (!current() || action.current || reading.current) return;
       reading.current = true;
       setListAttempt(current => current + 1);
     },
-    retryProviders: () => { if (alive.current) setProvidersAttempt(current => current + 1); },
-    busy: busy || loading || !ready.current,
-    error,
-    handoff,
+    retryProviders: () => { if (current()) setProvidersAttempt(current => current + 1); },
+    busy: !scoped || busy || loading || !ready.current,
+    error: scoped ? error : null,
+    handoff: scoped ? handoff : null,
     toggle,
     remove: async (itemId) => { await run(() => api.removeListItem(itemId)); },
     clear: async () => { await run(() => api.clearList()); },

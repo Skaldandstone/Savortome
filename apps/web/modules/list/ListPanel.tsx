@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@clerk/nextjs";
+import { createClient } from "@seconds/core/format";
 import { signInReturnHref } from "@/lib/action-failure";
 import { Button, Callout, Panel, PanelHeader } from "@/ui";
 import { CartButtons } from "./CartButtons";
@@ -10,8 +12,23 @@ import { ListItems } from "./ListItems";
 import { useShoppingList, type ListController } from "./useShoppingList";
 import styles from "./list.module.css";
 
-export function ListPanel() {
+export function ListPanel({ clerkEnabled = true }: { clerkEnabled?: boolean }) {
+  return clerkEnabled ? <AuthenticatedListPanel /> : <LocalListPanel />;
+}
+
+function LocalListPanel() {
   return <ListPanelView shopping={useShoppingList()} />;
+}
+
+function AuthenticatedListPanel() {
+  const { isLoaded, userId, sessionId } = useAuth();
+  const api = useMemo(() => createClient({ expectedSessionId: sessionId ?? "signed-out" }), [userId, sessionId]);
+  // Keep the hook mounted across identity changes: it hides old data and guards
+  // retained actions synchronously, before passive effect cleanup.
+  const shopping = useShoppingList(api);
+  if (!isLoaded) return <p role="status">Loading your sign-in for the shopping list.</p>;
+  if (!userId || !sessionId) return <Callout tone="info"><Link href={signInReturnHref("/list")}>Sign in again to load your shopping list.</Link></Callout>;
+  return <ListPanelView key={`${userId}:${sessionId}`} shopping={shopping} />;
 }
 
 export function ListPanelView({ shopping }: { shopping: ListController }) {

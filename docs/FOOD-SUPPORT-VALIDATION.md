@@ -643,3 +643,12 @@ PR126 run37574540100 completed static and fullPostgreSQL jobs successfully (incl
 Webbarcode10/nativebarcode13actualcomponent casesPASS, CIYAML3jobsPASS, whitespacePASS. Fullworkspace types repeated separately. PriorfullPostgreSQL success is distinct from current hostedmigration or independent multi-connection race acceptance; browserE2E has not run, productionbuild has not passed at this checkpoint. No provider/device/buildservice/cloud/configuration/customerdata changes, no mainmerge. Linearreconnect prompt remainsopen; no speculative auth probes.
 
 Allfourworkspace typesPASS. Hygiene34repos/14findings/202.28GiB, changed from prior15 findings; reviewed read-only, no cleanup or checkout retirement.
+
+
+### October 6 release boundary: shopping-list session replacement
+
+PR126run37575598228 passes static/fullPostgreSQL/productionbuild/E2Ejobs. Browser totals15passed/10skipped; signed-in coverage lacks test credentials, so no realClerk/session acceptance. Initial newhookfixtures10/13PASS reproduced oldprivate-list visibility, lateoldwriteconfirmation and oldproviderclipboard afterclientreplacement beforepassivecleanup. Shoppinghook nowaccepts injected scopedclient; synchronously hides priordata, gates retainedhandlers/read/write/providerresults against currentclient, pinsdata/providerread scopes and preserves newactionlock when oldsettlementfinishes. Failedreplacementread exposeserrorwithoutpriorlist; newactions blocked untilcurrentreadconfirmed. ListPanel usesexisting ClerkuseAuth/useMemo pattern pluscreateClient expectedSessionId, with signed-outsentinel so cookiechangescannot silentlyretarget. Existingserver sessionheader check remainsownershipboundary. Keyedviewresets localclearconfirmation; hook staysmounted to guardbeforecleanup. Serverlistpage passesclerkConfigured forlocalnonClerk path.
+
+Final16actualhookcasesPASS, webTypeScriptPASS/UTF8all775trackedfiles/whitespacePASS. Hook/client/browser synthetic; ListPanelwrapper source/type reviewed only, not renderedoractualClerkaccountswitch. No provider/order/inventory/securitypolicy/credentials/schema/runtime changes. Other recipe/AddMissingbuttons remainunscoped and require followup before release; providerresponse URL/schema validation stillopen. Hostedmigrations/rollback/immutableimage/source admission/authenticatedflows separate. ExistingCI reruns onpush, no manualdispatch/mainmerge.
+
+Read-only hygiene34repos/14unchanged findings/199.35GiB; no cleanup. Existing-account Chrome signed-in acceptance prompt sent once; no login initiated or credential/account change.
