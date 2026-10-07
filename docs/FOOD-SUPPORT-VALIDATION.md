@@ -672,3 +672,10 @@ The actual web shopping hook now rejects a response with a different provider, w
 The expanded synthetic hook fixture first reproduced two regressions (17/19), then passed 20/20 after the fix, including provider/domain impersonation, credentials, ports, script/relative URLs, stale-session and unmount boundaries. Web typechecking passed. Browser globals, clients and React are synthetic: these checks do not establish a live provider cart, clipboard permissions, popup behavior, real Clerk sessions or device acceptance. No provider calls or runtime deployment occurred.
 
 Provider contract reference: [Instacart Create shopping list page](https://docs.instacart.com/developer_platform_api/api/products/create_shopping_list_page), reviewed October 7 UTC. Its generated-link response is not proof of checkout or inventory.
+
+
+### October 6 release iteration: actual shopping wrapper scope
+
+At a7f16f5, PR126 CI run 37579656134 passed all three jobs. The new `check-web-list-panel.mjs` bundles the actual ListPanel plus actual shopping hook, with a component/key-aware synthetic renderer and mocked Clerk/client/child widgets. All five cases pass: local mode without Clerk construction, loading/signed-out privacy, immediate account replacement before effects, session-key reset of destructive confirmation with retained old action refusal, and delayed old response rejection before passive cleanup. It is included in static CI. No production change was needed in this iteration.
+
+This provides wrapper integration evidence beyond the hook-only fixture, but is not DOM rendering, real React scheduling, cookie/session revocation, accessibility or signed-in hosted acceptance. CartButtons, ListItems and KrogerConnection children are mocked. The existing KrogerConnection source uses its own unscoped client and requires separate stale-session/response review before its configured provider workflow can be accepted. No provider call, cloud write or deployment occurred.
