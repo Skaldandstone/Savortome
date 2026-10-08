@@ -169,5 +169,11 @@ try {
 } finally {
     if ($null -eq $oldIndex) { Remove-Item Env:\GIT_INDEX_FILE -ErrorAction SilentlyContinue }
     else { $env:GIT_INDEX_FILE = $oldIndex }
-    Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
+    $resolvedWork = [IO.Path]::GetFullPath($work)
+    $resolvedTemp = [IO.Path]::GetFullPath($env:TEMP).TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+    if (!$resolvedWork.StartsWith($resolvedTemp, [StringComparison]::OrdinalIgnoreCase) -or
+        [IO.Path]::GetFileName($resolvedWork) -notmatch '^secondbreakfast-snapshot-[a-f0-9]{32}$') {
+        throw 'Refusing cleanup outside the unique snapshot temporary directory.'
+    }
+    Remove-Item -LiteralPath $resolvedWork -Recurse -Force -ErrorAction SilentlyContinue
 }
