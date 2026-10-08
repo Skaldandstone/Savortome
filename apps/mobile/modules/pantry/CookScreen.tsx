@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useRouter } from "expo-router";
+import { useAuth } from "@clerk/expo";
 import { KitchenWelcome } from '@/modules/woodland/KitchenWelcome';
 import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -7,6 +9,7 @@ import { MatchList, QueryReadback } from "./MatchList";
 import { PantryChips } from "./PantryChips";
 import { PantryReviewQueue } from "./PantryReviewQueue";
 import { ReceiptCapture } from "./ReceiptCapture";
+import { BarcodeCapture } from "./BarcodeCapture";
 import { usePantry, usePantrySearch } from "./usePantry";
 
 const EXAMPLES = ["chicken thighs, rice, an onion", "something quick and vegetarian", "dinner without dairy"];
@@ -17,6 +20,13 @@ const EXAMPLES = ["chicken thighs, rice, an onion", "something quick and vegetar
  * common case is one tap rather than retyping.
  */
 export function CookScreen() {
+  const { userId } = useAuth();
+  // Reset private drafts, inventory, review selections and search on a switch.
+  return <AccountCookScreen key={userId ?? "signed-out"} />;
+}
+
+function AccountCookScreen() {
+  const router = useRouter();
   const pantry = usePantry();
   const { response, searching, error, search } = usePantrySearch();
   const [query, setQuery] = useState("");
@@ -31,7 +41,14 @@ export function CookScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <KitchenWelcome />
+      <Panel><PanelHeader title="A little help for today" hint="Meal ideas from your pantry, or an optional food note to help you remember." /><Button label="Open Today and food notes" onPress={() => router.push("/today")} /></Panel>
       <ReceiptCapture onScan={pantry.scanReceipt} />
+      <BarcodeCapture onQueued={pantry.queuedIntake} />
+      <Panel>
+        <PanelHeader title="Check grocery reviews" hint="If a scan or review action was not confirmed, refresh before repeating it. Refresh only reads your pantry and reviews; it does not scan again or accept items." />
+        <Button label={pantry.refreshingReviews ? "Refreshing grocery reviews..." : "Refresh grocery reviews"} busy={pantry.refreshingReviews} disabled={pantry.loading || pantry.refreshingReviews} onPress={() => void pantry.refreshReviews()} />
+        <Text style={{ color: c.textMuted, marginTop: space.sm }}>An empty review list does not prove an earlier request failed. If it is still uncertain, wait and refresh again.</Text>
+      </Panel>
       <PantryReviewQueue intakes={pantry.intakes} onResolve={pantry.resolveIntake} />
       {pantry.error ? <Callout tone="error">{pantry.error}</Callout> : null}
       <Panel>

@@ -20,11 +20,17 @@ function tokenMatches(provided: string | null): boolean {
   return a.length === b.length && timingSafeEqual(a, b);
 }
 
+/** Allows default-off operator gates to refuse before opening a database. */
+export function adminAuthorized(request: Request): boolean {
+  return tokenMatches(request.headers.get("x-admin-token"));
+}
+
 export async function withAdmin<T>(
   request: Request,
   handler: (database: Database) => Promise<T>,
+  privacy: { redactUnexpectedErrors?: boolean } = {},
 ): Promise<NextResponse> {
-  if (!tokenMatches(request.headers.get("x-admin-token"))) {
+  if (!adminAuthorized(request)) {
     return NextResponse.json({ error: "Admin token required" }, { status: 401 });
   }
   if (!databaseConfigured()) {
@@ -40,6 +46,6 @@ export async function withAdmin<T>(
     }
     return NextResponse.json(result);
   } catch (err) {
-    return errorResponse(err);
+    return errorResponse(err, privacy);
   }
 }

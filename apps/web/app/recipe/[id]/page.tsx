@@ -22,6 +22,7 @@ export default async function RecipePage({ params }: { params: Promise<{ id: str
   return (
     <main className="woodland-workspace" data-kitchen-page="recipe">
       <RecipeCard
+        clerkEnabled={clerkConfigured()}
         headingLevel={await canUseBeta() ? 1 : 2}
         recipe={toRecipe(row)}
         shelvedId={row.id}

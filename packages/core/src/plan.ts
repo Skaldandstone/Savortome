@@ -58,8 +58,11 @@ export interface PlanSuggestion {
 
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
-export const isISODate = (value: string): boolean =>
-  ISO_DATE.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00Z`));
+export const isISODate = (value: string): boolean => {
+  if (typeof value !== "string" || !ISO_DATE.test(value)) return false;
+  const date = new Date(`${value}T12:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+};
 
 /** Today, as a plain date, in whatever zone the person is actually standing in. */
 export function todayISO(now: Date = new Date()): string {

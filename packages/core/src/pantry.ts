@@ -50,6 +50,7 @@ export const PANTRY_SOURCES = [
   "shopping_list",
   "grocery_order",
   "receipt",
+  "barcode",
   "recipe",
 ] as const;
 export type PantrySource = (typeof PANTRY_SOURCES)[number];

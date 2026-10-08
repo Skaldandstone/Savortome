@@ -38,6 +38,8 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Source encoding
+        run: node scripts/check-source-encoding.mjs
       - name: Typecheck every workspace
         run: pnpm typecheck
       - name: Unit tests
@@ -48,6 +50,51 @@ jobs:
         run: node scripts/check-mobile-account-startup.mjs
       - name: Mobile telemetry privacy
         run: node scripts/check-mobile-sentry.mjs
+      - name: Mobile receipt recovery
+        run: node scripts/check-mobile-receipts.mjs
+      - name: Pantry review recovery
+        run: |
+          node scripts/check-pantry-review-recovery.mjs
+          node scripts/check-native-pantry-lifecycle.mjs
+          node scripts/check-web-pantry-lifecycle.mjs
+          node scripts/check-web-barcode-lifecycle.mjs
+          node scripts/check-browser-barcode-scanner.mjs
+          node scripts/check-receipt-api-boundaries.mjs
+          node scripts/check-shopping-api-boundaries.mjs
+          node scripts/check-native-barcode-lifecycle.mjs
+      # Local synthetic boundaries only: no provider keys, native builds or devices.
+      - name: Food capture and recovery lifecycle
+        run: |
+          node scripts/check-food-capture-lifecycle.mjs
+          node scripts/check-food-capture-api.mjs
+          node scripts/check-today-recovery.mjs
+          node scripts/check-food-note-transport.mjs
+          node scripts/check-food-note-local-recovery.mjs
+          node scripts/check-food-note-signout.mjs
+          node scripts/check-food-recovery-accessibility.mjs
+          node scripts/check-pantry-planning-recovery.mjs
+          node scripts/check-meal-review-recovery.mjs
+          node scripts/check-native-recipe-shopping.mjs
+          node scripts/check-web-recipe-shopping.mjs
+          node scripts/check-web-list-lifecycle.mjs
+          node scripts/check-web-list-panel.mjs
+          node scripts/check-web-kroger-lifecycle.mjs
+          node scripts/check-clerk-webhook-recovery.mjs
+          node scripts/check-photo-cleanup-adapter.mjs
+          node scripts/check-photo-cleanup-operator.mjs
+          node scripts/check-photo-upload-recovery.mjs
+          node scripts/check-recipe-photo-ui.mjs
+          node scripts/check-photo-preparation.mjs
+          node scripts/check-import-photo-recovery.mjs
+      # Disposable PGlite fixtures are distinct from the full pgvector schema job.
+      - name: Food-note tenant recovery and partial migrations
+        run: |
+          node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-food-note-recovery.mjs
+          node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-food-note-api.mjs
+          node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-food-note-migration.mjs
+          node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-template-recovery.mjs
+          node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-reviewed-planning-db.mjs
+          node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-photo-deletion-recovery.mjs
 
   database:
     name: Database checks
@@ -102,6 +149,14 @@ jobs:
           pnpm check:pantry
           pnpm check:sharing
           pnpm check:friends
+      - name: Independent template writer compatibility
+        run: node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-template-postgres-concurrency.mjs
+      - name: Independent food-note writer recovery
+        run: node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-food-note-postgres-concurrency.mjs
+      - name: Independent shopping writer recovery
+        run: node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-shopping-postgres-concurrency.mjs
+      - name: Independent photo cleanup recovery
+        run: node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-photo-postgres-concurrency.mjs
       - name: Editor and grocery
         run: |
           pnpm check:editor
@@ -145,6 +200,31 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # Production connectionOptions deliberately requires verified TLS even
+      # for localhost. Supply it in this disposable service, rather than
+      # weakening the app policy or letting browser checks hide SQL failures.
+      - name: Enable verified TLS on disposable E2E PostgreSQL
+        env:
+          PG_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          set -euo pipefail
+          cert_dir="$RUNNER_TEMP/savortome-e2e-tls"
+          mkdir -p "$cert_dir"
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -sha256 -subj '/CN=Savortome disposable CI CA' -keyout "$cert_dir/ca.key" -out "$cert_dir/ca.crt" -addext 'basicConstraints=critical,CA:TRUE' -addext 'keyUsage=critical,keyCertSign,cRLSign' 2>/dev/null
+          openssl req -newkey rsa:2048 -nodes -sha256 -subj '/CN=localhost' -keyout "$cert_dir/server.key" -out "$cert_dir/server.csr" 2>/dev/null
+          printf '%s\n' 'basicConstraints=critical,CA:FALSE' 'keyUsage=critical,digitalSignature,keyEncipherment' 'extendedKeyUsage=serverAuth' 'subjectAltName=DNS:localhost,IP:127.0.0.1' > "$cert_dir/server.ext"
+          openssl x509 -req -in "$cert_dir/server.csr" -CA "$cert_dir/ca.crt" -CAkey "$cert_dir/ca.key" -CAcreateserial -days 1 -sha256 -extfile "$cert_dir/server.ext" -out "$cert_dir/server.crt" 2>/dev/null
+          docker cp "$cert_dir/server.key" "$PG_CONTAINER:/tmp/savortome-server.key"
+          docker cp "$cert_dir/server.crt" "$PG_CONTAINER:/tmp/savortome-server.crt"
+          docker exec "$PG_CONTAINER" chown postgres:postgres /tmp/savortome-server.key /tmp/savortome-server.crt
+          docker exec "$PG_CONTAINER" chmod 600 /tmp/savortome-server.key
+          docker exec "$PG_CONTAINER" psql -U postgres -d savortome_e2e -c "ALTER SYSTEM SET ssl_cert_file='/tmp/savortome-server.crt'" -c "ALTER SYSTEM SET ssl_key_file='/tmp/savortome-server.key'" -c "ALTER SYSTEM SET ssl=on"
+          docker exec "$PG_CONTAINER" psql -U postgres -d savortome_e2e -c 'SELECT pg_reload_conf()'
+          echo "NODE_EXTRA_CA_CERTS=$cert_dir/ca.crt" >> "$GITHUB_ENV"
+      - name: Verify production-mode database transport
+        run: node --import ./packages/db/node_modules/tsx/dist/loader.mjs scripts/check-ci-postgres-tls.mjs
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/savortome_e2e
       - name: Apply migrations
         run: pnpm --filter @seconds/db migrate
         env:

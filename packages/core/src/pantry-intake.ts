@@ -1,6 +1,6 @@
 import { parseIngredientLine } from "./units.js";
 
-export const PANTRY_INTAKE_SOURCES = ["grocery_order", "receipt"] as const;
+export const PANTRY_INTAKE_SOURCES = ["grocery_order", "receipt", "barcode"] as const;
 export type PantryIntakeSource = (typeof PANTRY_INTAKE_SOURCES)[number];
 export type PantryIntakeStatus = "pending" | "accepted" | "dismissed";
 

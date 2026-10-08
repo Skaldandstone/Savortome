@@ -43,7 +43,7 @@ function starter(input: StarterInput): StarterRecipe {
 const easySkills: SkillDemands = { knife: 1, stovetop: 1, oven: 1, timing: 1 };
 
 /**
- * Original, human-authored recipes that make a new Savortome account useful.
+ * Original starter recipes that make a new Savortome account useful.
  * They contain no medical or allergen-safety claims. Dietary labels describe
  * ingredients as written; people still need to check their own packages.
  */
@@ -143,5 +143,101 @@ export const STARTER_RECIPES: readonly StarterRecipe[] = [
     ingredients: ["2 cups plain yogurt", "1 cup fruit, fresh or thawed from frozen", "1/2 cup granola or toasted oats", "2 tablespoons nut or seed butter, optional", "2 teaspoons honey or maple syrup, optional"],
     steps: ["Divide the yogurt between two bowls.", "Add the fruit and granola or toasted oats.", "Drizzle with nut or seed butter and honey or maple syrup, if using. Check package labels for ingredients that matter to you."],
     equipment: ["2 bowls", "spoon"], tags: ["breakfast", "no-cook", "quick", "vegetarian"], cuisine: null, course: "breakfast", difficulty: "easy", skillDemands: { ...easySkills },
+  }),
+  starter({
+    id: "5a70f70e-5eed-4d8f-9000-000000000113", slug: "chickpea-cucumber-pitas",
+    title: "Chickpea cucumber pitas", description: "A cool, crunchy lunch with no stove to manage.",
+    servings: 2, servingsNote: "2 filled pitas", prepMinutes: 10, cookMinutes: 0, totalMinutes: 10,
+    ingredients: ["1 15-ounce can chickpeas, drained and rinsed", "1/2 cucumber, diced", "2 tablespoons plain yogurt", "1 tablespoon lemon juice", "1/4 teaspoon salt", "2 pita breads"],
+    steps: ["Mash the chickpeas roughly in a bowl with a fork.", "Stir in the cucumber, yogurt, lemon juice, and salt.", "Split the 2 pitas and divide the filling between them. Serve immediately."],
+    equipment: ["bowl", "fork", "knife"], tags: ["lunch", "no-cook", "vegetarian", "quick"], cuisine: null, course: "lunch", difficulty: "easy", skillDemands: { ...easySkills, knife: 2 },
+  }),
+  starter({
+    id: "5a70f70e-5eed-4d8f-9000-000000000114", slug: "hummus-carrot-wraps",
+    title: "Hummus carrot wraps", description: "A short assembly recipe for a day when cooking feels like a lot.",
+    servings: 2, servingsNote: "2 wraps", prepMinutes: 10, cookMinutes: 0, totalMinutes: 10,
+    ingredients: ["2 large flour tortillas", "1/2 cup hummus", "1 carrot, grated", "1 cup baby spinach", "1/2 cucumber, sliced"],
+    steps: ["Spread 1/4 cup hummus over each tortilla, leaving a small border around the edge.", "Divide the carrot, spinach, and cucumber between the tortillas.", "Fold the sides inward, then roll from the bottom to enclose the filling. Cut in half if helpful."],
+    equipment: ["grater", "knife", "board"], tags: ["lunch", "no-cook", "vegetarian", "quick"], cuisine: null, course: "lunch", difficulty: "easy", skillDemands: { ...easySkills, knife: 2 },
+  }),
+  starter({
+    id: "5a70f70e-5eed-4d8f-9000-000000000115", slug: "couscous-peas-lemon",
+    title: "Couscous with peas and lemon", description: "Tiny pasta that steeps while you take a breather.",
+    servings: 2, servingsNote: null, prepMinutes: 5, cookMinutes: 10, totalMinutes: 15,
+    ingredients: ["1 cup instant couscous", "1 cup water", "1 cup frozen peas", "1 tablespoon olive oil", "1 tablespoon lemon juice", "1/4 teaspoon salt"],
+    steps: ["Check that the couscous is the instant variety, not pearl couscous; use the package's liquid ratio if different.", "Bring the water to a boil in a small saucepan. Add the peas and simmer for 3 minutes, or follow their package cooking directions.", "Remove from the heat. Stir in the couscous, olive oil, and salt. Cover for the package's standing time, usually 5 minutes.", "Fluff with a fork and stir in the lemon juice."],
+    equipment: ["small saucepan with lid", "fork"], tags: ["lunch", "quick", "vegetarian"], cuisine: null, course: "lunch", difficulty: "easy", skillDemands: { ...easySkills, stovetop: 2 },
+  }),
+  starter({
+    id: "5a70f70e-5eed-4d8f-9000-000000000116", slug: "peanut-lime-noodles",
+    title: "Peanut lime noodles", description: "A creamy sauce stirred in a bowl while the noodles cook.",
+    servings: 2, servingsNote: null, prepMinutes: 10, cookMinutes: 10, totalMinutes: 20,
+    ingredients: ["6 ounces dried noodles", "3 tablespoons smooth peanut butter", "1 tablespoon soy sauce", "1 tablespoon lime juice", "1 teaspoon maple syrup", "3 tablespoons warm water", "1 carrot, grated"],
+    steps: ["Cook the noodles according to their package directions.", "In a bowl, stir the peanut butter, soy sauce, lime juice, maple syrup, and 3 tablespoons warm water until smooth. Add a little more water if needed to make a pourable sauce.", "Drain the noodles and toss with the sauce and grated carrot. Divide between 2 bowls."],
+    equipment: ["saucepan", "colander", "bowl", "grater"], tags: ["quick", "vegetarian", "weeknight"], cuisine: null, course: "dinner", difficulty: "easy", skillDemands: { ...easySkills, stovetop: 2 },
+  }),
+  starter({
+    id: "5a70f70e-5eed-4d8f-9000-000000000117", slug: "broccoli-cheddar-toast",
+    title: "Broccoli cheddar toast", description: "A small warm meal using cooked broccoli and a slice of bread.",
+    servings: 2, servingsNote: "2 topped slices", prepMinutes: 5, cookMinutes: 10, totalMinutes: 15,
+    ingredients: ["2 thick slices bread", "1 cup cooked broccoli, chopped", "1 teaspoon olive oil", "1/2 cup grated cheddar cheese", "black pepper to taste"],
+    steps: ["Heat the oven to 400°F (200°C). Put the bread on a baking sheet.", "Toss the cooked broccoli with the olive oil and pepper. Divide between the bread slices.", "Top each slice with 1/4 cup cheddar. Bake for 8 to 10 minutes, until the cheese melts and the topping is hot."],
+    equipment: ["baking sheet", "bowl"], tags: ["lunch", "use-it-up", "vegetarian", "quick"], cuisine: null, course: "lunch", difficulty: "easy", skillDemands: { ...easySkills, oven: 2 },
+  }),
+  starter({
+    id: "5a70f70e-5eed-4d8f-9000-000000000118", slug: "sweet-potato-black-bean-bowls",
+    title: "Sweet potato black bean bowls", description: "Roasted sweet potato with warm beans and a cool yogurt topping.",
+    servings: 2, servingsNote: null, prepMinutes: 10, cookMinutes: 30, totalMinutes: 40,
+    ingredients: ["2 medium sweet potatoes, cut into 3/4-inch cubes", "1 tablespoon olive oil", "1/2 teaspoon ground cumin", "1/4 teaspoon salt", "1 15-ounce can black beans, drained and rinsed", "1/4 cup plain yogurt", "1 tablespoon lime juice"],
+    steps: ["Heat the oven to 425°F (220°C). Toss the sweet potato cubes with the oil, cumin, and salt on a baking sheet.", "Spread into one layer. Roast for 25 to 30 minutes, turning halfway through, until a fork slides easily into the cubes.", "Warm the beans in a small saucepan with 2 tablespoons water, stirring until hot.", "Stir the yogurt and lime juice together. Divide the sweet potato and beans between 2 bowls and spoon the yogurt over them."],
+    equipment: ["baking sheet", "small saucepan", "bowl", "knife"], tags: ["dinner", "vegetarian", "weeknight"], cuisine: null, course: "dinner", difficulty: "easy", skillDemands: { ...easySkills, knife: 2, oven: 2, timing: 2 },
+  }),
+  starter({
+    id: "5a70f70e-5eed-4d8f-9000-000000000119", slug: "mushroom-bean-skillet",
+    title: "Mushroom white bean skillet", description: "A warm skillet meal with a short list of ingredients.",
+    servings: 2, servingsNote: null, prepMinutes: 10, cookMinutes: 15, totalMinutes: 25,
+    ingredients: ["1 tablespoon olive oil", "8 ounces mushrooms, sliced", "1 clove garlic, minced", "1 15-ounce can white beans, drained and rinsed", "1/4 cup vegetable broth", "2 cups baby spinach", "1/4 teaspoon salt"],
+    steps: ["Heat the oil in a skillet over medium heat. Add the mushrooms and cook for 8 minutes, stirring occasionally, until softened and browned in places.", "Add the garlic and stir for 30 seconds.", "Add the beans, broth, and salt. Simmer for 4 minutes, stirring gently.", "Stir in the spinach until wilted. Divide between 2 bowls."],
+    equipment: ["skillet", "spoon", "knife"], tags: ["one-pan", "vegetarian", "quick"], cuisine: null, course: "dinner", difficulty: "easy", skillDemands: { ...easySkills, knife: 2, stovetop: 2 },
+  }),
+  starter({
+    id: "5a70f70e-5eed-4d8f-9000-000000000120", slug: "overnight-apple-oats",
+    title: "Overnight apple oats", description: "Mix tonight, refrigerate, and have breakfast ready tomorrow.",
+    servings: 2, servingsNote: "2 jars; includes 8 hours refrigerated soaking", prepMinutes: 10, cookMinutes: 0, totalMinutes: 490,
+    ingredients: ["1 cup rolled oats", "1 cup milk", "1/2 cup plain yogurt", "1 apple, grated", "1/2 teaspoon ground cinnamon", "2 teaspoons maple syrup, optional"],
+    steps: ["Stir the oats, milk, yogurt, grated apple, cinnamon, and maple syrup, if using, in a bowl.", "Divide between 2 covered containers and refrigerate overnight, at least 8 hours. Preparation takes 10 minutes; the total includes the overnight wait.", "In the morning, stir and add a splash of milk if you want a looser texture. Keep refrigerated until serving."],
+    equipment: ["bowl", "grater", "2 covered containers"], tags: ["breakfast", "make-ahead", "no-cook", "vegetarian"], cuisine: null, course: "breakfast", difficulty: "easy", skillDemands: { ...easySkills },
+  }),
+  starter({
+    id: "5a70f70e-5eed-4d8f-9000-000000000121", slug: "tomato-cucumber-toast",
+    title: "Tomato cucumber toast", description: "Crunchy vegetables over creamy hummus, with optional toasting.",
+    servings: 2, servingsNote: "2 topped slices", prepMinutes: 10, cookMinutes: 0, totalMinutes: 10,
+    ingredients: ["2 slices bread", "1/4 cup hummus", "1 tomato, diced", "1/2 cucumber, diced", "1 teaspoon olive oil", "black pepper to taste"],
+    steps: ["Toast the bread if you want, or use it as it is.", "Spread 2 tablespoons hummus over each slice.", "Mix the tomato and cucumber with the olive oil and pepper. Divide over the bread and serve immediately."],
+    equipment: ["knife", "board", "bowl", "toaster, optional"], tags: ["lunch", "no-cook", "vegetarian", "quick"], cuisine: null, course: "lunch", difficulty: "easy", skillDemands: { ...easySkills, knife: 2 },
+  }),
+  starter({
+    id: "5a70f70e-5eed-4d8f-9000-000000000122", slug: "warm-butter-beans-peas",
+    title: "Warm butter beans and peas", description: "A soft, spoonable lunch made from a can and the freezer.",
+    servings: 2, servingsNote: null, prepMinutes: 5, cookMinutes: 10, totalMinutes: 15,
+    ingredients: ["1 15-ounce can butter beans, drained and rinsed", "1 cup frozen peas", "1/2 cup vegetable broth", "1 tablespoon olive oil", "1 tablespoon lemon juice", "black pepper to taste"],
+    steps: ["Put the beans, peas, broth, and olive oil in a small saucepan.", "Bring to a gentle simmer over medium heat. Cook for 5 to 7 minutes, stirring occasionally, until hot; follow the peas' package directions if they require longer.", "Mash a few beans with the back of the spoon to thicken the broth. Stir in the lemon juice and pepper."],
+    equipment: ["small saucepan", "spoon"], tags: ["lunch", "pantry", "vegetarian", "quick"], cuisine: null, course: "lunch", difficulty: "easy", skillDemands: { ...easySkills, stovetop: 2 },
+  }),
+  starter({
+    id: "5a70f70e-5eed-4d8f-9000-000000000123", slug: "roasted-carrots-chickpeas",
+    title: "Roasted carrots and chickpeas", description: "A tray of familiar ingredients with a lemon yogurt spoonful.",
+    servings: 2, servingsNote: null, prepMinutes: 10, cookMinutes: 30, totalMinutes: 40,
+    ingredients: ["4 carrots, cut into 1/2-inch pieces", "1 15-ounce can chickpeas, drained and rinsed", "1 tablespoon olive oil", "1/2 teaspoon ground cumin", "1/4 teaspoon salt", "1/4 cup plain yogurt", "1 tablespoon lemon juice"],
+    steps: ["Heat the oven to 425°F (220°C). Pat the chickpeas dry.", "Toss the carrots and chickpeas with the oil, cumin, and salt on a baking sheet. Spread into one layer.", "Roast for 25 to 30 minutes, turning halfway through, until the carrots are tender when pierced.", "Mix the yogurt and lemon juice in a small bowl. Divide the roasted vegetables between 2 plates and add the yogurt."],
+    equipment: ["baking sheet", "knife", "small bowl"], tags: ["dinner", "vegetarian", "one-pan"], cuisine: null, course: "dinner", difficulty: "easy", skillDemands: { ...easySkills, knife: 2, oven: 2 },
+  }),
+  starter({
+    id: "5a70f70e-5eed-4d8f-9000-000000000124", slug: "cinnamon-pear-yogurt",
+    title: "Cinnamon pear yogurt", description: "A small no-cook breakfast or snack with soft fruit and crunch.",
+    servings: 1, servingsNote: null, prepMinutes: 5, cookMinutes: 0, totalMinutes: 5,
+    ingredients: ["3/4 cup plain yogurt", "1 ripe pear, diced", "1/4 cup granola", "1 pinch ground cinnamon"],
+    steps: ["Spoon the yogurt into a bowl.", "Add the diced pear and granola. Sprinkle the cinnamon over the top.", "Stir together or leave the components separate, whichever texture you prefer."],
+    equipment: ["bowl", "spoon", "knife"], tags: ["breakfast", "snack", "no-cook", "vegetarian", "quick"], cuisine: null, course: "breakfast", difficulty: "easy", skillDemands: { ...easySkills },
   }),
 ] as const;

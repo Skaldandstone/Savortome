@@ -26,7 +26,7 @@ export default async function TemplatesPage() {
   return (
     <main className="woodland-workspace" data-kitchen-page="templates">
       <KitchenPageHeading title="Meals to come back to" description="Keep your saved meal combinations together." icon="book" />
-      <TemplateList />
+      <TemplateList clerkEnabled={clerkConfigured()} />
     </main>
   );
 }

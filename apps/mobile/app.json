@@ -12,14 +12,16 @@
       "@clerk/expo",
       "expo-secure-store",
       "expo-web-browser",
+      ["expo-camera", { "cameraPermission": "Scan a product barcode for pantry review.", "microphonePermission": false, "recordAudioAndroid": false, "barcodeScannerEnabled": true }],
       [
         "expo-image-picker",
         {
-          "photosPermission": "Choose a grocery receipt photo for review.",
-          "cameraPermission": "Take a grocery receipt photo for review.",
+          "photosPermission": "Choose a receipt or food photo for review.",
+          "cameraPermission": "Take a receipt or food photo for review.",
           "microphonePermission": false
         }
       ],
+      ["expo-audio", { "microphonePermission": "Record a short food note for transcription and review.", "recordAudioAndroid": true, "enableBackgroundRecording": false, "enableBackgroundPlayback": false }],
       [
         "expo-splash-screen",
         {
