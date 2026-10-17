@@ -44,7 +44,7 @@ function fixture(initial=[],platform='native'){
  state.localRemove=async key=>{state.localCalls.push(['remove',key]);state.localValues.delete(key);};
  state.client=owner=>{if(!state.clients.has(owner))state.clients.set(owner,{foodNoteCaptureStatus:async()=>({photo:false,voice:false}),listFoodNotes:date=>{state.calls.push({kind:'list',owner,date});return state.list(owner,date);},saveFoodNote:input=>{state.calls.push({kind:'save',owner,input});return state.save(owner,input);},deleteFoodNote:id=>{state.calls.push({kind:'delete',owner,id});return state.remove(owner,id);}});return state.clients.get(owner);};
  state.timers=new Map();state.nextTimer=0;
- const context={state,Date,setTimeout:(fn,ms)=>{const key=++state.nextTimer;state.timers.set(key,{fn,ms});return key;},clearTimeout:key=>state.timers.delete(key),crypto:{randomUUID:()=>state.nextId()},document:{addEventListener:()=>{},removeEventListener:()=>{}},window:{addEventListener:()=>{},removeEventListener:()=>{},confirm:()=>true}};runInNewContext(bundle.outputFiles[0].text,context);
+ const context={state,Date,setTimeout:(fn,ms)=>{const key=++state.nextTimer;state.timers.set(key,{fn,ms});return key;},clearTimeout:key=>state.timers.delete(key),crypto:{randomUUID:()=>state.nextId()},document:{addEventListener:()=>{},removeEventListener:()=>{}},window:{addEventListener:()=>{},removeEventListener:()=>{},confirm:()=>state.confirm !== false}};runInNewContext(bundle.outputFiles[0].text,context);
  const unmount=()=>{state.cleanups.filter(Boolean).forEach(fn=>fn());state.cleanups=[];};
  const render=()=>{let root=platform==='web'?context.app.WebTodayScreen({}):context.app.TodayScreen();while(typeof root.type==='function'&&!/^AccountTodayScreen\d*$/.test(root.type.name))root=root.type(root.props);if(root.key!==state.rootKey){unmount();state.rootKey=root.key;state.values=[];state.deps=[];state.effects=[];state.focus.clear();state.focusCleanups.clear();}state.cursor=0;const tree=root.type(root.props);state.effects.splice(0).forEach(fn=>fn());return tree;};
  const settle=async()=>{for(let i=0;i<4;i++){render();await flush();}return render();};
@@ -181,3 +181,26 @@ test('native restore: failed fresh read removes offer without changing current d
 
 test('native restore: disappeared device copy never restores cached fields',async()=>{const f=await offeredCopy();f.state.localValues.clear();await press(f,'Restore kept food note');await f.settle();assert.equal(field(f.render(),'Food name').props.value,'');assert.match(text(f.render()),/no longer available/);assert.equal(button(f.render(),'Restore kept food note'),undefined);assert.equal(f.writes('save').length,0);});
 test('native restore: account switch during recheck cannot expose old recovered food',async()=>{const f=await offeredCopy(),gate=deferred();const raw=[...f.state.localValues.values()][0];f.state.localGet=()=>gate.promise;await press(f,'Restore kept food note');await flush();f.state.userId='account-b';await f.settle();gate.resolve(raw);await f.settle();assert.equal(field(f.render(),'Food name').props.value,'');assert.doesNotMatch(text(f.render()),/Kept food note restored/);assert.equal(f.writes('save').length,0);});
+
+
+test('native: portion-only draft requires confirmation before capture replacement',async()=>{
+ const f=await ready();fill(f,'','Half a bowl');
+ const capture=nodes(f.render()).find(n=>typeof n.props?.confirmReplace==='function');assert.ok(capture);
+ const decision=capture.props.confirmReplace();await flush();assert.equal(f.state.alerts.length,1);f.decide(false);
+ assert.equal(await decision,false);assert.equal(field(f.render(),'Portion, optional').props.value,'Half a bowl');assert.equal(f.writes('save').length,0);
+});
+test('web: declining repeat replacement preserves a portion-only draft',async()=>{
+ const f=await webReady();const date=nodes(f.render()).find(n=>n.type==='TextField'&&n.props.type==='date').props.value;
+ f.state.records.set('account-a',[entry({id:sampleId,date,title:'Toast',portion:'One slice',source:'text'})]);
+ await press(f,'Reload food notes');await f.settle();
+ const portion=nodes(f.render()).find(n=>n.type==='TextField'&&n.props.maxLength===120);assert.ok(portion);
+ portion.props.onChange({target:{value:'Half a bowl'}});f.state.confirm=false;
+ const repeat=nodes(f.render()).find(n=>n.type==='Button'&&text(n.props.children).replace(/\s+/g,' ').trim()==='Use Toast as a new draft');assert.ok(repeat);repeat.props.onClick();await flush();assert.equal(webName(f.render()).props.value,'');
+ assert.equal(nodes(f.render()).find(n=>n.type==='TextField'&&n.props.maxLength===120).props.value,'Half a bowl');assert.equal(f.writes('save').length,0);
+});
+
+test('native: low-effort navigation is disabled while a portion-only draft exists',async()=>{
+ const f=await ready();assert.equal(!!button(f.render(),'Open-and-eat ideas').props.disabled,false);
+ fill(f,'','Half a bowl');assert.equal(button(f.render(),'Open-and-eat ideas').props.disabled,true);
+ assert.equal(button(f.render(),'Microwave-or-less ideas').props.disabled,true);assert.equal(f.writes('save').length,0);
+});

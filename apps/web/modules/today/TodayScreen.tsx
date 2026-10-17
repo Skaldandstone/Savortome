@@ -264,6 +264,10 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
   const todayNotes = dayNotes;
   const recent = notes.filter((note, index) => notes.findIndex(other => other.title === note.title && other.portion === note.portion) === index).slice(0, 3);
   return <div className={`${styles.page} ${styles.stack}`}>
+    <Panel><PanelHeader title="Start with what feels manageable" hint="No need to plan a whole day. Choose one small starting point." />
+      <div onClick={event => { if (noteLocked || hasShoppingPending || ((title.trim() || portion.trim() || voiceBlob) && !window.confirm("Leave this screen and its unsaved food-note draft?"))) event.preventDefault(); }}><FieldRow><Link href="/care?effort=open">Open-and-eat ideas</Link><Link href="/care?effort=microwave">Microwave-or-less ideas</Link><Link href="/templates">My familiar meals</Link></FieldRow></div>
+      <p>These shortcuts open choices, not a meal log. You can adjust textures, temperature and dietary choices there. Check ingredients and packaging; suggestions do not verify allergy safety.</p>
+    </Panel>
     {showInvitation ? <Panel><PanelHeader title="Want to plan something to eat together?" hint="We can start with what your pantry thinks is still there. You can correct it, choose something else, or leave this for later." />
       <fieldset className={styles.limits} disabled={ideasBusy || hasShoppingPending}><legend>Optional limits for these ideas</legend>
         <label>Time available <select value={maxMinutes ?? ""} onChange={event => { setMaxMinutes(event.target.value ? Number(event.target.value) as PlanTogetherOptions["maxMinutes"] : undefined); setIdeas(null); setIdeasError(null); }}>
@@ -325,7 +329,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
         <p>Only when you choose to send it, the file goes to OpenAI to prepare an editable draft. Savortome does not save the original file or raw transcript. Provider processing and retention are governed by our configured OpenAI service. A photo cannot establish hidden ingredients, portions, nutrients or allergy safety.</p>
         <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Choose a food photo for an editable draft" disabled={noteLocked || !capture?.photo} onChange={event => {
           const file = event.target.files?.[0]; event.target.value = "";
-          if (file && title.trim() && !window.confirm("Replace the current unsaved food draft with a photo suggestion?")) return;
+          if (file && (title.trim() || portion.trim() || voiceBlob) && !window.confirm("Replace the current unsaved food draft with a photo suggestion?")) return;
           if (file) void generate("photo", file);
         }} />
         {capture && !capture.photo ? <p>Photo suggestions aren’t enabled in this build. You can type a note.</p> : null}
@@ -333,7 +337,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
           <p>Record up to 45 seconds. Recording stops and is discarded when you leave this screen or hide the app. Nothing is sent until you select Send for editable draft.</p>
           <FieldRow><Button variant="ghost" disabled={!recording && (busy || unconfirmed || deleteUnconfirmed || loading || !loaded)} onClick={() => recording ? stopCapture() : void startVoice()}>{recording ? "Stop recording" : "Record a voice note"}</Button>
             {voiceBlob ? <><Button disabled={noteLocked} onClick={() => {
-              if (title.trim() && !window.confirm("Replace the current unsaved food draft with a voice suggestion?")) return;
+              if ((title.trim() || portion.trim()) && !window.confirm("Replace the current unsaved food draft with a voice suggestion?")) return;
               void generate("voice", voiceBlob);
             }}>Send for editable draft</Button><Button variant="ghost" disabled={busy} onClick={() => setVoiceBlob(null)}>Discard recording</Button></> : null}</FieldRow>
           {recording ? <p role="status">Recording. Stop whenever you want.</p> : voiceBlob ? <p role="status">Recording ready; not sent yet.</p> : null}
@@ -349,7 +353,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
       {todayNotes.map(note => <article className={styles.idea} key={note.id}><h3>{note.title}</h3><p>{note.portion ?? "Portion not recorded"}</p>
         <FieldRow><Button variant="ghost" aria-label={`Edit food note for ${note.title}`} disabled={noteLocked} onClick={() => {
           if (action.current || pendingSave.current || pendingDelete.current) return;
-          if (title.trim() && !window.confirm("Replace your current unsaved draft with this note?")) return;
+          if ((title.trim() || portion.trim() || voiceBlob) && !window.confirm("Replace your current unsaved draft with this note?")) return;
           setTitle(note.title); setPortion(note.portion ?? ""); setDate(note.date); setSource(note.source); draftId.current = note.id; editRevision.current = note.updatedAt; setUncertainty(""); setStatus("Editing an existing note. Save to confirm your changes. A newer edit will require a fresh review.");
         }}>Edit note</Button><Button variant="ghost" aria-label={`Remove food note for ${note.title}`} disabled={noteLocked} onClick={() => setConfirmDelete(note.id)}>Remove note</Button></FieldRow>
         {confirmDelete === note.id ? <div role="group" aria-label={`Confirm removing ${note.title}`}><p>Remove this food note? Pantry and plans stay unchanged.</p><FieldRow><Button variant="danger" disabled={noteLocked} onClick={() => void remove(note.id)}>Confirm removal</Button><Button variant="ghost" disabled={busy} onClick={() => setConfirmDelete(null)}>Keep note</Button></FieldRow></div> : null}
@@ -358,7 +362,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
     {loaded && recent.length ? <Panel><PanelHeader title="Something familiar" hint="Copy a previous food note into a new draft if you want. It only records another meal when you explicitly save it." />
       {recent.map(note => <Button key={note.id} variant="ghost" disabled={noteLocked} onClick={() => {
         if (action.current || pendingSave.current || pendingDelete.current) return;
-        if (title.trim() && !window.confirm("Replace your current unsaved food draft?")) return;
+        if ((title.trim() || portion.trim() || voiceBlob) && !window.confirm("Replace your current unsaved food draft?")) return;
         setTitle(note.title); setPortion(note.portion ?? ""); setSource("repeat"); setUncertainty(""); draftId.current = null; editRevision.current = undefined; setStatus("New repeat draft ready. Nothing saved yet.");
       }}>Use {note.title} as a new draft</Button>)}
     </Panel> : null}

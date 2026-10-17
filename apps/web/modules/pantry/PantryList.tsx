@@ -107,7 +107,8 @@ export function PantryList({
                       <Button type="button" variant="ghost" onClick={() => onUpdate({ canonicalItem: item.canonicalItem, confirmPresent: true })}>Yes, still here</Button>
                       <Button type="button" variant="ghost" onClick={() => startAmountEdit(item)}>Used some</Button>
                       <Button type="button" variant="ghost" onClick={() => onRemove(item.canonicalItem)}>All gone</Button>
-                      <Button type="button" variant="ghost" onClick={() => onUpdate({ canonicalItem: item.canonicalItem, snoozeDays: 3 })}>Remind me in 3 days</Button>
+                      {([3, 7, 14] as const).map(days => <Button key={days} type="button" variant="ghost" onClick={() => onUpdate({ canonicalItem: item.canonicalItem, snoozeDays: days })}>Remind me in {days} days</Button>)}
+                      <span>Hides this in-app suggestion until then. No push notification is scheduled.</span>
                       <Button type="button" variant="ghost" onClick={() => onUpdate({ canonicalItem: item.canonicalItem, resurfaceHidden: true })}>Hide this suggestion</Button>
                     </div>
                   ) : null}

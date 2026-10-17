@@ -73,6 +73,7 @@ function AccountTodayScreen() {
   const pendingDelete = useRef<string | null>(null);
   const [deleteUnconfirmed, setDeleteUnconfirmed] = useState(false);
   const draftTitle = useRef(title); draftTitle.current = title;
+  const draftPortion = useRef(portion); draftPortion.current = portion;
   const current = (version: number) => mounted.current && focused.current && generation.current === version;
   useFocusEffect(useCallback(() => {
     focused.current = true; action.current = false; ideasAction.current = false; setCaptureBusy(false); setBusy(false); setLocalBusy(false); setIdeasBusy(false); setLoading(false); setFocusVisit(value => value + 1);
@@ -126,7 +127,7 @@ function AccountTodayScreen() {
       .catch(() => { if (!cancelled && current(version)) setDayState("failed"); });
     return () => { cancelled = true; };
   }, [date, notes, client, focusVisit]);
-  const confirmReplace = useCallback(async () => !pendingDelete.current && !pendingSave.current && (!draftTitle.current.trim() || await ask("Replace the current unsaved food draft?", "Replace draft")), []);
+  const confirmReplace = useCallback(async () => !pendingDelete.current && !pendingSave.current && ((!draftTitle.current.trim() && !draftPortion.current.trim()) || await ask("Replace the current unsaved food draft?", "Replace draft")), []);
   const save = async () => {
     if (!client || action.current || captureBusy || localBusy || localBlocked || !loaded || loading || pendingDelete.current) return;
     let input: FoodLogInput;
@@ -285,6 +286,10 @@ function AccountTodayScreen() {
     <Button label="Back to cooking" variant="ghost" onPress={() => router.replace("/(protected)/(tabs)/cook")} />
     <Text accessibilityRole="header" style={[styles.heading, { color: c.text }]}>Today, at your pace</Text>
     <Text style={textStyle}>A meal idea or a little memory aid. Use what helps, leave what doesn’t.</Text>
+    <Panel><PanelHeader title="Start with what feels manageable" hint="No need to plan a whole day. Choose one small starting point." />
+      <View style={styles.row}><Button label="Open-and-eat ideas" variant="ghost" disabled={disabled || hasShoppingPending || !!title.trim() || !!portion.trim()} onPress={() => router.push("/care?effort=open")} /><Button label="Microwave-or-less ideas" variant="ghost" disabled={disabled || hasShoppingPending || !!title.trim() || !!portion.trim()} onPress={() => router.push("/care?effort=microwave")} /></View>
+      <Text style={textStyle}>Save or discard a food-note draft before leaving. These shortcuts open choices, not a meal log. Adjust textures, temperature and dietary choices there. Check ingredients and packaging; suggestions do not verify allergy safety.</Text>
+    </Panel>
     {invitation ? <Panel>
       <PanelHeader title="Want to plan something to eat together?" hint="Start with what your pantry thinks is still there. Correct it, choose something else, or leave this for later." />
       <Text style={textStyle}>Optional time limit</Text>
