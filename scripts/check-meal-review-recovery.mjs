@@ -101,3 +101,10 @@ for(const shopping of [false,true]){
 for(const kind of ['meal','combination','shopping'])test(`Native ${kind}: saving exposes busy accessibility state and clears it after uncertainty`,async()=>{
  const combination=kind==='combination',shopping=kind==='shopping',f=fixture('Native',combination,shopping),gate=deferred();f.state.save=()=>gate.promise;if(!shopping)f.choose();f.press(shopping?'Add 2 selected names to my list':combination?'Add reviewed dishes to my plan':'Add this meal to my plan');const label=shopping?'Updating list…':combination?'Planning combination…':'Adding meal…';assert.equal(f.button(label).props.busy,true);gate.reject(Error('synthetic missing acknowledgement'));await f.settle();assert.equal(f.button(shopping?'Retry the same 2 names':combination?'Retry this exact combination':'Retry this exact meal').props.busy,false);
 });
+
+for (const platform of ['Web','Native']) test(`${platform}: familiar shortcut loads once and never writes or drafts`,async()=>{
+ const f=fixture(platform,false,false,false,false,true),gate=deferred();f.state.load=()=>gate.promise;
+ f.press('Show my familiar meals');assert.equal(f.state.reads,1);assert.equal(f.button('Show my familiar meals').props.disabled,true);
+ const b=f.button('Show my familiar meals');(b.props.onPress??b.props.onClick)();assert.equal(f.state.reads,1);
+ gate.resolve({templates:[]});await f.settle();assert.equal(f.state.calls.length,0);assert.equal(f.state.drafts.length,0);assert.match(text(f.render()),/No saved combinations yet/);
+});

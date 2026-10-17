@@ -38,7 +38,7 @@ function CareContent({ link, standalone = false, accountId }: CareProps & { acco
     try {
       const raw = sessionStorage.getItem('seconds-care-return');
       sessionStorage.removeItem('seconds-care-return');
-      const saved = restoreCareReturn(raw);
+      const saved = restoreCareReturn(raw, Date.now(), link);
       if (saved) { setChoices(saved.choices); setSelectedId(saved.selectedId); setHandoff(saved.link); }
     } catch { /* Storage may be disabled. The screen still works. */ }
   }, []);

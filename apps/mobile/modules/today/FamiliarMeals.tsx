@@ -45,6 +45,7 @@ export function FamiliarMeals({ client, disabled, onDraft, onPending }: {
   };
   const textStyle = { color: c.textMuted, fontSize: typeScale.body, lineHeight: 23 };
   return <Panel><PanelHeader title="A meal you already saved" hint="Something familiar can be enough. These are saved combinations, not recommendations based on current dietary settings or pantry stock." />
+    <Button label="Show my familiar meals" variant="ghost" disabled={locked || busy || preparing} onPress={() => { setExpanded(true); void load(); }} />
     <Button label={expanded ? "Hide saved meals" : "Browse my saved meals"} variant="ghost" disabled={hasPending} onPress={() => setExpanded(value => !value)} />
     {expanded ? <View style={{ gap: space.sm }}>
       <Text style={textStyle}>Open a dish to review its ingredients and steps. These meals are not checked here for allergen conflicts or changes in your dietary profile; they do not verify allergy safety.</Text>

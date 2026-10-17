@@ -10,6 +10,7 @@ import { TemplateRenameControl } from "../templates/TemplateRenameControl";
 export function FamiliarMeals({ client, disabled, onDraft, onPending }: {
   client: SecondsClient; disabled: boolean; onDraft: (title: string) => boolean | Promise<boolean>; onPending: (id: string, pending: boolean) => void;
 }) {
+  const disclosure = useRef<HTMLDetailsElement>(null);
   const [meals, setMeals] = useState<MealTemplate[] | null>(null);
   const [busy, setBusy] = useState(false); const [failed, setFailed] = useState(false);
   const [preparing, setPreparing] = useState(false); const [message, setMessage] = useState("");
@@ -37,7 +38,8 @@ export function FamiliarMeals({ client, disabled, onDraft, onPending }: {
     finally { if (alive.current) { action.current = false; setPreparing(false); } }
   };
   return <Panel><PanelHeader title="A meal you already saved" hint="Something familiar can be enough. These are your saved combinations, not recommendations based on current dietary settings or pantry stock." />
-    <details className={styles.capture}><summary>Browse my saved meals</summary>
+    <Button variant="ghost" disabled={locked || busy || preparing} onClick={() => { if (disclosure.current) disclosure.current.open = true; void load(); }}>Show my familiar meals</Button>
+    <details ref={disclosure} className={styles.capture}><summary>Browse my saved meals</summary>
       <p>Open a dish to review its ingredients and steps. Saved meals are not checked here for allergen conflicts or changes in your dietary profile; they do not verify allergy safety.</p>
       <Button variant="ghost" disabled={locked || busy || preparing} onClick={() => void load()}>{busy ? "Loading saved meals…" : meals !== null ? "Refresh saved meals" : "Load my saved meals"}</Button>
       {busy ? <p role="status">Loading your combinations…</p> : null}
