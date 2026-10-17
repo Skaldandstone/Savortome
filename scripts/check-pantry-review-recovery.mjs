@@ -6,11 +6,11 @@ import {runInNewContext} from 'node:vm';
 const mocks={
  react:`export const useState=initial=>{const i=state.cursor++;if(!(i in state.values))state.values[i]=typeof initial==='function'?initial():initial;return [state.values[i],v=>state.values[i]=typeof v==='function'?v(state.values[i]):v];};export const useRef=()=>({current:{querySelector:()=>({focus:()=>state.focuses++})}});`,
  'react/jsx-runtime':`export const Fragment='Fragment';export const jsx=(type,props)=>({type,props});export const jsxs=jsx;`,
- 'react-native':`export const View='View',Text='Text',Pressable='Pressable';export const StyleSheet={create:v=>v};`,
- '@seconds/core/format':`export const formatAmount=item=>String(item.quantity??'');`,
- '@/ui':`export const Button='Button',Callout='Callout';export const usePalette=()=>({text:'#eee',textMuted:'#baa',surface:'#19211b',border:'#897855'});export const radius={md:8},space={sm:8,md:12,lg:16},type={title:20,small:14,body:16,micro:12};`,
+ 'react-native':`export const View='View',Text='Text',Pressable='Pressable',Switch='Switch';export const Linking={openURL:()=>{}};export const StyleSheet={create:v=>v};`,
+ '@seconds/core/format':`export const formatAmount=item=>String(item.quantity??'');export const pantryAttention=()=>({shouldResurface:state.resurface,message:'Check what remains',guide:{storageAdvice:'Synthetic guidance',sourceUrl:'https://example.invalid',sourceLabel:'Fixture'}});export const storageGuideFor=()=>null;`,
+ '@/ui':`export const Button='Button',Callout='Callout',FieldRow='FieldRow',TextField='TextField',Field='Field';export const usePalette=()=>({text:'#eee',textMuted:'#baa',surface:'#19211b',border:'#897855'});export const radius={md:8},space={sm:8,md:12,lg:16},type={title:20,small:14,body:16,micro:12};`,
 };
-const result=await build({bundle:true,write:false,format:'iife',globalName:'app',jsx:'automatic',stdin:{resolveDir:process.cwd(),contents:`export {PantryReviewQueue as Web} from './apps/web/modules/pantry/PantryReviewQueue';export {PantryReviewQueue as Mobile} from './apps/mobile/modules/pantry/PantryReviewQueue';`},plugins:[{name:'boundaries',setup(api){api.onResolve({filter:/.*/},args=>Object.hasOwn(mocks,args.path)?{path:args.path,namespace:'mock'}:args.path.endsWith('.css')?{path:args.path,namespace:'css'}:undefined);api.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:mocks[args.path],loader:'js'}));api.onLoad({filter:/.*/,namespace:'css'},()=>({contents:'export default {};'}));}}]});
+const result=await build({bundle:true,write:false,format:'iife',globalName:'app',jsx:'automatic',stdin:{resolveDir:process.cwd(),contents:`export {PantryList as WebPantry} from './apps/web/modules/pantry/PantryList';export {PantryChips as MobilePantry} from './apps/mobile/modules/pantry/PantryChips';export {PantryReviewQueue as Web} from './apps/web/modules/pantry/PantryReviewQueue';export {PantryReviewQueue as Mobile} from './apps/mobile/modules/pantry/PantryReviewQueue';`},plugins:[{name:'boundaries',setup(api){api.onResolve({filter:/.*/},args=>Object.hasOwn(mocks,args.path)?{path:args.path,namespace:'mock'}:args.path.endsWith('.css')?{path:args.path,namespace:'css'}:undefined);api.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:mocks[args.path],loader:'js'}));api.onLoad({filter:/.*/,namespace:'css'},()=>({contents:'export default {};'}));}}]});
 function nodes(tree){return Array.isArray(tree)?tree.flatMap(nodes):tree&&typeof tree==='object'?[tree,...nodes(tree.props?.children)]:[];}
 function text(tree){if(Array.isArray(tree))return tree.map(text).join(' ');if(tree&&typeof tree==='object')return text(tree.props?.children);return String(tree??'');}
 const button=(tree,label)=>nodes(tree).find(n=>n.type==='Button'&&(n.props.label??text(n.props.children))===label);
@@ -42,3 +42,19 @@ for(const platform of ['Web','Mobile']){
 test('Mobile: pending review actions expose busy semantics and clear them after settlement',async()=>{
  for(const action of ['accept','dismiss']){const f=fixture('Mobile');let finish;f.state.write=()=>new Promise(resolve=>finish=resolve);if(action==='dismiss'){click(button(f.render(),'Dismiss'));click(button(f.render(),'Dismiss this review'));}else click(button(f.render(),'Add selected items'));const pending=button(f.render(),action==='dismiss'?'Dismiss this review':'Saving review…');assert.equal(pending.props.busy,true);finish(false);await flush();assert.equal(button(f.render(),action==='dismiss'?'Dismiss this review':'Add selected items').props.busy,false);}
 });
+
+for (const platform of ['Web','Mobile']) {
+ test(`${platform}: snooze choices dispatch only the reviewed duration and never remove inventory`,()=>{
+  const state={cursor:0,values:[],resurface:true},context={state,Intl,Date};runInNewContext(result.outputFiles[0].text,context);
+  const writes=[],removals=[];
+  const props={items:[{canonicalItem:'banana',displayName:'Bananas',quantity:null,unit:null,storageLocation:'unknown'}],onUpdate:value=>writes.push(value),onRemove:value=>removals.push(value),onAdd:()=>{},onClear:()=>{}};
+  const tree=context.app[platform+'Pantry'](props);assert.equal(writes.length,0);
+  for(const days of [3,7,14]) {
+   const b=nodes(tree).find(n=>n.type==='Button'&&(n.props.label??text(n.props.children)).replace(/\s+/g,' ').trim()===`Remind me in ${days} days`);assert.ok(b);click(b);
+   assert.equal(writes.at(-1).snoozeDays,days);assert.deepEqual(Object.keys(writes.at(-1)).sort(),['canonicalItem','snoozeDays']);
+  }
+  assert.equal(removals.length,0);assert.match(text(tree),/No push notification is scheduled/);
+  state.cursor=0;state.resurface=false;assert.doesNotMatch(text(context.app[platform+'Pantry'](props)),/Remind me in/);
+ });
+}
+
