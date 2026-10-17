@@ -57,4 +57,3 @@ for (const platform of ['Web','Mobile']) {
   state.cursor=0;state.resurface=false;assert.doesNotMatch(text(context.app[platform+'Pantry'](props)),/Remind me in/);
  });
 }
-
