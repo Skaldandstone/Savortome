@@ -85,6 +85,7 @@ jobs:
           node scripts/check-photo-upload-recovery.mjs
           node scripts/check-recipe-photo-ui.mjs
           node scripts/check-nutrition-action-recovery.mjs
+          node scripts/check-nutrition-api.mjs
           node scripts/check-photo-preparation.mjs
           node scripts/check-import-photo-recovery.mjs
       # Disposable PGlite fixtures are distinct from the full pgvector schema job.

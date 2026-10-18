@@ -41,7 +41,7 @@ export async function POST(_request: Request, { params }: Params) {
 
     const saved = await setRecipeNutrition(database, userId, id, nutrition, recipe);
     return saved ? { nutrition } : { needsReview: true };
-  });
+  }, { redactUnexpectedErrors: true });
 
   // `withUser` always answers 200 with whatever the handler returned; `null`
   // is the sentinel this route uses for "no such recipe," same as its sibling.
