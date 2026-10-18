@@ -215,3 +215,10 @@ test('web: photo selection stays local until explicit send and discard preserves
  f.state.confirm=false;await press(f,'Send photo for editable draft');assert.ok(button(f.render(),'Send photo for editable draft'));
  await press(f,'Discard selected photo');assert.equal(button(f.render(),'Send photo for editable draft'),undefined);assert.equal(webName(f.render()).props.value,'');assert.equal(nodes(f.render()).find(n=>n.type==='TextField'&&n.props.maxLength===120).props.value,'Half a bowl');
 });
+
+for (const invalid of [{size:0,type:'image/jpeg'},{size:8000001,type:'image/jpeg'},{size:100,type:'image/heic'}]) test(`web: rejected photo ${invalid.size}/${invalid.type} cannot leave an older selection sendable`,async()=>{
+ const f=fixture([],'web');f.state.captureStatus={photo:true,voice:false};await f.settle();webName(f.render()).props.onChange({target:{value:'Keep my draft'}});
+ const choose=file=>nodes(f.render()).find(n=>n.type==='input'&&n.props.type==='file').props.onChange({target:{files:[file],value:'fixture'}});
+ choose({size:100,type:'image/jpeg'});assert.ok(button(f.render(),'Send photo for editable draft'));
+ choose(invalid);assert.equal(button(f.render(),'Send photo for editable draft'),undefined);assert.equal(webName(f.render()).props.value,'Keep my draft');assert.match(text(f.render()),/Nothing was sent/);assert.equal(f.writes('save').length,0);
+});

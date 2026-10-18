@@ -330,7 +330,12 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
         <p>Only when you choose to send it, the file goes to OpenAI to prepare an editable draft. Savortome does not save the original file or raw transcript. Provider processing and retention are governed by our configured OpenAI service. A photo cannot establish hidden ingredients, portions, nutrients or allergy safety.</p>
         <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Choose a food photo for an editable draft" disabled={noteLocked || !capture?.photo} onChange={event => {
           const file = event.target.files?.[0]; event.target.value = "";
-          if (file) { setSelectedPhoto(file); setStatus("Photo selected on this screen only. Nothing has been sent. Choose Send photo for editable draft, or discard it."); }
+          if (!file) return;
+          setSelectedPhoto(null); setStatus(""); setError("");
+          if (!file.size || file.size > 8_000_000 || !["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+            setError("Choose a non-empty JPEG, PNG or WebP photo under 8 MB. Nothing was sent; your food-note draft is unchanged."); return;
+          }
+          setSelectedPhoto(file); setStatus("Photo selected on this screen only. Nothing has been sent. Choose Send photo for editable draft, or discard it.");
 
         }} />
         {selectedPhoto ? <FieldRow><Button disabled={noteLocked || !capture?.photo} onClick={() => {
