@@ -108,6 +108,28 @@ test.describe("gentle preparation shortcuts", () => {
   }
 });
 
+test.describe("gentle choices on a small screen", () => {
+  test("preparation and sensory choices remain reachable without horizontal scrolling", async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    const writes: string[] = [];
+    page.on("request", request => { if (new URL(request.url()).pathname.startsWith("/api/") && request.method() !== "GET") writes.push(request.url()); });
+    await page.goto("/care?effort=open", { waitUntil: "networkidle" });
+    const preparation = page.getByRole("combobox", { name: "How much preparation?" });
+    await expect(preparation).toHaveValue("open");
+    await preparation.focus();
+    await expect(preparation).toBeFocused();
+    await preparation.selectOption("microwave");
+    await expect(preparation).toHaveValue("microwave");
+    await page.getByText("A few more preferences", { exact: true }).click();
+    await page.getByLabel("Texture", { exact: true }).selectOption("smooth");
+    await expect(page.getByLabel("Texture", { exact: true })).toHaveValue("smooth");
+    await page.getByLabel("Temperature", { exact: true }).selectOption("warm");
+    await expect(page.getByLabel("Temperature", { exact: true })).toHaveValue("warm");
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1)).toBe(true);
+    expect(writes).toEqual([]);
+  });
+});
+
 test.describe("gated pages", () => {
   for (const path of GATED_PATHS) {
     test(`${path} sends a stranger to sign in`, async ({ page }) => {
