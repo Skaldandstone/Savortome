@@ -48,7 +48,7 @@ export function RecipeCard({
         <RecipeHeader recipe={recipe} headingLevel={headingLevel} />
         <RecipeFacts recipe={recipe} />
         <AllergenWarning ingredients={recipe.ingredients} />
-        <NutritionFacts recipe={recipe} shelvedId={shelvedId} />
+        <NutritionFacts recipe={recipe} shelvedId={shelvedId} clerkEnabled={clerkEnabled} />
         <TagList tags={recipe.tags} />
 
         <section className={styles.journalPage} aria-label="Recipe ingredients">

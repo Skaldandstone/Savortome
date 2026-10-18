@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import {
   NUTRITION_DISCLAIMER,
   nutritionLabel,
@@ -18,13 +19,15 @@ import styles from "./NutritionFacts.module.css";
 export function NutritionFacts({
   recipe,
   shelvedId,
+  clerkEnabled = true,
 }: {
   recipe: Recipe;
   /** Null for an unsaved preview card — nothing to attach nutrition to yet. */
   shelvedId: string | null;
+  clerkEnabled?: boolean;
 }) {
   if (!recipe.nutrition) {
-    return shelvedId ? <AddNutrition recipeId={shelvedId} /> : null;
+    return shelvedId ? (clerkEnabled ? <AuthenticatedNutrition recipeId={shelvedId} /> : <AddNutrition key={shelvedId} recipeId={shelvedId} />) : null;
   }
 
   const { perServing } = recipe.nutrition;
@@ -67,31 +70,46 @@ export function NutritionFacts({
 
 const round1 = (n: number): number => Math.round(n * 10) / 10;
 
-function AddNutrition({ recipeId }: { recipeId: string }) {
+function AuthenticatedNutrition({ recipeId }: { recipeId: string }) {
+  const { isLoaded, userId, sessionId } = useAuth();
+  if (!isLoaded) return <p role="status">Loading nutrition actions.</p>;
+  if (!userId || !sessionId) return <p role="status">Sign in again before adding nutrition.</p>;
+  return <AddNutrition key={`${sessionId}:${recipeId}`} recipeId={recipeId} sessionId={sessionId} />;
+}
+
+function AddNutrition({ recipeId, sessionId }: { recipeId: string; sessionId?: string }) {
   const [state, setState] = useState<"idle" | "busy" | "error">("idle");
+  const alive = useRef(true);
+  const started = useRef(false);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
 
   const add = async () => {
+    if (!alive.current || started.current) return;
+    started.current = true;
     setState("busy");
     try {
-      const response = await fetch(`/api/recipes/${recipeId}/nutrition`, { method: "POST" });
+      const response = await fetch(`/api/recipes/${recipeId}/nutrition`, {
+        method: "POST",
+        headers: sessionId ? { "x-savortome-expected-session": sessionId } : undefined,
+      });
       if (!response.ok) throw new Error("failed");
       // The server-rendered card won't show the new figures until the page
       // reloads — simplest correct thing for an action someone reaches for
       // once, not a control that needs to feel instant.
-      window.location.reload();
+      if (alive.current) window.location.reload();
     } catch {
-      setState("error");
+      if (alive.current) setState("error");
     }
   };
 
   return (
     <div className={styles.offer} data-print="hide" aria-busy={state === "busy"}>
-      <button type="button" className={styles.addButton} disabled={state === "busy"} onClick={() => void add()}>
+      <button type="button" className={styles.addButton} disabled={state !== "idle"} onClick={() => void add()}>
         {state === "busy" ? "Estimating…" : "Add nutrition"}
       </button>
       {state === "error" ? (
         <span className={styles.offerNote} role="alert">
-          Couldn't add nutrition just now — try again in a moment.
+          This estimate is unconfirmed and may still finish. Reload this recipe to check before requesting another. Nothing retries automatically.
         </span>
       ) : (
         <span className={styles.offerNote}>
