@@ -11,7 +11,7 @@ import styles from "./NutritionFacts.module.css";
 /**
  * The per-serving figures, and the honesty about where they came from.
  *
- * Shown whenever a recipe has nutrition; offered as something to add when it
+ * Available on request whenever a recipe has nutrition; offered as something to add when it
  * doesn't. Never computed here — this component only ever displays what the
  * ingest pipeline or the "add nutrition" action already put on the record.
  */
@@ -36,9 +36,7 @@ export function NutritionFacts({
     ["Fat", perServing.fatGrams === null ? null : `${round1(perServing.fatGrams)}g`],
     ["Fiber", perServing.fiberGrams === null ? null : `${round1(perServing.fiberGrams)}g`],
     ["Sodium", perServing.sodiumMg === null ? null : `${Math.round(perServing.sodiumMg)}mg`],
-  ].filter((f): f is [string, string] => f[1] !== null);
-
-  if (figures.length === 0) return null;
+  ];
 
   return (
     // No data-print attribute — this is content, not chrome, and belongs on
@@ -50,15 +48,19 @@ export function NutritionFacts({
           {label}
         </span>
       </div>
-      <dl className={styles.grid}>
-        {figures.map(([name, value]) => (
-          <div key={name}>
-            <dt className={styles.label}>{name}</dt>
-            <dd className={styles.value}>{value}</dd>
-          </div>
-        ))}
-      </dl>
-      <p className={styles.disclaimer}>{NUTRITION_DISCLAIMER}</p>
+      <details>
+        <summary>Show optional nutrition figures</summary>
+        <p className={styles.disclaimer}>These are recipe estimates or published values per serving, not a record of what you ate. Missing values are unknown, not zero. You can leave this closed.</p>
+        <dl className={styles.grid}>
+          {figures.map(([name, value]) => (
+            <div key={name}>
+              <dt className={styles.label}>{name}</dt>
+              <dd className={styles.value}>{value ?? "Not available"}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className={styles.disclaimer}>{NUTRITION_DISCLAIMER}</p>
+      </details>
     </div>
   );
 }
