@@ -85,6 +85,29 @@ test.describe("public pages", () => {
   });
 });
 
+test.describe("gentle preparation shortcuts", () => {
+  for (const effort of ["open", "microwave"]) {
+    test(`${effort} overrides a stale recovered choice without account requests`, async ({ page }) => {
+      const accountRequests: string[] = [];
+      page.on("request", request => {
+        if (/\/api\/(profile|pantry|shopping|food-log)/.test(new URL(request.url()).pathname)) accountRequests.push(request.url());
+      });
+      await page.addInitScript(() => {
+        sessionStorage.setItem("seconds-care-return", JSON.stringify({
+          at: Date.now(), link: { source: "wispling", return_to: "wispling://care-return" },
+          choices: { effort: "cook", texture: "soft" }, selectedId: "banana",
+        }));
+      });
+      await page.goto(`/care?effort=${effort}`, { waitUntil: "networkidle" });
+      await expect(page.getByRole("heading", { name: "Feed me gently" })).toBeVisible();
+      await expect(page.getByRole("combobox", { name: "How much preparation?" })).toHaveValue(effort);
+      await expect(page.getByRole("region", { name: "Food suggestions" })).toBeVisible();
+      expect(await page.evaluate(() => sessionStorage.getItem("seconds-care-return"))).toBeNull();
+      expect(accountRequests).toEqual([]);
+    });
+  }
+});
+
 test.describe("gated pages", () => {
   for (const path of GATED_PATHS) {
     test(`${path} sends a stranger to sign in`, async ({ page }) => {
