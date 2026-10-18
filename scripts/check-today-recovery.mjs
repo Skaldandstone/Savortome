@@ -42,7 +42,7 @@ function fixture(initial=[],platform='native'){
  state.localGet=async key=>{state.localCalls.push(['get',key]);return state.localValues.get(key)??null;};
  state.localSet=async(key,value)=>{state.localCalls.push(['set',key]);state.localValues.set(key,value);};
  state.localRemove=async key=>{state.localCalls.push(['remove',key]);state.localValues.delete(key);};
- state.client=owner=>{if(!state.clients.has(owner))state.clients.set(owner,{foodNoteCaptureStatus:async()=>({photo:false,voice:false}),listFoodNotes:date=>{state.calls.push({kind:'list',owner,date});return state.list(owner,date);},saveFoodNote:input=>{state.calls.push({kind:'save',owner,input});return state.save(owner,input);},deleteFoodNote:id=>{state.calls.push({kind:'delete',owner,id});return state.remove(owner,id);}});return state.clients.get(owner);};
+ state.client=owner=>{if(!state.clients.has(owner))state.clients.set(owner,{foodNoteCaptureStatus:async()=>(state.captureStatus??{photo:false,voice:false}),listFoodNotes:date=>{state.calls.push({kind:'list',owner,date});return state.list(owner,date);},saveFoodNote:input=>{state.calls.push({kind:'save',owner,input});return state.save(owner,input);},deleteFoodNote:id=>{state.calls.push({kind:'delete',owner,id});return state.remove(owner,id);}});return state.clients.get(owner);};
  state.timers=new Map();state.nextTimer=0;
  const context={state,Date,setTimeout:(fn,ms)=>{const key=++state.nextTimer;state.timers.set(key,{fn,ms});return key;},clearTimeout:key=>state.timers.delete(key),crypto:{randomUUID:()=>state.nextId()},document:{addEventListener:()=>{},removeEventListener:()=>{}},window:{addEventListener:()=>{},removeEventListener:()=>{},confirm:()=>state.confirm !== false}};runInNewContext(bundle.outputFiles[0].text,context);
  const unmount=()=>{state.cleanups.filter(Boolean).forEach(fn=>fn());state.cleanups=[];};
@@ -203,4 +203,15 @@ test('native: low-effort navigation is disabled while a portion-only draft exist
  const f=await ready();assert.equal(!!button(f.render(),'Open-and-eat ideas').props.disabled,false);
  fill(f,'','Half a bowl');assert.equal(button(f.render(),'Open-and-eat ideas').props.disabled,true);
  assert.equal(button(f.render(),'Microwave-or-less ideas').props.disabled,true);assert.equal(f.writes('save').length,0);
+});
+
+test('web: photo selection stays local until explicit send and discard preserves partial draft',async()=>{
+ const f=fixture([],'web');f.state.captureStatus={photo:true,voice:false};await f.settle();
+ const input=nodes(f.render()).find(n=>n.type==='input'&&n.props.type==='file');assert.equal(input.props.disabled,false);
+ nodes(f.render()).find(n=>n.type==='TextField'&&n.props.maxLength===120).props.onChange({target:{value:'Half a bowl'}});
+ const photo={size:100,type:'image/jpeg'};input.props.onChange({target:{files:[photo],value:'fixture'}});await flush();
+ assert.ok(button(f.render(),'Send photo for editable draft'));assert.match(text(f.render()),/Nothing has been sent/);
+ assert.equal(f.writes('save').length,0);assert.doesNotMatch(text(f.render()),/Could not prepare/);
+ f.state.confirm=false;await press(f,'Send photo for editable draft');assert.ok(button(f.render(),'Send photo for editable draft'));
+ await press(f,'Discard selected photo');assert.equal(button(f.render(),'Send photo for editable draft'),undefined);assert.equal(webName(f.render()).props.value,'');assert.equal(nodes(f.render()).find(n=>n.type==='TextField'&&n.props.maxLength===120).props.value,'Half a bowl');
 });

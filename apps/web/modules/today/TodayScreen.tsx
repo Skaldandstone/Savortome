@@ -60,6 +60,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
   const [error, setError] = useState("");
   const [needsSignIn, setNeedsSignIn] = useState(false);
   const [capture, setCapture] = useState<{ photo: boolean; voice: boolean } | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<File | null>(null);
   const [captureError, setCaptureError] = useState(false);
   const [captureVisit, setCaptureVisit] = useState(0);
   const draftId = useRef<string | null>(null);
@@ -139,7 +140,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
   }, [api, userId, captureVisit]);
   useEffect(() => {
     const hide = () => { if (document.visibilityState !== "visible") stopCapture(true); };
-    const leave = () => stopCapture(true);
+    const leave = () => { stopCapture(true); setSelectedPhoto(null); };
     document.addEventListener("visibilitychange", hide);
     window.addEventListener("pagehide", leave);
     return () => { document.removeEventListener("visibilitychange", hide); window.removeEventListener("pagehide", leave); };
@@ -265,7 +266,7 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
   const recent = notes.filter((note, index) => notes.findIndex(other => other.title === note.title && other.portion === note.portion) === index).slice(0, 3);
   return <div className={`${styles.page} ${styles.stack}`}>
     <Panel><PanelHeader title="Start with what feels manageable" hint="No need to plan a whole day. Choose one small starting point." />
-      <div onClick={event => { if (noteLocked || hasShoppingPending || ((title.trim() || portion.trim() || voiceBlob) && !window.confirm("Leave this screen and its unsaved food-note draft?"))) event.preventDefault(); }}><FieldRow><Link href="/care?effort=open">Open-and-eat ideas</Link><Link href="/care?effort=microwave">Microwave-or-less ideas</Link><Link href="/templates">My familiar meals</Link></FieldRow></div>
+      <div onClick={event => { if (noteLocked || hasShoppingPending || ((title.trim() || portion.trim() || voiceBlob || selectedPhoto) && !window.confirm("Leave this screen and its unsaved food-note draft?"))) event.preventDefault(); }}><FieldRow><Link href="/care?effort=open">Open-and-eat ideas</Link><Link href="/care?effort=microwave">Microwave-or-less ideas</Link><Link href="/templates">My familiar meals</Link></FieldRow></div>
       <p>These shortcuts open choices, not a meal log. You can adjust textures, temperature and dietary choices there. Check ingredients and packaging; suggestions do not verify allergy safety.</p>
     </Panel>
     {showInvitation ? <Panel><PanelHeader title="Want to plan something to eat together?" hint="We can start with what your pantry thinks is still there. You can correct it, choose something else, or leave this for later." />
@@ -329,9 +330,14 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
         <p>Only when you choose to send it, the file goes to OpenAI to prepare an editable draft. Savortome does not save the original file or raw transcript. Provider processing and retention are governed by our configured OpenAI service. A photo cannot establish hidden ingredients, portions, nutrients or allergy safety.</p>
         <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Choose a food photo for an editable draft" disabled={noteLocked || !capture?.photo} onChange={event => {
           const file = event.target.files?.[0]; event.target.value = "";
-          if (file && (title.trim() || portion.trim() || voiceBlob) && !window.confirm("Replace the current unsaved food draft with a photo suggestion?")) return;
-          if (file) void generate("photo", file);
+          if (file) { setSelectedPhoto(file); setStatus("Photo selected on this screen only. Nothing has been sent. Choose Send photo for editable draft, or discard it."); }
+
         }} />
+        {selectedPhoto ? <FieldRow><Button disabled={noteLocked || !capture?.photo} onClick={() => {
+          if ((title.trim() || portion.trim() || voiceBlob) && !window.confirm("Replace the current unsaved food draft with a photo suggestion?")) return;
+          const file = selectedPhoto; setSelectedPhoto(null); void generate("photo", file);
+        }}>Send photo for editable draft</Button><Button variant="ghost" disabled={busy} onClick={() => { setSelectedPhoto(null); setStatus("Selected photo discarded. Your food-note draft is unchanged."); }}>Discard selected photo</Button></FieldRow> : null}
+        <p>Choosing a photo does not upload it. Sending shares it with the provider for a draft; it does not save a food note.</p>
         {capture && !capture.photo ? <p>Photo suggestions aren’t enabled in this build. You can type a note.</p> : null}
         {capture?.voice ? <div className={styles.stack}>
           <p>Record up to 45 seconds. Recording stops and is discarded when you leave this screen or hide the app. Nothing is sent until you select Send for editable draft.</p>
