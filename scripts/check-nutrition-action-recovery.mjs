@@ -72,3 +72,19 @@ test('nutrition stays opt-in and distinguishes unknown figures from measured zer
   assert.deepEqual(values, ['0', ...Array(5).fill('Not available')]);
   assert.equal(f.state.calls.length, 0);
 });
+test('session replacement before effect cleanup invalidates retained handlers and completion', async () => {
+  const f = fixture(); let finish;
+  f.state.response = () => new Promise(resolve => { finish = resolve; });
+  f.button().props.onClick();
+  f.state.auth.sessionId = 'session-b'; f.render(); const writes = f.state.writes;
+  finish({ ok: true }); await flush();
+  assert.equal(f.state.reloads, 0); assert.equal(f.state.writes, writes);
+  const idle = fixture(); const retained = idle.button().props.onClick;
+  idle.state.auth.sessionId = 'session-b'; idle.render(); retained(); await flush();
+  assert.equal(idle.state.calls.length, 0);
+});
+test('sign-out before cleanup invalidates retained nutrition action', async () => {
+  const f = fixture(); const retained = f.button().props.onClick;
+  f.state.auth = { isLoaded: true, userId: null, sessionId: null }; f.render();
+  retained(); await flush(); assert.equal(f.state.calls.length, 0);
+});

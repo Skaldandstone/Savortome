@@ -72,19 +72,24 @@ const round1 = (n: number): number => Math.round(n * 10) / 10;
 
 function AuthenticatedNutrition({ recipeId }: { recipeId: string }) {
   const { isLoaded, userId, sessionId } = useAuth();
+  const currentScope = useRef<string | null>(null);
+  const scope = isLoaded && userId && sessionId ? `${userId}:${sessionId}:${recipeId}` : null;
+  // Invalidate old callbacks during replacement, before passive cleanup runs.
+  currentScope.current = scope;
   if (!isLoaded) return <p role="status">Loading nutrition actions.</p>;
   if (!userId || !sessionId) return <p role="status">Sign in again before adding nutrition.</p>;
-  return <AddNutrition key={`${sessionId}:${recipeId}`} recipeId={recipeId} sessionId={sessionId} />;
+  return <AddNutrition key={scope} recipeId={recipeId} sessionId={sessionId} isCurrent={() => currentScope.current === scope} />;
 }
 
-function AddNutrition({ recipeId, sessionId }: { recipeId: string; sessionId?: string }) {
+function AddNutrition({ recipeId, sessionId, isCurrent }: { recipeId: string; sessionId?: string; isCurrent?: () => boolean }) {
   const [state, setState] = useState<"idle" | "busy" | "error">("idle");
   const alive = useRef(true);
   const started = useRef(false);
   useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+  const active = () => alive.current && (isCurrent?.() ?? true);
 
   const add = async () => {
-    if (!alive.current || started.current) return;
+    if (!active() || started.current) return;
     started.current = true;
     setState("busy");
     try {
@@ -96,9 +101,9 @@ function AddNutrition({ recipeId, sessionId }: { recipeId: string; sessionId?: s
       // The server-rendered card won't show the new figures until the page
       // reloads — simplest correct thing for an action someone reaches for
       // once, not a control that needs to feel instant.
-      if (alive.current) window.location.reload();
+      if (active()) window.location.reload();
     } catch {
-      if (alive.current) setState("error");
+      if (active()) setState("error");
     }
   };
 
