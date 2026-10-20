@@ -8,6 +8,7 @@ import { ApiError, isPhotoMediaType, type FoodNoteDraft, type SecondsClient } fr
 import { Button, Callout, Panel, PanelHeader, space, usePalette } from "@/ui";
 class CaptureInputError extends Error {}
 type SelectedPhoto = { client: SecondsClient; base64: string; mediaType: string; temporaryUri: string | null; previewUri: string | null };
+type SelectedVoice = { client: SecondsClient; uri: string };
 function captureFailure(cause: unknown, fallback: string) {
   if (cause instanceof CaptureInputError) return cause.message;
   if (cause instanceof ApiError && cause.status === 401) return "Your sign-in may have ended. Sign in again before sending a food note.";
@@ -40,8 +41,8 @@ export function FoodNoteCapture({ client, onDraft, onBusy, confirmReplace, disab
   const [statusError, setStatusError] = useState(false);
   const [busy, setBusy] = useState(false);
   const [recording, setRecording] = useState(false);
-  const [audioUri, setAudioUri] = useState<string | null>(null);
-  const audioRef = useRef<string | null>(null);
+  const [voiceClip, setVoiceClip] = useState<SelectedVoice | null>(null);
+  const audioRef = useRef<SelectedVoice | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<SelectedPhoto | null>(null);
   const [photoSending, setPhotoSending] = useState(false);
   const photoRef = useRef<SelectedPhoto | null>(null);
@@ -62,13 +63,17 @@ export function FoodNoteCapture({ client, onDraft, onBusy, confirmReplace, disab
     photoRef.current = null;
     if (active.current) { setSelectedPhoto(null); setPhotoSending(false); }
   }, []);
+  const discardVoice = useCallback(() => {
+    removeTemporaryFile(audioRef.current?.uri ?? null);
+    audioRef.current = null;
+    if (active.current) setVoiceClip(null);
+  }, []);
   const stop = useCallback((keep: boolean): Promise<void> => {
     if (timer.current) { clearTimeout(timer.current); timer.current = null; }
     if (stopping.current) {
       if (keep) return stopping.current;
       keepStopped.current = false;
-      removeTemporaryFile(audioRef.current); audioRef.current = null;
-      if (active.current) setAudioUri(null);
+      discardVoice();
       // Discard can arrive after the stop saved its URI but before audio-mode
       // restoration finishes. Clean up again once that same stop settles.
       return stopping.current.then(() => { removeTemporaryFile(recorder.uri); });
@@ -77,28 +82,28 @@ export function FoodNoteCapture({ client, onDraft, onBusy, confirmReplace, disab
     const version = generation.current;
     const work = async () => { try {
       if (recordingRef.current) { recordingRef.current = false; await recorder.stop(); }
-      const uri = recorder.uri ?? audioRef.current;
-      if (keepStopped.current && active.current && generation.current === version && uri) {
-        audioRef.current = uri; setAudioUri(uri);
-      } else { removeTemporaryFile(uri); removeTemporaryFile(audioRef.current); audioRef.current = null; if (active.current) setAudioUri(null); }
+      const uri = recorder.uri ?? audioRef.current?.uri;
+      if (keepStopped.current && active.current && generation.current === version && currentScope.current.client === client && !currentScope.current.disabled && uri) {
+        const clip = { client, uri }; audioRef.current = clip; setVoiceClip(clip);
+      } else { removeTemporaryFile(uri ?? null); discardVoice(); }
     } catch {
-      keepStopped.current = false; removeTemporaryFile(recorder.uri); removeTemporaryFile(audioRef.current); audioRef.current = null;
-      if (active.current) { setAudioUri(null); setError("Recording could not be finalized. It will not be offered for sending. You can type a note instead."); }
+      keepStopped.current = false; removeTemporaryFile(recorder.uri); discardVoice();
+      if (active.current) { setVoiceClip(null); setError("Recording could not be finalized. It will not be offered for sending. You can type a note instead."); }
     }
     finally {
       // Restore playback mode; this feature never requests background audio.
       await setAudioModeAsync({ allowsRecording: false, shouldPlayInBackground: false }).catch(() => {});
-      if (active.current && !recordingRef.current) { setRecording(false); onBusy(false); }
+      if (active.current && currentScope.current.client === client && !recordingRef.current) { setRecording(false); onBusy(false); }
       stopping.current = null;
     } };
     stopping.current = work(); return stopping.current;
-  }, [recorder, onBusy]);
+  }, [client, recorder, onBusy, discardVoice]);
   useFocusEffect(useCallback(() => {
     active.current = true;
     operation.current = false;
-    setBusy(false); setRecording(false); setAudioUri(null); setSelectedPhoto(null); setPhotoSending(false); onBusy(false);
-    return () => { active.current = false; ++generation.current; discardPhoto(); void stop(false); removeTemporaryFile(audioRef.current); audioRef.current = null; };
-  }, [client, stop, onBusy, discardPhoto]));
+    setBusy(false); setRecording(false); setVoiceClip(null); setSelectedPhoto(null); setPhotoSending(false); onBusy(false);
+    return () => { active.current = false; ++generation.current; discardPhoto(); void stop(false); discardVoice(); };
+  }, [client, stop, onBusy, discardPhoto, discardVoice]));
   useEffect(() => {
     const listener = AppState.addEventListener("change", state => {
       // System photo pickers and permission sheets may change AppState. Do not
@@ -175,45 +180,50 @@ export function FoodNoteCapture({ client, onDraft, onBusy, confirmReplace, disab
     }
   };
   const start = async () => {
-    if (operation.current || stopping.current || disabled || recordingRef.current) return;
+    if (!active.current || operation.current || stopping.current || currentScope.current.client !== client || currentScope.current.disabled || recordingRef.current || AppState.currentState !== "active") return;
     operation.current = true;
     const version = generation.current;
-    setError(null); removeTemporaryFile(audioRef.current); audioRef.current = null; setAudioUri(null); setBusy(true); onBusy(true);
+    const current = () => active.current && generation.current === version && currentScope.current.client === client && !currentScope.current.disabled && AppState.currentState === "active";
+    setError(null); discardVoice(); setBusy(true); onBusy(true);
     try {
       const permission = await requestRecordingPermissionsAsync();
       if (!permission.granted) throw new CaptureInputError("Microphone access was not granted. You can type a note or use keyboard dictation.");
-      if (!active.current || generation.current !== version || AppState.currentState !== "active") return;
+      if (!current()) return;
       await setAudioModeAsync({ allowsRecording: true, shouldPlayInBackground: false });
+      if (!current()) { await stop(false); return; }
       await recorder.prepareToRecordAsync();
-      if (!active.current || generation.current !== version || AppState.currentState !== "active") { await stop(false); return; }
+      if (!current()) { await stop(false); return; }
       recordingRef.current = true; recorder.record(); setRecording(true);
       timer.current = setTimeout(() => { void stop(true); }, 45_000);
     } catch (cause) {
       // Preparation/record() can fail after recording mode was enabled. Restore
       // playback and discard any partial cache file before exposing recovery.
       await stop(false);
-      if (active.current && generation.current === version) setError(captureFailure(cause, "Recording unavailable. Type a note instead."));
+      if (current()) setError(captureFailure(cause, "Recording unavailable. Type a note instead."));
     }
-    finally { if (active.current && generation.current === version) { operation.current = false; setBusy(false); if (!recordingRef.current) onBusy(false); } }
+    finally { if (active.current && generation.current === version && currentScope.current.client === client) { operation.current = false; setBusy(false); if (!recordingRef.current) onBusy(false); } }
   };
   const sendVoice = async () => {
-    if (operation.current || stopping.current || disabled || recordingRef.current) return;
+    const chosen = voiceClip;
+    if (!active.current || !chosen || chosen.client !== client || audioRef.current !== chosen || operation.current || stopping.current || currentScope.current.client !== client || currentScope.current.disabled || recordingRef.current || AppState.currentState !== "active") return;
     operation.current = true;
-    const version = generation.current; const uri = audioRef.current;
+    const version = generation.current;
+    const current = () => active.current && generation.current === version && currentScope.current.client === client && !currentScope.current.disabled && audioRef.current === chosen && AppState.currentState === "active";
     setBusy(true); onBusy(true); setError(null);
     let sent = false;
     try {
-      if (!uri || !await confirmReplace() || !active.current || generation.current !== version) return;
-      const file = new File(uri);
+      if (!await confirmReplace() || !current()) return;
+      const file = new File(chosen.uri);
       if (!file.exists || file.size === 0 || file.size > 5_000_000) throw new CaptureInputError("Recording is empty or too large. Try a shorter note.");
       const base64 = await file.base64();
-      if (!active.current || generation.current !== version) return;
+      if (!current()) return;
       sent = true;
       await draft("voice", base64, "audio/mp4", version);
-    } catch (cause) { if (active.current && generation.current === version) setError(captureFailure(cause, "Voice draft unavailable. Type a note instead.")); }
+    } catch (cause) { if (current()) setError(captureFailure(cause, "Voice draft unavailable. Type a note instead.")); }
     finally {
-      if (sent) { removeTemporaryFile(uri); if (audioRef.current === uri) audioRef.current = null; }
-      if (active.current && generation.current === version) { operation.current = false; if (sent) setAudioUri(null); setBusy(false); onBusy(false); }
+      // A URI may be reused by the SDK; only this exact clip owns its cleanup.
+      if (sent && audioRef.current === chosen) discardVoice();
+      if (active.current && generation.current === version && currentScope.current.client === client) { operation.current = false; setBusy(false); onBusy(false); }
     }
   };
   return <Panel>
@@ -241,9 +251,9 @@ export function FoodNoteCapture({ client, onDraft, onBusy, confirmReplace, disab
         <Text style={{ color: c.textMuted }}>Record up to 45 seconds. Recording stops and is discarded when you leave the screen or hide the app. You choose whether to send it for an editable draft.</Text>
         <Button label={recording ? "Stop recording" : "Record a voice note"} disabled={busy || (disabled && !recording)} onPress={() => recording ? void stop(true) : void start()} />
         {recording ? <Text accessibilityLiveRegion="polite" style={{ color: c.text }}>Recording. Stop whenever you want.</Text> : null}
-        {audioUri ? <View style={styles.row}>
+        {voiceClip?.client === client && !disabled ? <View style={styles.row}>
           <Button label="Send recording for editable draft" disabled={disabled || busy} onPress={() => void sendVoice()} />
-          <Button label="Discard recording" variant="ghost" disabled={busy} onPress={() => { removeTemporaryFile(audioRef.current); audioRef.current = null; setAudioUri(null); }} />
+          <Button label="Discard recording" variant="ghost" disabled={busy} onPress={() => { if (audioRef.current === voiceClip && currentScope.current.client === client) discardVoice(); }} />
         </View> : null}
       </View> : status ? <Text style={{ color: c.textMuted }}>Voice transcription is not enabled in this build. Your keyboard's dictation can enter text.</Text> : null}
       {error ? <Callout tone="error">{error}</Callout> : null}

@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { runInNewContext } from 'node:vm';
 import { build } from 'esbuild';
 const mocks = {
-  react: `export const useState=v=>{const i=state.cursor++;if(!(i in state.values))state.values[i]=v;return [state.values[i],v=>state.values[i]=typeof v==='function'?v(state.values[i]):v];};export const useRef=v=>{const i=state.cursor++;return state.values[i]??=( {current:v} );};export const useCallback=(fn,deps)=>{const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){state.deps[i]=deps;state.values[i]=fn;}return state.values[i];};export const useEffect=(fn,deps)=>{const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){state.cleanups[i]?.();state.deps[i]=deps;state.effects.push(()=>state.cleanups[i]=fn());}};`,
+  react: `export const useState=v=>{const i=state.cursor++;if(!(i in state.values))state.values[i]=v;return [state.values[i],v=>state.values[i]=typeof v==='function'?v(state.values[i]):v];};export const useRef=v=>{const i=state.cursor++;return state.values[i]??=( {current:v} );};export const useCallback=(fn,deps)=>{const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){state.deps[i]=deps;state.values[i]=fn;}return state.values[i];};export const useEffect=(fn,deps)=>{const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){const cleanup=state.cleanups[i];state.deps[i]=deps;state.effects.push(()=>{cleanup?.();state.cleanups[i]=fn();});}};`,
   'react/jsx-runtime': `export const Fragment='Fragment';export const jsx=(type,props)=>({type,props});export const jsxs=jsx;`,
   'react-native': `export const Text='Text',View='View',Image='Image',StyleSheet={create:v=>v};export const AppState={get currentState(){return state.appState;},addEventListener:(_,fn)=>{state.listeners.add(fn);return {remove:()=>state.listeners.delete(fn)};}};`,
   'expo-router': `import {useEffect} from 'react';export const useFocusEffect=fn=>useEffect(()=>{state.focus.add(fn);const cleanup=fn();state.focusCleanups.set(fn,cleanup);return ()=>{state.focus.delete(fn);state.focusCleanups.get(fn)?.();state.focusCleanups.delete(fn);};},[fn]);`,
@@ -267,4 +267,86 @@ test('old request settlement cannot delete a newer selection that reused its cac
   assert.ok(f.state.files.has('file:///cache/photo.jpg'));
   assert.ok(button(f.render(), 'Send photo for editable draft'));
   assert.equal(f.state.drafts.length, 0);
+});
+
+test('a previous voice send handler cannot upload a newer recording at the same URI', async () => {
+  const f = await ready(); await press(f, 'Record a voice note'); await press(f, 'Stop recording');
+  const staleSend = button(f.render(), 'Send recording for editable draft').props.onPress;
+  await press(f, 'Discard recording');
+  f.state.files.add('file:///cache/voice.m4a'); f.state.readFile = async () => 'new-voice-selection';
+  await press(f, 'Record a voice note'); await press(f, 'Stop recording');
+  staleSend(); await flush();
+  assert.equal(f.state.uploads.length, 0);
+  await press(f, 'Send recording for editable draft');
+  assert.equal(f.state.uploads.length, 1);
+  assert.equal(f.state.uploads[0][1], 'new-voice-selection');
+});
+
+test('old voice request completion cannot delete a newer recording that reused its URI', async () => {
+  const f = await ready(); await press(f, 'Record a voice note'); await press(f, 'Stop recording');
+  const gate = deferred(); f.state.send = () => gate.promise;
+  await press(f, 'Send recording for editable draft'); f.background(); await flush();
+  f.state.appState = 'active'; f.state.files.add('file:///cache/voice.m4a');
+  await press(f, 'Record a voice note'); await press(f, 'Stop recording');
+  assert.ok(button(f.render(), 'Send recording for editable draft'));
+  gate.resolve({ draft: { title: 'Old voice suggestion' } }); await flush();
+  assert.ok(f.state.files.has('file:///cache/voice.m4a'));
+  assert.ok(button(f.render(), 'Send recording for editable draft'));
+  assert.equal(f.state.drafts.length, 0);
+});
+
+test('retained voice start cannot request microphone permission after client replacement before cleanup', async () => {
+  const f = await ready(); const start = button(f.render(), 'Record a voice note').props.onPress;
+  let requests = 0; f.state.micPermission = async () => { requests++; return { granted: true }; };
+  f.props.client = { ...f.props.client }; f.renderWithoutEffects();
+  start(); await flush();
+  assert.equal(requests, 0);
+  assert.equal(f.state.recordCalls, 0);
+  f.render();
+});
+
+test('capture becoming disabled while microphone permission is pending never starts recording', async () => {
+  const f = await ready(); const gate = deferred(); f.state.micPermission = () => gate.promise;
+  await press(f, 'Record a voice note');
+  f.props.disabled = true; f.renderWithoutEffects();
+  gate.resolve({ granted: true }); await flush();
+  assert.equal(f.state.recordCalls, 0);
+  assert.equal(f.state.modes.some(mode => mode.allowsRecording), false);
+  assert.equal(f.state.busy.at(-1), false);
+});
+
+test('retained voice send cannot read a recording after client replacement before cleanup', async () => {
+  const f = await ready(); await press(f, 'Record a voice note'); await press(f, 'Stop recording');
+  const send = button(f.render(), 'Send recording for editable draft').props.onPress;
+  let reads = 0; f.state.readFile = async () => { reads++; return 'synthetic'; };
+  f.props.client = { ...f.props.client };
+  const tree = f.renderWithoutEffects();
+  assert.equal(button(tree, 'Send recording for editable draft'), undefined);
+  send(); await flush();
+  assert.equal(reads, 0);
+  assert.equal(f.state.uploads.length, 0);
+  f.render();
+});
+
+test('cancelled voice replacement consent retains the exact clip for a later deliberate send', async () => {
+  const f = await ready(); await press(f, 'Record a voice note'); await press(f, 'Stop recording');
+  f.state.confirm = async () => false;
+  await press(f, 'Send recording for editable draft');
+  assert.equal(f.state.uploads.length, 0);
+  assert.ok(f.state.files.has('file:///cache/voice.m4a'));
+  assert.ok(button(f.render(), 'Send recording for editable draft'));
+  f.state.confirm = async () => true;
+  await press(f, 'Send recording for editable draft');
+  assert.equal(f.state.uploads.length, 1);
+});
+
+test('a retained discard handler cannot erase a newer recorded clip at the same URI', async () => {
+  const f = await ready(); await press(f, 'Record a voice note'); await press(f, 'Stop recording');
+  const discard = button(f.render(), 'Discard recording').props.onPress;
+  await press(f, 'Record a voice note'); await press(f, 'Stop recording');
+  f.state.files.add('file:///cache/voice.m4a');
+  discard(); await flush();
+  assert.ok(f.state.files.has('file:///cache/voice.m4a'));
+  assert.ok(button(f.render(), 'Send recording for editable draft'));
+  assert.equal(f.state.uploads.length, 0);
 });
