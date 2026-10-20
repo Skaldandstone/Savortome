@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Alert, View } from "react-native";
 import { getClerkInstance, useAuth } from "@clerk/expo";
+import { createNativePantryRecovery } from "@/lib/nativePantryRecovery";
 import { createNativeFoodNoteRecovery } from "@/lib/nativeFoodNoteRecovery";
 import { Button, Callout } from "@/ui";
 
@@ -30,19 +31,24 @@ export function SignOutButton() {
       } catch { return false; } // Unavailable auth must never authorize an operation.
     };
     action.current = true; prompt.current = true; setError(null);
-    const cancel = () => { if (sameView() && prompt.current) { prompt.current = false; action.current = false; } };
-    const finish = async (discard: boolean) => {
-      if (!prompt.current || !sameView()) return;
-      prompt.current = false;
+    let stage: "food" | "pantry" | "done" = "food";
+    const cancel = (expected: "food" | "pantry") => { if (sameView() && prompt.current && stage === expected) { prompt.current = false; action.current = false; } };
+    const finish = async (discard: boolean, discardPantry: boolean) => {
+      if (!prompt.current || !sameView() || stage !== "pantry") return;
+      stage = "done"; prompt.current = false;
       if (!current()) {
         action.current = false;
         setError("Your account session could not be confirmed. Sign-out and device discard were not started. Check your account before trying again.");
         return;
       }
       setBusy(true);
-      let clearing = discard;
+      let clearing = discard || discardPantry;
+      let releasePantry: (() => void) | undefined;
       let timer: ReturnType<typeof setTimeout> | null = null;
       try {
+        const pantry = createNativePantryRecovery(owner, session);
+        releasePantry = pantry.holdSession();
+        if (discardPantry) await pantry.discard(true);
         if (discard) await createNativeFoodNoteRecovery(owner, session).discard(true);
         if (!current()) {
           if (sameView()) setError("Your account session could not be confirmed. Sign-out was not started. A confirmed device discard is not undone.");
@@ -61,16 +67,26 @@ export function SignOutButton() {
           ? "Device-copy discard was not confirmed and may still finish. Sign-out was not started. Try again, or choose sign out without clearing. Saved account notes were not removed."
           : "Sign-out was not confirmed. Check your account before trying again. A confirmed device discard is not undone.");
       } finally {
+        releasePantry?.();
         if (timer !== null) clearTimeout(timer);
         if (warningTimer.current === timer) warningTimer.current = null;
         if (sameView()) { action.current = false; setBusy(false); }
       }
     };
-    Alert.alert("Sign out of Savortome?", "Optional food-note device copies stay on this device unless discarded. Discard affects only this account in the current app environment, not saved account notes or other devices. Earlier account/local operations are not cancelled and may still finish. Check device recovery in Today when you return.", [
-      { text: "Cancel", style: "cancel", onPress: cancel },
-      { text: "Sign out without clearing", onPress: () => void finish(false) },
-      { text: "Discard copy and sign out", style: "destructive", onPress: () => void finish(true) },
-    ], { cancelable: true, onDismiss: cancel });
+    const choosePantry = (discardFood: boolean) => {
+      if (!prompt.current || !sameView() || stage !== "food") return;
+      stage = "pantry";
+      Alert.alert("Pantry recovery on sign-out", "Clear this account's pantry recovery copy on this device (recommended), or explicitly keep it for the next sign-in to this same account. Copies expire after 24 hours and are removed on the next access; no background or other-device erasure is promised. Saved pantry reviews are not removed.", [
+        { text: "Cancel", style: "cancel", onPress: () => cancel("pantry") },
+        { text: "Clear pantry copy and sign out", style: "destructive", onPress: () => void finish(discardFood, true) },
+        { text: "Keep pantry copy and sign out", onPress: () => void finish(discardFood, false) },
+      ], { cancelable: true, onDismiss: () => cancel("pantry") });
+    };
+    Alert.alert("Sign out of Savortome?", "Optional food-note device copies stay on this device unless discarded. Discard affects only this account in the current app environment, not saved account notes or other devices. Earlier account/local operations are not cancelled and may still finish. The next step asks separately about pantry recovery. Check food-note recovery in Today when you return.", [
+      { text: "Cancel", style: "cancel", onPress: () => cancel("food") },
+      { text: "Keep food-note copy; next", onPress: () => choosePantry(false) },
+      { text: "Discard food-note copy; next", style: "destructive", onPress: () => choosePantry(true) },
+    ], { cancelable: true, onDismiss: () => cancel("food") });
   };
   return <View style={{ flexShrink: 1, maxWidth: 240 }}>
     <Button label={busy ? "Signing out…" : "Sign out"} busy={busy} variant="ghost" disabled={busy || !userId || !sessionId} onPress={begin} />
