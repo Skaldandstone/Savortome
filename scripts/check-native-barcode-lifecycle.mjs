@@ -123,3 +123,18 @@ test('native barcode: current local code closes scanner without automatic produc
 test('native barcode: late mount error or timer cannot replace a code already found',async()=>{
  const f=fixture();f.render();await flush();press(f.render(),'Scan barcode');await flush();const tree=f.render(),camera=nodes(tree).find(n=>n.type==='CameraView'),timer=[...f.state.timers.values()].find(t=>t.ms===45000);camera.props.onBarcodeScanned({type:'ean13',data:'synthetic-code'});const writes=f.state.writes;camera.props.onMountError();timer.fn();assert.equal(f.state.writes,writes);assert.match(text(f.render()),/Barcode found/);
 });
+
+for (const nextSession of ['synthetic-session-b', null]) test(`native barcode: session reset clears manually entered quantity unit (${nextSession ?? 'session unavailable'})`, async () => {
+ const f=fixture();f.render();await flush();f.enter();
+ const field=(tree,label)=>nodes(tree).find(node=>node.props?.accessibilityLabel===label);
+ field(f.render(),'Quantity you currently have, optional').props.onChangeText('2');
+ field(f.render(),'Quantity unit').props.onChangeText('kg');
+ assert.equal(field(f.render(),'Quantity unit').props.value,'kg');
+ const staleUnit=field(f.render(),'Quantity unit').props.onChangeText;
+ f.state.auth.sessionId=nextSession;
+ f.render();await flush();staleUnit('old-session-unit');const reset=f.render();
+ assert.equal(field(reset,'Product name, editable').props.value,'');
+ assert.equal(field(reset,'Quantity you currently have, optional').props.value,'');
+ assert.equal(field(reset,'Quantity unit').props.value,'packages');
+ assert.equal(f.state.calls.filter(call=>call.method==='createPantryIntake').length,0);
+});

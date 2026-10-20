@@ -57,7 +57,7 @@ export function BarcodeCapture({ onQueued }: { onQueued: (intake: PantryIntakeVi
     mounted.current = true; dataClient.current = client;
     ++version.current; ++cameraRun.current;
     action.current = false; setUncertain(false); setAvailabilityError(false);
-    setCamera(false); setProduct(null); setName(""); setAmount(""); setBarcode(""); setError(null); setNotice(null); setBusy(false); setEnabled(null); reference.current = null; submitted.current = null;
+    setCamera(false); setProduct(null); setName(""); setAmount(""); setUnit("packages"); setBarcode(""); setError(null); setNotice(null); setBusy(false); setEnabled(null); reference.current = null; submitted.current = null;
     return () => { mounted.current = false; ++version.current; ++cameraRun.current; scannerLock.current = true; };
   }, [client]);
   useFocusEffect(useCallback(() => {
