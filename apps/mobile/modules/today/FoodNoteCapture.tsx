@@ -168,7 +168,9 @@ export function FoodNoteCapture({ client, onDraft, onBusy, confirmReplace, disab
     finally {
       // A dispatched request is never offered for automatic retry. A new photo
       // requires another deliberate selection and send, even after failure.
-      if (sent) { removeTemporaryFile(chosen.temporaryUri); if (photoRef.current === chosen) { photoRef.current = null; if (active.current) setSelectedPhoto(null); } }
+      // Leaving/replacement already releases the old selection. A late request
+      // must not delete a newer SDK file that happens to reuse its cache path.
+      if (sent && photoRef.current === chosen) discardPhoto();
       if (active.current && generation.current === version && currentScope.current.client === client) { operation.current = false; setPhotoSending(false); setBusy(false); onBusy(false); }
     }
   };

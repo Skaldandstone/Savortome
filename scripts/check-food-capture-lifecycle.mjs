@@ -253,3 +253,18 @@ for (const replace of ['background', 'client']) {
     assert.equal(button(f.render(), 'Send photo for editable draft'), undefined);
   });
 }
+
+test('old request settlement cannot delete a newer selection that reused its cache path', async () => {
+  const f = await ready(); await press(f, 'Choose a food photo');
+  const gate = deferred(); f.state.send = () => gate.promise;
+  await press(f, 'Send photo for editable draft'); f.background(); await flush();
+  f.state.appState = 'active';
+  f.state.files.add('file:///cache/photo.jpg');
+  f.state.picker = async () => ({ canceled: false, assets: [{ uri: 'file:///cache/photo.jpg', mimeType: 'image/jpeg', base64: 'new-selection' }] });
+  await press(f, 'Choose a food photo');
+  assert.ok(button(f.render(), 'Send photo for editable draft'));
+  gate.resolve({ draft: { title: 'Old suggestion' } }); await flush();
+  assert.ok(f.state.files.has('file:///cache/photo.jpg'));
+  assert.ok(button(f.render(), 'Send photo for editable draft'));
+  assert.equal(f.state.drafts.length, 0);
+});
