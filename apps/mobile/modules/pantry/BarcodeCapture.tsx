@@ -4,7 +4,7 @@ import { CameraView, useCameraPermissions } from "expo-camera";
 import { useFocusEffect } from "expo-router";
 import { useAuth } from "@clerk/expo";
 import * as Crypto from "expo-crypto";
-import { parseProductBarcode, type BarcodeProductDraft, type PantryIntakeView } from "@seconds/core/format";
+import { parseProductBarcode, type BarcodeProductDraft, type PantryIntakeInput, type PantryIntakeView } from "@seconds/core/format";
 import { createAccountClient } from "@/lib/client";
 import { Button, Callout, Field, Panel, PanelHeader, space, usePalette } from "@/ui";
 
@@ -36,6 +36,12 @@ export function BarcodeCapture({ onQueued }: { onQueued: (intake: PantryIntakeVi
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const reference = useRef<string | null>(null);
+  // Disabled inputs can still deliver queued events. Hold the submitted body
+  // independently until its result is confirmed or that entry is discarded.
+  const submitted = useRef<PantryIntakeInput | null>(null);
+  const renderedVersion = version.current;
+  const renderedSubmission = submitted.current;
+  const editable = () => current() && !action.current && submitted.current === null;
   useEffect(() => {
     if (!camera) return;
     const run = cameraRun.current;
@@ -51,7 +57,7 @@ export function BarcodeCapture({ onQueued }: { onQueued: (intake: PantryIntakeVi
     mounted.current = true; dataClient.current = client;
     ++version.current; ++cameraRun.current;
     action.current = false; setUncertain(false); setAvailabilityError(false);
-    setCamera(false); setProduct(null); setName(""); setAmount(""); setBarcode(""); setError(null); setNotice(null); setBusy(false); setEnabled(null); reference.current = null;
+    setCamera(false); setProduct(null); setName(""); setAmount(""); setBarcode(""); setError(null); setNotice(null); setBusy(false); setEnabled(null); reference.current = null; submitted.current = null;
     return () => { mounted.current = false; ++version.current; ++cameraRun.current; scannerLock.current = true; };
   }, [client]);
   useFocusEffect(useCallback(() => {
@@ -62,7 +68,7 @@ export function BarcodeCapture({ onQueued }: { onQueued: (intake: PantryIntakeVi
     return () => { active = false; };
   }, [client, availabilityVisit]));
   const lookup = async (value = barcode) => {
-    if (!current() || action.current || uncertain) return;
+    if (!editable() || uncertain) return;
     if (!client) { setError("Sign in to look up products."); return; }
     action.current = true; ++cameraRun.current;
     const run = ++version.current;
@@ -78,7 +84,7 @@ export function BarcodeCapture({ onQueued }: { onQueued: (intake: PantryIntakeVi
     } finally { if (current() && run === version.current) { action.current = false; setBusy(false); } }
   };
   const startCamera = async () => {
-    if (!current() || action.current || uncertain) return;
+    if (!editable() || uncertain) return;
     if (!focused.current || AppState.currentState !== "active") return;
     const run = ++cameraRun.current;
     setError(null);
@@ -90,34 +96,37 @@ export function BarcodeCapture({ onQueued }: { onQueued: (intake: PantryIntakeVi
     } catch { if (run === cameraRun.current && current() && focused.current) setError("Camera unavailable. Type the barcode or product name instead."); }
   };
   const queue = async () => {
-    if (!current() || action.current) return;
+    if (!current() || action.current || renderedVersion !== version.current || renderedSubmission !== submitted.current) return;
     if (!client) { setError("Sign in to save a pantry review."); return; }
     const quantity = amount.trim() ? Number(amount) : null;
-    if (!name.trim() || (quantity !== null && (!Number.isFinite(quantity) || quantity <= 0 || quantity > 10000))) {
+    if (!submitted.current && (!name.trim() || (quantity !== null && (!Number.isFinite(quantity) || quantity <= 0 || quantity > 10000)))) {
       setError("Enter a name and positive quantity, or leave quantity unknown."); return;
     }
+    const input: PantryIntakeInput = submitted.current ?? { source: "barcode", externalReference: reference.current, sourceLabel: "Product entered for review", acquiredAt: null,
+      items: [{ displayName: name.trim(), quantity, unit: quantity === null ? null : unit.trim() || null }] };
+    submitted.current = input;
     const run = ++version.current;
     action.current = true; ++cameraRun.current; setCamera(false);
     setBusy(true); setError(null); setNotice(null);
     try {
       reference.current ??= Crypto.randomUUID();
-      const intake = await client.createPantryIntake({ source: "barcode", externalReference: reference.current, sourceLabel: "Product entered for review", acquiredAt: null,
-        items: [{ displayName: name.trim(), quantity, unit: quantity === null ? null : unit.trim() || null }] });
+      input.externalReference ??= reference.current;
+      const intake = await client.createPantryIntake(input);
       if (!current() || run !== version.current) return;
       setUncertain(false); onQueued(intake); setNotice("Item ready for review below. Nothing has entered your pantry yet.");
-      setProduct(null); setName(""); setAmount(""); setBarcode(""); reference.current = null;
+      setProduct(null); setName(""); setAmount(""); setBarcode(""); reference.current = null; submitted.current = null;
     } catch {
       if (current() && run === version.current) { setUncertain(true); setError("We could not confirm the review saved. Your entry is kept unchanged for a safe retry. Check existing reviews below first."); }
     } finally { if (current() && run === version.current) { action.current = false; setBusy(false); } }
   };
   const previewRun = cameraRun.current;
-  const currentPreview = () => current() && focused.current && !scannerLock.current && camera && previewRun === cameraRun.current && AppState.currentState === "active";
+  const currentPreview = () => editable() && focused.current && !scannerLock.current && camera && previewRun === cameraRun.current && AppState.currentState === "active";
   if (dataClient.current !== client) return <Text accessibilityLiveRegion="polite">Refreshing pantry entry for your sign-in…</Text>;
   return <Panel>
     <PanelHeader title="Add a packaged item" hint="Scan its barcode or type the label. You confirm the quantity and review it before inventory changes." />
     <View style={styles.fields}>
       <Text style={{ color: c.text }}>Product barcode</Text>
-      <Field accessibilityLabel="Product barcode" keyboardType="number-pad" value={barcode} maxLength={14} editable={!busy && !uncertain} onChangeText={value => { if (current()) setBarcode(value); }} />
+      <Field accessibilityLabel="Product barcode" keyboardType="number-pad" value={barcode} maxLength={14} editable={!busy && !uncertain} onChangeText={value => { if (editable()) setBarcode(value); }} />
       <View style={styles.actions}>
         <Button label="Scan barcode" disabled={busy || uncertain || camera} onPress={() => void startCamera()} />
         <Button label={busy ? "Working…" : "Look up label"} variant="ghost" disabled={busy || uncertain || !enabled} onPress={() => void lookup()} />
@@ -144,16 +153,17 @@ export function BarcodeCapture({ onQueued }: { onQueued: (intake: PantryIntakeVi
       {product ? <View><Text style={{ color: c.textMuted }}>{product.brand ?? ""} {product.packageLabel ? `Package label: ${product.packageLabel}.` : ""} Open Food Facts data (ODbL) can be incomplete. Check your package for allergens.</Text>
         <Button label="View Open Food Facts source" variant="ghost" onPress={() => { if (current()) void Linking.openURL(product.sourceUrl).catch(() => { if (current()) setError("Could not open the source link."); }); }} /></View> : null}
       <Text style={{ color: c.text }}>Product name, editable</Text>
-      <Field accessibilityLabel="Product name, editable" value={name} maxLength={120} editable={!busy && !uncertain} onChangeText={value => { if (!current()) return; setName(value); reference.current = null; }} />
+      <Field accessibilityLabel="Product name, editable" value={name} maxLength={120} editable={!busy && !uncertain} onChangeText={value => { if (!editable()) return; setName(value); reference.current = null; }} />
       <Text style={{ color: c.text }}>Quantity you currently have (optional)</Text>
-      <Field accessibilityLabel="Quantity you currently have, optional" keyboardType="decimal-pad" value={amount} editable={!busy && !uncertain} onChangeText={value => { if (!current()) return; setAmount(value); reference.current = null; }} />
-      <Field accessibilityLabel="Quantity unit" value={unit} maxLength={40} editable={!busy && !uncertain} onChangeText={value => { if (!current()) return; setUnit(value); reference.current = null; }} />
+      <Field accessibilityLabel="Quantity you currently have, optional" keyboardType="decimal-pad" value={amount} editable={!busy && !uncertain} onChangeText={value => { if (!editable()) return; setAmount(value); reference.current = null; }} />
+      <Field accessibilityLabel="Quantity unit" value={unit} maxLength={40} editable={!busy && !uncertain} onChangeText={value => { if (!editable()) return; setUnit(value); reference.current = null; }} />
       <Text style={{ color: c.textMuted }}>Package size is not the number purchased. Leave quantity blank if unsure. Accepting replaces a matching pantry entry rather than adding to its old quantity.</Text>
       <Button label={uncertain ? "Retry the same pantry review" : "Queue item for pantry review"} disabled={busy || !name.trim()} onPress={() => void queue()} />
-      {uncertain ? <Button label="Discard local entry" variant="ghost" disabled={busy} onPress={() => { if (!current()) return; Alert.alert("Discard local entry?", "The earlier review may already have saved. Check reviews before adding it again.", [
+      {uncertain ? <Button label="Discard local entry" variant="ghost" disabled={busy} onPress={() => { if (!current() || action.current || !renderedSubmission || submitted.current !== renderedSubmission) return; Alert.alert("Discard local entry?", "The earlier review may already have saved. Check reviews before adding it again.", [
         { text: "Keep entry", style: "cancel" }, { text: "Discard local entry", style: "destructive", onPress: () => {
-          if (!current() || action.current) return;
-          setUncertain(false); setName(""); setAmount(""); setBarcode(""); setProduct(null); setError(null); reference.current = null;
+          if (!current() || action.current || submitted.current !== renderedSubmission) return;
+          ++version.current;
+          setUncertain(false); setName(""); setAmount(""); setBarcode(""); setProduct(null); setError(null); reference.current = null; submitted.current = null;
         } },
       ]); }} /> : null}
       {notice ? <Callout tone="info">{notice}</Callout> : null}

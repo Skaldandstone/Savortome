@@ -10,7 +10,7 @@ const mocks={react:`export const useState=initial=>{const i=state.cursor++;if(!(
  'expo-camera':`export const CameraView='CameraView',useCameraPermissions=()=>[{granted:false},()=>{state.permissions++;return state.permission();}];`,
  'expo-router':`import {useEffect} from 'react';export const useFocusEffect=fn=>useEffect(()=>{const cleanup=fn();state.focusCleanups.push(cleanup);return cleanup;},[fn]);`,
  '@clerk/expo':`export const useAuth=()=>state.auth;`,
- 'expo-crypto':`export const randomUUID=()=>'synthetic-reference';`,
+ 'expo-crypto':`export const randomUUID=()=>'synthetic-reference-'+ ++state.uuid;`,
  '@seconds/core/format':`export const parseProductBarcode=code=>code;`,
  '@/lib/client':`export const createAccountClient=account=>Object.fromEntries(['barcodeLookupStatus','lookupProductBarcode','createPantryIntake'].map(method=>[method,async(...args)=>{state.calls.push({account,method,args});return state.respond(method,...args);} ]));`,
  '@/ui':`export const Button='Button',Callout='Callout',Field='Field',Panel='Panel',PanelHeader='PanelHeader',space={sm:8},usePalette=()=>({text:'#eee',textMuted:'#bbb'});`,
@@ -21,12 +21,67 @@ function nodes(tree){return Array.isArray(tree)?tree.flatMap(nodes):tree&&typeof
 function text(tree){return Array.isArray(tree)?tree.map(text).join(' '):tree&&typeof tree==='object'?text(tree.props?.children):String(tree??'');}
 const button=(tree,label)=>nodes(tree).find(n=>n.type==='Button'&&n.props.label===label);const press=(tree,label)=>button(tree,label).props.onPress();
 function fixture(){
- const state={cursor:0,values:[],refs:[],deps:[],memos:[],effects:[],cleanups:[],focusCleanups:[],writes:0,calls:[],queued:0,permissions:0,alerts:[],appState:'active',auth:{userId:'synthetic-account-a',sessionId:'synthetic-session-a'},respond:async method=>method==='barcodeLookupStatus'?{enabled:true}:method==='lookupProductBarcode'?{product:null}:{id:'synthetic-intake'},permission:async()=>({granted:true}),timers:new Map(),nextTimer:0};
+ const state={cursor:0,values:[],refs:[],deps:[],memos:[],effects:[],cleanups:[],focusCleanups:[],writes:0,calls:[],queued:0,uuid:0,permissions:0,alerts:[],appState:'active',auth:{userId:'synthetic-account-a',sessionId:'synthetic-session-a'},respond:async method=>method==='barcodeLookupStatus'?{enabled:true}:method==='lookupProductBarcode'?{product:null}:{id:'synthetic-intake'},permission:async()=>({granted:true}),timers:new Map(),nextTimer:0};
  const ctx={state,setTimeout:(fn,ms)=>{const id=++state.nextTimer;state.timers.set(id,{fn,ms});return id;},clearTimeout:id=>state.timers.delete(id)};runInNewContext(bundle.outputFiles[0].text,ctx);
  const render=(commit=true)=>{state.cursor=0;const tree=ctx.app.BarcodeCapture({onQueued:()=>state.queued++});if(commit)state.effects.splice(0).forEach(fn=>fn());return tree;};
  const enter=()=>nodes(render()).find(n=>n.props?.accessibilityLabel==='Product name, editable').props.onChangeText('Synthetic beans');
  return{state,render,enter,unmount:()=>state.cleanups.filter(Boolean).forEach(fn=>fn()),blur:()=>state.focusCleanups.filter(Boolean).forEach(fn=>fn())};
 }
+
+for (const phase of ['pending', 'uncertain']) test(`native barcode: late ${phase} input cannot change a submitted review or its retry identity`, async () => {
+ const f=fixture();f.render();await flush();f.enter();
+ const field=(tree,label)=>nodes(tree).find(node=>node.props?.accessibilityLabel===label);
+ field(f.render(),'Quantity you currently have, optional').props.onChangeText('2');
+ const old=f.render();const gate=deferred();
+ f.state.respond=async method=>method==='createPantryIntake'?gate.promise:{enabled:true};
+ press(old,'Queue item for pantry review');await flush();
+ const original=JSON.stringify(f.state.calls.find(call=>call.method==='createPantryIntake').args[0]);
+ if(phase==='uncertain'){gate.reject(Error('Synthetic uncertain queue'));await flush();}
+ field(old,'Product name, editable').props.onChangeText('Late flour');
+ field(old,'Quantity you currently have, optional').props.onChangeText('9');
+ field(old,'Quantity unit').props.onChangeText('kg');
+ const held=[field(f.render(),'Product name, editable').props.value,field(f.render(),'Quantity you currently have, optional').props.value,field(f.render(),'Quantity unit').props.value];
+ if(phase==='pending'){gate.reject(Error('Synthetic uncertain queue'));await flush();}
+ f.state.respond=async()=>({id:'synthetic-intake'});
+ press(f.render(),'Retry the same pantry review');await flush();
+ const requests=f.state.calls.filter(call=>call.method==='createPantryIntake');
+ assert.equal(requests.length,2);
+ assert.equal(JSON.stringify(requests[1].args[0]),original);
+ assert.deepEqual(held,['Synthetic beans','2','packages']);
+ assert.equal(f.state.queued,1);
+});
+
+test('native barcode: retained successful submit cannot create another review', async () => {
+ const f=fixture();f.render();await flush();f.enter();const old=f.render();
+ press(old,'Queue item for pantry review');await flush();
+ press(old,'Queue item for pantry review');await flush();
+ assert.equal(f.state.calls.filter(call=>call.method==='createPantryIntake').length,1);
+ assert.equal(f.state.queued,1);
+});
+
+test('native barcode: retained lookup and camera controls cannot replace an unconfirmed review', async () => {
+ const f=fixture();f.render();await flush();f.enter();const old=f.render();
+ f.state.respond=async method=>{if(method==='createPantryIntake')throw Error('Synthetic uncertain queue');return {enabled:true,product:null};};
+ press(old,'Queue item for pantry review');await flush();
+ press(old,'Look up label');press(old,'Scan barcode');await flush();
+ assert.equal(f.state.calls.filter(call=>call.method==='lookupProductBarcode').length,0);
+ assert.equal(f.state.permissions,0);
+ assert.equal(nodes(f.render()).find(node=>node.props?.accessibilityLabel==='Product name, editable').props.value,'Synthetic beans');
+});
+
+test('native barcode: old discard confirmation cannot erase a replacement unconfirmed entry', async () => {
+ const f=fixture();f.render();await flush();f.enter();
+ f.state.respond=async()=>{throw Error('Synthetic uncertain queue');};
+ press(f.render(),'Queue item for pantry review');await flush();
+ const old=f.render();press(old,'Discard local entry');press(old,'Discard local entry');
+ const confirm=index=>f.state.alerts[index][2].find(choice=>choice.text==='Discard local entry').onPress;
+ const staleConfirm=confirm(1);confirm(0)();
+ nodes(f.render()).find(node=>node.props?.accessibilityLabel==='Product name, editable').props.onChangeText('Replacement rice');
+ press(f.render(),'Queue item for pantry review');await flush();
+ staleConfirm();
+ assert.equal(nodes(f.render()).find(node=>node.props?.accessibilityLabel==='Product name, editable').props.value,'Replacement rice');
+ assert.ok(button(f.render(),'Retry the same pantry review'));
+});
 test('native barcode: retained unmounted queue/lookup/permission handlers cannot dispatch',async()=>{
  const f=fixture();f.render();await flush();f.enter();const old=f.render();f.unmount();const calls=f.state.calls.length,writes=f.state.writes;press(old,'Queue item for pantry review');press(old,'Look up label');press(old,'Scan barcode');await flush();assert.equal(f.state.calls.length,calls);assert.equal(f.state.permissions,0);assert.equal(f.state.writes,writes);
 });

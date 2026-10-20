@@ -33,6 +33,57 @@ function fixture(){
  const enter=()=>{const tree=render();nodes(tree).find(n=>n.props?.id==='pantry-product-name').props.onChange({target:{value:'Synthetic beans'}});};
  return {state,render,unmount,enter};
 }
+
+for (const phase of ['pending', 'uncertain']) test(`barcode: late ${phase} input cannot change a submitted review or its retry identity`, async () => {
+ const f=fixture();f.render();await flush();f.enter();
+ const fields=tree=>nodes(tree).filter(node=>node.type==='TextField');
+ fields(f.render())[2].props.onChange({target:{value:'2'}});
+ const old=f.render();const gate=deferred();
+ f.state.respond=async method=>method==='createPantryIntake'?gate.promise:{enabled:true};
+ submit(forms(old)[1]);await flush();
+ const original=JSON.stringify(f.state.calls.find(call=>call.method==='createPantryIntake').args[0]);
+ if(phase==='uncertain'){gate.reject(Error('Synthetic uncertain queue'));await flush();}
+ fields(old)[1].props.onChange({target:{value:'Late flour'}});
+ fields(old)[2].props.onChange({target:{value:'9'}});
+ fields(old)[3].props.onChange({target:{value:'kg'}});
+ const held=fields(f.render()).slice(1).map(field=>field.props.value);
+ if(phase==='pending'){gate.reject(Error('Synthetic uncertain queue'));await flush();}
+ f.state.respond=async()=>({});
+ submit(forms(f.render())[1]);await flush();
+ const requests=f.state.calls.filter(call=>call.method==='createPantryIntake');
+ assert.equal(requests.length,2);
+ assert.equal(JSON.stringify(requests[1].args[0]),original);
+ assert.deepEqual(held,['Synthetic beans','2','packages']);
+ assert.equal(f.state.queued,1);
+});
+
+test('barcode: retained successful submit cannot create another review', async () => {
+ const f=fixture();f.render();await flush();f.enter();const old=forms(f.render())[1];
+ submit(old);await flush();submit(old);await flush();
+ assert.equal(f.state.calls.filter(call=>call.method==='createPantryIntake').length,1);
+ assert.equal(f.state.queued,1);
+});
+
+test('barcode: retained lookup and scanner controls cannot replace an unconfirmed review', async () => {
+ const f=fixture();f.render();await flush();f.enter();const old=f.render();
+ f.state.respond=async method=>{if(method==='createPantryIntake')throw Error('Synthetic uncertain queue');return {enabled:true,product:null};};
+ submit(forms(old)[1]);await flush();
+ submit(forms(old)[0]);button(old,'Scan barcode with camera').props.onClick();await flush();
+ assert.equal(f.state.calls.filter(call=>call.method==='lookupProductBarcode').length,0);
+ assert.equal(nodes(f.render()).some(node=>node.type==='Scanner'),false);
+ assert.equal(nodes(f.render()).find(node=>node.props?.id==='pantry-product-name').props.value,'Synthetic beans');
+});
+
+test('barcode: retained discard cannot erase a replacement unconfirmed entry', async () => {
+ const f=fixture();f.render();await flush();f.enter();
+ f.state.respond=async()=>{throw Error('Synthetic uncertain queue');};
+ submit(forms(f.render())[1]);await flush();
+ const discard=button(f.render(),'Discard local entry').props.onClick;discard();
+ nodes(f.render()).find(node=>node.props?.id==='pantry-product-name').props.onChange({target:{value:'Replacement rice'}});
+ submit(forms(f.render())[1]);await flush();discard();
+ assert.equal(nodes(f.render()).find(node=>node.props?.id==='pantry-product-name').props.value,'Replacement rice');
+ assert.ok(button(f.render(),'Retry the same pantry review'));
+});
 test('barcode: retained unmounted queue and lookup cannot dispatch or update state',async()=>{
  const f=fixture();f.render();await flush();f.enter();const tree=f.render();f.unmount();const calls=f.state.calls.length,writes=f.state.writes;submit(forms(tree)[1]);await flush();submit(forms(tree)[0]);await flush();assert.equal(f.state.calls.length,calls);assert.equal(f.state.writes,writes);
 });
