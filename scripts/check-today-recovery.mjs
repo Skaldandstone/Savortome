@@ -59,6 +59,41 @@ fixture.counter=0;
 async function ready(initial=[]){const f=fixture(initial);await f.settle();return f;}
 function fill(f,title='Toast',portion='One slice'){field(f.render(),'Food name').props.onChangeText(title);field(f.render(),'Portion, optional').props.onChangeText(portion);}
 async function press(f,label){const tree=f.render();const b=button(tree,label);assert.ok(b,`Missing ${label}`);assert.ok(!b.props.disabled,`Disabled ${label}`);if(b.props.type==='submit')nodes(tree).find(n=>n.type==='form').props.onSubmit({preventDefault:()=>{}});else (b.props.onPress??b.props.onClick)();await flush();}
+
+test('native: capture busy locks food edits without revoking its own in-flight capability', async () => {
+ const f=await ready();
+ const capture=()=>nodes(f.render()).find(node=>node.type==='FoodNoteCapture');
+ assert.equal(capture().props.disabled,false);
+ capture().props.onBusy(true);
+ assert.equal(field(f.render(),'Food name').props.editable,false);
+ assert.equal(capture().props.disabled,false,'Capture must not disable itself through parent busy feedback');
+ capture().props.onDraft({title:'Synthetic suggestion',portion:'Review this portion',uncertainty:'Check this'},'photo');
+ assert.equal(field(f.render(),'Food name').props.value,'Synthetic suggestion');
+ assert.equal(f.writes('save').length,0);
+ capture().props.onBusy(false);
+ assert.equal(field(f.render(),'Food name').props.editable,true);
+});
+
+test('native: food-note write and unconfirmed result still disable new media capture', async () => {
+ const f=await ready();fill(f);
+ const gate=deferred();f.state.save=()=>gate.promise;
+ await press(f,'Save food note');
+ const capture=()=>nodes(f.render()).find(node=>node.type==='FoodNoteCapture');
+ assert.equal(capture().props.disabled,true);
+ gate.reject(Error('Synthetic uncertain save'));await flush();
+ capture().props.onBusy(false);
+ assert.equal(capture().props.disabled,true);
+ assert.equal(f.writes('save').length,1);
+});
+
+test('native: failed note reload cannot be unlocked by capture reporting idle', async () => {
+ const f=await ready();f.state.list=async()=>{throw Error('Synthetic failed review');};
+ await press(f,'Reload food notes');await f.settle();
+ const capture=nodes(f.render()).find(node=>node.type==='FoodNoteCapture');
+ capture.props.onBusy(false);
+ assert.equal(nodes(f.render()).find(node=>node.type==='FoodNoteCapture').props.disabled,true);
+ assert.equal(f.writes('save').length,0);
+});
 async function pendingDraft(){const f=await ready();fill(f);const p=deferred();f.state.save=()=>p.promise;await press(f,'Save food note');return {f,p};}
 async function recent(){const f=await ready();const date=field(f.render(),'Food note date, YYYY-MM-DD').props.value;f.state.records.set('account-a',[entry({id:sampleId,date,title:'Toast',portion:'One slice',source:'text'})]);await press(f,'Reload food notes');await f.settle();return f;}
 test('save requires explicit action and exact successful receipt; pantry is unchanged',async()=>{const f=await ready();fill(f);assert.equal(f.writes('save').length,0);await press(f,'Save food note');await f.settle();assert.match(text(f.render()),/Food note saved. Your pantry was not changed/);assert.equal(field(f.render(),'Food name').props.value,'');assert.equal(f.writes('save').length,1);assert.equal(f.state.calls.some(c=>/pantry|shopping/.test(c.kind)),false);});

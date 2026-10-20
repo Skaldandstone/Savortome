@@ -402,7 +402,9 @@ function AccountTodayScreen() {
         {message ? <Callout tone="info">{message}</Callout> : null}{error ? <Callout tone="error">{error}</Callout> : null}
       </View>
     </Panel>
-    {client ? <FoodNoteCapture key={userId} client={client} disabled={disabled || unconfirmed || deleteUnconfirmed || loading || !loaded} onBusy={setCaptureBusy} confirmReplace={confirmReplace} onDraft={(draft, kind) => {
+    {/* Capture handles its own busy lock. Feeding captureBusy back as disabled
+        would revoke its async permission/picker/send after onBusy(true). */}
+    {client ? <FoodNoteCapture key={userId} client={client} disabled={busy || localBusy || localBlocked || unconfirmed || deleteUnconfirmed || loading || !loaded} onBusy={setCaptureBusy} confirmReplace={confirmReplace} onDraft={(draft, kind) => {
       if (localBlocked || localBusy || pendingSave.current || pendingDelete.current || action.current) return;
       setTitle(draft.title); setPortion(draft.portion ?? ""); setSource(kind); setUncertainty(draft.uncertainty); id.current = null; editRevision.current = undefined;
       setMessage("Draft ready. Check the name and portion before saving. Nothing has been saved.");
