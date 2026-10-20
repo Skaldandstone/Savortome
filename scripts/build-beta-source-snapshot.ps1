@@ -75,6 +75,18 @@ try {
     [IO.Compression.ZipFile]::ExtractToDirectory($baseZip, $staging)
 
     $files = @(Get-ChildItem -LiteralPath $staging -File -Recurse)
+    # Git archive applies checkout conversions. Even a correct source tree can
+    # otherwise export different SQL bytes on Windows and change Drizzle hashes.
+    foreach ($file in $files) {
+        $relative = Get-SnapshotRelativePath $staging $file.FullName
+        if ($relative -notlike 'packages/db/migrations/*.sql') { continue }
+        $expectedBlob = (& git -C $repo rev-parse "${commit}:$relative").Trim()
+        if ($LASTEXITCODE -ne 0) { throw "Could not resolve canonical migration bytes: $relative" }
+        $exportedBlob = (& git -C $repo hash-object --no-filters -- $file.FullName).Trim()
+        if ($LASTEXITCODE -ne 0 -or $exportedBlob -cne $expectedBlob) {
+            throw "Archive changed migration bytes; refusing to seal: $relative"
+        }
+    }
     $maximumBytes = $MaximumFileSizeMb * 1MB
     $large = @($files | Where-Object Length -gt $maximumBytes)
     if ($large.Count) {

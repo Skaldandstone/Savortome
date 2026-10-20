@@ -40,6 +40,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Source encoding
         run: node scripts/check-source-encoding.mjs
+      - name: Migration archive identity across checkout settings
+        run: node scripts/check-migration-archive-bytes.mjs
       - name: Typecheck every workspace
         run: pnpm typecheck
       - name: Unit tests
