@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useAuth } from "@clerk/expo";
+import { getClerkInstance, useAuth } from "@clerk/expo";
 import type { PantryEntry, PantryEntryUpdate, PantryIntakeView, PantrySearchResponse, PhotoMediaType } from "@seconds/core/format";
 import { createAccountClient } from "@/lib/client";
 
@@ -12,7 +12,7 @@ export interface PantryController {
   queuedIntake: (intake: PantryIntakeView) => void;
   error: string | null;
   add: (text: string) => Promise<void>;
-  update: (entry: PantryEntryUpdate) => Promise<void>;
+  update: (entry: PantryEntryUpdate) => Promise<boolean>;
   remove: (canonicalItem: string) => Promise<void>;
   clear: () => Promise<void>;
   scanReceipt: (imageBase64: string, imageMediaType: PhotoMediaType) => Promise<boolean>;
@@ -29,7 +29,13 @@ export function usePantry(): PantryController {
   activeClient.current = api;
   const dataClient = useRef(api);
   const mounted = useRef(true);
-  const current = useCallback(() => mounted.current && activeClient.current === api, [api]);
+  const current = useCallback(() => {
+    if (!mounted.current || activeClient.current !== api) return false;
+    try {
+      const session = getClerkInstance().session;
+      return !!userId && !!sessionId && session?.user.id === userId && session.id === sessionId;
+    } catch { return false; }
+  }, [api, userId, sessionId]);
   const [items, setItems] = useState<PantryEntry[]>([]);
   const [intakes, setIntakes] = useState<PantryIntakeView[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,15 +67,18 @@ export function usePantry(): PantryController {
     };
   }, [api, current]);
 
-  const run = useCallback(async (write: () => Promise<PantryEntry[]>) => {
-    if (!current()) return;
+  const run = useCallback(async (write: () => Promise<PantryEntry[]>, verify: (items: PantryEntry[]) => boolean = () => true) => {
+    if (!current()) return false;
     ++reviewVersion.current;
     setError(null);
     try {
       const next = await write();
-      if (current()) { ++reviewVersion.current; setItems(next); }
+      if (!current()) return false;
+      if (!Array.isArray(next) || !verify(next)) throw new Error("We could not confirm that pantry change. Review the latest pantry before trying again.");
+      ++reviewVersion.current; setItems(next); return true;
     } catch (err) {
       if (current()) setError(err instanceof Error ? err.message : "That didn't save.");
+      return false;
     }
   }, [current]);
 
@@ -97,10 +106,15 @@ export function usePantry(): PantryController {
     },
     queuedIntake: intake => { if (current()) { ++reviewVersion.current; setIntakes(items => [intake, ...items.filter(item => item.id !== intake.id)]); } },
     error: dataClient.current === api ? error : null,
-    add: (text) => run(() => api.addPantry(text)),
-    update: (entry) => run(() => api.updatePantry(entry)),
-    remove: (canonicalItem) => run(() => api.removePantry([canonicalItem])),
-    clear: () => run(() => api.clearPantry()),
+    add: async text => { await run(() => api.addPantry(text)); },
+    update: entry => {
+      const input = { ...entry };
+      return run(() => api.updatePantry(input), next => next.some(item => item?.canonicalItem === input.canonicalItem
+        && (input.quantity === undefined || item.quantity === input.quantity)
+        && (input.unit === undefined || item.unit === input.unit)));
+    },
+    remove: async canonicalItem => { await run(() => api.removePantry([canonicalItem])); },
+    clear: async () => { await run(() => api.clearPantry()); },
     scanReceipt: async (imageBase64, imageMediaType) => {
       if (!current()) return false;
       ++reviewVersion.current;
@@ -147,7 +161,13 @@ export function usePantrySearch(): SearchController {
   activeClient.current = api;
   const dataClient = useRef(api);
   const mounted = useRef(true);
-  const current = useCallback(() => mounted.current && activeClient.current === api, [api]);
+  const current = useCallback(() => {
+    if (!mounted.current || activeClient.current !== api) return false;
+    try {
+      const session = getClerkInstance().session;
+      return !!userId && !!sessionId && session?.user.id === userId && session.id === sessionId;
+    } catch { return false; }
+  }, [api, userId, sessionId]);
   const request = useRef(0);
   const [response, setResponse] = useState<PantrySearchResponse | null>(null);
   const [searching, setSearching] = useState(false);

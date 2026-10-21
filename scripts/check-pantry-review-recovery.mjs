@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {build} from 'esbuild';
 import {runInNewContext} from 'node:vm';
 const mocks={
- react:`export const useState=initial=>{const i=state.cursor++;if(!(i in state.values))state.values[i]=typeof initial==='function'?initial():initial;return [state.values[i],v=>state.values[i]=typeof v==='function'?v(state.values[i]):v];};export const useRef=()=>({current:{querySelector:()=>({focus:()=>state.focuses++})}});`,
+ react:`export const useEffect=()=>{};export const useState=initial=>{const i=state.cursor++;if(!(i in state.values))state.values[i]=typeof initial==='function'?initial():initial;return [state.values[i],v=>state.values[i]=typeof v==='function'?v(state.values[i]):v];};export const useRef=initial=>{const i=state.cursor++;return (state.refs??=[])[i]??={current:initial};};`,
  'react/jsx-runtime':`export const Fragment='Fragment';export const jsx=(type,props)=>({type,props});export const jsxs=jsx;`,
  'react-native':`export const View='View',Text='Text',Pressable='Pressable',Switch='Switch';export const Linking={openURL:()=>{}};export const StyleSheet={create:v=>v};`,
  '@seconds/core/format':`export const formatAmount=item=>String(item.quantity??'');export const pantryAttention=()=>({shouldResurface:state.resurface,message:'Check what remains',guide:{storageAdvice:'Synthetic guidance',sourceUrl:'https://example.invalid',sourceLabel:'Fixture'}});export const storageGuideFor=()=>null;`,
@@ -23,7 +23,7 @@ function fixture(platform){
  const onResolve=async(...args)=>{state.calls.push(args);return state.write(...args);};
  const queue=context.app[platform]({intakes:[intake],onResolve});
  const card=nodes(queue).find(n=>typeof n.type==='function');
- const render=()=>{state.cursor=0;return card.type(card.props);};
+ const render=()=>{state.cursor=0;const tree=card.type(card.props);if(platform==='Web')for(const node of nodes(tree)){if(node.props?.ref)node.props.ref.current={querySelector:()=>({focus:()=>state.focuses++})};}return tree;};
  const checkboxes=tree=>nodes(tree).filter(n=>platform==='Web'?n.type==='input':n.type==='Pressable');
  const uncheck=tree=>{const node=checkboxes(tree)[0];platform==='Web'?node.props.onChange({target:{checked:false}}):node.props.onPress();};
  const checked=tree=>checkboxes(tree).map(n=>platform==='Web'?n.props.checked:n.props.accessibilityState.checked);

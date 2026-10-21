@@ -101,8 +101,8 @@ test('mobile cooking onboarding keeps controls closed after load failure and rec
   tree=f.render('CookingStep',{userId:f.state.userId,onDone(){}});for(const effect of f.state.effects.splice(0))effect();await new Promise(resolve=>setTimeout(resolve,0));tree=f.render('CookingStep',{userId:f.state.userId,onDone(){}});
   assert.match(textOf(tree),/Optional details/);assert.ok(nodes(tree).some(n=>typeof n.type==='function'&&n.type.name==='Choice'&&n.props.selected===true));assert.equal(writes,0);
 });
-test('mobile pantry memory keeps correction actions named and guidance qualified',()=>{
-  const f=fixture();const updates=[];const removals=[];const props={items:[{canonicalItem:'banana',displayName:'bananas',quantity:6,unit:null,isStaple:false,isUsual:false,storageLocation:'unknown',acquiredAt:'2026-09-01T00:00:00.000Z',lastConfirmedAt:null,updatedAt:'2026-09-01T00:00:00.000Z'}],onAdd(){},onUpdate:value=>updates.push(value),onRemove:value=>removals.push(value),onClear(){}};let tree=f.render('PantryChips',props);
+test('mobile pantry memory keeps correction actions named and guidance qualified',async()=>{
+  const f=fixture();const updates=[];const removals=[];const props={items:[{canonicalItem:'banana',displayName:'bananas',quantity:6,unit:null,isStaple:false,isUsual:false,storageLocation:'unknown',acquiredAt:'2026-09-01T00:00:00.000Z',lastConfirmedAt:null,updatedAt:'2026-09-01T00:00:00.000Z'}],onAdd(){},onUpdate:async value=>{updates.push(value);return true;},onRemove:value=>removals.push(value),onClear(){}};let tree=f.render('PantryChips',props);
   const content=textOf(tree);assert.match(content,/not expiry or food-safety guarantees/i);assert.match(content,/USDA produce storage guidance/);
   const usual=nodes(tree).find(n=>n.type==='Switch');assert.match(usual.props.accessibilityLabel,/Usually keep bananas/);usual.props.onValueChange(true);
   const fridge=nodes(tree).find(n=>n.type==='Pressable'&&n.props.accessibilityLabel==='bananas: Fridge');assert.equal(fridge.props.accessibilityRole,'radio');fridge.props.onPress();
@@ -111,6 +111,7 @@ test('mobile pantry memory keeps correction actions named and guidance qualified
   nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Used some').props.onPress();tree=f.render('PantryChips',props);
   nodes(tree).find(n=>n.type==='Field'&&n.props.accessibilityLabel==='Remaining amount of bananas').props.onChangeText('4');tree=f.render('PantryChips',props);
   nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Save amount').props.onPress();
+  await new Promise(resolve=>setImmediate(resolve));tree=f.render('PantryChips',props);
   nodes(tree).find(n=>n.type==='Button'&&n.props.label==='All gone').props.onPress();
   nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Remind me in 3 days').props.onPress();
   nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Hide this suggestion').props.onPress();
@@ -171,8 +172,8 @@ test('Android review source blocks storage and overlay permissions the beta does
   assert.deepEqual(config.expo.android.permissions,['android.permission.CAMERA','android.permission.POST_NOTIFICATIONS']);
   const picker=config.expo.plugins.find(plugin=>Array.isArray(plugin)&&plugin[0]==='expo-image-picker');
   assert.ok(picker);assert.equal(picker[1].microphonePermission,false);
-  assert.match(picker[1].cameraPermission,/receipt photo for review/i);
-  assert.match(picker[1].photosPermission,/receipt photo for review/i);
+  assert.match(picker[1].cameraPermission,/receipt or food photo for review/i);
+  assert.match(picker[1].photosPermission,/receipt or food photo for review/i);
 });
 test('hosted account authentication keeps every required Expo runtime peer',async()=>{
   const packageJson=JSON.parse(await readFile(root+'apps/mobile/package.json','utf8'));

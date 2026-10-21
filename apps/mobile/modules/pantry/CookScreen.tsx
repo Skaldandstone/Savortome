@@ -20,9 +20,9 @@ const EXAMPLES = ["chicken thighs, rice, an onion", "something quick and vegetar
  * common case is one tap rather than retyping.
  */
 export function CookScreen() {
-  const { userId } = useAuth();
+  const { userId, sessionId } = useAuth();
   // Reset private drafts, inventory, review selections and search on a switch.
-  return <AccountCookScreen key={userId ?? "signed-out"} />;
+  return <AccountCookScreen key={JSON.stringify([userId ?? null, sessionId ?? null])} />;
 }
 
 function AccountCookScreen() {
@@ -112,7 +112,7 @@ function AccountCookScreen() {
             <PantryChips
               items={pantry.items}
               onAdd={(text) => void pantry.add(text)}
-              onUpdate={(entry) => void pantry.update(entry)}
+              onUpdate={pantry.update}
               onRemove={(item) => void pantry.remove(item)}
               onClear={() => void pantry.clear()}
             />

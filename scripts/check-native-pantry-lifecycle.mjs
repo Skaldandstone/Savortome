@@ -9,7 +9,7 @@ const mocks={
  export const useMemo=(fn,deps)=>{const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){state.deps[i]=deps;state.memos[i]=fn();}return state.memos[i];};
  export const useCallback=(fn,deps)=>useMemo(()=>fn,deps);
  export const useEffect=(fn,deps)=>{const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){state.deps[i]=deps;state.effects.push(()=>{state.cleanups[i]?.();state.cleanups[i]=fn();});}};`,
- '@clerk/expo':'export const useAuth=()=>state.auth;',
+ '@clerk/expo':`export const useAuth=()=>state.auth;export const getClerkInstance=()=>{if(state.sdkError)throw Error('private SDK detail');return {session:state.auth.userId&&state.auth.sessionId?{id:state.auth.sessionId,user:{id:state.auth.userId}}:null};};`,
  '@/lib/client':`export const createAccountClient=account=>Object.fromEntries(['listPantry','listPantryIntakes','addPantry','updatePantry','removePantry','clearPantry','scanPantryReceipt','resolvePantryIntake','searchPantry'].map(method=>[method,async(...args)=>{state.calls.push({account,method,args});return state.respond(method,...args);} ]));`,
 };
 const bundle=await build({bundle:true,write:false,format:'iife',globalName:'pantry',stdin:{resolveDir:process.cwd(),contents:"export {usePantry,usePantrySearch} from './apps/mobile/modules/pantry/usePantry.ts';"},plugins:[{name:'pantry-lifecycle',setup(api){api.onResolve({filter:/.*/},args=>Object.hasOwn(mocks,args.path)?{path:args.path,namespace:'mock'}:undefined);api.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:mocks[args.path],loader:'js'}));}}]});
@@ -121,9 +121,9 @@ test('native reviews: stale refresh cannot undo confirmed acceptance or restore 
 
 // Actual native screen composition; hooks and native UI are injected boundaries.
 const screenMocks={
- react:`export const useState=initial=>[initial,()=>{}];`,
+ react:`export const useState=initial=>[initial===false&&state.showPantry?true:initial,()=>{}];`,
  'react/jsx-runtime':`export const jsx=(type,props,key)=>({type,props,key});export const jsxs=jsx;`,
- '@clerk/expo':`export const useAuth=()=>state.auth;`,
+ '@clerk/expo':`export const useAuth=()=>state.auth;export const getClerkInstance=()=>{if(state.sdkError)throw Error('private SDK detail');return {session:state.auth.userId&&state.auth.sessionId?{id:state.auth.sessionId,user:{id:state.auth.userId}}:null};};`,
  'expo-router':`export const useRouter=()=>({push:route=>state.routes.push(route)});`,
  'react-native':`export const Pressable='Pressable',ScrollView='ScrollView',Text='Text',View='View';export const StyleSheet={create:v=>v};`,
  'react-native-safe-area-context':`export const useSafeAreaInsets=()=>({top:0});`,
@@ -153,7 +153,7 @@ test('actual native CookScreen: uncertain failure remains visible and exact revi
  const f=screenFixture(),review={id:'original-review',digest:'original-digest',items:[{id:'original-line',quantity:6}]};f.state.controller.intakes=[review];f.state.controller.error='We could not confirm the latest grocery reviews.';const tree=f.render(),nodes=screenNodes(tree),queue=nodes.find(n=>n.type==='PantryReviewQueue');assert.equal(queue.props.intakes[0],review);assert.equal(queue.props.onResolve,f.state.controller.resolveIntake);assert.equal(nodes.find(n=>n.type==='ReceiptCapture').props.onScan,f.state.controller.scanReceipt);assert.match(screenText(tree),/could not confirm/);assert.equal(f.state.reads,0);assert.equal(f.state.writes,0);
 });
 test('actual native CookScreen: account replacement resets the private screen key',()=>{
- const f=screenFixture();assert.equal(f.wrapper().key,'account-a');f.state.auth={userId:'account-b'};assert.equal(f.wrapper().key,'account-b');f.state.auth={userId:null};assert.equal(f.wrapper().key,'signed-out');
+ const f=screenFixture();assert.equal(f.wrapper().key,JSON.stringify(['account-a',null]));f.state.auth={userId:'account-b'};assert.equal(f.wrapper().key,JSON.stringify(['account-b',null]));f.state.auth={userId:null};assert.equal(f.wrapper().key,JSON.stringify([null,null]));
 });
 
 test('actual native CookScreen: pending refresh exposes busy semantics to shared Button',()=>{
@@ -170,3 +170,13 @@ const sharedButton=await build({bundle:true,write:false,format:'iife',globalName
 test('actual native Button: pending work maps to busy and disabled accessibility state',()=>{
  const ctx={};runInNewContext(sharedButton.outputFiles[0].text,ctx);for(const busy of [true,false]){const tree=ctx.shared.Button({label:'Review groceries',busy,onPress:()=>{}});assert.equal(tree.props.accessibilityRole,'button');assert.equal(tree.props.accessibilityLabel,'Review groceries');assert.equal(tree.props.accessibilityState.busy,busy);assert.equal(tree.props.accessibilityState.disabled,busy);assert.equal(tree.props.disabled,busy);}
 });
+
+test('native pantry amount receipt: wrong, missing and malformed confirmations remain unconfirmed',async()=>{for(const response of [[],[null],[{canonicalItem:'banana',quantity:9,unit:'pieces'}],[{canonicalItem:'banana',quantity:4,unit:'kg'}],null]){const f=fixture();f.render();await flush();f.state.respond=async()=>response;assert.equal(await f.render().update({canonicalItem:'banana',quantity:4,unit:'pieces',confirmPresent:true}),false);assert.match(f.render().error,/could not confirm/);}});
+test('native pantry amount receipt: exact confirmed quantity/unit returns true',async()=>{const f=fixture();f.render();await flush();f.state.respond=async()=>[{canonicalItem:'banana',quantity:4,unit:'pieces'}];assert.equal(await f.render().update({canonicalItem:'banana',quantity:4,unit:'pieces',confirmPresent:true}),true);assert.equal(f.render().items[0].quantity,4);});
+test('native pantry amount receipt: input freezes before dispatch and old-session completion returns false',async()=>{const f=fixture();f.render();await flush();const gate=deferred();f.state.respond=()=>gate.promise;const input={canonicalItem:'banana',quantity:4,unit:'pieces'},pending=f.render().update(input);input.quantity=9;assert.equal(f.state.calls.find(call=>call.method==='updatePantry').args[0].quantity,4);f.state.respond=async()=>[];f.state.auth.sessionId='replacement';f.render();await flush();gate.resolve([{canonicalItem:'banana',quantity:4,unit:'pieces'}]);assert.equal(await pending,false);assert.equal(f.render().items.length,0);});
+test('actual CookScreen: session identity keys private drafts and preserves update confirmation promise',()=>{const f=screenFixture();f.state.auth.sessionId='session-a';const first=f.wrapper().key;f.state.auth.sessionId='session-b';assert.notEqual(f.wrapper().key,first);f.state.auth.userId='account-b';assert.notEqual(f.wrapper().key,first);});
+
+test('actual CookScreen: quantity editor receives the actual update confirmation promise',async()=>{const f=screenFixture(),gate=deferred();f.state.showPantry=true;f.state.controller.update=()=>gate.promise;const chip=screenNodes(f.render()).find(n=>n.type==='PantryChips');assert.ok(chip);const pending=chip.props.onUpdate({canonicalItem:'banana',quantity:4});gate.resolve(false);assert.equal(await pending,false);});
+
+test('native pantry amount: SDK session replacement without old-hook rerender refuses retained update',async()=>{const f=fixture(),old=f.render();await flush();f.state.auth.sessionId='replacement-session';const calls=f.state.calls.length;assert.equal(await old.update({canonicalItem:'banana',quantity:4,unit:'pieces'}),false);assert.equal(f.state.calls.length,calls);});
+test('native pantry amount: unavailable live session refuses update without disclosing SDK details',async()=>{const f=fixture(),old=f.render();await flush();f.state.sdkError=true;const calls=f.state.calls.length;assert.equal(await old.update({canonicalItem:'banana',quantity:4,unit:'pieces'}),false);assert.equal(f.state.calls.length,calls);});
