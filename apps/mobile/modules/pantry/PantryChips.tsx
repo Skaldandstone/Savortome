@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Linking, Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import { Alert, Linking, Pressable, StyleSheet, Switch, Text, View } from "react-native";
 import {
   formatAmount,
+  parsePantryInput,
   pantryAttention,
   storageGuideFor,
   type PantryEntry,
@@ -20,7 +21,7 @@ const STORAGE: Array<{ value: PantryStorageLocation; label: string }> = [
 
 export function PantryChips({ items, onAdd, onUpdate, onRemove, onClear }: {
   items: PantryEntry[];
-  onAdd: (text: string) => void;
+  onAdd: (text: string) => void | Promise<boolean>;
   onUpdate: (entry: PantryEntryUpdate) => void | Promise<boolean>;
   onRemove: (canonicalItem: string) => void;
   onClear: () => void;
@@ -31,13 +32,48 @@ export function PantryChips({ items, onAdd, onUpdate, onRemove, onClear }: {
   const [remainingAmount, setRemainingAmount] = useState("");
   const [amountBusy, setAmountBusy] = useState(false);
   const [amountError, setAmountError] = useState<string | null>(null);
+  const [addBusy, setAddBusy] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const addDraft = useRef("");
+  const addRequest = useRef<{ text: string } | null>(null);
+  const addVersion = useRef(0);
+  const renderedAddVersion = addVersion.current;
+  const renderedAddRequest = addRequest.current;
+  const pantryBusy = amountBusy || addBusy;
   const mounted = useRef(true);
   const currentItems = useRef(items); currentItems.current = items;
   const editor = useRef<{ item: PantryEntry; input: PantryEntryUpdate | null } | null>(null);
   const flight = useRef<object | null>(null);
   const renderedEditor = editor.current;
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; editor.current = null; }; }, []);
-  const submit = () => { if (mounted.current && !flight.current && text.trim()) { onAdd(text); setText(""); } };
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; editor.current = null; ++addVersion.current; }; }, []);
+  const submit = async () => {
+    if (!mounted.current || flight.current || renderedAddVersion !== addVersion.current || renderedAddRequest !== addRequest.current) return;
+    const request = addRequest.current ?? { text: addDraft.current.trim() };
+    if (!request.text) return;
+    if (!addRequest.current && !parsePantryInput(request.text).length) { setAddError("Enter at least one ingredient before adding. Nothing was sent."); return; }
+    addRequest.current = request; ++addVersion.current;
+    const token = {}; flight.current = token; setAddBusy(true); setAddError(null);
+    try {
+      const confirmed = await onAdd(request.text);
+      if (!mounted.current || addRequest.current !== request || flight.current !== token) return;
+      if (confirmed !== true) throw new Error("Unconfirmed pantry add");
+      addRequest.current = null; addDraft.current = ""; ++addVersion.current; setText("");
+    } catch {
+      if (mounted.current && addRequest.current === request) setAddError("We could not confirm these ingredients saved. Your exact entry is kept for a deliberate retry. Check your pantry first: retrying replaces matching quantities rather than adding to their previous counts.");
+    } finally {
+      if (flight.current === token) { flight.current = null; if (mounted.current) setAddBusy(false); }
+    }
+  };
+  const discardAdd = () => {
+    if (!mounted.current || flight.current || !renderedAddRequest || addRequest.current !== renderedAddRequest) return;
+    Alert.alert("Discard local pantry entry?", "The earlier request may already have saved or may still finish. This only discards your local entry; it does not remove pantry items or cancel the request. Check your pantry before entering a different amount.", [
+      { text: "Keep entry", style: "cancel" },
+      { text: "Discard local pantry entry", style: "destructive", onPress: () => {
+        if (!mounted.current || flight.current || addRequest.current !== renderedAddRequest) return;
+        addRequest.current = null; addDraft.current = ""; ++addVersion.current; setText(""); setAddError(null);
+      } },
+    ]);
+  };
   const startAmountEdit = (item: PantryEntry) => {
     if (!mounted.current || flight.current || editor.current?.input) return;
     const current = currentItems.current.find(value => value.canonicalItem === item.canonicalItem);
@@ -79,12 +115,15 @@ export function PantryChips({ items, onAdd, onUpdate, onRemove, onClear }: {
     <View style={styles.wrap}>
       {editor.current && !items.some(item => item.canonicalItem === editor.current?.item.canonicalItem) ? <View style={styles.amountEditor}>
         <Text accessibilityRole="alert" style={{ color: c.text }}>The edited item no longer appears in the latest pantry. Your local correction ({remainingAmount} {editor.current.item.unit ?? ""}) is kept and may already have saved. Cancel this local edit before correcting another item; cancellation cannot undo an earlier request.</Text>
-        <Button label="Cancel amount change" variant="ghost" disabled={amountBusy} onPress={cancelAmount} />
+        <Button label="Cancel amount change" variant="ghost" disabled={pantryBusy} onPress={cancelAmount} />
       </View> : null}
       <View style={styles.addRow}>
-        <Field value={text} editable={!amountBusy} onChangeText={value => { if (mounted.current && !flight.current) setText(value); }} placeholder="2 chicken thighs, rice, tomatoes" accessibilityLabel="Add pantry ingredients" autoCapitalize="none" onSubmitEditing={submit} style={styles.input} />
-        <Button label="Add" variant="ghost" disabled={amountBusy} onPress={submit} />
+        <Field value={text} editable={!pantryBusy && !addRequest.current} onChangeText={value => { if (mounted.current && !flight.current && !addRequest.current && renderedAddVersion === addVersion.current) { addDraft.current = value; setText(value); setAddError(null); } }} placeholder="2 chicken thighs, rice, tomatoes" accessibilityLabel="Add pantry ingredients" autoCapitalize="none" onSubmitEditing={() => void submit()} style={styles.input} />
+        <Button label={addBusy ? "Adding ingredients..." : addRequest.current ? "Retry the same pantry entry" : "Add"} busy={addBusy} variant="ghost" disabled={pantryBusy || !text.trim()} onPress={() => void submit()} />
       </View>
+      <Text style={{ color: c.textMuted }}>Enter the amounts you currently have. Manual entry replaces matching pantry quantities rather than adding to their previous counts.</Text>
+      {addRequest.current ? <Button label="Discard local pantry entry" variant="ghost" disabled={pantryBusy} onPress={discardAdd} /> : null}
+      {addError ? <Text accessibilityRole="alert" style={{ color: c.error }}>{addError}</Text> : null}
       {items.length === 0 ? (
         <Text style={[styles.empty, { color: c.textMuted }]}>Nothing here yet. Common seasonings and baking staples are already assumed; add anything else you keep in.</Text>
       ) : items.map(item => {
@@ -98,32 +137,32 @@ export function PantryChips({ items, onAdd, onUpdate, onRemove, onClear }: {
                 <Text style={[styles.name, { color: c.text }]}>{item.displayName}</Text>
                 {amount ? <Text style={[styles.amount, { color: c.textMuted }]}>{amount}</Text> : null}
               </View>
-              <Button label={`Remove ${item.displayName}`} accessibilityLabel={`Remove ${item.displayName}`} variant="ghost" disabled={amountBusy} onPress={() => remove(item.canonicalItem)} />
+              <Button label={`Remove ${item.displayName}`} accessibilityLabel={`Remove ${item.displayName}`} variant="ghost" disabled={pantryBusy} onPress={() => remove(item.canonicalItem)} />
             </View>
-            {attention?.shouldResurface ? <><Text accessibilityRole="alert" style={[styles.reminder, { color: c.warn }]}>{attention.message}</Text><View style={styles.promptActions}><Button label="Yes, still here" variant="ghost" disabled={amountBusy} onPress={() => update({ canonicalItem: item.canonicalItem, confirmPresent: true })} /><Button label="Used some" variant="ghost" disabled={amountBusy || !!editor.current?.input} onPress={() => startAmountEdit(item)} /><Button label="All gone" variant="ghost" disabled={amountBusy} onPress={() => remove(item.canonicalItem)} />{([3, 7, 14] as const).map(days => <Button key={days} label={`Remind me in ${days} days`} variant="ghost" disabled={amountBusy} onPress={() => update({ canonicalItem: item.canonicalItem, snoozeDays: days })} />)}<Text>Hides this in-app suggestion until then. No push notification is scheduled.</Text><Button label="Hide this suggestion" variant="ghost" disabled={amountBusy} onPress={() => update({ canonicalItem: item.canonicalItem, resurfaceHidden: true })} /></View></> : null}
-            {editingAmount === item.canonicalItem ? <View style={[styles.amountEditor, { backgroundColor: c.surfaceSunken, borderColor: c.border }]}><Text style={[styles.label, { color: c.text }]}>How many {item.unit ? `${item.unit} ` : ""}remain?</Text><Field value={remainingAmount} editable={!amountBusy && !editor.current?.input} onChangeText={value => { if (mounted.current && editor.current === renderedEditor && !flight.current && !editor.current?.input) setRemainingAmount(value); }} keyboardType="decimal-pad" accessibilityLabel={`Remaining amount of ${item.displayName}`} style={styles.amountInput} /><View style={styles.promptActions}><Button label={amountBusy ? "Saving amount..." : "Save amount"} busy={amountBusy} disabled={amountBusy || !remainingAmount.trim() || !Number.isFinite(Number(remainingAmount)) || Number(remainingAmount) <= 0} onPress={() => void saveAmount(item)} /><Button label="Cancel amount change" variant="ghost" disabled={amountBusy} onPress={cancelAmount} /></View>{amountError ? <Text accessibilityRole="alert" style={{ color: c.error }}>{amountError}</Text> : null}</View> : null}
+            {attention?.shouldResurface ? <><Text accessibilityRole="alert" style={[styles.reminder, { color: c.warn }]}>{attention.message}</Text><View style={styles.promptActions}><Button label="Yes, still here" variant="ghost" disabled={pantryBusy} onPress={() => update({ canonicalItem: item.canonicalItem, confirmPresent: true })} /><Button label="Used some" variant="ghost" disabled={pantryBusy || !!editor.current?.input} onPress={() => startAmountEdit(item)} /><Button label="All gone" variant="ghost" disabled={pantryBusy} onPress={() => remove(item.canonicalItem)} />{([3, 7, 14] as const).map(days => <Button key={days} label={`Remind me in ${days} days`} variant="ghost" disabled={pantryBusy} onPress={() => update({ canonicalItem: item.canonicalItem, snoozeDays: days })} />)}<Text>Hides this in-app suggestion until then. No push notification is scheduled.</Text><Button label="Hide this suggestion" variant="ghost" disabled={pantryBusy} onPress={() => update({ canonicalItem: item.canonicalItem, resurfaceHidden: true })} /></View></> : null}
+            {editingAmount === item.canonicalItem ? <View style={[styles.amountEditor, { backgroundColor: c.surfaceSunken, borderColor: c.border }]}><Text style={[styles.label, { color: c.text }]}>How many {item.unit ? `${item.unit} ` : ""}remain?</Text><Field value={remainingAmount} editable={!pantryBusy && !editor.current?.input} onChangeText={value => { if (mounted.current && editor.current === renderedEditor && !flight.current && !editor.current?.input) setRemainingAmount(value); }} keyboardType="decimal-pad" accessibilityLabel={`Remaining amount of ${item.displayName}`} style={styles.amountInput} /><View style={styles.promptActions}><Button label={amountBusy ? "Saving amount..." : "Save amount"} busy={amountBusy} disabled={pantryBusy || !remainingAmount.trim() || !Number.isFinite(Number(remainingAmount)) || Number(remainingAmount) <= 0} onPress={() => void saveAmount(item)} /><Button label="Cancel amount change" variant="ghost" disabled={pantryBusy} onPress={cancelAmount} /></View>{amountError ? <Text accessibilityRole="alert" style={{ color: c.error }}>{amountError}</Text> : null}</View> : null}
             <View style={styles.usualRow}>
               <Text style={[styles.body, { color: c.text }]}>Usually keep this</Text>
-              <Switch accessibilityLabel={`Usually keep ${item.displayName}`} value={item.isUsual ?? false} disabled={amountBusy} onValueChange={isUsual => update({ canonicalItem: item.canonicalItem, isUsual })} />
+              <Switch accessibilityLabel={`Usually keep ${item.displayName}`} value={item.isUsual ?? false} disabled={pantryBusy} onValueChange={isUsual => update({ canonicalItem: item.canonicalItem, isUsual })} />
             </View>
             <View style={styles.usualRow}>
               <Text style={[styles.body, { color: c.text }]}>Show freshness prompts</Text>
-              <Switch accessibilityLabel={`Show freshness prompts for ${item.displayName}`} value={!(item.resurfaceHidden ?? false)} disabled={amountBusy} onValueChange={value => update({ canonicalItem: item.canonicalItem, resurfaceHidden: !value })} />
+              <Switch accessibilityLabel={`Show freshness prompts for ${item.displayName}`} value={!(item.resurfaceHidden ?? false)} disabled={pantryBusy} onValueChange={value => update({ canonicalItem: item.canonicalItem, resurfaceHidden: !value })} />
             </View>
             <Text style={[styles.label, { color: c.textMuted }]}>Stored in</Text>
             <View accessibilityRole="radiogroup" style={styles.storage}>
               {STORAGE.map(option => (
-                <Pressable key={option.value} accessibilityRole="radio" accessibilityState={{ disabled: amountBusy, selected: (item.storageLocation ?? "unknown") === option.value }} accessibilityLabel={`${item.displayName}: ${option.label}`} disabled={amountBusy} onPress={() => update({ canonicalItem: item.canonicalItem, storageLocation: option.value })} style={[styles.storageChoice, { borderColor: c.border, backgroundColor: (item.storageLocation ?? "unknown") === option.value ? c.accentSoft : c.surfaceSunken }]}>
+                <Pressable key={option.value} accessibilityRole="radio" accessibilityState={{ disabled: pantryBusy, selected: (item.storageLocation ?? "unknown") === option.value }} accessibilityLabel={`${item.displayName}: ${option.label}`} disabled={pantryBusy} onPress={() => update({ canonicalItem: item.canonicalItem, storageLocation: option.value })} style={[styles.storageChoice, { borderColor: c.border, backgroundColor: (item.storageLocation ?? "unknown") === option.value ? c.accentSoft : c.surfaceSunken }]}>
                   <Text style={{ color: c.text, fontSize: typeScale.micro }}>{option.label}</Text>
                 </Pressable>
               ))}
             </View>
-            <View style={styles.confirm}><Button label={`Still have ${item.displayName}`} variant="ghost" disabled={amountBusy} onPress={() => update({ canonicalItem: item.canonicalItem, confirmPresent: true })} /></View>
+            <View style={styles.confirm}><Button label={`Still have ${item.displayName}`} variant="ghost" disabled={pantryBusy} onPress={() => update({ canonicalItem: item.canonicalItem, confirmPresent: true })} /></View>
             {guide ? <View style={[styles.guidance, { backgroundColor: c.surfaceSunken }]}><Text style={[styles.body, { color: c.text }]}>{guide.storageAdvice}</Text>{guide.separationAdvice ? <Text style={[styles.body, { color: c.textMuted }]}>{guide.separationAdvice}</Text> : null}<Pressable accessibilityRole="link" accessibilityLabel={`Open ${guide.sourceLabel}`} onPress={() => void Linking.openURL(guide.sourceUrl)}><Text style={[styles.source, { color: c.accent }]}>{guide.sourceLabel}</Text></Pressable><Text style={[styles.source, { color: c.textMuted }]}>Check current package directions too.</Text></View> : null}
           </View>
         );
       })}
-      {items.length > 0 ? <><Text style={[styles.boundary, { color: c.textMuted }]}>Dates and counts help you remember what may be around. They are not expiry or food-safety guarantees.</Text><Button label="Clear pantry" variant="ghost" disabled={amountBusy} onPress={() => { if (mounted.current && !flight.current) onClear(); }} /></> : null}
+      {items.length > 0 ? <><Text style={[styles.boundary, { color: c.textMuted }]}>Dates and counts help you remember what may be around. They are not expiry or food-safety guarantees.</Text><Button label="Clear pantry" variant="ghost" disabled={pantryBusy} onPress={() => { if (mounted.current && !flight.current) onClear(); }} /></> : null}
     </View>
   );
 }

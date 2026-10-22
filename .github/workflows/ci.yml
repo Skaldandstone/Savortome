@@ -59,6 +59,7 @@ jobs:
           node scripts/check-pantry-review-recovery.mjs
           node scripts/check-native-pantry-lifecycle.mjs
           node scripts/check-native-pantry-amount.mjs
+          node scripts/check-native-pantry-add.mjs
           node scripts/check-web-pantry-lifecycle.mjs
           node scripts/check-web-barcode-lifecycle.mjs
           node scripts/check-browser-barcode-scanner.mjs

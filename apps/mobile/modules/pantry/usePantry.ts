@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getClerkInstance, useAuth } from "@clerk/expo";
-import type { PantryEntry, PantryEntryUpdate, PantryIntakeView, PantrySearchResponse, PhotoMediaType } from "@seconds/core/format";
+import { parsePantryInput, type PantryEntry, type PantryEntryUpdate, type PantryIntakeView, type PantrySearchResponse, type PhotoMediaType } from "@seconds/core/format";
 import { createAccountClient } from "@/lib/client";
 
 export interface PantryController {
@@ -11,7 +11,7 @@ export interface PantryController {
   refreshReviews: () => Promise<boolean>;
   queuedIntake: (intake: PantryIntakeView) => void;
   error: string | null;
-  add: (text: string) => Promise<void>;
+  add: (text: string) => Promise<boolean>;
   update: (entry: PantryEntryUpdate) => Promise<boolean>;
   remove: (canonicalItem: string) => Promise<void>;
   clear: () => Promise<void>;
@@ -76,8 +76,8 @@ export function usePantry(): PantryController {
       if (!current()) return false;
       if (!Array.isArray(next) || !verify(next)) throw new Error("We could not confirm that pantry change. Review the latest pantry before trying again.");
       ++reviewVersion.current; setItems(next); return true;
-    } catch (err) {
-      if (current()) setError(err instanceof Error ? err.message : "That didn't save.");
+    } catch {
+      if (current()) setError("We could not confirm that pantry change. Check your pantry before trying again.");
       return false;
     }
   }, [current]);
@@ -106,7 +106,13 @@ export function usePantry(): PantryController {
     },
     queuedIntake: intake => { if (current()) { ++reviewVersion.current; setIntakes(items => [intake, ...items.filter(item => item.id !== intake.id)]); } },
     error: dataClient.current === api ? error : null,
-    add: async text => { await run(() => api.addPantry(text)); },
+    add: text => {
+      const pending = text.trim();
+      const expected = parsePantryInput(pending);
+      if (!expected.length) return Promise.resolve(false);
+      return run(() => api.addPantry(pending), next => expected.every(entry => next.some(item => item?.canonicalItem === entry.canonicalItem
+        && item.quantity === entry.quantity && item.unit === entry.unit)));
+    },
     update: entry => {
       const input = { ...entry };
       return run(() => api.updatePantry(input), next => next.some(item => item?.canonicalItem === input.canonicalItem

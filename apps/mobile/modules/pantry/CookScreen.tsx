@@ -111,7 +111,7 @@ function AccountCookScreen() {
           <View style={[styles.pantryPanel, { backgroundColor: c.surfaceSunken }]}>
             <PantryChips
               items={pantry.items}
-              onAdd={(text) => void pantry.add(text)}
+              onAdd={pantry.add}
               onUpdate={pantry.update}
               onRemove={(item) => void pantry.remove(item)}
               onClear={() => void pantry.clear()}
