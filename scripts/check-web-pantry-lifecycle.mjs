@@ -7,19 +7,24 @@ const mocks={react:`export const useState=initial=>{const i=state.cursor++;if(!(
  export const useRef=initial=>{const i=state.cursor++;return state.refs[i]??= {current:initial};};
  export const useMemo=(fn,deps)=>{const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){state.deps[i]=deps;state.memos[i]=fn();}return state.memos[i];};
  export const useCallback=(fn,deps)=>useMemo(()=>fn,deps);
- export const useEffect=(fn,deps)=>{const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){state.deps[i]=deps;state.effects.push(()=>{state.cleanups[i]?.();state.cleanups[i]=fn();});}};`, '@/lib/client':`export const api=Object.fromEntries(["listPantry","listPantryIntakes","addPantry","updatePantry","removePantry","clearPantry","resolvePantryIntake","searchPantry"].map(method=>[method,(...args)=>state.api[method](...args)]));`, '@/lib/action-failure':`export const actionFailure=(error,fallback)=>({message:error.message??fallback,signInRequired:false});`};
-const bundle=await build({bundle:true,write:false,format:'iife',globalName:'pantry',stdin:{resolveDir:process.cwd(),contents:"export {usePantry,usePantrySearch} from './apps/web/modules/pantry/usePantry.ts';"},plugins:[{name:'web-pantry-lifecycle',setup(api){api.onResolve({filter:/.*/},args=>Object.hasOwn(mocks,args.path)?{path:args.path,namespace:'mock'}:undefined);api.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:mocks[args.path],loader:'js'}));}}]});
+ export const useEffect=(fn,deps)=>{const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){state.deps[i]=deps;state.effects.push(()=>{state.cleanups[i]?.();state.cleanups[i]=fn();});}};`, '@/lib/client':`export const api=Object.fromEntries(["listPantry","listPantryIntakes","addPantry","updatePantry","removePantry","clearPantry","resolvePantryIntake","searchPantry"].map(method=>[method,(...args)=>state.api[method](...args)]));`, '@/lib/action-failure':`export {actionFailure} from './apps/web/lib/action-failure.ts';`, '@seconds/core/format':`export {parsePantryInput} from './packages/core/src/pantry.ts';export {ApiError} from './packages/core/src/api-client.ts';`};
+const bundle=await build({bundle:true,write:false,format:'iife',globalName:'pantry',stdin:{resolveDir:process.cwd(),contents:"export {usePantry,usePantrySearch} from './apps/web/modules/pantry/usePantry.ts';export {ApiError} from '@seconds/core/format';"},plugins:[{name:'web-pantry-lifecycle',setup(api){api.onResolve({filter:/.*/},args=>Object.hasOwn(mocks,args.path)?{path:args.path,namespace:'mock'}:undefined);api.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:mocks[args.path],loader:'js',resolveDir:process.cwd()}));}}]});
 const flush=()=>new Promise(resolve=>setImmediate(resolve));
 const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return{promise,resolve,reject};};
 function fixture(hookName='usePantry'){
  const state={cursor:0,values:[],refs:[],deps:[],memos:[],effects:[],cleanups:[],writes:0,calls:[],respond:async()=>[]};
  const client=()=>Object.fromEntries(['listPantry','listPantryIntakes','addPantry','updatePantry','removePantry','clearPantry','resolvePantryIntake','searchPantry'].map(method=>[method,async(...args)=>{state.calls.push({method,args});return state.respond(method,...args);} ]));
- const context={state};runInNewContext(bundle.outputFiles[0].text,context);let api=client();state.api=api;
+ const context={state,Error};runInNewContext(bundle.outputFiles[0].text,context);let api=client();state.api=api;
  const render=(commit=true)=>{state.cursor=0;const hook=context.pantry[hookName](api);if(commit)state.effects.splice(0).forEach(fn=>fn());return hook;};
  const unmount=()=>state.cleanups.filter(Boolean).forEach(fn=>fn());
- return{state,render,unmount,replace:()=>{api=client();state.api=api;}};
+ return{state,render,unmount,ApiError:context.pantry.ApiError,replace:()=>{api=client();state.api=api;}};
 }
 const late={pantry:[{canonicalItem:'synthetic-old-food'}],intakes:[{id:'synthetic-old-review'}]};
+
+test('web pantry: missing Add receipt cannot confirm success or erase the last pantry',async()=>{
+ const f=fixture();f.state.respond=async method=>method==='listPantry'?[{canonicalItem:'rice',quantity:1,unit:'cup'}]:[];f.render();await flush();
+ f.state.respond=async()=>[];assert.equal(await f.render().add('2 bananas'),false);assert.equal(f.render().items[0].canonicalItem,'rice');assert.match(f.render().error.message,/could not confirm/i);
+});
 test('web pantry: same-account session replacement invalidates pending review result',async()=>{
  const f=fixture(),old=f.render();await flush();const reply=deferred();f.state.respond=()=>reply.promise;const operation=old.resolveIntake('old-review','accept',['item']);
  f.state.respond=async()=>[];f.replace();f.render();await flush();reply.resolve(late);assert.equal(await operation,false);assert.deepEqual(Array.from(f.render().items),[]);
@@ -96,7 +101,7 @@ test('web pantry: older review load cannot restore an accepted grocery review',a
  const f=fixture(),initial=deferred();f.state.respond=async method=>method==='listPantryIntakes'?initial.promise:[];f.render();f.state.respond=async()=>({pantry:[{canonicalItem:'confirmed banana'}],intakes:[]});assert.equal(await f.render().resolveIntake('original-review','accept',['original-line']),true);initial.resolve([{id:'old-review'}]);await flush();assert.equal(f.render().intakes.length,0);assert.equal(f.render().items[0].canonicalItem,'confirmed banana');
 });
 test('web pantry: older pantry load cannot undo a confirmed write',async()=>{
- const f=fixture(),initial=deferred();f.state.respond=async method=>method==='listPantry'?initial.promise:[];f.render();f.state.respond=async()=>[{canonicalItem:'confirmed banana'}];assert.equal(await f.render().add('synthetic'),true);initial.resolve([]);await flush();assert.equal(f.render().items[0].canonicalItem,'confirmed banana');
+ const f=fixture(),initial=deferred();f.state.respond=async method=>method==='listPantry'?initial.promise:[];f.render();f.state.respond=async()=>[{canonicalItem:'rice',quantity:2,unit:'cup'}];assert.equal(await f.render().add('2 cups rice'),true);initial.resolve([]);await flush();assert.equal(f.render().items[0].canonicalItem,'rice');
 });
 test('web pantry: retry invalidates previous read before effect cleanup',async()=>{
  const f=fixture(),old=deferred();f.state.respond=method=>method==='listPantryIntakes'?old.promise:Promise.resolve([]);f.render();await flush();f.render().retryIntakes();const writes=f.state.writes;old.resolve([{id:'stale-review'}]);await flush();assert.equal(f.state.writes,writes);f.unmount();
@@ -112,4 +117,54 @@ test('actual CookPanel: refresh is available without read errors and invokes rea
  const render=()=>{state.cursor=0;const content=ctx.shell.CookPanel({clerkEnabled:false});return walk(content.type(content.props));};
  const action=render().find(n=>n.props?.children==='Refresh pantry and grocery reviews');assert.ok(action);assert.equal(action.props.disabled,false);action.props.onClick();assert.deepEqual(calls,['pantry-read','review-read']);
  state.pantry.intakesLoading=true;assert.equal(render().find(n=>n.props?.children==='Refresh pantry and grocery reviews').props.disabled,true);
+});
+
+
+test('web pantry: Add requires every submitted quantity and normalized unit',async()=>{
+ for(const receipt of [[],[{canonicalItem:'rice',quantity:2,unit:'cup'}],[{canonicalItem:'rice',quantity:9,unit:'cup'},{canonicalItem:'banana',quantity:2,unit:null}],[{canonicalItem:'rice',quantity:2,unit:'kg'},{canonicalItem:'banana',quantity:2,unit:null}],[{canonicalItem:'rice',quantity:2,unit:'cup'},{canonicalItem:'banana',quantity:2,unit:'pieces'}]]){
+  const f=fixture();f.render();await flush();f.state.respond=async()=>receipt;
+  assert.equal(await f.render().add('2 cups rice, 2 bananas'),false);assert.match(f.render().error.message,/could not confirm/);assert.equal(f.render().items.length,0);
+ }
+});
+
+test('web pantry: complete Add receipt confirms all entries and keeps unrelated items',async()=>{
+ const f=fixture();f.render();await flush();f.state.respond=async()=>[{canonicalItem:'rice',quantity:2,unit:'cup'},{canonicalItem:'banana',quantity:2,unit:null},{canonicalItem:'pear',quantity:3,unit:null}];
+ assert.equal(await f.render().add(' 2 cups rice, 2 bananas '),true);assert.equal(f.render().items.length,3);assert.equal(f.render().error,null);assert.equal(f.state.calls.at(-1).args[0],'2 cups rice, 2 bananas');
+});
+
+test('web pantry: Add with unknown amount requires explicit null amount and unit in receipt',async()=>{
+ const f=fixture();f.render();await flush();f.state.respond=async()=>[{canonicalItem:'rice'}];assert.equal(await f.render().add('rice'),false);
+ f.state.respond=async()=>[{canonicalItem:'rice',quantity:null,unit:null}];assert.equal(await f.render().add('rice'),true);
+});
+
+test('web pantry: malformed Add receipts never replace confirmed pantry',async()=>{
+ for(const receipt of [null,{}, {items:[]},[null],[{canonicalItem:'banana',quantity:'2',unit:null}]]){
+  const f=fixture();f.state.respond=async method=>method==='listPantry'?[{canonicalItem:'rice',quantity:1,unit:'cup'}]:[];f.render();await flush();f.state.respond=async()=>receipt;
+  assert.equal(await f.render().add('2 bananas'),false);assert.equal(f.render().items[0].canonicalItem,'rice');assert.match(f.render().error.message,/could not confirm/);
+ }
+});
+
+test('web pantry: invalid Add input never dispatches or disturbs current pantry',async()=>{
+ const f=fixture();f.render();await flush();const calls=f.state.calls.length;
+ for(const input of ['','  ',' , ; '])assert.equal(await f.render().add(input),false);
+ assert.equal(f.state.calls.length,calls);
+});
+
+test('web pantry: uncertain Add can be explicitly retried with the same text',async()=>{
+ const f=fixture();f.render();await flush();let writes=0;f.state.respond=async()=>++writes===1?[]:[{canonicalItem:'rice',quantity:2,unit:'cup'}];
+ assert.equal(await f.render().add('2 cups rice'),false);assert.equal(await f.render().add('2 cups rice'),true);
+ assert.deepEqual(f.state.calls.filter(c=>c.method==='addPantry').map(c=>c.args[0]),['2 cups rice','2 cups rice']);assert.equal(f.render().error,null);
+});
+
+test('web pantry: Add failures hide private details while preserving sign-in recovery',async()=>{
+ const f=fixture();f.render();await flush();
+ for(const status of [401,500]){
+  f.state.respond=async()=>{throw new f.ApiError('private backend payload',status);};
+  assert.equal(await f.render().add('2 cups rice'),false);assert.equal(f.render().error.signInRequired,status===401);assert.doesNotMatch(f.render().error.message,/private backend payload/);
+ }
+});
+
+test('web pantry: verified Add receipt still cannot publish after client replacement before cleanup',async()=>{
+ const f=fixture();f.render();await flush();const reply=deferred();f.state.respond=()=>reply.promise;const operation=f.render().add('2 cups rice');f.replace();f.render(false);const writes=f.state.writes;
+ reply.resolve([{canonicalItem:'rice',quantity:2,unit:'cup'}]);assert.equal(await operation,false);assert.equal(f.state.writes,writes);assert.equal(f.render(false).items.length,0);f.unmount();
 });

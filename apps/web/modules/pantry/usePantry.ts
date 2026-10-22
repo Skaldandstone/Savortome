@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { PantryEntry, PantryEntryUpdate, PantryIntakeView, PantrySearchResponse } from "@seconds/core/format";
+import { parsePantryInput, type PantryEntry, type PantryEntryUpdate, type PantryIntakeView, type PantrySearchResponse } from "@seconds/core/format";
 import { api as defaultApi } from "@/lib/client";
 import { actionFailure, type ActionFailure } from "@/lib/action-failure";
 
@@ -121,17 +121,23 @@ export function usePantry(api = defaultApi): PantryController {
     }
   }, [api, current]);
 
-  const run = useCallback(async (write: () => Promise<PantryEntry[]>): Promise<boolean> => {
+  const run = useCallback(async (write: () => Promise<PantryEntry[]>, verify?: (items: PantryEntry[]) => boolean): Promise<boolean> => {
     if (!current()) return false;
     setError(null);
     try {
       const next = await write();
       if (!current()) return false;
+      if (!Array.isArray(next) || (verify && !verify(next))) throw new Error("We could not confirm that pantry change. Check your pantry before trying again.");
       ++pantryVersion.current; setLoaded(true); setLoading(false); setPantryError(null);
       setItems(next);
       return true;
     } catch (err) {
-      if (current()) setError(actionFailure(err, "That didn't save."));
+      if (current()) {
+        const failure = actionFailure(err, "That didn't save.");
+        setError(verify && !failure.signInRequired
+          ? { message: "We could not confirm that pantry change. Check your pantry before trying again.", signInRequired: false }
+          : failure);
+      }
       return false;
     }
   }, [current]);
@@ -148,7 +154,15 @@ export function usePantry(api = defaultApi): PantryController {
     intakesError: dataClient.current === api ? intakesError : null,
     retryPantry: () => { if (current()) { ++pantryVersion.current; setPantryAttempt(attempt => attempt + 1); } },
     retryIntakes: () => { if (current()) { ++intakesVersion.current; setIntakesAttempt(attempt => attempt + 1); } },
-    add: (text) => run(() => api.addPantry(text)),
+    add: (text) => {
+      if (!current()) return Promise.resolve(false);
+      const pending = text.trim();
+      const expected = parsePantryInput(pending);
+      if (!expected.length) return Promise.resolve(false);
+      // The form clears on true, so a resolved request alone is not confirmation.
+      return run(() => api.addPantry(pending), next => expected.every(entry => next.some(item => item?.canonicalItem === entry.canonicalItem
+        && item.quantity === entry.quantity && item.unit === entry.unit)));
+    },
     update: (update) => run(() => api.updatePantry(update)),
     remove: (canonicalItem) => run(() => api.removePantry([canonicalItem])),
     clear: () => run(() => api.clearPantry()),
