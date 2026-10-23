@@ -115,7 +115,7 @@ export function pantryAttention(
     daysSinceKnown,
     shouldResurface,
     message: shouldResurface
-      ? `Still have ${name}? It has been about ${daysSinceKnown} day${daysSinceKnown === 1 ? "" : "s"} since it was last confirmed. Check it before planning around it.`
+      ? `Still have ${name}? It has been about ${daysSinceKnown} day${daysSinceKnown === 1 ? "" : "s"} since its latest recorded arrival, update or check. Check it before planning around it.`
       : `Storage guidance for ${name}.`,
   };
 }

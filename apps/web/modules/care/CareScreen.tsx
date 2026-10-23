@@ -38,7 +38,7 @@ function CareContent({ link, standalone = false, accountId }: CareProps & { acco
     try {
       const raw = sessionStorage.getItem('seconds-care-return');
       sessionStorage.removeItem('seconds-care-return');
-      const saved = restoreCareReturn(raw);
+      const saved = restoreCareReturn(raw, Date.now(), link);
       if (saved) { setChoices(saved.choices); setSelectedId(saved.selectedId); setHandoff(saved.link); }
     } catch { /* Storage may be disabled. The screen still works. */ }
   }, []);
@@ -97,9 +97,9 @@ function CareContent({ link, standalone = false, accountId }: CareProps & { acco
       <label className={styles.quickChoice}><KitchenIcon name="clock" /><span>Time<select aria-label="How much time?" value={choices.time ?? ''} onChange={e => setChoice('time', e.target.value || undefined)}><option value="">Up to twenty minutes</option><option value="two">Two minutes</option><option value="ten">Ten minutes</option><option value="twenty">Twenty minutes</option></select></span></label>
     </section>
     <details className={styles.moreChoices}><summary>A few more preferences<KitchenIcon name="plus" /></summary><div className={styles.additionalChoices}>
-      <label>Temperature<select value={choices.temperature ?? 'any'} onChange={e => setChoice('temperature', e.target.value)}><option value="any">Either</option><option value="cold">Cold</option><option value="warm">Warm</option></select></label>
-      <label>Texture<select value={choices.texture ?? 'any'} onChange={e => setChoice('texture', e.target.value)}>{CARE_TEXTURES.map(v => <option key={v} value={v}>{v === 'any' ? 'No preference' : v}</option>)}</select></label>
-      <label>Appetite<select value={choices.appetite ?? ''} onChange={e => setChoice('appetite', e.target.value || undefined)}><option value="">No preference</option><option value="small">Barely there</option><option value="regular">Something familiar</option><option value="more">Something more</option></select></label>
+      <label>Temperature<select aria-label="Temperature" value={choices.temperature ?? 'any'} onChange={e => setChoice('temperature', e.target.value)}><option value="any">Either</option><option value="cold">Cold</option><option value="warm">Warm</option></select></label>
+      <label>Texture<select aria-label="Texture" value={choices.texture ?? 'any'} onChange={e => setChoice('texture', e.target.value)}>{CARE_TEXTURES.map(v => <option key={v} value={v}>{v === 'any' ? 'No preference' : v}</option>)}</select></label>
+      <label>Appetite<select aria-label="Appetite" value={choices.appetite ?? ''} onChange={e => setChoice('appetite', e.target.value || undefined)}><option value="">No preference</option><option value="small">Barely there</option><option value="regular">Something familiar</option><option value="more">Something more</option></select></label>
       <label className={styles.check}><input type="checkbox" checked={!!choices.usePantry} onChange={e => setChoice('usePantry', e.target.checked)} />Use my saved pantry</label>
     </div></details>
     {pantryState && <p className={styles.note} role="status">{pantryState}</p>}

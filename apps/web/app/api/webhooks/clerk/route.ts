@@ -45,9 +45,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid signature." }, { status: 400 });
   }
 
-  const database = db();
-
   try {
+    const database = db();
     switch (event.type) {
       case "user.created":
       case "user.updated": {
@@ -81,7 +80,9 @@ export async function POST(request: NextRequest) {
           // failure here should 500 the whole webhook so Clerk retries,
           // rather than deleting the account and quietly losing the one
           // piece of information needed to stop the charges.
-          if (stripeConfigured() && user.stripeSubscriptionId) {
+          if (user.stripeSubscriptionId) {
+            // Configuration loss must not discard the only cancellation handle.
+            if (!stripeConfigured()) throw new Error("Billing cancellation is unavailable.");
             await cancelSubscription(user.stripeSubscriptionId);
           }
 
@@ -98,10 +99,10 @@ export async function POST(request: NextRequest) {
         // Everything else is subscribed to by someone else, or not at all.
         break;
     }
-  } catch (err) {
+  } catch {
     // 5xx tells Clerk to retry; a bad write here should not be silently dropped.
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Webhook handling failed." },
+      { error: "Webhook handling failed." },
       { status: 500 },
     );
   }

@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, ne, sql, type SQL } from "drizzle-orm";
+import { and, desc, eq, inArray, isNull, ne, sql, type SQL } from "drizzle-orm";
 import {
   DEFAULT_LIBRARY_SORT,
   MAX_RECIPE_PHOTOS,
@@ -173,13 +173,22 @@ export async function setRecipeNutrition(
   ownerId: string,
   recipeId: string,
   nutrition: Recipe["nutrition"],
+  expected: Pick<Recipe, "ingredients" | "servings">,
 ): Promise<boolean> {
   if (!isUuid(recipeId)) return false;
 
   const [updated] = await database
     .update(schema.recipes)
     .set({ nutrition })
-    .where(and(eq(schema.recipes.id, recipeId), eq(schema.recipes.ownerId, ownerId)))
+    .where(and(
+      eq(schema.recipes.id, recipeId),
+      eq(schema.recipes.ownerId, ownerId),
+      isNull(schema.recipes.nutrition),
+      // A provider can finish after an edit/re-import. Attach its answer only
+      // to the exact calculation inputs, never to a newer ingredient list.
+      sql`${schema.recipes.ingredients} = ${JSON.stringify(expected.ingredients)}::jsonb`,
+      sql`${schema.recipes.servings} is not distinct from ${expected.servings}`,
+    ))
     .returning({ id: schema.recipes.id });
 
   return Boolean(updated);

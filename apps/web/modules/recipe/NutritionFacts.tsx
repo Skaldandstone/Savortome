@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useAuth } from "@clerk/nextjs";
 import {
   NUTRITION_DISCLAIMER,
   nutritionLabel,
@@ -11,20 +12,22 @@ import styles from "./NutritionFacts.module.css";
 /**
  * The per-serving figures, and the honesty about where they came from.
  *
- * Shown whenever a recipe has nutrition; offered as something to add when it
+ * Available on request whenever a recipe has nutrition; offered as something to add when it
  * doesn't. Never computed here — this component only ever displays what the
  * ingest pipeline or the "add nutrition" action already put on the record.
  */
 export function NutritionFacts({
   recipe,
   shelvedId,
+  clerkEnabled = true,
 }: {
   recipe: Recipe;
   /** Null for an unsaved preview card — nothing to attach nutrition to yet. */
   shelvedId: string | null;
+  clerkEnabled?: boolean;
 }) {
   if (!recipe.nutrition) {
-    return shelvedId ? <AddNutrition recipeId={shelvedId} /> : null;
+    return shelvedId ? (clerkEnabled ? <AuthenticatedNutrition recipeId={shelvedId} /> : <AddNutrition key={shelvedId} recipeId={shelvedId} />) : null;
   }
 
   const { perServing } = recipe.nutrition;
@@ -36,9 +39,7 @@ export function NutritionFacts({
     ["Fat", perServing.fatGrams === null ? null : `${round1(perServing.fatGrams)}g`],
     ["Fiber", perServing.fiberGrams === null ? null : `${round1(perServing.fiberGrams)}g`],
     ["Sodium", perServing.sodiumMg === null ? null : `${Math.round(perServing.sodiumMg)}mg`],
-  ].filter((f): f is [string, string] => f[1] !== null);
-
-  if (figures.length === 0) return null;
+  ];
 
   return (
     // No data-print attribute — this is content, not chrome, and belongs on
@@ -50,46 +51,70 @@ export function NutritionFacts({
           {label}
         </span>
       </div>
-      <dl className={styles.grid}>
-        {figures.map(([name, value]) => (
-          <div key={name}>
-            <dt className={styles.label}>{name}</dt>
-            <dd className={styles.value}>{value}</dd>
-          </div>
-        ))}
-      </dl>
-      <p className={styles.disclaimer}>{NUTRITION_DISCLAIMER}</p>
+      <details>
+        <summary>Show optional nutrition figures</summary>
+        <p className={styles.disclaimer}>These are recipe estimates or published values per serving, not a record of what you ate. Missing values are unknown, not zero. You can leave this closed.</p>
+        <dl className={styles.grid}>
+          {figures.map(([name, value]) => (
+            <div key={name}>
+              <dt className={styles.label}>{name}</dt>
+              <dd className={styles.value}>{value ?? "Not available"}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className={styles.disclaimer}>{NUTRITION_DISCLAIMER}</p>
+      </details>
     </div>
   );
 }
 
 const round1 = (n: number): number => Math.round(n * 10) / 10;
 
-function AddNutrition({ recipeId }: { recipeId: string }) {
+function AuthenticatedNutrition({ recipeId }: { recipeId: string }) {
+  const { isLoaded, userId, sessionId } = useAuth();
+  const currentScope = useRef<string | null>(null);
+  const scope = isLoaded && userId && sessionId ? `${userId}:${sessionId}:${recipeId}` : null;
+  // Invalidate old callbacks during replacement, before passive cleanup runs.
+  currentScope.current = scope;
+  if (!isLoaded) return <p role="status">Loading nutrition actions.</p>;
+  if (!userId || !sessionId) return <p role="status">Sign in again before adding nutrition.</p>;
+  return <AddNutrition key={scope} recipeId={recipeId} sessionId={sessionId} isCurrent={() => currentScope.current === scope} />;
+}
+
+function AddNutrition({ recipeId, sessionId, isCurrent }: { recipeId: string; sessionId?: string; isCurrent?: () => boolean }) {
   const [state, setState] = useState<"idle" | "busy" | "error">("idle");
+  const alive = useRef(true);
+  const started = useRef(false);
+  useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
+  const active = () => alive.current && (isCurrent?.() ?? true);
 
   const add = async () => {
+    if (!active() || started.current) return;
+    started.current = true;
     setState("busy");
     try {
-      const response = await fetch(`/api/recipes/${recipeId}/nutrition`, { method: "POST" });
+      const response = await fetch(`/api/recipes/${recipeId}/nutrition`, {
+        method: "POST",
+        headers: sessionId ? { "x-savortome-expected-session": sessionId } : undefined,
+      });
       if (!response.ok) throw new Error("failed");
       // The server-rendered card won't show the new figures until the page
       // reloads — simplest correct thing for an action someone reaches for
       // once, not a control that needs to feel instant.
-      window.location.reload();
+      if (active()) window.location.reload();
     } catch {
-      setState("error");
+      if (active()) setState("error");
     }
   };
 
   return (
     <div className={styles.offer} data-print="hide" aria-busy={state === "busy"}>
-      <button type="button" className={styles.addButton} disabled={state === "busy"} onClick={() => void add()}>
+      <button type="button" className={styles.addButton} disabled={state !== "idle"} onClick={() => void add()}>
         {state === "busy" ? "Estimating…" : "Add nutrition"}
       </button>
       {state === "error" ? (
         <span className={styles.offerNote} role="alert">
-          Couldn't add nutrition just now — try again in a moment.
+          This estimate is unconfirmed and may still finish. Reload this recipe to check before requesting another. Nothing retries automatically.
         </span>
       ) : (
         <span className={styles.offerNote}>

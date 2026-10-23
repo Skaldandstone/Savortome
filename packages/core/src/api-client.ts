@@ -1,7 +1,11 @@
 import type { RecipeRating, RecipeShelfState, ShelfSummary, StatusShelf } from "./shelves.js";
 import type { PantryEntry, PantryEntryUpdate, PantryMatch } from "./pantry.js";
 import type { PantryIntakeInput, PantryIntakeResolution, PantryIntakeView } from "./pantry-intake.js";
-import type { PlanTogetherIdea } from "./plan-together.js";
+import type { PlanTogetherIdea, PlanTogetherOptions } from "./plan-together.js";
+import type { ReviewedMealInput } from "./reviewed-meal.js";
+import type { ReviewedTemplatePlanInput, MealTemplateRenameInput } from "./template.js";
+import type { BarcodeProductDraft } from "./barcode.js";
+import type { FoodLogEntry, FoodLogInput, FoodNoteDraft } from "./food-log.js";
 import type { ShoppingLine } from "./shopping.js";
 import type { CartHandoff, CartProvider, CartProviderId } from "./carts.js";
 import type { Visibility } from "./shelves.js";
@@ -93,6 +97,8 @@ export interface ApiClientConfig {
   baseUrl?: string;
   /** Supplies a Clerk session token per request. Omit on web — the cookie does it. */
   getToken?: () => Promise<string | null>;
+  /** Comparison with server-verified auth only; never an authentication credential. */
+  expectedSessionId?: string;
 }
 
 export class ApiError extends Error {
@@ -195,6 +201,13 @@ export interface SecondsClient {
   rateRecipe: (recipeId: string, stars: number, review?: string | null) => Promise<RecipeRating>;
   clearRating: (recipeId: string) => Promise<void>;
   listPantry: () => Promise<PantryEntry[]>;
+  listFoodNotes: (date?: string) => Promise<FoodLogEntry[]>;
+  foodNoteCaptureStatus: () => Promise<{ photo: boolean; voice: boolean }>;
+  foodNoteDraft: (source: "photo" | "voice", base64: string, mediaType: string) => Promise<{ draft: FoodNoteDraft }>;
+  saveFoodNote: (input: FoodLogInput) => Promise<FoodLogEntry>;
+  deleteFoodNote: (id: string) => Promise<{ deleted: boolean }>;
+  barcodeLookupStatus: () => Promise<{ enabled: boolean }>;
+  lookupProductBarcode: (barcode: string) => Promise<{ product: BarcodeProductDraft | null }>;
   addPantry: (text: string) => Promise<PantryEntry[]>;
   updatePantry: (update: PantryEntryUpdate) => Promise<PantryEntry[]>;
   listPantryIntakes: () => Promise<PantryIntakeView[]>;
@@ -232,8 +245,10 @@ export interface SecondsClient {
   createTemplate: (
     name: string,
     items: { role: TemplateRole; recipeId: string }[],
+    requestId?: string,
   ) => Promise<{ id: string }>;
   deleteTemplate: (id: string) => Promise<{ ok: boolean }>;
+  renameTemplate: (id: string, input: MealTemplateRenameInput) => Promise<{ confirmed: { id: string; name: string } | null }>;
   setTemplateVisibility: (id: string, visibility: Visibility) => Promise<{ visibility: Visibility | null }>;
   saveSharedTemplate: (id: string) => Promise<{ id: string }>;
   friends: () => Promise<FriendsOverview>;
@@ -256,8 +271,10 @@ export interface SecondsClient {
   credits: () => Promise<CreditsResponse>;
   library: (shelfId?: string, query?: string, sort?: LibrarySort) => Promise<LibraryResponse>;
   plan: (week?: string) => Promise<PlanResponse>;
-  planTogether: () => Promise<{ ideas: PlanTogetherIdea[]; pantryCount: number }>;
+  planTogether: (options?: PlanTogetherOptions) => Promise<{ ideas: PlanTogetherIdea[]; pantryCount: number }>;
   planAdd: (recipeId: string, date: string, slot: MealSlot, week?: string) => Promise<PlanResponse>;
+  reviewedPlanAdd: (input: ReviewedMealInput) => Promise<PlanResponse>;
+  reviewedTemplatePlanAdd: (input: ReviewedTemplatePlanInput) => Promise<{ confirmed: ReviewedTemplatePlanInput }>;
   planRemove: (recipeId: string, date: string, slot: MealSlot, week?: string) => Promise<PlanResponse>;
   planMove: (
     recipeId: string,
@@ -290,11 +307,17 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
   async function send<T>(path: string, init: RequestInit = {}): Promise<T> {
     const token = config.getToken ? await config.getToken() : null;
 
+    // Token acquisition may finish after sendTimed has already expired. Do
+    // not invoke native/custom fetch at all with a cancelled write; relying
+    // only on its handling of an already-aborted signal is insufficient.
+    if (init.signal?.aborted) throw new ApiError("The request timed out. Reload to check whether a save completed.", 408);
+
     const res = await fetch(`${base}${path}`, {
       ...init,
       headers: {
         "content-type": "application/json",
         ...(token ? { authorization: `Bearer ${token}` } : {}),
+        ...(config.expectedSessionId ? { "x-savortome-expected-session": config.expectedSessionId } : {}),
         ...(init.headers ?? {}),
       },
     });
@@ -317,6 +340,17 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
   }
 
   const body = (value: unknown) => JSON.stringify(value);
+
+  /** Native-compatible timeout, including a token supplier that never settles. */
+  async function sendTimed<T>(path: string, init: RequestInit, milliseconds: number): Promise<T> {
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+      timer = setTimeout(() => { controller.abort(); reject(new ApiError("The request timed out. Reload to check whether a save completed.", 408)); }, milliseconds);
+    });
+    try { return await Promise.race([send<T>(path, { ...init, signal: controller.signal }), timeout]); }
+    finally { if (timer) clearTimeout(timer); }
+  }
 
   return {
     importRecipe: (request) =>
@@ -359,7 +393,16 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
       await send(`/api/recipes/${recipeId}/rating`, { method: "DELETE" });
     },
 
-    listPantry: () => send<PantryEntry[]>("/api/pantry"),
+    listPantry: () => sendTimed<PantryEntry[]>("/api/pantry", {}, 12_000),
+    listFoodNotes: (date) => sendTimed<FoodLogEntry[]>(`/api/food-log${date ? `?date=${encodeURIComponent(date)}` : ""}`, {}, 12_000),
+    foodNoteCaptureStatus: () => sendTimed<{ photo: boolean; voice: boolean }>("/api/food-log/draft", {}, 12_000),
+    foodNoteDraft: (source, base64, mediaType) => sendTimed<{ draft: FoodNoteDraft }>("/api/food-log/draft", { method: "POST", body: body({ source, base64, mediaType }) }, 75_000),
+    saveFoodNote: (input) => sendTimed<FoodLogEntry>("/api/food-log", { method: "POST", body: body(input) }, 12_000),
+    deleteFoodNote: (id) => sendTimed<{ deleted: boolean }>("/api/food-log", { method: "DELETE", body: body({ id }) }, 12_000),
+    barcodeLookupStatus: () => sendTimed<{ enabled: boolean }>("/api/pantry/barcode", {}, 12_000),
+    lookupProductBarcode: (barcode) => sendTimed<{ product: BarcodeProductDraft | null }>("/api/pantry/barcode", {
+      method: "POST", body: body({ barcode }),
+    }, 12_000),
 
     addPantry: (text) =>
       send<PantryEntry[]>("/api/pantry", { method: "POST", body: body({ text }) }),
@@ -398,29 +441,29 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
         body: body({ query: query ?? "" }),
       }),
 
-    getRecipe: (recipeId) => send<OwnedRecipe>(`/api/recipes/${recipeId}`),
+    getRecipe: (recipeId) => sendTimed<OwnedRecipe>(`/api/recipes/${recipeId}`, {}, 12_000),
 
     addRecipePhoto: (recipeId, imageBase64, imageMediaType) =>
-      send<{ photos: RecipePhoto[] }>(`/api/recipes/${recipeId}/photos`, {
+      sendTimed<{ photos: RecipePhoto[] }>(`/api/recipes/${recipeId}/photos`, {
         method: "POST",
         body: body({ imageBase64, imageMediaType }),
-      }),
+      }, 20_000),
 
     removeRecipePhoto: (recipeId, key) =>
-      send<{ photos: RecipePhoto[] }>(`/api/recipes/${recipeId}/photos`, {
+      sendTimed<{ photos: RecipePhoto[] }>(`/api/recipes/${recipeId}/photos`, {
         method: "DELETE",
         body: body({ key }),
-      }),
+      }, 12_000),
 
     getSharedRecipe: (recipeId) => send<SharedRecipeResponse>(`/api/shared/${recipeId}`),
 
-    getList: () => send<ShoppingListView>("/api/list"),
+    getList: () => sendTimed<ShoppingListView>("/api/list", {}, 12_000),
 
     addRecipesToList: (recipeIds) =>
-      send<ShoppingListView>("/api/list", { method: "POST", body: body({ recipeIds }) }),
+      sendTimed<ShoppingListView>("/api/list", { method: "POST", body: body({ recipeIds }) }, 12_000),
 
     addItemsToList: (items) =>
-      send<ShoppingListView>("/api/list", { method: "POST", body: body({ items }) }),
+      sendTimed<ShoppingListView>("/api/list", { method: "POST", body: body({ items }) }, 12_000),
 
     setListItemChecked: (itemId, checked) =>
       send<ShoppingListView>(`/api/list/items/${itemId}`, {
@@ -447,18 +490,23 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
     saveSharedRecipe: (recipeId) =>
       send<{ recipeId: string }>(`/api/recipes/${recipeId}/save`, { method: "POST" }),
 
-    myTemplates: () => send<{ templates: MealTemplate[] }>("/api/templates"),
+    myTemplates: () => sendTimed<{ templates: MealTemplate[] }>("/api/templates", {}, 12_000),
 
-    createTemplate: (name, items) =>
-      send<{ id: string }>("/api/templates", { method: "POST", body: body({ name, items }) }),
+    createTemplate: (name, items, requestId) => {
+      const request = { method: "POST", body: body({ id: requestId, name, items }) };
+      // A timed retry is safe only for a caller retaining a stable identity.
+      // Legacy callers keep their existing request behavior until adapted.
+      return requestId ? sendTimed<{ id: string }>("/api/templates", request, 12_000) : send<{ id: string }>("/api/templates", request);
+    },
 
-    deleteTemplate: (id) => send<{ ok: boolean }>(`/api/templates/${id}`, { method: "DELETE" }),
+    deleteTemplate: (id) => sendTimed<{ ok: boolean }>(`/api/templates/${id}`, { method: "DELETE" }, 12_000),
+    renameTemplate: (id, input) => sendTimed<{ confirmed: { id: string; name: string } | null }>(`/api/templates/${id}`, { method: "PATCH", body: body(input) }, 12_000),
 
     setTemplateVisibility: (id, visibility) =>
-      send<{ visibility: Visibility | null }>(`/api/templates/${id}/share`, {
+      sendTimed<{ visibility: Visibility | null }>(`/api/templates/${id}/share`, {
         method: "PUT",
         body: body({ visibility }),
-      }),
+      }, 12_000),
 
     saveSharedTemplate: (id) => send<{ id: string }>(`/api/templates/${id}/save`, { method: "POST" }),
 
@@ -510,7 +558,7 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
 
     similarRecipes: (recipeId) => send<DiscoverCard[]>(`/api/recipes/${recipeId}/similar`),
 
-    pairings: (recipeId) => send<PairingSuggestions>(`/api/recipes/${recipeId}/pairings`),
+    pairings: (recipeId) => sendTimed<PairingSuggestions>(`/api/recipes/${recipeId}/pairings`, {}, 12_000),
 
     library: (shelfId, query, sort) => {
       const params = new URLSearchParams();
@@ -518,43 +566,47 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
       if (query?.trim()) params.set("q", query.trim());
       if (sort && sort !== "newest") params.set("sort", sort);
       const qs = params.toString();
-      return send<LibraryResponse>(`/api/recipes${qs ? `?${qs}` : ""}`);
+      return sendTimed<LibraryResponse>(`/api/recipes${qs ? `?${qs}` : ""}`, {}, 12_000);
     },
 
     credits: () => send<CreditsResponse>("/api/credits"),
 
-    plan: (week) => send<PlanResponse>(`/api/plan${week ? `?week=${week}` : ""}`),
+    plan: (week) => sendTimed<PlanResponse>(`/api/plan${week ? `?week=${encodeURIComponent(week)}` : ""}`, {}, 12_000),
 
-    planTogether: () => send<{ ideas: PlanTogetherIdea[]; pantryCount: number }>("/api/plan/together"),
+    planTogether: (options) => {
+      return sendTimed<{ ideas: PlanTogetherIdea[]; pantryCount: number }>("/api/plan/together", { method: "POST", body: body(options ?? {}) }, 12_000);
+    },
 
+    reviewedPlanAdd: (input) => sendTimed<PlanResponse>("/api/plan/meal", { method: "POST", body: body(input) }, 12_000),
+    reviewedTemplatePlanAdd: (input) => sendTimed<{ confirmed: ReviewedTemplatePlanInput }>("/api/plan/combination", { method: "POST", body: body(input) }, 12_000),
     planAdd: (recipeId, date, slot, week) =>
-      send<PlanResponse>("/api/plan", {
+      sendTimed<PlanResponse>("/api/plan", {
         method: "POST",
         body: body({ action: "add", recipeId, date, slot, week }),
-      }),
+      }, 12_000),
 
     planRemove: (recipeId, date, slot, week) =>
-      send<PlanResponse>("/api/plan", {
+      sendTimed<PlanResponse>("/api/plan", {
         method: "POST",
         body: body({ action: "remove", recipeId, date, slot, week }),
-      }),
+      }, 12_000),
 
     planMove: (recipeId, from, to, week) =>
-      send<PlanResponse>("/api/plan", {
+      sendTimed<PlanResponse>("/api/plan", {
         method: "POST",
         body: body({ action: "move", recipeId, from, date: to.date, slot: to.slot, week }),
-      }),
+      }, 12_000),
 
     planClearWeek: (week) =>
-      send<PlanResponse>("/api/plan", { method: "POST", body: body({ action: "clearWeek", week }) }),
+      sendTimed<PlanResponse>("/api/plan", { method: "POST", body: body({ action: "clearWeek", week }) }, 12_000),
 
     planToShoppingList: (week) =>
-      send<PlanResponse>("/api/plan", {
+      sendTimed<PlanResponse>("/api/plan", {
         method: "POST",
         body: body({ action: "toShoppingList", week }),
-      }),
+      }, 12_000),
 
-    mySuggestions: () => send<{ suggestions: PlanSuggestion[] }>("/api/plan/suggestions"),
+    mySuggestions: () => sendTimed<{ suggestions: PlanSuggestion[] }>("/api/plan/suggestions", {}, 12_000),
 
     suggestForFriend: (ownerId, recipeId, date, slot) =>
       send<{ ok: boolean }>("/api/plan/suggestions", {
@@ -563,10 +615,10 @@ export function createClient(config: ApiClientConfig = {}): SecondsClient {
       }),
 
     respondToSuggestion: (id, action) =>
-      send<{ ok: boolean }>(`/api/plan/suggestions/${id}`, {
+      sendTimed<{ ok: boolean }>(`/api/plan/suggestions/${id}`, {
         method: "POST",
         body: body({ action }),
-      }),
+      }, 12_000),
 
     krogerStatus: () => send<KrogerStatus>("/api/grocery/kroger"),
 

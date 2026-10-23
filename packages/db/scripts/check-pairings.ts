@@ -25,7 +25,7 @@ import {
   type RecipeNutrition,
 } from "@seconds/core";
 import * as schema from "../src/schema.js";
-import { createRecipe, setRecipeNutrition, suggestedPairings } from "../src/queries/recipes.js";
+import { createRecipe, getRecipe, setRecipeNutrition, suggestedPairings } from "../src/queries/recipes.js";
 
 const url =
   process.env.DATABASE_URL ??
@@ -108,7 +108,7 @@ const sideNutrition: RecipeNutrition = {
   perIngredient: [],
   method: "computed",
 };
-await setRecipeNutrition(db, userId, sideMex, sideNutrition);
+await setRecipeNutrition(db, userId, sideMex, sideNutrition, (await getRecipe(db, userId, sideMex))!);
 
 const withNutrition = await suggestedPairings(db, userId, mainId);
 const sideCandidate = withNutrition.side.find((c) => c.id === sideMex);

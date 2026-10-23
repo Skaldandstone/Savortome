@@ -7,9 +7,12 @@ import {
   type PantryEntry,
   type ShoppingLine,
 } from "@seconds/core";
-import type { Database } from "../client.js";
+import type { Database as RootDatabase } from "../client.js";
 import * as schema from "../schema.js";
 import { listPantry } from "./pantry.js";
+
+// Root connections and transactions share the query surface, not $client.
+type Database = Omit<RootDatabase, "$client">;
 
 /**
  * Shopping lists.
@@ -117,22 +120,37 @@ export async function getShoppingList(
 }
 
 /** The list a new addition goes onto: the newest one, or a fresh one. */
+async function lockShoppingOwner(database: Database, userId: string): Promise<boolean> {
+  const [owner] = await database
+    .select({ id: schema.users.id })
+    .from(schema.users)
+    .where(eq(schema.users.id, userId))
+    .for("update");
+  return Boolean(owner);
+}
+
 export async function currentShoppingList(
   database: Database,
   userId: string,
 ): Promise<string> {
-  const existing = await database.query.shoppingLists.findFirst({
-    where: eq(schema.shoppingLists.userId, userId),
-    orderBy: [desc(schema.shoppingLists.createdAt)],
-    columns: { id: true },
-  });
-  if (existing) return existing.id;
+  return database.transaction(async (tx) => {
+    // Lock the stable owner row: there may be no shopping-list row to lock yet.
+    // Concurrent first additions must choose the same destination.
+    if (!(await lockShoppingOwner(tx, userId))) throw new Error("Shopping list owner unavailable");
 
-  const [created] = await database
-    .insert(schema.shoppingLists)
-    .values({ userId, name: "Shopping list" })
-    .returning({ id: schema.shoppingLists.id });
-  return created!.id;
+    const existing = await tx.query.shoppingLists.findFirst({
+      where: eq(schema.shoppingLists.userId, userId),
+      orderBy: [desc(schema.shoppingLists.createdAt)],
+      columns: { id: true },
+    });
+    if (existing) return existing.id;
+
+    const [created] = await tx
+      .insert(schema.shoppingLists)
+      .values({ userId, name: "Shopping list" })
+      .returning({ id: schema.shoppingLists.id });
+    return created!.id;
+  });
 }
 
 export interface AddToListOptions {
@@ -156,6 +174,17 @@ export async function addRecipesToList(
   recipeIds: string[],
   options: AddToListOptions = {},
 ): Promise<ShoppingListDetail> {
+  // currentShoppingList locks the owner inside this transaction. Retain that
+  // lock through the read/merge/write so another addition cannot overwrite it.
+  return database.transaction((tx) => addRecipesInTransaction(tx, userId, recipeIds, options));
+}
+
+async function addRecipesInTransaction(
+  database: Database,
+  userId: string,
+  recipeIds: string[],
+  options: AddToListOptions,
+): Promise<ShoppingListDetail> {
   const { skipStaples = true, skipOptional = true, usePantry = true } = options;
   const listId = await currentShoppingList(database, userId);
 
@@ -163,6 +192,12 @@ export async function addRecipesToList(
     where: and(eq(schema.recipes.ownerId, userId), inArray(schema.recipes.id, recipeIds)),
     columns: { id: true, ingredients: true },
   });
+
+  // An empty/unavailable selection contributes nothing. Rebuilding the saved
+  // shortfall would subtract pantry stock again and replace existing line IDs.
+  if (recipes.length === 0) {
+    return (await getShoppingList(database, userId, listId))!;
+  }
 
   const byRecipe = new Map<string, Ingredient[]>(recipes.map((r) => [r.id, r.ingredients]));
 
@@ -190,7 +225,15 @@ export async function addRecipesToList(
   }
 
   const pantry = usePantry ? await listPantry(database, userId) : [];
-  const lines = buildShoppingList(byRecipe, { pantry, skipStaples, skipOptional });
+  // Saved quantities are already shopping shortfalls, not original recipe needs.
+  // Do not deduct the same pantry stock again or silently remove saved items
+  // after a pantry edit. Only newly introduced items receive a pantry deduction.
+  const savedItems = new Set(existing.map((row) => row.canonicalItem));
+  const lines = buildShoppingList(byRecipe, {
+    pantry: pantry.filter((entry) => !savedItems.has(entry.canonicalItem)),
+    skipStaples,
+    skipOptional,
+  });
 
   if (lines.length === 0) {
     await database
@@ -201,6 +244,8 @@ export async function addRecipesToList(
 
   // Ticked-off items stay ticked when the list is rebuilt.
   const wasChecked = new Set(existing.filter((e) => e.checked).map((e) => e.canonicalItem));
+  const existingRecipeIds = new Map(existing.map((row) => [row.canonicalItem, row.recipeIds]));
+  const existingItemIds = new Map(existing.map((row) => [row.canonicalItem, row.id]));
 
   await database.transaction(async (tx) => {
     await tx
@@ -208,13 +253,23 @@ export async function addRecipesToList(
       .where(eq(schema.shoppingListItems.listId, listId));
     await tx.insert(schema.shoppingListItems).values(
       lines.map((line) => ({
+        // Controls may still hold the displayed ID while another recipe is added.
+        id: line.recipeIds.includes("__existing__")
+          ? existingItemIds.get(line.canonicalItem)
+          : undefined,
         listId,
         canonicalItem: line.canonicalItem,
         displayName: line.displayName,
         quantity: line.quantity,
         unit: line.unit,
-        // The synthetic id used to fold existing items back in isn't a recipe.
-        recipeIds: line.recipeIds.filter((id) => id !== "__existing__"),
+        // Restore the saved explanations folded into the synthetic contribution.
+        // Keep each real recipe once; never persist the synthetic merge marker.
+        recipeIds: [...new Set([
+          ...line.recipeIds.filter((id) => id !== "__existing__"),
+          ...(line.recipeIds.includes("__existing__")
+            ? (existingRecipeIds.get(line.canonicalItem) ?? [])
+            : []),
+        ])],
         checked: wasChecked.has(line.canonicalItem),
       })),
     );
@@ -225,6 +280,15 @@ export async function addRecipesToList(
 
 /** Add loose items — typically the "missing" list from a pantry match. */
 export async function addItemsToList(
+  database: Database,
+  userId: string,
+  items: { canonicalItem: string; displayName?: string }[],
+): Promise<ShoppingListDetail> {
+  // Share the owner lock with recipe additions until the loose-item write ends.
+  return database.transaction((tx) => addItemsInTransaction(tx, userId, items));
+}
+
+async function addItemsInTransaction(
   database: Database,
   userId: string,
   items: { canonicalItem: string; displayName?: string }[],
@@ -278,12 +342,13 @@ export async function setItemChecked(
   itemId: string,
   checked: boolean,
 ): Promise<void> {
-  if (!(await ownsItem(database, userId, itemId))) return;
-
-  await database
-    .update(schema.shoppingListItems)
-    .set({ checked })
-    .where(eq(schema.shoppingListItems.id, itemId));
+  await database.transaction(async tx => {
+    // Serialize with the addition's existing-row snapshot and rebuild. Lock
+    // owner first everywhere, including ownership checks and account cascades.
+    if (!(await lockShoppingOwner(tx, userId)) || !(await ownsItem(tx, userId, itemId))) return;
+    await tx.update(schema.shoppingListItems).set({ checked })
+      .where(eq(schema.shoppingListItems.id, itemId));
+  });
 }
 
 export async function removeListItem(
@@ -291,8 +356,10 @@ export async function removeListItem(
   userId: string,
   itemId: string,
 ): Promise<void> {
-  if (!(await ownsItem(database, userId, itemId))) return;
-  await database.delete(schema.shoppingListItems).where(eq(schema.shoppingListItems.id, itemId));
+  await database.transaction(async tx => {
+    if (!(await lockShoppingOwner(tx, userId)) || !(await ownsItem(tx, userId, itemId))) return;
+    await tx.delete(schema.shoppingListItems).where(eq(schema.shoppingListItems.id, itemId));
+  });
 }
 
 export async function clearShoppingList(
@@ -300,12 +367,15 @@ export async function clearShoppingList(
   userId: string,
   listId: string,
 ): Promise<void> {
-  const list = await database.query.shoppingLists.findFirst({
-    where: and(eq(schema.shoppingLists.id, listId), eq(schema.shoppingLists.userId, userId)),
-    columns: { id: true },
+  await database.transaction(async tx => {
+    if (!(await lockShoppingOwner(tx, userId))) return;
+    const list = await tx.query.shoppingLists.findFirst({
+      where: and(eq(schema.shoppingLists.id, listId), eq(schema.shoppingLists.userId, userId)),
+      columns: { id: true },
+    });
+    if (!list) return;
+    await tx.delete(schema.shoppingListItems).where(eq(schema.shoppingListItems.listId, listId));
   });
-  if (!list) return;
-  await database.delete(schema.shoppingListItems).where(eq(schema.shoppingListItems.listId, listId));
 }
 
 /** Record where a list was sent, so the history reads the same for every provider. */

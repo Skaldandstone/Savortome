@@ -8,10 +8,11 @@ import {
   type PantrySearchResponse,
   type PantrySearchResult,
 } from "@seconds/core/format";
+import { api as localApi } from "@/lib/client";
 import { AddMissingButton } from "@/modules/list";
 import styles from "./pantry.module.css";
 
-function MatchRow({ match }: { match: PantrySearchResult }) {
+function MatchRow({ match, api }: { match: PantrySearchResult; api: typeof localApi }) {
   return (
     <li className={styles.matchRow}>
       <Link className={styles.match} href={`/recipe/${match.recipeId}`}>
@@ -33,7 +34,7 @@ function MatchRow({ match }: { match: PantrySearchResult }) {
         </span>
       </Link>
       {/* Sits outside the link: adding to the list isn't navigation. */}
-      <AddMissingButton missing={match.missing} />
+      <AddMissingButton missing={match.missing} api={api} />
     </li>
   );
 }
@@ -43,7 +44,7 @@ function MatchRow({ match }: { match: PantrySearchResult }) {
  * away from, and everything else. The middle group is the useful one — it's
  * where "add one thing to the list" lives.
  */
-export function MatchList({ results }: { results: PantrySearchResult[] }) {
+export function MatchList({ results, api = localApi }: { results: PantrySearchResult[]; api?: typeof localApi }) {
   if (results.length === 0) {
     return <p className={styles.empty}>Nothing in your collection matches that yet.</p>;
   }
@@ -59,7 +60,7 @@ export function MatchList({ results }: { results: PantrySearchResult[] }) {
           <h3 className={styles.groupHeading}>Cook tonight</h3>
           <ul className={styles.matches}>
             {now.map((m) => (
-              <MatchRow key={m.recipeId} match={m} />
+              <MatchRow key={m.recipeId} match={m} api={api} />
             ))}
           </ul>
         </section>
@@ -72,7 +73,7 @@ export function MatchList({ results }: { results: PantrySearchResult[] }) {
           </h3>
           <ul className={styles.matches}>
             {nearly.map((m) => (
-              <MatchRow key={m.recipeId} match={m} />
+              <MatchRow key={m.recipeId} match={m} api={api} />
             ))}
           </ul>
         </section>
@@ -83,7 +84,7 @@ export function MatchList({ results }: { results: PantrySearchResult[] }) {
           <summary>{rest.length} more from your collection</summary>
           <ul className={styles.matches}>
             {rest.map((m) => (
-              <MatchRow key={m.recipeId} match={m} />
+              <MatchRow key={m.recipeId} match={m} api={api} />
             ))}
           </ul>
         </details>

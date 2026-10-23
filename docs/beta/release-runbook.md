@@ -3,20 +3,22 @@
 Status: no runtime release is approved. The sole current target is account
 `051722405355`, profile `skaldandstone-admin`, region `us-east-2`. Accounts
 `734702670689` and `574921529762` are historical and must not receive new work.
-The candidate image is present and scanned in the current account, but the
-privacy-v3 rollback image, same-account build provenance, runtime, secrets and
-network boundary are missing. Follow the current
-[account and admission migration](account-admission-migration.md). Older account
-identifiers later in this document describe preserved historical evidence and
-must not be executed.
+The established script targets cluster `skaldandstone-production`, service
+`secondbreakfast-web`, CodeBuild project `secondbreakfast-web-build` and ECR
+repository `secondbreakfast-web`. These are source-verified targets, not proof
+of current runtime health or a deployed candidate. The last release inspection
+on October 18 at 23:08 UTC stopped at an expired AWS session before service
+inspection. Renew the existing session as the owner, then refresh identity,
+service, running digests, source provenance, schema and rollback evidence.
+The [account and admission migration](account-admission-migration.md) preserves
+historical context; it is not permission to provision or change accounts.
 Do not use `scripts/deploy-aws.ps1` unchanged: it archives `origin/main`, builds
 from a mutable S3 key and force-redeploys without the cohort, source, digest,
 privacy rollback or drift checks required here.
 
-`scripts/beta-release.ps1 -Mode VerifyImages` was run against AWS read APIs for
-the current candidate and rollback. No task definition, ECS service, load
-balancer, DNS record, secret or runtime was created or changed. The selected
-account still has no Second Breakfast ECS service or endpoint.
+Prior image-verification records do not establish that the latest source has
+been built or deployed. Fresh verification must bind the reviewed source to
+both candidate and compatible rollback images in the selected account.
 
 The [image parser review](image-parser-security.md) adds a manual candidate and
 rollback source/build requirement: verify `images.unoptimized: true` and empty
@@ -49,36 +51,37 @@ Never set `NODE_TLS_REJECT_UNAUTHORIZED=0` or accept a PostgreSQL URL override t
    The script uses a temporary Git index, rejects unsafe input, and records the
    archive, embedded manifest, snapshot commit and source tree without changing
    the real index.
-2. Authenticate to `skaldandstone-dev` and stop unless STS reports account
-   `734702670689` in `us-east-2`. Verify versioned S3 source, CodeBuild identity,
+2. Use the existing `skaldandstone-admin` session and stop unless STS reports
+   account `051722405355` in `us-east-2`. Session renewal is an owner action;
+   do not create credentials or change access. Verify versioned S3 source, CodeBuild identity,
    immutable ECR digest, OCI config and scan results. Do not infer a revision
    from HTTP 200 or an image tag.
 3. Before `Prepare`, confirm the reviewed ECS service exists and is stable.
    Record desired count, network configuration, roles, logging and its actual
    running digest. The release script refuses a missing, sleeping or unstable
    service.
-4. Bootstrap the service with the reviewed rollback digest and beta disabled.
-   The approved rollback is privacy-v3 image
-   `sha256:79d7d53cbf332b288d075e9981edf09a49837a1db06f5276842506e4423a55e7`.
-   Never use the pre-beta broad-cache image.
+4. Preserve the existing service and verify its running immutable rollback
+   image, source/build provenance and compatibility with the candidate schema.
+   No historical digest is automatically approved for a new release. Do not
+   bootstrap a missing service or renew expired infrastructure through this runbook.
 
 PowerShell, canonical repository:
 
 ```powershell
-Set-Location -LiteralPath 'C:\Users\James\Documents\GitHub\SecondBreakfast'
-aws sts get-caller-identity --profile skaldandstone-dev --region us-east-2
+Set-Location -LiteralPath 'C:\Users\James\Documents\GitHub\Savortome'
+aws sts get-caller-identity --profile skaldandstone-admin --region us-east-2
 ./scripts/beta-release.ps1 -Mode Inspect
 ```
 
 `Inspect` is read-only and reports configured task/image references; separately
-inspect `list-tasks` and `describe-tasks` for actual running digests. It currently
-fails closed because the expected service does not exist. Keep secret values and
-tester identities out of committed evidence.
+inspect `list-tasks` and `describe-tasks` for actual running digests. A failed
+identity check proves neither service absence nor stability. Keep secret values
+and tester identities out of committed evidence.
 
 ## Image verification paths
 
 Always record an immutable
-`734702670689.dkr.ecr.us-east-2.amazonaws.com/skaldandstone-development-foundation/secondbreakfast-web@sha256:...`
+`051722405355.dkr.ecr.us-east-2.amazonaws.com/secondbreakfast-web@sha256:...`
 reference. A tag, runtime commit variable or unattested JSON file is
 insufficient.
 
@@ -87,10 +90,10 @@ insufficient.
 **Current artifact-free CodeBuild and ECR path.** No local Docker is needed. The
 verifier accepts only:
 
-- Project `skaldandstone-development-foundation-secondbreakfast-web` in the
+- Project `secondbreakfast-web-build` in the
   expected account and region, exact build ID and successful result.
 - The SHA256 of the exact reviewed inline buildspec string from `build.source.buildspec`. Passing only a filename as the buildspec is unsupported by this verification path.
-- S3 source under `skald-dev-734702670689-artifacts/sources/secondbreakfast/`
+- S3 source under `secondbreakfast-build-source-051722405355/sources/secondbreakfast/`
   with a pinned VersionId and checksum matching the reviewed archive.
 - The exact ECR manifest and a locally downloaded config blob whose SHA-256
   equals the manifest config digest. The config must prove linux/amd64, UID
@@ -99,16 +102,16 @@ verifier accepts only:
 - ECR BASIC scan status `COMPLETE` with zero findings. Amazon Inspector ECR is
   disabled, so this is not enhanced or full-coverage scanning.
 
-The foundation project deliberately uses `NO_ARTIFACTS`. Download the config
+The verifier requires the selected project to use `NO_ARTIFACTS`. Download the config
 blob named by the ECR manifest with `ecr get-download-url-for-layer`, retain it
 outside Git, and pass its expected digest to the verifier. The downloaded file
 is not trusted on its own: its SHA-256 must equal the config digest in the live
 immutable ECR manifest. Preserve the source VersionId, archive checksum,
 embedded manifest hash, buildspec hash and image config digest together.
 
-The direct ECR path has passed against both live immutable images. Evidence is
-stored outside Git under
+Historical direct ECR verification evidence is stored outside Git under
 `C:\Users\James\Documents\Codex\2026-08-31\i-n\outputs\secondbreakfast-release\image-verification`.
+It does not establish current-account or current-candidate image verification.
 
 ## Cohort enrollment and removal
 
@@ -146,7 +149,7 @@ The release owner may deploy only after the remaining gates are signed off:
 
 ```powershell
 ./scripts/beta-release.ps1 -Mode Deploy -ReleaseDirectory $packet
-aws ecs wait services-stable --cluster skaldandstone-development-foundation-cluster --services skaldandstone-development-foundation-secondbreakfast-web --profile skaldandstone-dev --region us-east-2
+aws ecs wait services-stable --cluster skaldandstone-production --services secondbreakfast-web --profile skaldandstone-admin --region us-east-2
 ```
 
 Deploy rechecks stable state and task/config drift, registers the pinned rollback before candidate, preserves capacity/network/schedule, and enables the ECS circuit breaker with rollback. It saves registrations before the update request; an uncertain update is not silently retried. Inspect the saved ARNs and live state before any manual recovery. Successful command return means requested, not validated.

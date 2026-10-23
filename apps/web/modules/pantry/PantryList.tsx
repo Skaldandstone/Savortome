@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   formatAmount,
+  parsePantryInput,
   pantryAttention,
   type PantryEntry,
   type PantryEntryUpdate,
@@ -32,6 +33,43 @@ export function PantryList({
   const [adding, setAdding] = useState(false);
   const [savingAmount, setSavingAmount] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [confirmingDiscard, setConfirmingDiscard] = useState(false);
+  const addDraft = useRef("");
+  const addRequest = useRef<{ text: string } | null>(null);
+  const addVersion = useRef(0);
+  const addFlight = useRef<object | null>(null);
+  const mounted = useRef(true);
+  const renderedAddVersion = addVersion.current;
+  const renderedAddRequest = addRequest.current;
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+
+  const submitAdd = async () => {
+    if (!mounted.current || addFlight.current || renderedAddVersion !== addVersion.current || renderedAddRequest !== addRequest.current) return;
+    const request = addRequest.current ?? { text: addDraft.current.trim() };
+    if (!request.text) return;
+    if (!addRequest.current && !parsePantryInput(request.text).length) {
+      setAddError("Enter at least one ingredient before adding. Nothing was sent."); return;
+    }
+    addRequest.current = request; ++addVersion.current;
+    const token = {}; addFlight.current = token;
+    setAdding(true); setAddError(null); setConfirmingDiscard(false);
+    try {
+      const saved = await onAdd(request.text);
+      if (!mounted.current || addFlight.current !== token || addRequest.current !== request) return;
+      if (saved !== true) throw new Error("Unconfirmed pantry add");
+      addRequest.current = null; addDraft.current = ""; ++addVersion.current; setText("");
+    } catch {
+      if (mounted.current && addRequest.current === request) setAddError("We could not confirm these ingredients saved. Your exact entry is kept while this form stays open for a deliberate retry. Check your pantry first: retrying replaces matching quantities rather than adding to their previous counts.");
+    } finally {
+      if (addFlight.current === token) { addFlight.current = null; if (mounted.current) setAdding(false); }
+    }
+  };
+  const discardAdd = () => {
+    if (!mounted.current || addFlight.current || !renderedAddRequest || addRequest.current !== renderedAddRequest) return;
+    addRequest.current = null; addDraft.current = ""; ++addVersion.current;
+    setText(""); setAddError(null); setConfirmingDiscard(false);
+  };
 
   const startAmountEdit = (item: PantryEntry) => {
     setEditingAmount(item.canonicalItem);
@@ -53,14 +91,9 @@ export function PantryList({
   return (
     <>
       <form
-        onSubmit={async (e) => {
+        onSubmit={(e) => {
           e.preventDefault();
-          const pending = text.trim();
-          if (!pending || adding) return;
-          setAdding(true);
-          const saved = await onAdd(pending);
-          setAdding(false);
-          if (saved) setText("");
+          void submitAdd();
         }}
       >
         <FieldRow>
@@ -68,13 +101,28 @@ export function PantryList({
             aria-label="Ingredients to add to your pantry"
             type="text"
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              if (!mounted.current || addFlight.current || addRequest.current || renderedAddVersion !== addVersion.current) return;
+              addDraft.current = e.target.value; setText(e.target.value); setAddError(null);
+            }}
             placeholder="2 chicken thighs, rice, a can of chopped tomatoes"
-            disabled={adding}
+            disabled={adding || !!addRequest.current}
           />
-          <Button type="submit" disabled={adding || !text.trim()}>{adding ? "Adding…" : "Add"}</Button>
+          <Button type="submit" disabled={adding || !text.trim()}>{adding ? "Adding…" : addRequest.current ? "Retry the same pantry entry" : "Add"}</Button>
         </FieldRow>
       </form>
+      <p>Enter the amounts you currently have. Manual entry replaces matching pantry quantities rather than adding to their previous counts.</p>
+      {addError ? <p role="alert">{addError}</p> : null}
+      {addRequest.current ? <Button type="button" variant="ghost" disabled={adding} onClick={() => {
+        if (mounted.current && !addFlight.current && renderedAddRequest === addRequest.current) setConfirmingDiscard(true);
+      }}>Discard local pantry entry</Button> : null}
+      {confirmingDiscard && addRequest.current ? <div role="group" aria-label="Confirm discarding local pantry entry">
+        <p>The earlier request may already have saved or may still finish. This only discards your local entry; it does not remove pantry items or cancel the request. Check your pantry before entering a different amount.</p>
+        <Button type="button" variant="danger" disabled={adding} onClick={discardAdd}>Discard this local entry</Button>
+        <Button type="button" variant="ghost" disabled={adding} onClick={() => {
+          if (mounted.current && !addFlight.current && renderedAddRequest === addRequest.current) setConfirmingDiscard(false);
+        }}>Keep entry</Button>
+      </div> : null}
 
       {items.length === 0 ? (
         <p className={styles.empty}>
@@ -107,7 +155,8 @@ export function PantryList({
                       <Button type="button" variant="ghost" onClick={() => onUpdate({ canonicalItem: item.canonicalItem, confirmPresent: true })}>Yes, still here</Button>
                       <Button type="button" variant="ghost" onClick={() => startAmountEdit(item)}>Used some</Button>
                       <Button type="button" variant="ghost" onClick={() => onRemove(item.canonicalItem)}>All gone</Button>
-                      <Button type="button" variant="ghost" onClick={() => onUpdate({ canonicalItem: item.canonicalItem, snoozeDays: 3 })}>Remind me in 3 days</Button>
+                      {([3, 7, 14] as const).map(days => <Button key={days} type="button" variant="ghost" onClick={() => onUpdate({ canonicalItem: item.canonicalItem, snoozeDays: days })}>Remind me in {days} days</Button>)}
+                      <span>Hides this in-app suggestion until then. No push notification is scheduled.</span>
                       <Button type="button" variant="ghost" onClick={() => onUpdate({ canonicalItem: item.canonicalItem, resurfaceHidden: true })}>Hide this suggestion</Button>
                     </div>
                   ) : null}

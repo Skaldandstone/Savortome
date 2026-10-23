@@ -30,7 +30,8 @@ export async function POST(_request: Request, { params }: Params) {
 
     // Already has one — editing clears it (see updateRecipe's draftColumns),
     // so a present value here means nothing has changed since it was computed.
-    // Re-fetching costs nothing and saves whoever double-clicks a second call.
+    // A later request can reuse it without another provider call. Requests
+    // already computing in parallel are not a provider-level deduplication.
     if (recipe.nutrition) return { nutrition: recipe.nutrition };
 
     const guesses = await guessIngredientNutrition(recipe.ingredients, {
@@ -38,14 +39,17 @@ export async function POST(_request: Request, { params }: Params) {
     });
     const nutrition = await computeNutrition(recipe.ingredients, guesses, recipe.servings);
 
-    const saved = await setRecipeNutrition(database, userId, id, nutrition);
-    return saved ? { nutrition } : null;
-  });
+    const saved = await setRecipeNutrition(database, userId, id, nutrition, recipe);
+    return saved ? { nutrition } : { needsReview: true };
+  }, { redactUnexpectedErrors: true });
 
   // `withUser` always answers 200 with whatever the handler returned; `null`
   // is the sentinel this route uses for "no such recipe," same as its sibling.
   if (response.ok && (await response.clone().json()) === null) {
     return NextResponse.json({ error: "No such recipe." }, { status: 404 });
+  }
+  if (response.ok && (await response.clone().json()).needsReview) {
+    return NextResponse.json({ error: "This recipe changed or another estimate finished. Reload it to review the current recipe." }, { status: 409 });
   }
   return response;
 }

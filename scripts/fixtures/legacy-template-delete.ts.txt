@@ -1,0 +1,12 @@
+export async function deleteTemplate(
+  database: Database,
+  ownerId: string,
+  templateId: string,
+): Promise<boolean> {
+  if (!isUuid(templateId)) return false;
+  const [deleted] = await database
+    .delete(schema.mealTemplates)
+    .where(and(eq(schema.mealTemplates.id, templateId), eq(schema.mealTemplates.ownerId, ownerId)))
+    .returning({ id: schema.mealTemplates.id });
+  return Boolean(deleted);
+}

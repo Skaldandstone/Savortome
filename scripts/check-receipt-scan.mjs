@@ -28,10 +28,11 @@ async function routeFixture() {
         "@seconds/db": `
           export const createPantryIntake=async(_db,userId,value)=>{state.saved={userId,...value};return {id:'intake-1',...value};};
           export const listPendingPantryIntakes=async()=>[{id:'intake-1'}];`,
+        "@/lib/bounded-json": `export const boundedJson=async request=>{state.bodyReads++;return request.body;};`,
         "@/lib/api": `
           export class BadRequestError extends Error{};
           export const readJson=async request=>{state.bodyReads++;return request.body;};
-          export const withUser=async handler=>{if(state.signedOut)return {status:401};try{return {status:200,body:await handler('user-a',{})};}catch(error){return {status:error.name==='NotConfiguredError'?501:400,error};}};`,
+          export const withUser=async handler=>{if(state.signedOut)return {status:401,headers:{set(){}}};try{return {headers:{set(){}},status:200,body:await handler('user-a',{})};}catch(error){return {headers:{set(){}},status:error.name==='NotConfiguredError'?501:400,error};}};`,
         "@/lib/session": `export class NotConfiguredError extends Error{constructor(message){super(message);this.name='NotConfiguredError';}};`,
       };
       api.onResolve({ filter: /.*/ }, args => Object.hasOwn(stubs, args.path) ? { path: args.path, namespace: "stub" } : undefined);
@@ -39,7 +40,7 @@ async function routeFixture() {
     }}],
   });
   const state = { signedOut: false, bodyReads: 0, modelCalls: 0, saved: null };
-  const context = { state, process: { env: {} }, Buffer, require };
+  const context = { state, AbortSignal, process: { env: {} }, Buffer, require };
   runInNewContext(built.outputFiles[0].text, context);
   return { state, env: context.process.env, route: context.route };
 }
@@ -47,7 +48,7 @@ async function routeFixture() {
 test("receipt route authenticates before reading the body or calling the model", async () => {
   const fixture = await routeFixture();
   fixture.state.signedOut = true;
-  const response = await fixture.route.POST({ body: { imageBase64: "bad" } });
+  const response = await fixture.route.POST({ signal: new AbortController().signal, body: { imageBase64: "bad" } });
   assert.equal(response.status, 401);
   assert.equal(fixture.state.bodyReads, 0);
   assert.equal(fixture.state.modelCalls, 0);
@@ -55,7 +56,7 @@ test("receipt route authenticates before reading the body or calling the model",
 
 test("receipt route fails closed unless the metered feature is explicitly configured", async () => {
   const fixture = await routeFixture();
-  const response = await fixture.route.POST({ body: {} });
+  const response = await fixture.route.POST({ signal: new AbortController().signal, body: {} });
   assert.equal(response.status, 501);
   assert.equal(fixture.state.bodyReads, 0);
   assert.equal(fixture.state.modelCalls, 0);
@@ -68,7 +69,7 @@ test("receipt route cannot be enabled with the old Anthropic key or a blank Open
   for (const key of [undefined, "   "]) {
     fixture.env.OPENAI_API_KEY = key;
     assert.equal((await fixture.route.GET()).body.enabled, false);
-    assert.equal((await fixture.route.POST({ body: {} })).status, 501);
+    assert.equal((await fixture.route.POST({ signal: new AbortController().signal, body: {} })).status, 501);
   }
   assert.equal(fixture.state.modelCalls, 0);
   assert.equal(fixture.state.bodyReads, 0);
@@ -78,7 +79,7 @@ test("receipt route stores only normalized review data and a duplicate digest", 
   const fixture = await routeFixture();
   fixture.env.RECEIPT_SCAN_ENABLED = "true";
   fixture.env.OPENAI_API_KEY = "test-placeholder";
-  const response = await fixture.route.POST({ body: { imageBase64: "aW1hZ2U=", imageMediaType: "image/jpeg" } });
+  const response = await fixture.route.POST({ signal: new AbortController().signal, body: { imageBase64: "aW1hZ2U=", imageMediaType: "image/jpeg" } });
   assert.equal(response.status, 200);
   assert.equal(fixture.state.modelCalls, 1);
   assert.equal(fixture.state.saved.userId, "user-a");

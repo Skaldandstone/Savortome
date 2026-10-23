@@ -1,11 +1,13 @@
 import { flagsForRecipe, type DietaryProfile } from "./dietary.js";
 import { pantryAttention } from "./pantry-guidance.js";
 import type { PantryEntry, PantryMatch } from "./pantry.js";
+import { canonicalize } from "./units.js";
 
 export interface PlanTogetherCandidate extends PantryMatch {
   title: string;
   imageUrl: string | null;
   totalMinutes: number | null;
+  stepCount?: number | null;
   tags: string[];
   ingredients: string[];
 }
@@ -15,11 +17,79 @@ export interface PlanTogetherIdea {
   title: string;
   imageUrl: string | null;
   totalMinutes: number | null;
+  stepCount?: number | null;
   have: string[];
   missing: string[];
   canMakeNow: boolean;
   reason: string;
   resurfaceItems: string[];
+}
+
+/** Explicit planning limits, not inferred energy or cooking difficulty. */
+export interface PlanTogetherOptions {
+  strictDietary?: boolean;
+  maxMinutes?: 10 | 20 | 30 | 60;
+  /** Count of saved instruction entries, never a difficulty/energy inference. */
+  maxSteps?: 3 | 5 | 8;
+  pantryOnly?: boolean;
+  /** Temporary names, normalized by the input parser before ranking; never saved as dietary settings. */
+  useIngredient?: string;
+  skipIngredient?: string;
+  /** Exact saved pantry key, checked against this account; not normalized again. */
+  pantryItem?: string;
+}
+
+export function planIngredientName(value: string | null | undefined): string | undefined {
+  if (value == null || value.trim() === "") return undefined;
+  if (value.length > 100 || /[\u0000-\u001f\u007f,;]|\bor\b/i.test(value)) throw new Error("Enter one ingredient name, up to 100 characters, without alternatives.");
+  const name = canonicalize(value.trim());
+  if (!name) throw new Error("Enter an ingredient name.");
+  return name;
+}
+
+export function parsePlanTogetherOptions(params: URLSearchParams): PlanTogetherOptions {
+  if (["maxMinutes", "maxSteps", "pantryOnly", "strictDietary", "useIngredient", "skipIngredient", "pantryItem"].some(key => params.getAll(key).length > 1)) throw new Error("Choose one value for each meal-planning limit.");
+  const rawTime = params.get("maxMinutes");
+  const rawSteps = params.get("maxSteps");
+  if (rawSteps !== null && !["3", "5", "8"].includes(rawSteps)) throw new Error("Choose a supported saved-step limit.");
+  const rawPantry = params.get("pantryOnly");
+  const rawDietary = params.get("strictDietary");
+  if (rawTime !== null && !["10", "20", "30", "60"].includes(rawTime)) throw new Error("Choose a supported meal-planning time limit.");
+  if (rawPantry !== null && rawPantry !== "true" && rawPantry !== "false") throw new Error("Choose whether to use pantry matches only.");
+  if (rawDietary !== null && rawDietary !== "true" && rawDietary !== "false") throw new Error("Choose a valid dietary matching setting.");
+  const useIngredient = planIngredientName(params.get("useIngredient"));
+  const pantryItem = params.get("pantryItem") ?? undefined;
+  if (pantryItem !== undefined && (pantryItem.length === 0 || pantryItem.length > 200 || /[\u0000-\u001f\u007f]/.test(pantryItem))) throw new Error("Choose one saved pantry item.");
+  if (pantryItem && useIngredient) throw new Error("Choose a saved pantry item or enter an ingredient, not both.");
+  return { strictDietary: rawDietary === "true", pantryOnly: rawPantry === "true", maxMinutes: rawTime === null ? undefined : Number(rawTime) as PlanTogetherOptions["maxMinutes"], maxSteps: rawSteps === null ? undefined : Number(rawSteps) as PlanTogetherOptions["maxSteps"], useIngredient, skipIngredient: planIngredientName(params.get("skipIngredient")), pantryItem };
+}
+
+/** JSON callers keep temporary food choices out of URLs and access-log queries. */
+export function parsePlanTogetherInput(value: unknown): PlanTogetherOptions {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("Review your meal-planning choices.");
+  const input = value as Record<string, unknown>;
+  const params = new URLSearchParams();
+  for (const key of ["strictDietary", "pantryOnly"] as const) {
+    if (input[key] !== undefined) {
+      if (typeof input[key] !== "boolean") throw new Error("Choose a valid matching setting.");
+      params.set(key, String(input[key]));
+    }
+  }
+  if (input.maxMinutes !== undefined) {
+    if (typeof input.maxMinutes !== "number") throw new Error("Choose a supported time limit.");
+    params.set("maxMinutes", String(input.maxMinutes));
+  }
+  if (input.maxSteps !== undefined) {
+    if (typeof input.maxSteps !== "number") throw new Error("Choose a supported saved-step limit.");
+    params.set("maxSteps", String(input.maxSteps));
+  }
+  for (const key of ["useIngredient", "skipIngredient", "pantryItem"] as const) {
+    if (input[key] !== undefined) {
+      if (typeof input[key] !== "string") throw new Error("Enter one ingredient name.");
+      params.set(key, input[key]);
+    }
+  }
+  return parsePlanTogetherOptions(params);
 }
 
 /**
@@ -33,11 +103,31 @@ export function suggestPlanTogether(
   profile: DietaryProfile,
   now: Date = new Date(),
   limit = 3,
+  options: PlanTogetherOptions = {},
 ): PlanTogetherIdea[] {
   const pantryByName = new Map(pantry.map(entry => [entry.canonicalItem, entry]));
   const taggedPreferences = new Set<string>(profile.dietaryTags);
+  // The boundary parser already canonicalizes names. Do not singularize an
+  // already-normalized name a second time (normalization is not idempotent for
+  // every possible user-supplied word).
+  const useIngredient = options.useIngredient;
+  const skipIngredient = options.skipIngredient;
 
   return candidates
+    .filter(candidate => !options.pantryItem || (pantryByName.has(options.pantryItem) && candidate.ingredients.includes(options.pantryItem)))
+    // A conflicting use/skip request deliberately returns no choices. Do not
+    // weaken either preference or treat a name exclusion as allergy safety.
+    .filter(candidate => !useIngredient || candidate.ingredients.includes(useIngredient))
+    .filter(candidate => !skipIngredient || !candidate.ingredients.includes(skipIngredient))
+    // Search normally assumes staples. A no-shopping request cannot rely on
+    // that assumption: require every indexed name, even optional ingredients.
+    // An empty ingredient index is not evidence that nothing is needed.
+    .filter(candidate => !options.pantryOnly || (candidate.ingredients.length > 0 && candidate.missing.length === 0 && candidate.ingredients.every(item => pantryByName.has(item))))
+    // Unknown times never satisfy a selected limit. Include elapsed waiting
+    // time from the saved recipe; never substitute active preparation time.
+    .filter(candidate => options.maxMinutes === undefined || (candidate.totalMinutes !== null && Number.isFinite(candidate.totalMinutes) && candidate.totalMinutes >= 0 && candidate.totalMinutes <= options.maxMinutes))
+    .filter(candidate => options.maxSteps === undefined || (typeof candidate.stepCount === "number" && Number.isInteger(candidate.stepCount) && candidate.stepCount > 0 && candidate.stepCount <= options.maxSteps))
+    .filter(candidate => !options.strictDietary || profile.dietaryTags.every(tag => candidate.tags.includes(tag)))
     .filter(candidate => flagsForRecipe(
       candidate.ingredients.map(canonicalItem => ({ canonicalItem, optional: false })),
       profile.allergens,
@@ -64,12 +154,28 @@ export function suggestPlanTogether(
       title: candidate.title,
       imageUrl: candidate.imageUrl,
       totalMinutes: candidate.totalMinutes,
+      stepCount: typeof candidate.stepCount === "number" && Number.isInteger(candidate.stepCount) && candidate.stepCount > 0 ? candidate.stepCount : null,
       have: candidate.have,
       missing: candidate.missing,
       canMakeNow: candidate.canMakeNow,
       resurfaceItems,
       reason: planReason(candidate, resurfaceItems),
     }));
+}
+
+/** A small, stable memory aid, never an assertion that food is fresh/present. */
+export function pantryPlanningItems(entries: readonly PantryEntry[], now: Date = new Date()): PantryEntry[] {
+  return pantryPlanningMatches(entries, "", now).slice(0, 6);
+}
+
+/** Literal local browse over saved names. Never normalizes a saved key again. */
+export function pantryPlanningMatches(entries: readonly PantryEntry[], query = "", now: Date = new Date()): PantryEntry[] {
+  if (query.length > 100 || /[\u0000-\u001f\u007f]/.test(query)) return [];
+  const needle = query.trim().toLowerCase();
+  return entries.filter(entry => !needle || entry.displayName.toLowerCase().includes(needle) || entry.canonicalItem.toLowerCase().includes(needle)).sort((a, b) =>
+    Number(pantryAttention(b, now)?.shouldResurface === true) - Number(pantryAttention(a, now)?.shouldResurface === true) ||
+    a.canonicalItem.localeCompare(b.canonicalItem)
+  );
 }
 
 function planReason(candidate: PlanTogetherCandidate, resurfaceItems: string[]): string {
