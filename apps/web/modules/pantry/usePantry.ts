@@ -163,7 +163,12 @@ export function usePantry(api = defaultApi): PantryController {
       return run(() => api.addPantry(pending), next => expected.every(entry => next.some(item => item?.canonicalItem === entry.canonicalItem
         && item.quantity === entry.quantity && item.unit === entry.unit)));
     },
-    update: (update) => run(() => api.updatePantry(update)),
+    update: (update) => {
+      const input = { ...update };
+      return run(() => api.updatePantry(input), next => next.some(item => item?.canonicalItem === input.canonicalItem
+        && (input.quantity === undefined || item.quantity === input.quantity)
+        && (input.unit === undefined || item.unit === input.unit)));
+    },
     remove: (canonicalItem) => run(() => api.removePantry([canonicalItem])),
     clear: () => run(() => api.clearPantry()),
     resolveIntake,

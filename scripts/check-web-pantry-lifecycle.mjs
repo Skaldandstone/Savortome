@@ -168,3 +168,48 @@ test('web pantry: verified Add receipt still cannot publish after client replace
  const f=fixture();f.render();await flush();const reply=deferred();f.state.respond=()=>reply.promise;const operation=f.render().add('2 cups rice');f.replace();f.render(false);const writes=f.state.writes;
  reply.resolve([{canonicalItem:'rice',quantity:2,unit:'cup'}]);assert.equal(await operation,false);assert.equal(f.state.writes,writes);assert.equal(f.render(false).items.length,0);f.unmount();
 });
+
+test('web pantry: missing amount-save receipt cannot confirm success or erase loaded pantry',async()=>{
+ const f=fixture();f.state.respond=async method=>method==='listPantry'?[{canonicalItem:'rice',quantity:6,unit:'cup'}]:[];f.render();await flush();f.state.respond=async()=>[];
+ assert.equal(await f.render().update({canonicalItem:'rice',quantity:4,unit:'cup',confirmPresent:true}),false);assert.equal(f.render().items[0].quantity,6);assert.match(f.render().error.message,/could not confirm/);
+});
+
+test('web pantry: amount save refuses wrong item, quantity or unit and malformed acknowledgements',async()=>{
+ for(const receipt of [null,{},[null],[{canonicalItem:'pear',quantity:4,unit:'cup'}],[{canonicalItem:'rice',quantity:6,unit:'cup'}],[{canonicalItem:'rice',quantity:4,unit:'kg'}],[{canonicalItem:'rice',quantity:'4',unit:'cup'}]]){
+  const f=fixture();f.render();await flush();f.state.respond=async()=>receipt;
+  assert.equal(await f.render().update({canonicalItem:'rice',quantity:4,unit:'cup',confirmPresent:true}),false);assert.equal(f.render().items.length,0);assert.match(f.render().error.message,/could not confirm/);
+ }
+});
+
+test('web pantry: correct amount acknowledgement confirms and preserves unrelated items',async()=>{
+ const f=fixture();f.render();await flush();f.state.respond=async()=>[{canonicalItem:'rice',quantity:4,unit:'cup'},{canonicalItem:'pear',quantity:3,unit:null}];
+ assert.equal(await f.render().update({canonicalItem:'rice',quantity:4,unit:'cup',confirmPresent:true}),true);assert.equal(f.render().items[0].quantity,4);assert.equal(f.render().items.length,2);assert.equal(f.render().error,null);
+});
+
+test('web pantry: amount save snapshots caller input before dispatch and verification',async()=>{
+ const f=fixture();f.render();await flush();const reply=deferred();f.state.respond=()=>reply.promise;
+ const input={canonicalItem:'rice',quantity:4,unit:'cup',confirmPresent:true};const operation=f.render().update(input);input.quantity=9;input.unit='kg';input.canonicalItem='pear';
+ const sent=f.state.calls.at(-1).args[0];assert.equal(sent.quantity,4);assert.equal(sent.unit,'cup');assert.equal(sent.canonicalItem,'rice');
+ reply.resolve([{canonicalItem:'rice',quantity:4,unit:'cup'}]);assert.equal(await operation,true);assert.equal(f.render().items[0].quantity,4);
+});
+
+test('web pantry: amount save distinguishes explicit null unit from omitted unit',async()=>{
+ const f=fixture();f.render();await flush();f.state.respond=async()=>[{canonicalItem:'rice',quantity:4,unit:'cup'}];
+ assert.equal(await f.render().update({canonicalItem:'rice',quantity:4,unit:null}),false);assert.equal(await f.render().update({canonicalItem:'rice',quantity:4}),true);
+ f.state.respond=async()=>[{canonicalItem:'rice',quantity:4,unit:null}];assert.equal(await f.render().update({canonicalItem:'rice',quantity:4,unit:null}),true);
+});
+
+test('web pantry: uncertain amount can retry deliberately and non-amount update still works',async()=>{
+ const f=fixture();f.render();await flush();let writes=0;f.state.respond=async()=>++writes===1?[]:[{canonicalItem:'rice',quantity:4,unit:'cup',isUsual:true}];
+ const input={canonicalItem:'rice',quantity:4,unit:'cup'};assert.equal(await f.render().update(input),false);assert.equal(await f.render().update(input),true);assert.equal(await f.render().update({canonicalItem:'rice',isUsual:true}),true);assert.equal(f.render().error,null);
+});
+
+test('web pantry: amount errors hide private payloads and preserve sign-in-required recovery',async()=>{
+ const f=fixture();f.render();await flush();
+ for(const status of [401,500]){f.state.respond=async()=>{throw new f.ApiError('private amount payload',status);};assert.equal(await f.render().update({canonicalItem:'rice',quantity:4}),false);assert.equal(f.render().error.signInRequired,status===401);assert.doesNotMatch(f.render().error.message,/private amount payload/);}
+});
+
+test('web pantry: old amount acknowledgement cannot publish after client replacement',async()=>{
+ const f=fixture();f.render();await flush();const reply=deferred();f.state.respond=()=>reply.promise;const operation=f.render().update({canonicalItem:'rice',quantity:4,unit:'cup'});f.replace();f.render(false);const writes=f.state.writes;
+ reply.resolve([{canonicalItem:'rice',quantity:4,unit:'cup'}]);assert.equal(await operation,false);assert.equal(f.state.writes,writes);assert.equal(f.render(false).items.length,0);f.unmount();
+});
