@@ -690,7 +690,7 @@ test('mobile plan removal offers undo and clear-week requires confirmation', asy
 
 });
 
-for (const leave of ['change week', 'blur', 'unmount', 'refocus']) test(`an earlier native planner removal cannot write after ${leave}`, async () => {
+for (const leave of ['change week', 'blur', 'unmount', 'refocus', 'blurred rerender']) test(`an earlier native planner removal cannot write after ${leave}`, async () => {
   const week = '2026-09-21';
   const meal = { recipeId: 'recipe-1', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
   const f = fixture({ plannerLifecycle: true, deps: [], cleanups: [] });
@@ -720,7 +720,9 @@ for (const leave of ['change week', 'blur', 'unmount', 'refocus']) test(`an earl
     if (leave === 'unmount') f.state.cleanups.forEach(cleanup => cleanup?.());
     if (leave === 'refocus') { blur = focused(); tree = await settle(); }
   }
-  remove.props.onPress();
+  const callback = leave === 'blurred rerender'
+    ? nodes(render()).find(node => node.props?.accessibilityLabel === 'Remove Bean soup from Tue 22 Sep') : remove;
+  callback.props.onPress();
   await new Promise(resolve => setImmediate(resolve));
   assert.deepEqual(writes, [], 'A departed native view must not send a meal removal');
   if (leave === 'refocus') {

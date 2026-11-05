@@ -492,6 +492,8 @@ Validation: seven focused planner checks (included by the existing CI filter), t
 
 ### Native planner departure guards
 
-The native mutation runner now checks the mounted state, current week, and focus-visit identity captured by the rendered callback before dispatch. Reproductions showed stale removal callbacks sending after week navigation, blur, and unmount; the new cases require zero writes, including an older callback after refocus. A newly rendered callback after refocus remains usable and sends the exact intended payload. Existing uncertainty locks and confirmation flow are unchanged.
+The native mutation runner now checks the mounted and focused state, current week, and focus-visit identity captured by the rendered callback before dispatch. Reproductions showed stale removal callbacks sending after week navigation, blur, and unmount; the new cases require zero writes, including an older callback after refocus. A newly rendered callback after refocus remains usable and sends the exact intended payload. Existing uncertainty locks and confirmation flow are unchanged.
 
-Validation: five focused native planner cases and the complete60-case woodland suite pass locally, with native typechecking. Focused cases are included in the existing CI step. Synthetic focus callbacks do not establish physical-device behavior or deployment; those acceptance gates remain open.
+Validation: six focused native planner cases and the complete61-case woodland suite pass locally, with native typechecking. Focused cases are included in the existing CI step. Synthetic focus callbacks do not establish physical-device behavior or deployment; those acceptance gates remain open.
+
+A focused-state guard also blocks callbacks newly rendered while the screen remains blurred, such as after a theme update; a separate regression reproduced this offscreen dispatch.

@@ -39,7 +39,7 @@ import { useReducedMotion } from "@/ui/ThemeProvider";
 export function PlanScreen({ initialWeek, client }: { initialWeek: string; client: SecondsClient }) {
   const [week, setWeek] = useState(initialWeek);
   const alive = useRef(true); const visit = useRef(0); const currentWeek = useRef(week); currentWeek.current = week;
-  const mutation = useRef(false);
+  const mutation = useRef(false); const focused = useRef(false);
   const renderedVisit = visit.current;
   useEffect(() => { alive.current = true; return () => { alive.current = false; ++visit.current; }; }, []);
   const [meals, setMeals] = useState<PlannedMeal[]>([]);
@@ -97,17 +97,17 @@ export function PlanScreen({ initialWeek, client }: { initialWeek: string; clien
   // Planning happens here, but recipes arrive from other screens.
   useFocusEffect(
     useCallback(() => {
-      ++visit.current;
+      focused.current = true; ++visit.current;
       mutation.current = false; setBusy(false);
       void load(week);
       void loadLibrary();
-      return () => { ++visit.current; };
+      return () => { focused.current = false; ++visit.current; };
     }, [load, loadLibrary, week]),
   );
 
   const run = async (work: () => Promise<{ meals: PlannedMeal[]; addedToList?: number }>) => {
     // A callback belongs to the mounted, focused visit and week that rendered it.
-    if (!alive.current || visit.current !== renderedVisit || currentWeek.current !== week || mutation.current || uncertain.current || planLoading || loadedWeek !== week || planError) return false;
+    if (!alive.current || !focused.current || visit.current !== renderedVisit || currentWeek.current !== week || mutation.current || uncertain.current || planLoading || loadedWeek !== week || planError) return false;
     mutation.current = true;
     // Freeze other writes immediately, including if focus changes before this
     // request settles. Suppressing late feedback must not imply no write ran.
