@@ -183,8 +183,8 @@ function planReason(candidate: PlanTogetherCandidate, resurfaceItems: string[]):
     return `Uses ${readableList(resurfaceItems)}, which may be worth checking while you plan.`;
   }
   if (candidate.canMakeNow) return "Looks possible with what your pantry currently says you have.";
-  if (candidate.missing.length === 1) return `Close match. Your pantry is missing ${candidate.missing[0]}.`;
-  return `Close match. Your pantry is missing ${readableList(candidate.missing.slice(0, 3))}${candidate.missing.length > 3 ? " and a few more items" : ""}.`;
+  if (candidate.missing.length === 1) return `Close match: ${candidate.missing[0]} was not matched in your saved pantry. Check what you have before adding it to a shopping list.`;
+  return `Close match: ${readableList(candidate.missing.slice(0, 3))}${candidate.missing.length > 3 ? " and a few more names" : ""} were not matched in your saved pantry. Check what you have before adding them to a shopping list.`;
 }
 
 function readableList(items: readonly string[]): string {

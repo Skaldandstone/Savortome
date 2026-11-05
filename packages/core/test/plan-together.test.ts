@@ -42,7 +42,7 @@ test("keeps complete and close matches distinct without inventing pantry certain
     candidate({ recipeId: "close", title: "Close", canMakeNow: false, coverage: .8, missing: ["lime"] }),
   ], [], { dietaryTags: [], allergens: [] });
   assert.match(ideas[0]?.reason ?? "", /currently says/);
-  assert.match(ideas[1]?.reason ?? "", /missing lime/);
+  assert.match(ideas[1]?.reason ?? "", /lime.*not matched in your saved pantry/);
 });
 
 test("returns at most three in stable recipe-id order when scores tie", () => {
@@ -77,4 +77,16 @@ test("planning boundary rejects ambiguous duplicate, malformed and conflicting c
   for (const value of [{ maxMinutes: "10" }, { maxSteps: 0 }, { pantryOnly: "true" }, { useIngredient: ["banana"] }]) assert.throws(() => parsePlanTogetherInput(value));
   const parsed = parsePlanTogetherInput({ maxMinutes: 10, maxSteps: 3, pantryOnly: true, strictDietary: true, useIngredient: "bananas", diagnosis: "ignored synthetic field" });
   assert.equal(parsed.useIngredient, "banana"); assert.equal("diagnosis" in parsed, false);
+});
+
+test("partial pantry reasons describe missing records rather than absent food", () => {
+  for (const missing of [["lime"], ["lime", "rice"], ["lime", "rice", "tomato", "onion"]]) {
+    const [idea] = suggestPlanTogether([candidate({ recipeId: "partial", title: "Partial", canMakeNow: false, coverage: .5, missing })], [], { dietaryTags: [], allergens: [] });
+    assert.ok(idea);
+    assert.match(idea.reason, /not matched in your saved pantry/);
+    assert.match(idea.reason, /Check what you have/);
+    assert.doesNotMatch(idea.reason, /Your pantry is missing/);
+    assert.deepEqual(idea.missing, missing);
+    assert.equal(idea.canMakeNow, false);
+  }
 });
