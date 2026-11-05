@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Text, View } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
-import { mealShoppingNames, type SecondsClient } from "@seconds/core/format";
+import { mealShoppingNames, mealShoppingReceiptMatches, type SecondsClient } from "@seconds/core/format";
 import { Button, Callout, space, type as typeScale, usePalette } from "@/ui";
 
 export function MissingShoppingReview({ missing, client, onPending }: { missing: string[]; client: SecondsClient; onPending: (pending: boolean) => void }) {
@@ -21,7 +21,8 @@ export function MissingShoppingReview({ missing, client, onPending }: { missing:
     const exact = pending ?? [...selected]; setPending(exact); onPending(true);
     const version = ++visit.current;
     try {
-      await client.addItemsToList(exact.map(canonicalItem => ({ canonicalItem, displayName: canonicalItem })));
+      const receipt = await client.addItemsToList(exact.map(canonicalItem => ({ canonicalItem, displayName: canonicalItem })));
+      if (!mealShoppingReceiptMatches(exact, receipt)) throw new Error("Unconfirmed shopping names");
       if (alive.current && focused.current && visit.current === version) { setDone(true); setPending(null); onPending(false); setMessage("Selected names added. Existing amounts and check marks were kept. Pantry and meal plans were not changed."); }
     } catch { if (alive.current && focused.current && visit.current === version) setMessage("We could not confirm the update. It may already have saved. Your exact selection is kept; retry it or check your list before changing anything."); }
     finally { if (alive.current && focused.current && visit.current === version) { action.current = false; setBusy(false); } }

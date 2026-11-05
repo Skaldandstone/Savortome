@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { mealShoppingNames, type SecondsClient } from "@seconds/core/format";
+import { mealShoppingNames, mealShoppingReceiptMatches, type SecondsClient } from "@seconds/core/format";
 import { Button, Callout, FieldRow } from "@/ui";
 
 export function MissingShoppingReview({ missing, client, onPending }: { missing: string[]; client: SecondsClient; onPending: (pending: boolean) => void }) {
@@ -19,7 +19,8 @@ export function MissingShoppingReview({ missing, client, onPending }: { missing:
     action.current = true; setBusy(true); setMessage("");
     const exact = pending ?? [...selected]; setPending(exact); onPending(true);
     try {
-      await client.addItemsToList(exact.map(canonicalItem => ({ canonicalItem, displayName: canonicalItem })));
+      const receipt = await client.addItemsToList(exact.map(canonicalItem => ({ canonicalItem, displayName: canonicalItem })));
+      if (!mealShoppingReceiptMatches(exact, receipt)) throw new Error("Unconfirmed shopping names");
       if (alive.current) { setDone(true); setPending(null); onPending(false); setMessage("Selected names added to your list. Existing amounts and check marks were kept. Pantry and meal plans were not changed."); }
     } catch { if (alive.current) setMessage("We could not confirm the list update. It may already have saved. Your exact selection is kept; retry it or check your list before changing anything."); }
     finally { if (alive.current) { action.current = false; setBusy(false); } }
