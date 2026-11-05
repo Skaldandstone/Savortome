@@ -48,6 +48,21 @@ describe("parsePantryIntakeResolution", () => {
     }), { intakeId, action: "accept", acceptedItemIds: [itemId] });
   });
 
+  it("rejects a mixed valid and malformed selection instead of accepting a subset", () => {
+    for (const invalid of [null, 7, {}, "", "not-an-item-id"]) {
+      assert.throws(() => parsePantryIntakeResolution({
+        intakeId, action: "accept", acceptedItemIds: [itemId, invalid],
+      }), /valid items/);
+    }
+  });
+
+  it("preserves all distinct reviewed ids in their submitted order", () => {
+    const secondId = "00000000-0000-0000-0000-000000000003";
+    assert.deepEqual(parsePantryIntakeResolution({
+      intakeId, action: "accept", acceptedItemIds: [secondId, itemId, secondId],
+    }), { intakeId, action: "accept", acceptedItemIds: [secondId, itemId] });
+  });
+
   it("allows dismissal without accepting anything and rejects an empty acceptance", () => {
     assert.deepEqual(parsePantryIntakeResolution({ intakeId, action: "dismiss" }), {
       intakeId, action: "dismiss", acceptedItemIds: [],

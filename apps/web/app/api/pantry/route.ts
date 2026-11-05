@@ -5,7 +5,9 @@ import { readJson, withUser } from "@/lib/api";
 export const runtime = "nodejs";
 
 export async function GET() {
-  return withUser((userId, database) => listPantry(database, userId));
+  const response = await withUser((userId, database) => listPantry(database, userId), { redactUnexpectedErrors: true });
+  response.headers.set("Cache-Control", "private, no-store");
+  return response;
 }
 
 /**

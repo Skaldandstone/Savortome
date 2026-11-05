@@ -31,3 +31,16 @@ test('sign-in redirect carries only the allowlisted protocol fields', () => {
   assert.ok(!href.includes('banana'));
   assert.equal(careSignInHref({ return_to: 'wispling://arbitrary' } as never), '/sign-in?redirect_url=%2Fcare');
 });
+
+
+test('explicit low-effort shortcut wins over stale restored effort without retaining a foreign handoff', () => {
+ const raw=JSON.stringify(careReturnRecord({source:'wispling',return_to:'wispling://care-return'}, {effort:'cook',texture:'soft'}, 'banana', 50));
+ const restored=restoreCareReturn(raw,60,{effort:'open'})!;
+ assert.equal(restored.choices.effort,'open');assert.equal(restored.choices.texture,'soft');assert.equal(restored.selectedId,null);
+ assert.deepEqual(restored.link,{effort:'open'});
+});
+test('same explicit choices after sign-in retain the selected food', () => {
+ const raw=JSON.stringify(careReturnRecord({effort:'open'}, {effort:'open'}, 'banana',50));
+ assert.equal(restoreCareReturn(raw,60,{effort:'open'})!.selectedId,'banana');
+ assert.equal(restoreCareReturn(raw,60,{effort:'invalid',allergens:['milk']})!.choices.effort,'open');
+});

@@ -1,6 +1,6 @@
 import { parseIngredientLine } from "./units.js";
 
-export const PANTRY_INTAKE_SOURCES = ["grocery_order", "receipt"] as const;
+export const PANTRY_INTAKE_SOURCES = ["grocery_order", "receipt", "barcode"] as const;
 export type PantryIntakeSource = (typeof PANTRY_INTAKE_SOURCES)[number];
 export type PantryIntakeStatus = "pending" | "accepted" | "dismissed";
 
@@ -120,11 +120,18 @@ export function parsePantryIntakeResolution(value: unknown): PantryIntakeResolut
   if (body.action !== "accept" && body.action !== "dismiss") {
     throw new PantryIntakeValidationError("Choose whether to add or dismiss these items.");
   }
-  const acceptedItemIds = body.action === "accept" && Array.isArray(body.acceptedItemIds)
-    ? [...new Set(body.acceptedItemIds.filter((id): id is string => typeof id === "string" && /^[0-9a-f-]{36}$/i.test(id)))]
-    : [];
-  if (body.action === "accept" && acceptedItemIds.length === 0) {
-    throw new PantryIntakeValidationError("Choose at least one item to add.");
+  let acceptedItemIds: string[] = [];
+  if (body.action === "accept") {
+    const ids = body.acceptedItemIds;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      throw new PantryIntakeValidationError("Choose at least one item to add.");
+    }
+    // Reject the whole selection: dropping malformed ids would change what
+    // the person reviewed before the transactional ownership check runs.
+    if (!ids.every((id): id is string => typeof id === "string" && /^[0-9a-f-]{36}$/i.test(id))) {
+      throw new PantryIntakeValidationError("Choose valid items from this pantry review.");
+    }
+    acceptedItemIds = [...new Set(ids)];
   }
   return { intakeId: body.intakeId, action: body.action, acceptedItemIds };
 }

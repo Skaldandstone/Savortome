@@ -17,11 +17,22 @@ export function careReturnRecord(link: CareLink, choices: CareChoices, selectedI
   return { at: now, link: parseCareLink(link), choices: localCareChoices(choices), selectedId: CARE_FOODS.some(food => food.id === selectedId) ? selectedId : null };
 }
 
-export function restoreCareReturn(raw: string | null, now = Date.now()) {
+export function restoreCareReturn(raw: string | null, now = Date.now(), incoming?: unknown) {
   try {
     const value = JSON.parse(raw ?? 'null');
     if (!value || typeof value.at !== 'number' || !Number.isFinite(value.at) || value.at > now || now - value.at >= RETURN_TTL) return null;
-    return careReturnRecord(parseCareLink(value.link), localCareChoices(value.choices), value.selectedId, value.at);
+    const restored = careReturnRecord(parseCareLink(value.link), localCareChoices(value.choices), value.selectedId, value.at);
+    const explicit = parseCareLink(incoming);
+    if (!Object.keys(explicit).length) return restored;
+    const choices = { ...restored.choices };
+    let changed = false;
+    for (const key of ['effort', 'time', 'temperature', 'texture'] as const) {
+      if (explicit[key] !== undefined) {
+        if (explicit[key] !== choices[key]) changed = true;
+        Object.assign(choices, { [key]: explicit[key] });
+      }
+    }
+    return careReturnRecord(explicit, choices, changed ? null : restored.selectedId, value.at);
   } catch { return null; }
 }
 

@@ -12,7 +12,7 @@ import { PaprikaImport } from "./PaprikaImport";
 import { useImport } from "./useImport";
 
 /** The app's front door: paste something, get a recipe card. */
-export function ImportPanel() {
+export function ImportPanel({ clerkEnabled = true }: { clerkEnabled?: boolean }) {
   const { stage, busy, error, result, run } = useImport();
   const [credits, setCredits] = useState<CreditBalance | null>(null);
   const [resetsOn, setResetsOn] = useState<string>("");
@@ -72,6 +72,7 @@ export function ImportPanel() {
 
       {result ? (
         <RecipeCard
+          clerkEnabled={clerkEnabled}
           recipe={result.recipe}
           trace={result.trace}
           shelvedId={result.saved ? result.recipe.id : null}

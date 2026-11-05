@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "@clerk/nextjs";
+import { createClient } from "@seconds/core/format";
+import { api as localApi } from "@/lib/client";
 import { signInReturnHref } from "@/lib/action-failure";
 import { Button, Callout, FieldRow, Panel, PanelHeader, TextField } from "@/ui";
 import { MatchList, QueryReadback } from "./MatchList";
@@ -9,6 +12,7 @@ import { PantryList } from "./PantryList";
 import { usePantry, usePantrySearch } from "./usePantry";
 import styles from "./pantry.module.css";
 import { PantryReviewQueue } from "./PantryReviewQueue";
+import { BarcodeCapture } from "./BarcodeCapture";
 
 const EXAMPLES = [
   "chicken thighs, rice, an onion",
@@ -23,9 +27,21 @@ const EXAMPLES = [
  * Searching with an empty box deliberately falls back to the saved pantry, so
  * the common case is one tap rather than retyping the same ingredients.
  */
-export function CookPanel() {
-  const pantry = usePantry();
-  const { response, searching, error, search } = usePantrySearch();
+export function CookPanel({ clerkEnabled = true }: { clerkEnabled?: boolean }) {
+  return clerkEnabled ? <AuthenticatedCookPanel /> : <CookPanelContent clerkEnabled={false} api={localApi} />;
+}
+
+function AuthenticatedCookPanel() {
+  const { userId, sessionId } = useAuth();
+  // The server compares this header with its independently verified Clerk session.
+  // A loading/signed-out screen must never fall back to an unpinned cookie request.
+  const api = useMemo(() => createClient({ expectedSessionId: sessionId ?? "signed-out" }), [userId, sessionId]);
+  return <CookPanelContent clerkEnabled api={api} />;
+}
+
+function CookPanelContent({ clerkEnabled, api }: { clerkEnabled: boolean; api: typeof localApi }) {
+  const pantry = usePantry(api);
+  const { response, searching, error, search } = usePantrySearch(api);
   const [query, setQuery] = useState("");
   const [showPantry, setShowPantry] = useState(false);
 
@@ -89,6 +105,7 @@ export function CookPanel() {
 
         {showPantry ? (
           <div className={styles.pantryPanel}>
+            <BarcodeCapture clerkEnabled={clerkEnabled} onQueued={pantry.retryIntakes} />
             {pantry.loading && !pantry.loaded ? (
               <p className={styles.empty} role="status">
                 Loading pantry…
@@ -110,6 +127,10 @@ export function CookPanel() {
                 <Button type="button" variant="ghost" onClick={pantry.retryPantry}>Try pantry again</Button>
               </Callout>
             ) : null}
+            <div>
+              <Button type="button" variant="ghost" disabled={pantry.loading || pantry.intakesLoading} onClick={() => { pantry.retryPantry(); pantry.retryIntakes(); }}>Refresh pantry and grocery reviews</Button>
+              <p className={styles.empty}>If an action was not confirmed, refresh before repeating it. Refresh only reads saved data. An empty review list does not prove an earlier request failed.</p>
+            </div>
             {pantry.intakesLoading && !pantry.intakesLoaded ? (
               <p className={styles.empty} role="status">Checking for groceries to review…</p>
             ) : null}
@@ -148,7 +169,7 @@ export function CookPanel() {
             interpreted={response.interpreted}
             usedPantry={response.usedPantry}
           />
-          <MatchList results={response.results} />
+          <MatchList results={response.results} api={api} />
         </section>
       ) : null}
     </>

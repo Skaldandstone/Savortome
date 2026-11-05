@@ -1,0 +1,6 @@
+# Preserve the deterministic vendored library hash across Windows checkouts.
+packages/core/src/data/open-recipes.json text eol=lf
+
+# Drizzle stores hashes of exact migration bytes. Git archives must not convert
+# these to CRLF when sealed from a Windows checkout.
+packages/db/migrations/*.sql text eol=lf

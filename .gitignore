@@ -23,6 +23,10 @@ apps/mobile/ios/
 # flips back and forth in every diff.
 apps/web/next-env.d.ts
 
+# Generated Playwright results and failure captures stay local.
+apps/web/test-results/
+apps/web/playwright-report/
+
 # Personal Claude Code overrides for this project
 .claude/settings.local.json
 

@@ -1,0 +1,189 @@
+// Actual native barcode component; synthetic React/Clerk/camera/client, no device.
+import {createHash} from 'node:crypto';import {test} from 'node:test';import assert from 'node:assert/strict';import {build} from 'esbuild';import {runInNewContext} from 'node:vm';
+const mocks={react:`export const useState=initial=>{const i=state.cursor++;if(!(i in state.values))state.values[i]=typeof initial==='function'?initial():initial;return[state.values[i],v=>{state.writes++;state.values[i]=typeof v==='function'?v(state.values[i]):v;}];};
+ export const useRef=initial=>{const i=state.cursor++;return state.refs[i]??= {current:initial};};
+ export const useMemo=(fn,deps)=>{const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){state.deps[i]=deps;state.memos[i]=fn();}return state.memos[i];};
+ export const useCallback=(fn,deps)=>useMemo(()=>fn,deps);
+ export const useEffect=(fn,deps)=>{const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){state.deps[i]=deps;state.effects.push(()=>{state.cleanups[i]?.();state.cleanups[i]=fn();});}};`,
+ 'react/jsx-runtime':`export const jsx=(type,props)=>({type,props});export const jsxs=jsx;`,
+ 'react-native':`export const View='View',Text='Text',StyleSheet={create:v=>v},Alert={alert:(...args)=>state.alerts.push(args)},Linking={openURL:async()=>{}};export const AppState={get currentState(){return state.appState;},addEventListener:(_event,fn)=>{state.appListener=fn;return{remove:()=>state.appListener=null};}};`,
+ 'expo-camera':`export const CameraView='CameraView',useCameraPermissions=()=>[{granted:false},()=>{state.permissions++;return state.permission();}];`,
+ 'expo-router':`import {useEffect} from 'react';export const useFocusEffect=fn=>useEffect(()=>{const cleanup=fn();state.focusCleanups.push(cleanup);return cleanup;},[fn]);`,
+ '@clerk/expo':`export const useAuth=()=>state.auth;`,
+ 'expo-crypto':`export const randomUUID=()=>'00000000-0000-4000-8000-'+String(++state.uuid).padStart(12,'0');`,
+ '@/lib/nativePantryRecovery':`import {createPantryRecoveryStore} from './apps/mobile/lib/pantryRecovery.ts';export const createNativePantryRecovery=(accountId,sessionId)=>createPantryRecoveryStore({accountId,sessionId,environment:state.environment,currentSession:()=>state.auth.userId&&state.auth.sessionId?{accountId:state.auth.userId,sessionId:state.auth.sessionId}:null,digest:state.digest,now:()=>state.clock,storage:{get:key=>state.storage.get(key),set:(key,value)=>state.storage.set(key,value),remove:key=>state.storage.remove(key)}});`,
+ '@seconds/core/format':`export const parseProductBarcode=code=>code;`,
+ '@/lib/client':`export const createAccountClient=account=>Object.fromEntries(['barcodeLookupStatus','lookupProductBarcode','createPantryIntake'].map(method=>[method,async(...args)=>{state.calls.push({account,method,args});return state.respond(method,...args);} ]));`,
+ '@/ui':`export const Button='Button',Callout='Callout',Field='Field',Panel='Panel',PanelHeader='PanelHeader',space={sm:8},usePalette=()=>({text:'#eee',textMuted:'#bbb'});`,
+};
+const bundle=await build({bundle:true,write:false,format:'iife',globalName:'app',jsx:'automatic',stdin:{resolveDir:process.cwd(),contents:"export {BarcodeCapture} from './apps/mobile/modules/pantry/BarcodeCapture.tsx';"},plugins:[{name:'native-barcode-boundaries',setup(api){api.onResolve({filter:/.*/},args=>Object.hasOwn(mocks,args.path)?{path:args.path,namespace:'mock'}:undefined);api.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:mocks[args.path],loader:'js',resolveDir:process.cwd()}));}}]});
+const flush=()=>new Promise(resolve=>setImmediate(resolve));const deferred=()=>{let resolve,reject;const promise=new Promise((a,b)=>{resolve=a;reject=b;});return{promise,resolve,reject};};
+function nodes(tree){return Array.isArray(tree)?tree.flatMap(nodes):tree&&typeof tree==='object'?[tree,...nodes(tree.props?.children)]:[];}
+function text(tree){return Array.isArray(tree)?tree.map(text).join(' '):tree&&typeof tree==='object'?text(tree.props?.children):String(tree??'');}
+const button=(tree,label)=>nodes(tree).find(n=>n.type==='Button'&&n.props.label===label);const press=(tree,label)=>button(tree,label).props.onPress();
+function fixture(persisted = new Map(), environment = `synthetic-barcode-${++fixture.counter}`){
+ const state={cursor:0,values:[],refs:[],deps:[],memos:[],effects:[],cleanups:[],focusCleanups:[],writes:0,calls:[],queued:0,uuid:0,permissions:0,alerts:[],appState:'active',auth:{userId:'synthetic-account-a',sessionId:'synthetic-session-a'},respond:async method=>method==='barcodeLookupStatus'?{enabled:true}:method==='lookupProductBarcode'?{product:null}:{id:'synthetic-intake'},permission:async()=>({granted:true}),timers:new Map(),nextTimer:0};
+ Object.assign(state,{environment,clock:1791115200000,storeCalls:[],digest:async value=>createHash('sha256').update(value).digest('hex')});
+ state.storage={get:async key=>{state.storeCalls.push(['get',key]);return persisted.get(key)??null;},set:async(key,value)=>{state.storeCalls.push(['set',key]);persisted.set(key,value);},remove:async key=>{state.storeCalls.push(['remove',key]);persisted.delete(key);}};
+ const ctx={state,setTimeout:(fn,ms)=>{const id=++state.nextTimer;state.timers.set(id,{fn,ms});return id;},clearTimeout:id=>state.timers.delete(id)};runInNewContext(bundle.outputFiles[0].text,ctx);
+ const render=(commit=true)=>{state.cursor=0;const tree=ctx.app.BarcodeCapture({onQueued:()=>state.queued++});if(commit)state.effects.splice(0).forEach(fn=>fn());return tree;};
+ const enter=()=>nodes(render()).find(n=>n.props?.accessibilityLabel==='Product name, editable').props.onChangeText('Synthetic beans');
+ return{state,render,enter,unmount:()=>state.cleanups.filter(Boolean).forEach(fn=>fn()),blur:()=>state.focusCleanups.filter(Boolean).forEach(fn=>fn())};
+}
+
+fixture.counter=0;
+
+for (const phase of ['pending', 'uncertain']) test(`native barcode: late ${phase} input cannot change a submitted review or its retry identity`, async () => {
+ const f=fixture();f.render();await flush();f.enter();
+ const field=(tree,label)=>nodes(tree).find(node=>node.props?.accessibilityLabel===label);
+ field(f.render(),'Quantity you currently have, optional').props.onChangeText('2');
+ const old=f.render();const gate=deferred();
+ f.state.respond=async method=>method==='createPantryIntake'?gate.promise:{enabled:true};
+ press(old,'Queue item for pantry review');await flush();
+ const original=JSON.stringify(f.state.calls.find(call=>call.method==='createPantryIntake').args[0]);
+ if(phase==='uncertain'){gate.reject(Error('Synthetic uncertain queue'));await flush();}
+ field(old,'Product name, editable').props.onChangeText('Late flour');
+ field(old,'Quantity you currently have, optional').props.onChangeText('9');
+ field(old,'Quantity unit').props.onChangeText('kg');
+ const held=[field(f.render(),'Product name, editable').props.value,field(f.render(),'Quantity you currently have, optional').props.value,field(f.render(),'Quantity unit').props.value];
+ if(phase==='pending'){gate.reject(Error('Synthetic uncertain queue'));await flush();}
+ f.state.respond=async()=>({id:'synthetic-intake'});
+ press(f.render(),'Retry the same pantry review');await flush();
+ const requests=f.state.calls.filter(call=>call.method==='createPantryIntake');
+ assert.equal(requests.length,2);
+ assert.equal(JSON.stringify(requests[1].args[0]),original);
+ assert.deepEqual(held,['Synthetic beans','2','packages']);
+ assert.equal(f.state.queued,1);
+});
+
+test('native barcode: retained successful submit cannot create another review', async () => {
+ const f=fixture();f.render();await flush();f.enter();const old=f.render();
+ press(old,'Queue item for pantry review');await flush();
+ press(old,'Queue item for pantry review');await flush();
+ assert.equal(f.state.calls.filter(call=>call.method==='createPantryIntake').length,1);
+ assert.equal(f.state.queued,1);
+});
+
+test('native barcode: retained lookup and camera controls cannot replace an unconfirmed review', async () => {
+ const f=fixture();f.render();await flush();f.enter();const old=f.render();
+ f.state.respond=async method=>{if(method==='createPantryIntake')throw Error('Synthetic uncertain queue');return {enabled:true,product:null};};
+ press(old,'Queue item for pantry review');await flush();
+ press(old,'Look up label');press(old,'Scan barcode');await flush();
+ assert.equal(f.state.calls.filter(call=>call.method==='lookupProductBarcode').length,0);
+ assert.equal(f.state.permissions,0);
+ assert.equal(nodes(f.render()).find(node=>node.props?.accessibilityLabel==='Product name, editable').props.value,'Synthetic beans');
+});
+
+test('native barcode: old discard confirmation cannot erase a replacement unconfirmed entry', async () => {
+ const f=fixture();f.render();await flush();f.enter();
+ f.state.respond=async()=>{throw Error('Synthetic uncertain queue');};
+ press(f.render(),'Queue item for pantry review');await flush();
+ const old=f.render();press(old,'Discard local entry');press(old,'Discard local entry');
+ const confirm=index=>f.state.alerts[index][2].find(choice=>choice.text==='Discard local entry').onPress;
+ const staleConfirm=confirm(1);confirm(0)();
+ nodes(f.render()).find(node=>node.props?.accessibilityLabel==='Product name, editable').props.onChangeText('Replacement rice');
+ press(f.render(),'Queue item for pantry review');await flush();
+ staleConfirm();
+ assert.equal(nodes(f.render()).find(node=>node.props?.accessibilityLabel==='Product name, editable').props.value,'Replacement rice');
+ assert.ok(button(f.render(),'Retry the same pantry review'));
+});
+test('native barcode: retained unmounted queue/lookup/permission handlers cannot dispatch',async()=>{
+ const f=fixture();f.render();await flush();f.enter();const old=f.render();f.unmount();const calls=f.state.calls.length,writes=f.state.writes;press(old,'Queue item for pantry review');press(old,'Look up label');press(old,'Scan barcode');await flush();assert.equal(f.state.calls.length,calls);assert.equal(f.state.permissions,0);assert.equal(f.state.writes,writes);
+});
+test('native barcode: same-user session replacement before cleanup suppresses pending queue',async()=>{
+ const f=fixture();f.render();await flush();f.enter();const reply=deferred();f.state.respond=()=>reply.promise;press(f.render(),'Queue item for pantry review');f.state.auth.sessionId='synthetic-session-b';f.render(false);const writes=f.state.writes;reply.resolve({id:'synthetic-intake'});await flush();assert.equal(f.state.queued,0);assert.equal(f.state.writes,writes);f.unmount();
+});
+test('native barcode: retained old-account queue cannot dispatch after replacement',async()=>{
+ const f=fixture();f.render();await flush();f.enter();const old=f.render();f.state.auth={userId:'synthetic-account-b',sessionId:'synthetic-session-b'};f.render();await flush();const calls=f.state.calls.length;press(old,'Queue item for pantry review');await flush();assert.equal(f.state.calls.length,calls);
+});
+test('native barcode: old mounted camera events cannot restore data after unmount',async()=>{
+ const f=fixture();f.render();await flush();press(f.render(),'Scan barcode');await flush();const camera=nodes(f.render()).find(n=>n.type==='CameraView');f.unmount();const writes=f.state.writes;camera.props.onBarcodeScanned({type:'ean13',data:'synthetic-code'});camera.props.onMountError();assert.equal(f.state.writes,writes);
+});
+test('native barcode: blurred retained camera action cannot ask for permission',async()=>{
+ const f=fixture();f.render();await flush();const old=f.render();f.blur();const writes=f.state.writes;press(old,'Scan barcode');await flush();assert.equal(f.state.permissions,0);assert.equal(f.state.writes,writes);
+});
+test('native barcode: old camera events cannot interfere with a reopened camera',async()=>{
+ const f=fixture();f.render();await flush();press(f.render(),'Scan barcode');await flush();const oldTree=f.render(),camera=nodes(oldTree).find(n=>n.type==='CameraView');press(oldTree,'Close camera');press(f.render(),'Scan barcode');await flush();f.render();const writes=f.state.writes;camera.props.onBarcodeScanned({type:'ean13',data:'old-code'});camera.props.onMountError();assert.equal(f.state.writes,writes);
+});
+test('native barcode: failed queue retry preserves exact payload and review-only success',async()=>{
+ const f=fixture();f.render();await flush();f.enter();let reject=true;f.state.respond=async()=>{if(reject)throw Error('private diagnostic');return{id:'synthetic-intake'};};press(f.render(),'Queue item for pantry review');await flush();assert.match(text(f.render()),/kept unchanged/);assert.doesNotMatch(text(f.render()),/private diagnostic/);reject=false;press(f.render(),'Retry the same pantry review');await flush();const writes=f.state.calls.filter(c=>c.method==='createPantryIntake');assert.deepEqual(writes[0].args,writes[1].args);assert.equal(f.state.queued,1);assert.match(text(f.render()),/Nothing has entered your pantry yet/);
+});
+
+test('native barcode: old availability and lookup cannot update after same-user session render',async()=>{
+ for(const method of ['barcodeLookupStatus','lookupProductBarcode']){const f=fixture(),reply=deferred();if(method==='barcodeLookupStatus')f.state.respond=()=>reply.promise;f.render();await flush();if(method==='lookupProductBarcode'){f.state.respond=()=>reply.promise;press(f.render(),'Look up label');}f.state.auth.sessionId='synthetic-session-b';f.render(false);const writes=f.state.writes;reply.resolve(method==='barcodeLookupStatus'?{enabled:true}:{product:{displayName:'old private label'}});await flush();assert.equal(f.state.writes,writes);f.unmount();}
+});
+test('native barcode: pending permission after blur or session change cannot open camera',async()=>{
+ for(const boundary of ['blur','session','background']){const f=fixture(),permission=deferred();f.state.permission=()=>permission.promise;f.render();await flush();press(f.render(),'Scan barcode');if(boundary==='blur')f.blur();else if(boundary==='session'){f.state.auth.sessionId='synthetic-session-b';f.render(false);}else{f.state.appState='background';f.state.appListener('background');}const writes=f.state.writes;permission.resolve({granted:true});await flush();assert.equal(f.state.writes,writes);f.unmount();}
+});
+test('native barcode: delayed discard confirmation cannot erase a replacement account entry',async()=>{
+ const f=fixture();f.render();await flush();f.enter();f.state.respond=async()=>{throw Error('synthetic failure');};press(f.render(),'Queue item for pantry review');await flush();press(f.render(),'Discard local entry');const discard=f.state.alerts[0][2][1].onPress;f.state.respond=async()=>({enabled:true});f.state.auth={userId:'synthetic-account-b',sessionId:'synthetic-session-b'};f.render();await flush();f.enter();const writes=f.state.writes;discard();assert.equal(f.state.writes,writes);assert.equal(nodes(f.render()).find(n=>n.props?.accessibilityLabel==='Product name, editable').props.value,'Synthetic beans');
+});
+test('native barcode: prior entry is hidden before scope cleanup and retained edits ignored',async()=>{
+ const f=fixture();f.render();await flush();f.enter();const field=nodes(f.render()).find(n=>n.props?.accessibilityLabel==='Product name, editable');f.state.auth.sessionId='synthetic-session-b';const next=f.render(false);assert.equal(nodes(next).some(n=>n.props?.value==='Synthetic beans'),false);const writes=f.state.writes;field.props.onChangeText('old edit');assert.equal(f.state.writes,writes);f.unmount();
+});
+test('native barcode: current local code closes scanner without automatic product lookup',async()=>{
+ const f=fixture();f.render();await flush();press(f.render(),'Scan barcode');await flush();const camera=nodes(f.render()).find(n=>n.type==='CameraView');camera.props.onBarcodeScanned({type:'ean13',data:'synthetic-code'});const field=nodes(f.render()).find(n=>n.props?.accessibilityLabel==='Product barcode');assert.equal(field.props.value,'synthetic-code');assert.equal(f.state.calls.filter(c=>c.method==='lookupProductBarcode'||c.method==='createPantryIntake').length,0);assert.equal(nodes(f.render()).some(n=>n.type==='CameraView'),false);
+});
+
+test('native barcode: late mount error or timer cannot replace a code already found',async()=>{
+ const f=fixture();f.render();await flush();press(f.render(),'Scan barcode');await flush();const tree=f.render(),camera=nodes(tree).find(n=>n.type==='CameraView'),timer=[...f.state.timers.values()].find(t=>t.ms===45000);camera.props.onBarcodeScanned({type:'ean13',data:'synthetic-code'});const writes=f.state.writes;camera.props.onMountError();timer.fn();assert.equal(f.state.writes,writes);assert.match(text(f.render()),/Barcode found/);
+});
+
+for (const nextSession of ['synthetic-session-b', null]) test(`native barcode: session reset clears manually entered quantity unit (${nextSession ?? 'session unavailable'})`, async () => {
+ const f=fixture();f.render();await flush();f.enter();
+ const field=(tree,label)=>nodes(tree).find(node=>node.props?.accessibilityLabel===label);
+ field(f.render(),'Quantity you currently have, optional').props.onChangeText('2');
+ field(f.render(),'Quantity unit').props.onChangeText('kg');
+ assert.equal(field(f.render(),'Quantity unit').props.value,'kg');
+ const staleUnit=field(f.render(),'Quantity unit').props.onChangeText;
+ f.state.auth.sessionId=nextSession;
+ f.render();await flush();staleUnit('old-session-unit');const reset=f.render();
+ assert.equal(field(reset,'Product name, editable').props.value,'');
+ assert.equal(field(reset,'Quantity you currently have, optional').props.value,'');
+ assert.equal(field(reset,'Quantity unit').props.value,'packages');
+ assert.equal(f.state.calls.filter(call=>call.method==='createPantryIntake').length,0);
+});
+
+const field=(tree,label)=>nodes(tree).find(n=>n.props?.accessibilityLabel===label);
+const tick=async f=>{for(let i=0;i<4;i++){f.render();await flush();}};
+const optIn=f=>press(f.render(),'Keep device recovery for this review: off');
+async function uncertainCopy(values=new Map(),environment='synthetic-restart-'+ ++fixture.counter){
+ const f=fixture(values,environment);await tick(f);f.enter();optIn(f);
+ field(f.render(),'Quantity you currently have, optional').props.onChangeText('2');
+ field(f.render(),'Quantity unit').props.onChangeText('kg');
+ f.state.respond=async method=>{if(method==='createPantryIntake')throw Error('Synthetic lost reply');return {enabled:true};};
+ press(f.render(),'Queue item for pantry review');await tick(f);
+ assert.equal(values.size,1);return {f,values,environment};
+}
+test('native recovery: default off never persists even after uncertain write',async()=>{const f=fixture();await tick(f);f.enter();f.state.respond=async()=>{throw Error('Synthetic lost reply');};press(f.render(),'Queue item for pantry review');await tick(f);assert.equal(f.state.storeCalls.filter(c=>c[0]==='set').length,0);assert.ok(button(f.render(),'Retry the same pantry review'));});
+test('native recovery: fresh instance never auto-sends; explicit review/resume/retry preserves exact original request',async()=>{
+ const {f,values,environment}=await uncertainCopy();const original=JSON.stringify(f.state.calls.find(c=>c.method==='createPantryIntake').args[0]);f.unmount();
+ const next=fixture(values,environment);await tick(next);
+ assert.equal(next.state.calls.filter(c=>c.method==='createPantryIntake').length,0);
+ assert.equal(field(next.render(),'Product name, editable').props.value,'');
+ assert.equal(button(next.render(),'Queue item for pantry review').props.disabled,true);
+ press(next.render(),'Check pantry recovery');await tick(next);assert.match(text(next.render()),/Synthetic beans/);
+ press(next.render(),'Resume this exact review');await tick(next);
+ assert.equal(next.state.calls.filter(c=>c.method==='createPantryIntake').length,0);
+ assert.equal(field(next.render(),'Quantity unit').props.value,'kg');
+ field(next.render(),'Product name, editable').props.onChangeText('Forbidden edit');
+ press(next.render(),'Retry the same pantry review');await tick(next);
+ assert.equal(JSON.stringify(next.state.calls.find(c=>c.method==='createPantryIntake').args[0]),original);
+ assert.equal(values.size,0);assert.equal(next.state.queued,1);
+});
+test('native recovery: failed local keep never sends and retains exact request for deliberate retry',async()=>{const f=fixture();await tick(f);f.enter();optIn(f);const set=f.state.storage.set;f.state.storage.set=async()=>{throw Error('private path');};press(f.render(),'Queue item for pantry review');await tick(f);assert.equal(f.state.calls.filter(c=>c.method==='createPantryIntake').length,0);assert.match(text(f.render()),/did not send/);assert.doesNotMatch(text(f.render()),/private path/);f.state.storage.set=set;press(f.render(),'Retry the same pantry review');await tick(f);assert.equal(f.state.queued,1);});
+test('native recovery: discard is deliberate, removes only local copy and unlocks manual editing',async()=>{const {f,values}=await uncertainCopy();press(f.render(),'Discard local entry');assert.equal(values.size,1);const alert=f.state.alerts.pop();alert[2].find(v=>v.text==='Discard pantry recovery').onPress();await tick(f);assert.equal(values.size,0);assert.equal(f.state.calls.filter(c=>c.method==='createPantryIntake').length,1);assert.equal(field(f.render(),'Product name, editable').props.value,'');assert.match(text(f.render()),/earlier review may still exist/);});
+test('native recovery: failed clear after confirmed server result blocks duplicate entry, never retries automatically',async()=>{const f=fixture();await tick(f);f.enter();optIn(f);f.state.storage.remove=async()=>{throw Error('private remove');};press(f.render(),'Queue item for pantry review');await tick(f);assert.equal(f.state.queued,1);assert.equal(f.state.calls.filter(c=>c.method==='createPantryIntake').length,1);assert.match(text(f.render()),/review saved, but/);assert.ok(button(f.render(),'Discard pantry recovery'));assert.equal(button(f.render(),'Queue item for pantry review').props.disabled,true);});
+test('native recovery: expiry on fresh access purges and warns; no automatic review',async()=>{const {f,values,environment}=await uncertainCopy();f.unmount();const next=fixture(values,environment);next.state.clock+=24*60*60*1000;await tick(next);assert.equal(values.size,0);assert.match(text(next.render()),/expired pantry copy was removed/);assert.equal(next.state.queued,0);});
+test('native recovery: late recovery read after account replacement never exposes other-account name',async()=>{const {f,values,environment}=await uncertainCopy();f.unmount();const next=fixture(values,environment),gate=deferred(),get=next.state.storage.get;next.state.storage.get=async key=>{await gate.promise;return get(key);};next.render();await flush();next.state.auth={userId:'synthetic-account-b',sessionId:'synthetic-session-b'};next.render();gate.resolve();await tick(next);assert.doesNotMatch(text(next.render()),/Synthetic beans/);assert.equal(next.state.queued,0);});
+test('native recovery: changed copy requires a new review instead of restoring cached fields',async()=>{const {f,values,environment}=await uncertainCopy();f.unmount();const next=fixture(values,environment);await tick(next);press(next.render(),'Check pantry recovery');await tick(next);const key=[...values.keys()][0],envelope=JSON.parse(values.get(key));envelope.input.items[0].displayName='Replacement rice';values.set(key,JSON.stringify(envelope));press(next.render(),'Resume this exact review');await tick(next);assert.equal(field(next.render(),'Product name, editable').props.value,'');assert.match(text(next.render()),/Replacement rice/);assert.equal(next.state.queued,0);});
+test('native recovery: expired resumed request cannot be silently kept anew or sent',async()=>{const {f,values,environment}=await uncertainCopy();f.unmount();const next=fixture(values,environment);await tick(next);press(next.render(),'Check pantry recovery');await tick(next);press(next.render(),'Resume this exact review');await tick(next);next.state.clock+=24*60*60*1000;press(next.render(),'Retry the same pantry review');await tick(next);assert.equal(values.size,0);assert.equal(next.state.calls.filter(c=>c.method==='createPantryIntake').length,0);press(next.render(),'Retry the same pantry review');await tick(next);assert.equal(next.state.calls.filter(c=>c.method==='createPantryIntake').length,0);});
+
+test('native recovery: retained consent callback cannot opt a replacement entry into storage',async()=>{const f=fixture();await tick(f);f.enter();const oldToggle=button(f.render(),'Keep device recovery for this review: off').props.onPress;press(f.render(),'Queue item for pantry review');await tick(f);f.enter();oldToggle();assert.ok(button(f.render(),'Keep device recovery for this review: off'));press(f.render(),'Queue item for pantry review');await tick(f);assert.equal(f.state.storeCalls.filter(c=>c[0]==='set').length,0);});
+test('native recovery: latest explicit opt-out applies even to retained submit callback',async()=>{const f=fixture();await tick(f);f.enter();optIn(f);const old=button(f.render(),'Queue item for pantry review').props.onPress;press(f.render(),'Keep device recovery for this review: on');old();await tick(f);assert.equal(f.state.storeCalls.filter(c=>c[0]==='set').length,0);assert.equal(f.state.queued,1);});
+test('native recovery: leaving while local keep is pending cannot start a background review request',async()=>{const f=fixture();await tick(f);f.enter();optIn(f);const gate=deferred(),set=f.state.storage.set;f.state.storage.set=async(...args)=>{await gate.promise;await set(...args);};press(f.render(),'Queue item for pantry review');await flush();f.blur();f.state.appState='background';gate.resolve();await tick(f);assert.equal(f.state.calls.filter(c=>c.method==='createPantryIntake').length,0);assert.match(text(f.render()),/did not send/);});
+test('native recovery: stale discard dialog cannot erase a later recovered review',async()=>{const {f}=await uncertainCopy();press(f.render(),'Discard local entry');press(f.render(),'Discard local entry');const first=f.state.alerts[0][2].find(v=>v.text==='Discard pantry recovery').onPress,last=f.state.alerts[1][2].find(v=>v.text==='Discard pantry recovery').onPress;first();await tick(f);f.enter();optIn(f);press(f.render(),'Queue item for pantry review');await tick(f);const writes=f.state.storeCalls.filter(c=>c[0]==='remove').length;last();await tick(f);assert.equal(f.state.storeCalls.filter(c=>c[0]==='remove').length,writes);assert.ok(button(f.render(),'Retry the same pantry review'));});
+
+test('native recovery: consent toggle exposes selected state and resets off after success',async()=>{const f=fixture();await tick(f);f.enter();assert.equal(button(f.render(),'Keep device recovery for this review: off').props.selected,false);optIn(f);assert.equal(button(f.render(),'Keep device recovery for this review: on').props.selected,true);press(f.render(),'Queue item for pantry review');await tick(f);assert.equal(button(f.render(),'Keep device recovery for this review: off').props.selected,false);});
+
+test('native recovery: consented storage must settle before the explicit queue can dispatch',async()=>{const f=fixture();await tick(f);f.enter();optIn(f);const gate=deferred(),set=f.state.storage.set;f.state.storage.set=async(...args)=>{await gate.promise;await set(...args);};press(f.render(),'Queue item for pantry review');await flush();assert.equal(f.state.calls.filter(c=>c.method==='createPantryIntake').length,0);assert.equal(f.state.queued,0);gate.resolve();await tick(f);assert.equal(f.state.queued,1);assert.equal(f.state.calls.filter(c=>c.method==='createPantryIntake').length,1);});

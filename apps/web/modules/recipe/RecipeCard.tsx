@@ -29,12 +29,14 @@ export function RecipeCard({
   shelvedId = null,
   verifiedAt = null,
   headingLevel = 2,
+  clerkEnabled = true,
 }: {
   recipe: Recipe;
   trace?: string[];
   shelvedId?: string | null;
   verifiedAt?: string | null;
   headingLevel?: 1 | 2;
+  clerkEnabled?: boolean;
 }) {
   const { servings, canScale, increment, decrement, ingredients } = useServings(recipe);
 
@@ -46,7 +48,7 @@ export function RecipeCard({
         <RecipeHeader recipe={recipe} headingLevel={headingLevel} />
         <RecipeFacts recipe={recipe} />
         <AllergenWarning ingredients={recipe.ingredients} />
-        <NutritionFacts recipe={recipe} shelvedId={shelvedId} />
+        <NutritionFacts recipe={recipe} shelvedId={shelvedId} clerkEnabled={clerkEnabled} />
         <TagList tags={recipe.tags} />
 
         <section className={styles.journalPage} aria-label="Recipe ingredients">
@@ -72,7 +74,7 @@ export function RecipeCard({
             in-flight upload/remove can't be stomped by a stale refetch) —
             the key instead forces a clean remount if this same card instance
             is ever reused to show a different recipe. */}
-        {shelvedId ? <RecipePhotos key={shelvedId} recipeId={shelvedId} initial={recipe.photos} /> : null}
+        {shelvedId ? <RecipePhotos key={shelvedId} recipeId={shelvedId} initial={recipe.photos} clerkEnabled={clerkEnabled} /> : null}
 
         {recipe.equipment.length > 0 ? (
           <>
@@ -91,7 +93,7 @@ export function RecipeCard({
               Start cooking
             </Link>
           ) : null}
-          <AddToListButton recipeId={shelvedId} />
+          <AddToListButton recipeId={shelvedId} clerkEnabled={clerkEnabled} />
           {shelvedId ? (
             <Link className={styles.edit} href={`/recipe/${shelvedId}/edit`}>
               Edit recipe
@@ -104,6 +106,7 @@ export function RecipeCard({
         <RecipeExport recipe={recipe} ingredients={ingredients} servings={servings} />
 
         <PairingSuggestions
+          clerkEnabled={clerkEnabled}
           recipeId={shelvedId}
           mainNutrition={recipe.nutrition}
           servings={recipe.servings}

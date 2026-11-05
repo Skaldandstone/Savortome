@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   formatAmount,
+  parsePantryInput,
   pantryAttention,
   type PantryEntry,
   type PantryEntryUpdate,
@@ -31,36 +32,124 @@ export function PantryList({
   const [confirmingClear, setConfirmingClear] = useState(false);
   const [adding, setAdding] = useState(false);
   const [savingAmount, setSavingAmount] = useState(false);
+  const [amountError, setAmountError] = useState<string | null>(null);
+  const amountFlight = useRef(false);
+  const amountRequest = useRef<PantryEntryUpdate | null>(null);
+  const currentItems = useRef(items); currentItems.current = items;
+  const amountVersion = useRef(0);
+  const renderedAmountVersion = amountVersion.current;
   const [clearing, setClearing] = useState(false);
+  const [clearError, setClearError] = useState<string | null>(null);
+  const clearFlight = useRef(false);
+  const clearConfirmation = useRef<object | null>(null);
+  const renderedClearConfirmation = clearConfirmation.current;
+  const [addError, setAddError] = useState<string | null>(null);
+  const [confirmingDiscard, setConfirmingDiscard] = useState(false);
+  const addDraft = useRef("");
+  const addRequest = useRef<{ text: string } | null>(null);
+  const addVersion = useRef(0);
+  const addFlight = useRef<object | null>(null);
+  const mounted = useRef(true);
+  const renderedAddVersion = addVersion.current;
+  const renderedAddRequest = addRequest.current;
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+
+  const submitAdd = async () => {
+    if (!mounted.current || addFlight.current || renderedAddVersion !== addVersion.current || renderedAddRequest !== addRequest.current) return;
+    const request = addRequest.current ?? { text: addDraft.current.trim() };
+    if (!request.text) return;
+    if (!addRequest.current && !parsePantryInput(request.text).length) {
+      setAddError("Enter at least one ingredient before adding. Nothing was sent."); return;
+    }
+    addRequest.current = request; ++addVersion.current;
+    const token = {}; addFlight.current = token;
+    setAdding(true); setAddError(null); setConfirmingDiscard(false);
+    try {
+      const saved = await onAdd(request.text);
+      if (!mounted.current || addFlight.current !== token || addRequest.current !== request) return;
+      if (saved !== true) throw new Error("Unconfirmed pantry add");
+      addRequest.current = null; addDraft.current = ""; ++addVersion.current; setText("");
+    } catch {
+      if (mounted.current && addRequest.current === request) setAddError("We could not confirm these ingredients saved. Your exact entry is kept while this form stays open for a deliberate retry. Check your pantry first: retrying replaces matching quantities rather than adding to their previous counts.");
+    } finally {
+      if (addFlight.current === token) { addFlight.current = null; if (mounted.current) setAdding(false); }
+    }
+  };
+  const discardAdd = () => {
+    if (!mounted.current || addFlight.current || !renderedAddRequest || addRequest.current !== renderedAddRequest) return;
+    addRequest.current = null; addDraft.current = ""; ++addVersion.current;
+    setText(""); setAddError(null); setConfirmingDiscard(false);
+  };
+
+  const openClear = () => {
+    if (!mounted.current || clearFlight.current || clearConfirmation.current) return;
+    clearConfirmation.current = {}; setClearError(null); setConfirmingClear(true);
+  };
+  const cancelClear = () => {
+    if (!mounted.current || clearFlight.current || !renderedClearConfirmation || renderedClearConfirmation !== clearConfirmation.current) return;
+    clearConfirmation.current = null; setClearError(null); setConfirmingClear(false);
+  };
+  const submitClear = async () => {
+    if (!mounted.current || clearFlight.current || !renderedClearConfirmation || renderedClearConfirmation !== clearConfirmation.current) return;
+    clearFlight.current = true; setClearing(true); setClearError(null);
+    try {
+      const saved = await onClear();
+      if (!mounted.current) return;
+      if (saved !== true) throw new Error("Unconfirmed clear");
+      clearConfirmation.current = null; setConfirmingClear(false);
+    } catch {
+      if (mounted.current) setClearError("We could not confirm the pantry was cleared. Check your pantry before trying again. Closing this confirmation cannot undo an earlier request.");
+    } finally {
+      clearFlight.current = false;
+      if (mounted.current) setClearing(false);
+    }
+  };
 
   const startAmountEdit = (item: PantryEntry) => {
+    if (!mounted.current || amountFlight.current || amountRequest.current) return;
+    ++amountVersion.current; setAmountError(null);
     setEditingAmount(item.canonicalItem);
     setRemainingAmount(item.quantity === null ? "" : String(item.quantity));
   };
 
   const saveAmount = async (item: PantryEntry) => {
+    if (!mounted.current || amountFlight.current || renderedAmountVersion !== amountVersion.current) return;
     const quantity = Number(remainingAmount);
     if (!Number.isFinite(quantity) || quantity <= 0) return;
-    setSavingAmount(true);
-    const saved = await onUpdate({ canonicalItem: item.canonicalItem, quantity, unit: item.unit, confirmPresent: true });
-    setSavingAmount(false);
-    if (saved) {
-      setEditingAmount(null);
-      setRemainingAmount("");
+    const current = currentItems.current.find(value => value.canonicalItem === item.canonicalItem);
+    if (!current || current.unit !== (amountRequest.current ? amountRequest.current.unit : item.unit)) {
+      setAmountError("This item or its unit changed. Cancel this local correction and review the latest pantry before entering another amount."); return;
     }
+    amountRequest.current ??= { canonicalItem: item.canonicalItem, quantity, unit: item.unit, confirmPresent: true };
+    amountFlight.current = true; setSavingAmount(true); setAmountError(null);
+    try {
+      const saved = await onUpdate({ ...amountRequest.current });
+      if (!mounted.current) return;
+      if (saved !== true) throw new Error("Unconfirmed amount");
+      amountRequest.current = null; ++amountVersion.current; setEditingAmount(null); setRemainingAmount("");
+    } catch {
+      if (mounted.current) setAmountError("We could not confirm the amount saved. Your exact correction is kept while this form is open. Check your pantry before retrying. Cancel only discards this local correction; it cannot undo an earlier request.");
+    } finally {
+      amountFlight.current = false;
+      if (mounted.current) setSavingAmount(false);
+    }
+  };
+
+  const cancelAmount = () => {
+    if (!mounted.current || amountFlight.current || renderedAmountVersion !== amountVersion.current) return;
+    amountRequest.current = null; ++amountVersion.current; setEditingAmount(null); setRemainingAmount(""); setAmountError(null);
   };
 
   return (
     <>
+      {editingAmount && !items.some(item => item.canonicalItem === editingAmount) ? <div role="group" aria-label="Unfinished amount correction">
+        <p>The edited item no longer appears in the latest pantry. Your local correction ({remainingAmount}) is still here. Cancelling cannot undo an earlier request.</p>
+        <Button type="button" variant="ghost" disabled={savingAmount} onClick={cancelAmount}>Cancel local correction</Button>
+      </div> : null}
       <form
-        onSubmit={async (e) => {
+        onSubmit={(e) => {
           e.preventDefault();
-          const pending = text.trim();
-          if (!pending || adding) return;
-          setAdding(true);
-          const saved = await onAdd(pending);
-          setAdding(false);
-          if (saved) setText("");
+          void submitAdd();
         }}
       >
         <FieldRow>
@@ -68,19 +157,37 @@ export function PantryList({
             aria-label="Ingredients to add to your pantry"
             type="text"
             value={text}
-            onChange={(e) => setText(e.target.value)}
+            onChange={(e) => {
+              if (!mounted.current || addFlight.current || addRequest.current || renderedAddVersion !== addVersion.current) return;
+              addDraft.current = e.target.value; setText(e.target.value); setAddError(null);
+            }}
             placeholder="2 chicken thighs, rice, a can of chopped tomatoes"
-            disabled={adding}
+            disabled={adding || !!addRequest.current}
           />
-          <Button type="submit" disabled={adding || !text.trim()}>{adding ? "Adding…" : "Add"}</Button>
+          <Button type="submit" disabled={adding || !text.trim()}>{adding ? "Adding…" : addRequest.current ? "Retry the same pantry entry" : "Add"}</Button>
         </FieldRow>
       </form>
+      <p>Enter the amounts you currently have. Manual entry replaces matching pantry quantities rather than adding to their previous counts.</p>
+      {addError ? <p role="alert">{addError}</p> : null}
+      {addRequest.current ? <Button type="button" variant="ghost" disabled={adding} onClick={() => {
+        if (mounted.current && !addFlight.current && renderedAddRequest === addRequest.current) setConfirmingDiscard(true);
+      }}>Discard local pantry entry</Button> : null}
+      {confirmingDiscard && addRequest.current ? <div role="group" aria-label="Confirm discarding local pantry entry">
+        <p>The earlier request may already have saved or may still finish. This only discards your local entry; it does not remove pantry items or cancel the request. Check your pantry before entering a different amount.</p>
+        <Button type="button" variant="danger" disabled={adding} onClick={discardAdd}>Discard this local entry</Button>
+        <Button type="button" variant="ghost" disabled={adding} onClick={() => {
+          if (mounted.current && !addFlight.current && renderedAddRequest === addRequest.current) setConfirmingDiscard(false);
+        }}>Keep entry</Button>
+      </div> : null}
 
       {items.length === 0 ? (
+        <div className={styles.emptyPantry}>
+        <img src="/illustrations/pantry.svg" width={240} height={160} alt="" className={styles.emptyIllustration} />
         <p className={styles.empty}>
           Nothing here yet. Type what&apos;s in your kitchen — amounts are optional. Common
           seasonings and baking staples are already assumed; add anything else you keep in.
         </p>
+        </div>
       ) : (
         <>
           <p className={styles.pantryNote}>
@@ -107,7 +214,8 @@ export function PantryList({
                       <Button type="button" variant="ghost" onClick={() => onUpdate({ canonicalItem: item.canonicalItem, confirmPresent: true })}>Yes, still here</Button>
                       <Button type="button" variant="ghost" onClick={() => startAmountEdit(item)}>Used some</Button>
                       <Button type="button" variant="ghost" onClick={() => onRemove(item.canonicalItem)}>All gone</Button>
-                      <Button type="button" variant="ghost" onClick={() => onUpdate({ canonicalItem: item.canonicalItem, snoozeDays: 3 })}>Remind me in 3 days</Button>
+                      {([3, 7, 14] as const).map(days => <Button key={days} type="button" variant="ghost" onClick={() => onUpdate({ canonicalItem: item.canonicalItem, snoozeDays: days })}>Remind me in {days} days</Button>)}
+                      <span>Hides this in-app suggestion until then. No push notification is scheduled.</span>
                       <Button type="button" variant="ghost" onClick={() => onUpdate({ canonicalItem: item.canonicalItem, resurfaceHidden: true })}>Hide this suggestion</Button>
                     </div>
                   ) : null}
@@ -122,12 +230,13 @@ export function PantryList({
                         step="any"
                         inputMode="decimal"
                         value={remainingAmount}
-                        onChange={event => setRemainingAmount(event.target.value)}
-                        disabled={savingAmount}
+                        onChange={event => { if (mounted.current && !amountFlight.current && !amountRequest.current && renderedAmountVersion === amountVersion.current) setRemainingAmount(event.target.value); }}
+                        disabled={savingAmount || !!amountRequest.current}
                         required
                       />
                       <Button type="submit" disabled={savingAmount || !Number.isFinite(Number(remainingAmount)) || Number(remainingAmount) <= 0}>{savingAmount ? "Saving…" : "Save amount"}</Button>
-                      <Button type="button" variant="ghost" disabled={savingAmount} onClick={() => setEditingAmount(null)}>Cancel</Button>
+                      <Button type="button" variant="ghost" disabled={savingAmount} onClick={cancelAmount}>Cancel</Button>
+                      {amountError ? <p role="alert">{amountError}</p> : null}
                     </form>
                   ) : null}
 
@@ -187,19 +296,15 @@ export function PantryList({
               );
             })}
           </ul>
-          <Button variant="ghost" type="button" aria-expanded={confirmingClear} onClick={() => setConfirmingClear(true)}>
+          <Button variant="ghost" type="button" aria-expanded={confirmingClear} onClick={openClear}>
             Clear pantry
           </Button>
           {confirmingClear ? (
             <div className={styles.clearConfirm} role="group" aria-label="Confirm clearing pantry">
               <span>This removes every pantry item and its freshness history.</span>
-              <Button type="button" variant="danger" disabled={clearing} onClick={async () => {
-                setClearing(true);
-                const saved = await onClear();
-                setClearing(false);
-                if (saved) setConfirmingClear(false);
-              }}>{clearing ? "Clearing…" : "Clear every item"}</Button>
-              <Button type="button" variant="ghost" disabled={clearing} onClick={() => setConfirmingClear(false)}>Keep my pantry</Button>
+              {clearError ? <p role="alert">{clearError}</p> : null}
+              <Button type="button" variant="danger" disabled={clearing} onClick={submitClear}>{clearing ? "Clearing…" : "Clear every item"}</Button>
+              <Button type="button" variant="ghost" disabled={clearing} onClick={cancelClear}>Keep my pantry</Button>
             </div>
           ) : null}
         </>

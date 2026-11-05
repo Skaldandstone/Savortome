@@ -8,6 +8,10 @@ import {
   ReceiptExtractionError,
   RecipeValidationError,
   ShelfValidationError,
+  BarcodeValidationError,
+  BarcodeLookupError,
+  FoodLogValidationError,
+  FoodNoteExtractionError,
 } from "@seconds/core";
 import { FriendshipError } from "@seconds/core";
 import { PantryIntakeNotFoundError, SaveRecipeError, SaveTemplateError, SuggestionError } from "@seconds/db";
@@ -36,7 +40,10 @@ export class BadRequestError extends Error {
  * One place that turns a thrown domain error into the right status code, so
  * every route handler can be about its own job and nothing else.
  */
-export function errorResponse(err: unknown): NextResponse {
+type ErrorPrivacy = { redactUnexpectedErrors?: boolean };
+export function errorResponse(err: unknown, privacy: ErrorPrivacy = {}): NextResponse {
+  if (err instanceof FoodNoteExtractionError) return NextResponse.json({ error: err.message }, { status: 422 });
+  if (err instanceof BarcodeLookupError) return NextResponse.json({ error: err.message }, { status: err.status });
   if (err instanceof NotSignedInError) {
     return NextResponse.json({ error: err.message }, { status: 401 });
   }
@@ -48,6 +55,8 @@ export function errorResponse(err: unknown): NextResponse {
   }
   if (
     err instanceof BadRequestError ||
+    err instanceof BarcodeValidationError ||
+    err instanceof FoodLogValidationError ||
     err instanceof ShelfValidationError ||
     err instanceof SaveRecipeError ||
     err instanceof SaveTemplateError ||
@@ -76,7 +85,8 @@ export function errorResponse(err: unknown): NextResponse {
   // errors above say something useful on purpose; this one can't, because it
   // doesn't know what it's holding — and a driver error would hand the caller
   // the failing query and its bound values.
-  console.error("Unhandled API error:", err);
+  if (privacy.redactUnexpectedErrors) console.error("Unhandled food-support API error; details withheld.");
+  else console.error("Unhandled API error:", err);
   return NextResponse.json(
     { error: "Something went wrong on our end." },
     { status: 500 },
@@ -89,6 +99,7 @@ export function errorResponse(err: unknown): NextResponse {
  */
 export async function withUser<T>(
   handler: (userId: string, database: Database) => Promise<T>,
+  privacy: ErrorPrivacy = {},
 ): Promise<NextResponse> {
   if (!databaseConfigured()) {
     return NextResponse.json(
@@ -101,7 +112,7 @@ export async function withUser<T>(
     const database = db();
     return NextResponse.json(await handler(await requireUserId(database), database));
   } catch (err) {
-    return errorResponse(err);
+    return errorResponse(err, privacy);
   }
 }
 

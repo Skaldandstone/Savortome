@@ -13,7 +13,7 @@ const built = await build({ absWorkingDir:root, bundle:true,write:false,platform
     const stubs={
       'react':`export const useState = initial => {const slot=state.cursor++;if(!(slot in state.values))state.values[slot]=typeof initial==='function'?initial():initial;return [state.values[slot],value=>{state.values[slot]=typeof value==='function'?value(state.values[slot]):value;}];};export const useMemo=fn=>fn();export const useEffect=fn=>state.effects.push(fn);export const useRef=value=>{const slot=state.cursor++;return state.refs[slot]??=( {current:value} );};`,
       'react/jsx-runtime':`export const jsx = (type,props)=>({type,props});export const jsxs=jsx;export const Fragment='Fragment';`,
-      'react-native':`export const Image='Image',Text='Text',View='View',Pressable='Pressable',Switch='Switch',ScrollView='ScrollView';export const Linking={openURL:url=>state.links.push(url)};export const useWindowDimensions=()=>({width:state.width,fontScale:state.fontScale});export const StyleSheet={create:x=>x,absoluteFill:{position:'absolute',top:0,left:0,right:0,bottom:0}};`,
+      'react-native':`export const Image='Image',Text='Text',View='View',Pressable='Pressable',Switch='Switch',ScrollView='ScrollView';export const Alert={alert:()=>{}};export const Linking={openURL:url=>state.links.push(url)};export const useWindowDimensions=()=>({width:state.width,fontScale:state.fontScale});export const StyleSheet={create:x=>x,absoluteFill:{position:'absolute',top:0,left:0,right:0,bottom:0}};`,
       '@/ui':`export * from '${root.replaceAll('\\','/') + 'apps/mobile/ui/theme.ts'}';export const usePalette=()=>state.palette;export const Button='Button',Field='Field',Callout='Callout',Panel='Panel';`,
       '@/ui/ThemeProvider':`export const useDecoration=()=>({reduced:state.reduced,toggle:()=>{state.reduced=!state.reduced;}});export const PaletteScope='PaletteScope';`,
       'expo-router':`export const useRouter=()=>({push:path=>state.navigation.push(path),replace:path=>state.navigation.push(path)});`,
@@ -101,8 +101,8 @@ test('mobile cooking onboarding keeps controls closed after load failure and rec
   tree=f.render('CookingStep',{userId:f.state.userId,onDone(){}});for(const effect of f.state.effects.splice(0))effect();await new Promise(resolve=>setTimeout(resolve,0));tree=f.render('CookingStep',{userId:f.state.userId,onDone(){}});
   assert.match(textOf(tree),/Optional details/);assert.ok(nodes(tree).some(n=>typeof n.type==='function'&&n.type.name==='Choice'&&n.props.selected===true));assert.equal(writes,0);
 });
-test('mobile pantry memory keeps correction actions named and guidance qualified',()=>{
-  const f=fixture();const updates=[];const removals=[];const props={items:[{canonicalItem:'banana',displayName:'bananas',quantity:6,unit:null,isStaple:false,isUsual:false,storageLocation:'unknown',acquiredAt:'2026-09-01T00:00:00.000Z',lastConfirmedAt:null,updatedAt:'2026-09-01T00:00:00.000Z'}],onAdd(){},onUpdate:value=>updates.push(value),onRemove:value=>removals.push(value),onClear(){}};let tree=f.render('PantryChips',props);
+test('mobile pantry memory keeps correction actions named and guidance qualified',async()=>{
+  const f=fixture();const updates=[];const removals=[];const props={items:[{canonicalItem:'banana',displayName:'bananas',quantity:6,unit:null,isStaple:false,isUsual:false,storageLocation:'unknown',acquiredAt:'2026-09-01T00:00:00.000Z',lastConfirmedAt:null,updatedAt:'2026-09-01T00:00:00.000Z'}],onAdd(){},onUpdate:async value=>{updates.push(value);return true;},onRemove:value=>removals.push(value),onClear(){}};let tree=f.render('PantryChips',props);
   const content=textOf(tree);assert.match(content,/not expiry or food-safety guarantees/i);assert.match(content,/USDA produce storage guidance/);
   const usual=nodes(tree).find(n=>n.type==='Switch');assert.match(usual.props.accessibilityLabel,/Usually keep bananas/);usual.props.onValueChange(true);
   const fridge=nodes(tree).find(n=>n.type==='Pressable'&&n.props.accessibilityLabel==='bananas: Fridge');assert.equal(fridge.props.accessibilityRole,'radio');fridge.props.onPress();
@@ -111,6 +111,7 @@ test('mobile pantry memory keeps correction actions named and guidance qualified
   nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Used some').props.onPress();tree=f.render('PantryChips',props);
   nodes(tree).find(n=>n.type==='Field'&&n.props.accessibilityLabel==='Remaining amount of bananas').props.onChangeText('4');tree=f.render('PantryChips',props);
   nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Save amount').props.onPress();
+  await new Promise(resolve=>setImmediate(resolve));tree=f.render('PantryChips',props);
   nodes(tree).find(n=>n.type==='Button'&&n.props.label==='All gone').props.onPress();
   nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Remind me in 3 days').props.onPress();
   nodes(tree).find(n=>n.type==='Button'&&n.props.label==='Hide this suggestion').props.onPress();
@@ -171,8 +172,8 @@ test('Android review source blocks storage and overlay permissions the beta does
   assert.deepEqual(config.expo.android.permissions,['android.permission.CAMERA','android.permission.POST_NOTIFICATIONS']);
   const picker=config.expo.plugins.find(plugin=>Array.isArray(plugin)&&plugin[0]==='expo-image-picker');
   assert.ok(picker);assert.equal(picker[1].microphonePermission,false);
-  assert.match(picker[1].cameraPermission,/receipt photo for review/i);
-  assert.match(picker[1].photosPermission,/receipt photo for review/i);
+  assert.match(picker[1].cameraPermission,/receipt or food photo for review/i);
+  assert.match(picker[1].photosPermission,/receipt or food photo for review/i);
 });
 test('hosted account authentication keeps every required Expo runtime peer',async()=>{
   const packageJson=JSON.parse(await readFile(root+'apps/mobile/package.json','utf8'));

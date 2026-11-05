@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { suggestPlanTogether, type PlanTogetherCandidate } from "../src/plan-together.js";
+import { parsePlanTogetherInput, parsePlanTogetherOptions, suggestPlanTogether, type PlanTogetherCandidate } from "../src/plan-together.js";
 import type { PantryEntry } from "../src/pantry.js";
 
 function candidate(overrides: Partial<PlanTogetherCandidate> & Pick<PlanTogetherCandidate, "recipeId" | "title">): PlanTogetherCandidate {
@@ -42,10 +42,51 @@ test("keeps complete and close matches distinct without inventing pantry certain
     candidate({ recipeId: "close", title: "Close", canMakeNow: false, coverage: .8, missing: ["lime"] }),
   ], [], { dietaryTags: [], allergens: [] });
   assert.match(ideas[0]?.reason ?? "", /currently says/);
-  assert.match(ideas[1]?.reason ?? "", /missing lime/);
+  assert.match(ideas[1]?.reason ?? "", /lime.*not matched in your saved pantry/);
 });
 
 test("returns at most three in stable recipe-id order when scores tie", () => {
   const ideas = suggestPlanTogether(["d", "b", "a", "c"].map(id => candidate({ recipeId: id, title: id })), [], { dietaryTags: [], allergens: [] });
   assert.deepEqual(ideas.map(idea => idea.recipeId), ["a", "b", "c"]);
+});
+
+test("selected time limit rejects unknown, negative and nonfinite times without fallback", () => {
+  const choices = [null, -1, NaN, Infinity, 11, 10].map((totalMinutes, index) => candidate({ recipeId: String(index), title: "Synthetic meal", totalMinutes }));
+  assert.deepEqual(suggestPlanTogether(choices, [], { dietaryTags: [], allergens: [] }, undefined, 3, { maxMinutes: 10 }).map(item => item.recipeId), ["5"]);
+  assert.deepEqual(suggestPlanTogether(choices.slice(0, 5), [], { dietaryTags: [], allergens: [] }, undefined, 3, { maxMinutes: 10 }), []);
+});
+test("saved-step limit requires positive known integer counts", () => {
+  const choices = [undefined, null, 0, 1.5, 4, 3].map((stepCount, index) => candidate({ recipeId: String(index), title: "Synthetic meal", stepCount }));
+  assert.deepEqual(suggestPlanTogether(choices, [], { dietaryTags: [], allergens: [] }, undefined, 3, { maxSteps: 3 }).map(item => item.recipeId), ["5"]);
+});
+test("no-shopping filter requires every indexed ingredient including unlisted staples", () => {
+  const choices = [candidate({ recipeId: "empty", title: "No index" }), candidate({ recipeId: "staple", title: "Missing flour", ingredients: ["banana", "flour"], have: ["banana"], missing: [] }), candidate({ recipeId: "complete", title: "Banana", ingredients: ["banana"], have: ["banana"] })];
+  assert.deepEqual(suggestPlanTogether(choices, [pantry("banana", 4)], { dietaryTags: [], allergens: [] }, undefined, 3, { pantryOnly: true }).map(item => item.recipeId), ["complete"]);
+});
+test("produce resurfacing never overrides strict dietary, allergen or time limits", () => {
+  const choices = [candidate({ recipeId: "missing-tag", title: "Unknown tag", ingredients: ["banana"], have: ["banana"], totalMinutes: 5 }), candidate({ recipeId: "conflict", title: "Conflict", ingredients: ["banana", "peanut"], have: ["banana"], tags: ["vegan"], totalMinutes: 5 }), candidate({ recipeId: "slow", title: "Slow", ingredients: ["banana"], have: ["banana"], tags: ["vegan"], totalMinutes: 20 })];
+  assert.deepEqual(suggestPlanTogether(choices, [pantry("banana", 4)], { dietaryTags: ["vegan"], allergens: ["peanuts"] }, new Date("2026-09-13T12:00:00.000Z"), 3, { strictDietary: true, maxMinutes: 10 }), []);
+});
+test("conflicting ingredient choices and missing selected pantry entry return no ideas", () => {
+  const choices = [candidate({ recipeId: "banana", title: "Banana", ingredients: ["banana"] })];
+  assert.deepEqual(suggestPlanTogether(choices, [], { dietaryTags: [], allergens: [] }, undefined, 3, { useIngredient: "banana", skipIngredient: "banana" }), []);
+  assert.deepEqual(suggestPlanTogether(choices, [], { dietaryTags: [], allergens: [] }, undefined, 3, { pantryItem: "banana" }), []);
+});
+test("planning boundary rejects ambiguous duplicate, malformed and conflicting choices", () => {
+  for (const query of ["maxMinutes=10&maxMinutes=60", "maxSteps=4", "pantryOnly=yes", "strictDietary=1", "useIngredient=banana,rice", "pantryItem=banana&useIngredient=rice"]) assert.throws(() => parsePlanTogetherOptions(new URLSearchParams(query)));
+  for (const value of [{ maxMinutes: "10" }, { maxSteps: 0 }, { pantryOnly: "true" }, { useIngredient: ["banana"] }]) assert.throws(() => parsePlanTogetherInput(value));
+  const parsed = parsePlanTogetherInput({ maxMinutes: 10, maxSteps: 3, pantryOnly: true, strictDietary: true, useIngredient: "bananas", diagnosis: "ignored synthetic field" });
+  assert.equal(parsed.useIngredient, "banana"); assert.equal("diagnosis" in parsed, false);
+});
+
+test("partial pantry reasons describe missing records rather than absent food", () => {
+  for (const missing of [["lime"], ["lime", "rice"], ["lime", "rice", "tomato", "onion"]]) {
+    const [idea] = suggestPlanTogether([candidate({ recipeId: "partial", title: "Partial", canMakeNow: false, coverage: .5, missing })], [], { dietaryTags: [], allergens: [] });
+    assert.ok(idea);
+    assert.match(idea.reason, /not matched in your saved pantry/);
+    assert.match(idea.reason, /Check what you have/);
+    assert.doesNotMatch(idea.reason, /Your pantry is missing/);
+    assert.deepEqual(idea.missing, missing);
+    assert.equal(idea.canMakeNow, false);
+  }
 });

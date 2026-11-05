@@ -1,0 +1,12 @@
+{
+  "inputPages": 3895,
+  "acceptedRecipes": 3745,
+  "rejections": {
+    "incomplete_recipe": 150
+  },
+  "librarySha256": "b1d8d0785507fe0d38c669aae28579371d316c0501a78c855fe448e939b884d4",
+  "libraryBytes": 7487786,
+  "imagesIncluded": false,
+  "databaseWritten": false,
+  "cookingTested": false
+}

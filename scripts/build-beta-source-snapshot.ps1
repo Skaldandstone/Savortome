@@ -75,6 +75,18 @@ try {
     [IO.Compression.ZipFile]::ExtractToDirectory($baseZip, $staging)
 
     $files = @(Get-ChildItem -LiteralPath $staging -File -Recurse)
+    # Git archive applies checkout conversions. Even a correct source tree can
+    # otherwise export different SQL bytes on Windows and change Drizzle hashes.
+    foreach ($file in $files) {
+        $relative = Get-SnapshotRelativePath $staging $file.FullName
+        if ($relative -notlike 'packages/db/migrations/*.sql') { continue }
+        $expectedBlob = (& git -C $repo rev-parse "${commit}:$relative").Trim()
+        if ($LASTEXITCODE -ne 0) { throw "Could not resolve canonical migration bytes: $relative" }
+        $exportedBlob = (& git -C $repo hash-object --no-filters -- $file.FullName).Trim()
+        if ($LASTEXITCODE -ne 0 -or $exportedBlob -cne $expectedBlob) {
+            throw "Archive changed migration bytes; refusing to seal: $relative"
+        }
+    }
     $maximumBytes = $MaximumFileSizeMb * 1MB
     $large = @($files | Where-Object Length -gt $maximumBytes)
     if ($large.Count) {
@@ -169,5 +181,11 @@ try {
 } finally {
     if ($null -eq $oldIndex) { Remove-Item Env:\GIT_INDEX_FILE -ErrorAction SilentlyContinue }
     else { $env:GIT_INDEX_FILE = $oldIndex }
-    Remove-Item -LiteralPath $work -Recurse -Force -ErrorAction SilentlyContinue
+    $resolvedWork = [IO.Path]::GetFullPath($work)
+    $resolvedTemp = [IO.Path]::GetFullPath($env:TEMP).TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
+    if (!$resolvedWork.StartsWith($resolvedTemp, [StringComparison]::OrdinalIgnoreCase) -or
+        [IO.Path]::GetFileName($resolvedWork) -notmatch '^secondbreakfast-snapshot-[a-f0-9]{32}$') {
+        throw 'Refusing cleanup outside the unique snapshot temporary directory.'
+    }
+    Remove-Item -LiteralPath $resolvedWork -Recurse -Force -ErrorAction SilentlyContinue
 }

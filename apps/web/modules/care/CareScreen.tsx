@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ApiError, ALLERGENS, ALLERGEN_LABEL, DIETARY_TAGS, DIETARY_TAG_LABEL, CARE_DISCLAIMER, CARE_EFFORTS, CARE_EFFORT_LABELS, CARE_TEXTURES, parseCareLink, suggestCare, type CareChoices, type CareLink, type CareFood, type DietaryProfile } from '@seconds/core/format';
+import { mealShoppingReceiptMatches, ApiError, ALLERGENS, ALLERGEN_LABEL, DIETARY_TAGS, DIETARY_TAG_LABEL, CARE_DISCLAIMER, CARE_EFFORTS, CARE_EFFORT_LABELS, CARE_TEXTURES, parseCareLink, suggestCare, type CareChoices, type CareLink, type CareFood, type DietaryProfile } from '@seconds/core/format';
 import { useAuth } from '@clerk/nextjs';
 import { api } from '@/lib/client';
 import styles from './care.module.css';
@@ -30,6 +30,15 @@ function CareContent({ link, standalone = false, accountId }: CareProps & { acco
   const [signInNeeded, setSignInNeeded] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
+  const [unconfirmed, setUnconfirmed] = useState(false);
+  const pendingAdd = useRef<CareFood | null>(null);
+  const addFlight = useRef<object | null>(null);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true; pendingAdd.current = null; addFlight.current = null;
+    setUnconfirmed(false); setBusy(false);
+    return () => { alive.current = false; pendingAdd.current = null; addFlight.current = null; };
+  }, [accountId]);
   const profileTouched = useRef(false);
   const activeAccount = useRef(accountId); activeAccount.current = accountId;
   useEffect(() => {
@@ -38,7 +47,7 @@ function CareContent({ link, standalone = false, accountId }: CareProps & { acco
     try {
       const raw = sessionStorage.getItem('seconds-care-return');
       sessionStorage.removeItem('seconds-care-return');
-      const saved = restoreCareReturn(raw);
+      const saved = restoreCareReturn(raw, Date.now(), link);
       if (saved) { setChoices(saved.choices); setSelectedId(saved.selectedId); setHandoff(saved.link); }
     } catch { /* Storage may be disabled. The screen still works. */ }
   }, []);
@@ -66,26 +75,44 @@ function CareContent({ link, standalone = false, accountId }: CareProps & { acco
   }, [choices.usePantry, standalone, accountId]);
 
   const results = useMemo(() => suggestCare(choices, { ...profile, pantry }), [choices, profile, pantry]);
-  const setChoice = (name: keyof CareChoices, value: string | boolean | undefined) => { setChoices(old => ({ ...old, [name]: value })); setMessage(''); setSignInNeeded(false); };
+  const setChoice = (name: keyof CareChoices, value: string | boolean | undefined) => { setChoices(old => ({ ...old, [name]: value })); if (!pendingAdd.current) { setMessage(''); setSignInNeeded(false); } };
   async function add(item: CareFood) {
+    if (!alive.current || activeAccount.current !== accountId || addFlight.current || (pendingAdd.current && pendingAdd.current !== item)) return;
     setSelectedId(item.id); setMessage(''); setSignInNeeded(false);
-    if (standalone || !navigator.onLine) { setMessage('You are offline. Keep this idea here and add it when you reconnect. Nothing has been saved.'); return; }
+    if (standalone || !navigator.onLine) { setMessage(pendingAdd.current ? 'You are offline. The earlier list update is still unconfirmed. Check your list when you reconnect.' : 'You are offline. Keep this idea here and add it when you reconnect. Nothing has been saved.'); return; }
     if (!accountId) { setSignInNeeded(true); setMessage('Sign in to save this idea. Nothing has been added yet.'); return; }
-    setBusy(true);
-    // A lost response must leave an honest unconfirmed state, not a stuck button.
-    // This does not cancel or retry the write; it may already have committed.
-    try { await careRequest(api.addItemsToList([{ canonicalItem: item.shoppingItem, displayName: item.shoppingItem }]), 12000); if(activeAccount.current !== accountId) return; setMessage(`${item.shoppingItem} added to your shopping list.`); }
-    catch (error) {
-      if (activeAccount.current !== accountId) return;
+    const flight = {}; addFlight.current = flight; pendingAdd.current = item;
+    setBusy(true); setUnconfirmed(true);
+    const current = () => alive.current && activeAccount.current === accountId && addFlight.current === flight;
+    try {
+      const receipt = await careRequest(api.addItemsToList([{ canonicalItem: item.shoppingItem, displayName: item.shoppingItem }]), 12000);
+      if (!current()) return;
+      if (!mealShoppingReceiptMatches([item.shoppingItem], receipt)) throw new Error('Unconfirmed list item');
+      pendingAdd.current = null; setUnconfirmed(false); setMessage(`${item.shoppingItem} added to your shopping list.`);
+    } catch (error) {
+      if (!current()) return;
       const authError = (error instanceof ApiError && error.status === 401) || (error instanceof Error && /sign in|401|Clerk is not configured/i.test(error.message));
-      setSignInNeeded(authError); setMessage(authError ? 'Sign in to save this idea. Your choice will stay here; nothing has been added yet.' : 'We could not confirm the list update. Your choice is still here. Check your list before trying again.');
-    } finally { setBusy(false); }
+      setSignInNeeded(authError);
+      setMessage(`We could not confirm the list update for ${item.shoppingItem}. It may already have saved. Check your list before retrying the same item. Leaving this screen loses this local retry selection.`);
+    } finally { if (current()) { addFlight.current = null; setBusy(false); } }
+  }
+  function discardRetry() {
+    const pending = pendingAdd.current;
+    if (!alive.current || addFlight.current || !pending) return;
+    if (!window.confirm('Discard only the local retry selection? The earlier list update may already have saved or may still finish. This does not undo it.')) return;
+    if (!alive.current || addFlight.current || pendingAdd.current !== pending) return;
+    pendingAdd.current = null; setUnconfirmed(false); setSignInNeeded(false);
+    setMessage('Local retry selection discarded. Check your list before adding anything again.');
   }
   function saveReturn() {
     try { sessionStorage.setItem('seconds-care-return', JSON.stringify(careReturnRecord(handoff, choices, selectedId))); } catch { /* best effort, no private profile persistence */ }
   }
 
-  const feedback = message ? <div className={styles.feedback} role="status"><p>{message}</p>{signInNeeded && <a href={careSignInHref(handoff)} onClick={saveReturn}>Sign in and return</a>}</div> : null;
+  const feedback = message ? <div className={styles.feedback} role="status"><p>{message}</p>{unconfirmed && pendingAdd.current ? <>
+    <button type="button" className={styles.action} disabled={busy} onClick={() => { if (pendingAdd.current) void add(pendingAdd.current); }}>Retry the same list item</button>
+    <a href="/list">Check my shopping list</a>
+    <button type="button" className={styles.action} disabled={busy} onClick={discardRetry}>Discard local retry selection</button>
+  </> : null}{signInNeeded && <a href={careSignInHref(handoff)} onClick={saveReturn}>Sign in and return</a>}</div> : null;
 
   return <main className={styles.care}>
     <header className={styles.intro}>
@@ -97,9 +124,9 @@ function CareContent({ link, standalone = false, accountId }: CareProps & { acco
       <label className={styles.quickChoice}><KitchenIcon name="clock" /><span>Time<select aria-label="How much time?" value={choices.time ?? ''} onChange={e => setChoice('time', e.target.value || undefined)}><option value="">Up to twenty minutes</option><option value="two">Two minutes</option><option value="ten">Ten minutes</option><option value="twenty">Twenty minutes</option></select></span></label>
     </section>
     <details className={styles.moreChoices}><summary>A few more preferences<KitchenIcon name="plus" /></summary><div className={styles.additionalChoices}>
-      <label>Temperature<select value={choices.temperature ?? 'any'} onChange={e => setChoice('temperature', e.target.value)}><option value="any">Either</option><option value="cold">Cold</option><option value="warm">Warm</option></select></label>
-      <label>Texture<select value={choices.texture ?? 'any'} onChange={e => setChoice('texture', e.target.value)}>{CARE_TEXTURES.map(v => <option key={v} value={v}>{v === 'any' ? 'No preference' : v}</option>)}</select></label>
-      <label>Appetite<select value={choices.appetite ?? ''} onChange={e => setChoice('appetite', e.target.value || undefined)}><option value="">No preference</option><option value="small">Barely there</option><option value="regular">Something familiar</option><option value="more">Something more</option></select></label>
+      <label>Temperature<select aria-label="Temperature" value={choices.temperature ?? 'any'} onChange={e => setChoice('temperature', e.target.value)}><option value="any">Either</option><option value="cold">Cold</option><option value="warm">Warm</option></select></label>
+      <label>Texture<select aria-label="Texture" value={choices.texture ?? 'any'} onChange={e => setChoice('texture', e.target.value)}>{CARE_TEXTURES.map(v => <option key={v} value={v}>{v === 'any' ? 'No preference' : v}</option>)}</select></label>
+      <label>Appetite<select aria-label="Appetite" value={choices.appetite ?? ''} onChange={e => setChoice('appetite', e.target.value || undefined)}><option value="">No preference</option><option value="small">Barely there</option><option value="regular">Something familiar</option><option value="more">Something more</option></select></label>
       <label className={styles.check}><input type="checkbox" checked={!!choices.usePantry} onChange={e => setChoice('usePantry', e.target.checked)} />Use my saved pantry</label>
     </div></details>
     {pantryState && <p className={styles.note} role="status">{pantryState}</p>}
@@ -125,7 +152,7 @@ function CareContent({ link, standalone = false, accountId }: CareProps & { acco
           {choices.usePantry && pantryMatches > 0 && <p className={styles.note}>{pantryMatches} ingredient{pantryMatches === 1 ? '' : 's'} matched in your pantry. Other ingredients may still be needed.</p>}
           {kind !== 'future' ? <ol>{food.steps.map(step => <li key={step}>{step}</li>)}</ol> : <><p>A small thing to have on hand, whenever you next shop.</p><ol>{food.steps.map(step => <li key={step}>{step}</li>)}</ol></>}
           <p className={styles.note}>The list action adds {food.shoppingItem} only. Check any other ingredients you need.</p>
-          <button className={styles.action} aria-label={`Add ${food.shoppingItem} to my list for ${food.title}`} disabled={busy} onClick={() => void add(food)}>{busy && selectedId === food.id ? 'Adding...' : `Add ${food.shoppingItem} to my list`}</button>
+          <button className={styles.action} aria-label={`Add ${food.shoppingItem} to my list for ${food.title}`} disabled={busy || unconfirmed} onClick={() => void add(food)}>{busy && selectedId === food.id ? 'Adding...' : `Add ${food.shoppingItem} to my list`}</button>
           {selectedId === food.id && feedback}
         </div>
       </details>)}

@@ -1,14 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
-import type { PantryEntry, PantryEntryUpdate, PantryIntakeView, PantrySearchResponse, PhotoMediaType } from "@seconds/core/format";
-import { api } from "@/lib/client";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { getClerkInstance, useAuth } from "@clerk/expo";
+import { parsePantryInput, type PantryEntry, type PantryEntryUpdate, type PantryIntakeView, type PantrySearchResponse, type PhotoMediaType } from "@seconds/core/format";
+import { createAccountClient } from "@/lib/client";
 
 export interface PantryController {
   items: PantryEntry[];
   intakes: PantryIntakeView[];
   loading: boolean;
+  refreshingReviews: boolean;
+  refreshReviews: () => Promise<boolean>;
+  queuedIntake: (intake: PantryIntakeView) => void;
   error: string | null;
-  add: (text: string) => Promise<void>;
-  update: (entry: PantryEntryUpdate) => Promise<void>;
+  add: (text: string) => Promise<boolean>;
+  update: (entry: PantryEntryUpdate) => Promise<boolean>;
   remove: (canonicalItem: string) => Promise<void>;
   clear: () => Promise<void>;
   scanReceipt: (imageBase64: string, imageMediaType: PhotoMediaType) => Promise<boolean>;
@@ -17,66 +21,132 @@ export interface PantryController {
 
 /** What's in the kitchen. Same shape as the web hook, over the network client. */
 export function usePantry(): PantryController {
+  const { userId, sessionId } = useAuth();
+  const api = useMemo(() => createAccountClient(userId ?? ""), [userId, sessionId]);
+  // Invalidate retained handlers/results as soon as the auth scope renders,
+  // including the interval before its old effect cleanup runs.
+  const activeClient = useRef(api);
+  activeClient.current = api;
+  const dataClient = useRef(api);
+  const mounted = useRef(true);
+  const current = useCallback(() => {
+    if (!mounted.current || activeClient.current !== api) return false;
+    try {
+      const session = getClerkInstance().session;
+      return !!userId && !!sessionId && session?.user.id === userId && session.id === sessionId;
+    } catch { return false; }
+  }, [api, userId, sessionId]);
   const [items, setItems] = useState<PantryEntry[]>([]);
   const [intakes, setIntakes] = useState<PantryIntakeView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshingReviews, setRefreshingReviews] = useState(false);
+  const reviewVersion = useRef(0);
+  const refreshFlight = useRef<object | null>(null);
 
   useEffect(() => {
+    mounted.current = true;
+    dataClient.current = api;
     let cancelled = false;
+    const version = ++reviewVersion.current;
+    refreshFlight.current = null; setRefreshingReviews(false);
+    setItems([]); setIntakes([]); setLoading(true); setError(null);
     void (async () => {
       try {
         const [next, pending] = await Promise.all([api.listPantry(), api.listPantryIntakes()]);
-        if (!cancelled) { setItems(next); setIntakes(pending); }
+        if (!cancelled && current() && reviewVersion.current === version) { setItems(next); setIntakes(pending); }
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : "Couldn't load your pantry.");
+        if (!cancelled && current() && reviewVersion.current === version) setError(err instanceof Error ? err.message : "Couldn't load your pantry.");
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled && current()) setLoading(false);
       }
     })();
     return () => {
       cancelled = true;
+      mounted.current = false;
     };
-  }, []);
+  }, [api, current]);
 
-  const run = useCallback(async (write: () => Promise<PantryEntry[]>) => {
+  const run = useCallback(async (write: () => Promise<PantryEntry[]>, verify: (items: PantryEntry[]) => boolean = () => true) => {
+    if (!current()) return false;
+    ++reviewVersion.current;
     setError(null);
     try {
-      setItems(await write());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "That didn't save.");
+      const next = await write();
+      if (!current()) return false;
+      if (!Array.isArray(next) || !verify(next)) throw new Error("We could not confirm that pantry change. Review the latest pantry before trying again.");
+      ++reviewVersion.current; setItems(next); return true;
+    } catch {
+      if (current()) setError("We could not confirm that pantry change. Check your pantry before trying again.");
+      return false;
     }
-  }, []);
+  }, [current]);
 
   return {
-    items,
-    intakes,
-    loading,
-    error,
-    add: (text) => run(() => api.addPantry(text)),
-    update: (entry) => run(() => api.updatePantry(entry)),
-    remove: (canonicalItem) => run(() => api.removePantry([canonicalItem])),
-    clear: () => run(() => api.clearPantry()),
+    items: dataClient.current === api ? items : [],
+    intakes: dataClient.current === api ? intakes : [],
+    loading: dataClient.current !== api || loading,
+    refreshingReviews: dataClient.current === api && refreshingReviews,
+    refreshReviews: async () => {
+      if (!current() || refreshFlight.current) return false;
+      const flight = {}; refreshFlight.current = flight;
+      const version = ++reviewVersion.current;
+      setRefreshingReviews(true); setError(null);
+      try {
+        const [next, pending] = await Promise.all([api.listPantry(), api.listPantryIntakes()]);
+        if (!current() || reviewVersion.current !== version) return false;
+        setItems(next); setIntakes(pending);
+        return true;
+      } catch {
+        if (current() && reviewVersion.current === version) setError("We could not confirm the latest grocery reviews. Your last loaded reviews are still here. Refresh again before rescanning or repeating an uncertain action.");
+        return false;
+      } finally {
+        if (current() && refreshFlight.current === flight) { refreshFlight.current = null; setRefreshingReviews(false); }
+      }
+    },
+    queuedIntake: intake => { if (current()) { ++reviewVersion.current; setIntakes(items => [intake, ...items.filter(item => item.id !== intake.id)]); } },
+    error: dataClient.current === api ? error : null,
+    add: text => {
+      const pending = text.trim();
+      const expected = parsePantryInput(pending);
+      if (!expected.length) return Promise.resolve(false);
+      return run(() => api.addPantry(pending), next => expected.every(entry => next.some(item => item?.canonicalItem === entry.canonicalItem
+        && item.quantity === entry.quantity && item.unit === entry.unit)));
+    },
+    update: entry => {
+      const input = { ...entry };
+      return run(() => api.updatePantry(input), next => next.some(item => item?.canonicalItem === input.canonicalItem
+        && (input.quantity === undefined || item.quantity === input.quantity)
+        && (input.unit === undefined || item.unit === input.unit)));
+    },
+    remove: async canonicalItem => { await run(() => api.removePantry([canonicalItem])); },
+    clear: async () => { await run(() => api.clearPantry()); },
     scanReceipt: async (imageBase64, imageMediaType) => {
+      if (!current()) return false;
+      ++reviewVersion.current;
       setError(null);
       try {
         const result = await api.scanPantryReceipt(imageBase64, imageMediaType);
-        setIntakes(result.intakes);
+        if (!current()) return false;
+        ++reviewVersion.current; setIntakes(result.intakes);
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "That receipt could not be read.");
+        if (current()) setError(err instanceof Error ? err.message : "That receipt could not be read.");
         return false;
       }
     },
     resolveIntake: async (intakeId, action, acceptedItemIds = []) => {
+      if (!current()) return false;
+      ++reviewVersion.current;
       setError(null);
       try {
         const result = await api.resolvePantryIntake({ intakeId, action, acceptedItemIds });
-        setItems(result.pantry);
+        if (!current()) return false;
+        ++reviewVersion.current; setItems(result.pantry);
         setIntakes(result.intakes);
         return true;
       } catch (err) {
-        setError(err instanceof Error ? err.message : "That grocery review did not save.");
+        if (current()) setError(err instanceof Error ? err.message : "That grocery review did not save.");
         return false;
       }
     },
@@ -91,21 +161,48 @@ export interface SearchController {
 }
 
 export function usePantrySearch(): SearchController {
+  const { userId, sessionId } = useAuth();
+  const api = useMemo(() => createAccountClient(userId ?? ""), [userId, sessionId]);
+  const activeClient = useRef(api);
+  activeClient.current = api;
+  const dataClient = useRef(api);
+  const mounted = useRef(true);
+  const current = useCallback(() => {
+    if (!mounted.current || activeClient.current !== api) return false;
+    try {
+      const session = getClerkInstance().session;
+      return !!userId && !!sessionId && session?.user.id === userId && session.id === sessionId;
+    } catch { return false; }
+  }, [api, userId, sessionId]);
+  const request = useRef(0);
   const [response, setResponse] = useState<PantrySearchResponse | null>(null);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    mounted.current = true; dataClient.current = api;
+    ++request.current; setResponse(null); setSearching(false); setError(null);
+    return () => { mounted.current = false; ++request.current; };
+  }, [api]);
 
   const search = useCallback(async (query: string) => {
+    if (!current()) return;
+    const version = ++request.current;
     setSearching(true);
     setError(null);
     try {
-      setResponse(await api.searchPantry(query));
+      const result = await api.searchPantry(query);
+      if (current() && request.current === version) setResponse(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "That search didn't work.");
+      if (current() && request.current === version) setError(err instanceof Error ? err.message : "That search didn't work.");
     } finally {
-      setSearching(false);
+      if (current() && request.current === version) setSearching(false);
     }
-  }, []);
+  }, [api, current]);
 
-  return { response, searching, error, search };
+  return {
+    response: dataClient.current === api ? response : null,
+    searching: dataClient.current === api && searching,
+    error: dataClient.current === api ? error : null,
+    search,
+  };
 }

@@ -1,4 +1,5 @@
 import { relations, sql, type SQL } from "drizzle-orm";
+import type { FoodLogSource } from "@seconds/core";
 import {
   type AnyPgColumn,
   boolean,
@@ -18,6 +19,36 @@ import {
   uuid,
   vector,
 } from "drizzle-orm/pg-core";
+
+/** Pending storage erasure, independent of deleted accounts. No URLs or photo bytes.
+ * Migration 0023 captures removals transactionally. Not a public/user-facing queue.
+ */
+export const pendingPhotoDeletions = pgTable("pending_photo_deletions", {
+  key: text("key").primaryKey(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  attempts: integer("attempts").notNull().default(0),
+  lastAttemptAt: timestamp("last_attempt_at", { withTimezone: true }),
+  retryAfter: timestamp("retry_after", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Optional food notes. No images, audio, calories, health history or inventory linkage. */
+export const foodLogEntries = pgTable("food_log_entries", {
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  id: uuid("id").notNull(),
+  date: date("date").notNull(),
+  title: text("title").notNull(),
+  portion: text("portion"),
+  source: text("source").$type<FoodLogSource>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+}, table => [primaryKey({ columns: [table.userId, table.id] }), index("food_log_user_date_idx").on(table.userId, table.date)]);
+
+/** Account-scoped retry identity only; deletion never retains food content. */
+export const foodNoteReferences = pgTable("food_note_references", {
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  id: uuid("id").notNull(),
+  deleted: boolean("deleted").notNull().default(false),
+}, table => [primaryKey({ columns: [table.userId, table.id] })]);
 import type {
   CookTier,
   Ingredient,
@@ -700,6 +731,13 @@ export const mealTemplates = pgTable("meal_templates", {
   name: text("name").notNull(),
   visibility: visibility("visibility").notNull().default("private"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** Content-free retry identity, retained after grouping deletion but not account deletion. */
+export const mealTemplateReferences = pgTable("meal_template_references", {
+  id: uuid("id").primaryKey(),
+  ownerId: uuid("owner_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  deleted: boolean("deleted").notNull().default(false),
 });
 
 export const templateRole = pgEnum("template_role", ["main", "side", "drink", "dessert"]);

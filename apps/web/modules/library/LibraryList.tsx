@@ -5,6 +5,7 @@ import styles from "./library.module.css";
 export function LibraryList({ entries, woodland = false }: { entries: LibraryEntry[]; woodland?: boolean }) {
   if (entries.length === 0) {
     return <div className={styles.emptyBlock}>
+      <img src="/illustrations/recipes.svg" width={240} height={160} alt="" className={styles.emptyIllustration} />
       <p className={styles.empty}>{woodland ? 'Your journal is ready for its first recipe.' : 'Your library is ready for its first recipe.'}</p>
       <Link className={styles.emptyLink} href="/discover">Browse starter recipes</Link>
     </div>;

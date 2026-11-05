@@ -63,7 +63,7 @@ try {
   assert.equal(await updateRecipe(database,other,recipeId,draft),false);
   assert.equal(await getRecipe(database,other,recipeId),undefined);
   assert.equal(await deleteRecipe(database,other,recipeId),undefined);
-  assert.equal(await setRecipeNutrition(database,other,recipeId,null),false);
+  assert.equal(await setRecipeNutrition(database,other,recipeId,null,draft),false);
   await saveRecipe(database,id,{...imported,title:'Owner-only update'});
   assert.deepEqual(await snapshot(other),otherBeforeIsolation);
   assert.equal((await getRecipe(database,id,recipeId))?.title,draft.title);

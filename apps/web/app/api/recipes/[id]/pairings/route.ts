@@ -7,6 +7,11 @@ export const runtime = "nodejs";
 
 type Params = { params: Promise<{ id: string }> };
 
+function privateResponse(response: NextResponse) {
+  response.headers.set("Cache-Control", "private, no-store");
+  return response;
+}
+
 /**
  * "Pairs well with" — a side, a drink, and a dessert from the signed-in
  * user's own library. Unlike `/similar`, this reads private state, so it
@@ -16,14 +21,14 @@ type Params = { params: Promise<{ id: string }> };
 export async function GET(_request: Request, { params }: Params) {
   const { id } = await params;
   const empty = { side: [], drink: [], dessert: [] };
-  if (!databaseConfigured()) return NextResponse.json(empty);
+  if (!databaseConfigured()) return privateResponse(NextResponse.json(empty));
 
   try {
     const database = db();
     const userId = await currentUserId(database);
-    if (!userId) return NextResponse.json(empty);
-    return NextResponse.json(await suggestedPairings(database, userId, id));
+    if (!userId) return privateResponse(NextResponse.json(empty));
+    return privateResponse(NextResponse.json(await suggestedPairings(database, userId, id)));
   } catch (err) {
-    return errorResponse(err);
+    return privateResponse(errorResponse(err, { redactUnexpectedErrors: true }));
   }
 }

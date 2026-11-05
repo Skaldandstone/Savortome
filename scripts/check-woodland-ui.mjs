@@ -13,13 +13,18 @@ const woodlandCss = readFileSync(new URL('../apps/web/ui/woodland.css', import.m
 const stubs = {
   'react/jsx-runtime': 'export const jsx=(type,props)=>({type,props}); export const jsxs=jsx; export const Fragment="fragment";',
   react: `export const useState=initial=>{const i=state.cursor++;if(!(i in state.values))state.values[i]=typeof initial==='function'?initial():initial;return [state.values[i],next=>state.values[i]=typeof next==='function'?next(state.values[i]):next];};
-    export const useEffect=fn=>state.effects.push(fn),useMemo=fn=>fn(),useCallback=fn=>fn,useRef=value=>{const i=state.cursor++;return state.refs[i]??=({current:state.refCurrent??value});},useId=()=>"fixture-id";`,
+    export const useEffect=(fn,deps)=>{if(!state.plannerLifecycle){state.effects.push(fn);return;}const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){state.deps[i]=deps;state.effects.push(()=>{state.cleanups[i]?.();state.cleanups[i]=fn();});}};
+    export const useMemo=(fn,deps)=>{if(!state.plannerLifecycle)return fn();const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){state.deps[i]=deps;state.values[i]=fn();}return state.values[i];};
+    export const useCallback=(fn,deps)=>state.plannerLifecycle?useMemo(()=>fn,deps):fn;
+    export const useRef=value=>{const i=state.cursor++;return state.refs[i]??=({current:state.refCurrent??value});},useId=()=>"fixture-id";`,
   'next/link': 'export default function Link(){}',
   'next/navigation': 'export const usePathname=()=>state.pathname; export const useRouter=()=>({refresh:()=>state.refreshes++});',
   'expo-router': 'export const useFocusEffect=fn=>state.focusEffects.push(fn); export const useRouter=()=>({push:path=>state.routes.push(path)});',
   'react-native-safe-area-context': 'export const useSafeAreaInsets=()=>({top:0,right:0,bottom:0,left:0});',
   'react-native': `export const Modal='Modal',Pressable='Pressable',ScrollView='ScrollView',Text='Text',View='View'; export const StyleSheet={create:value=>value};`,
   '@clerk/nextjs': 'export const useAuth=()=>({userId:null});',
+  // Theme is an injected native boundary, like the palette in the UI stub.
+  '@/ui/ThemeProvider': 'export const useReducedMotion=()=>state.reducedMotion??false;',
   '@/lib/beta': 'export const canUseBeta=async()=>state.allowed;',
   '@/lib/client': `export const api=new Proxy({}, {get:(_,name)=>async(...args)=>{state.calls.push({name,args});if((state.defer&&name==='dietaryProfile')||(state.deferSave&&name==='setDietaryProfile')||state.deferMethods?.has(name))return new Promise((resolve,reject)=>state.pending.push({resolve,reject,name,args}));if(state.fail||state.failMethods?.has(name))throw Error('Fixture write failed');const response=state.responses?.[name]??state.response??{};return typeof response==='function'?response(...args):response;}});`,
   '@/lib/action-failure': `export const actionFailure=(error,fallback)=>({message:error instanceof Error?error.message:fallback,signInRequired:false}); export const signInReturnHref=path=>'/sign-in?redirect_url='+encodeURIComponent(path);`,
@@ -122,6 +127,59 @@ function careFixture(online = true) {
   const screen = f.app.CareScreen({ link: {} });
   return { ...f, care: () => f.render(screen.type, screen.props) };
 }
+// Read-only planner fixture: render the current account child and commit effects
+// by dependency identity, without seeding private hook positions.
+function plannerReadFixture(overrides = {}) {
+  const f = fixture({ plannerLifecycle: true, deps: [], cleanups: [],
+    responses: { plan: { meals: [] }, library: { recipes: [] }, mySuggestions: { suggestions: [] } }, ...overrides });
+  f.sandbox.AbortController = AbortController;
+  f.sandbox.fetch = async (url, init = {}) => {
+    assert.ok(!init.method || init.method === 'GET', 'Read fixture must not write');
+    const address = new URL(url, 'https://synthetic.invalid');
+    const name = address.pathname === '/api/plan/suggestions' ? 'mySuggestions' : address.pathname === '/api/plan' ? 'plan' : address.pathname === '/api/recipes' ? 'library' : null;
+    assert.ok(name, `Unexpected route ${address.pathname}`);
+    const args = name === 'plan' ? [address.searchParams.get('week')] : [];
+    f.state.calls.push({ name, args });
+    let response;
+    if (f.state.deferMethods?.has(name)) response = await new Promise((resolve, reject) => f.state.pending.push({ name, args, resolve, reject }));
+    else if (f.state.failMethods?.has(name)) return { ok: false, status: 503, json: async () => ({ error: "Couldn't load your recipes." }) };
+    else response = f.state.responses[name];
+    return { ok: true, status: 200, json: async () => response };
+  };
+  const render = () => {
+    const shell = f.app.PlanWeek({ initialWeek: '2026-09-21', clerkEnabled: false });
+    const tree = f.render(shell.type, shell.props);
+    f.state.effects.splice(0).forEach(effect => effect());
+    return tree;
+  };
+  const settle = async () => { for (let i = 0; i < 3; i++) { render(); await new Promise(resolve => setImmediate(resolve)); } return render(); };
+  return { ...f, render, settle };
+}
+// Writes are intercepted only in this explicit mutation fixture; reads still use
+// the read-only fixture and real client. Record wire payloads, not mock method args.
+function plannerMutationFixture(meal) {
+  const f = plannerReadFixture();
+  f.state.responses.plan = { meals: [meal] };
+  const read = f.sandbox.fetch;
+  f.state.writes = [];
+  f.sandbox.fetch = async (url, init = {}) => {
+    if (!init.method || init.method === 'GET') return read(url, init);
+    assert.equal(init.method, 'POST');
+    assert.ok(['/api/plan', '/api/plan/meal'].includes(url));
+    const payload = JSON.parse(init.body);
+    f.state.writes.push({ url, payload });
+    if (f.state.rejectWrite) return { ok: false, status: 503, json: async () => ({ error: 'Could not confirm this change.' }) };
+    const meals = url === '/api/plan/meal' ? [meal] : [];
+    f.state.responses.plan = { meals };
+    return { ok: true, status: 200, json: async () => ({ meals }) };
+  };
+  return f;
+}
+const plannerButton = (tree, label) => {
+  const button = nodes(tree).find(n => text(n) === label && n.props?.onClick);
+  assert.ok(button, `Missing planner control: ${label}`);
+  return button;
+};
 const cards = tree => nodes(tree).filter(node => node.type === 'details' && node.props['data-kind']);
 const action = card => nodes(card).find(node => node.type === 'button' && node.props['aria-label']?.startsWith('Add '));
 
@@ -248,41 +306,69 @@ test('a late discover response cannot replace the newer search', async () => {
   cleanup();
 });
 
-test('saved meals distinguish load failure from empty and retain a meal after failed deletion', async () => {
+for (const failure of ['false receipt', 'rejected request']) test(`saved meals distinguish failed reads and require review of unconfirmed deletion (${failure})`, async () => {
   const meal = { id: 'meal-1', name: 'Sunday dinner', visibility: 'private', items: [] };
-  const f = fixture({ failMethods: new Set(['myTemplates']), responses: { myTemplates: { templates: [meal] }, deleteTemplate: { ok: true } } });
-  const render = () => f.render(f.app.TemplateList);
+  const f = fixture({ plannerLifecycle: true, deps: [], cleanups: [] });
+  f.sandbox.AbortController = AbortController;
+  let failRead = true, deleteResponse = { ok: false };
+  const requests = [];
+  f.sandbox.fetch = async (url, init = {}) => {
+    const method = init.method ?? 'GET';
+    requests.push({ url, method });
+    if (method === 'GET') {
+      assert.equal(url, '/api/templates');
+      return { ok: !failRead, status: failRead ? 503 : 200, json: async () => ({ templates: [meal] }) };
+    }
+    assert.equal(method, 'DELETE'); assert.equal(url, '/api/templates/meal-1');
+    const rejected = !deleteResponse.ok && failure === 'rejected request';
+    return { ok: !rejected, status: rejected ? 503 : 200, json: async () => deleteResponse };
+  };
+  const render = () => {
+    const shell = f.app.TemplateList({ clerkEnabled: false });
+    const tree = f.render(shell.type, shell.props);
+    f.state.effects.splice(0).forEach(effect => effect());
+    return tree;
+  };
+  const settle = async () => { for (let i = 0; i < 3; i++) { render(); await new Promise(resolve => setImmediate(resolve)); } return render(); };
+  const deletes = () => requests.filter(r => r.method === 'DELETE').length;
   assert.match(text(render()), /Loading saved meals/);
-  f.state.effects[0]();
-  await new Promise(resolve => setImmediate(resolve));
-
-  let tree = render();
+  let tree = await settle();
   assert.match(text(tree), /saved meals have not been changed/i);
   assert.doesNotMatch(text(tree), /Nothing saved yet/);
-  f.state.failMethods.delete('myTemplates');
-  nodes(tree).find(node => node.props?.onClick && text(node) === 'Try again').props.onClick();
-  render();
-  f.state.effects.at(-1)();
-  await new Promise(resolve => setImmediate(resolve));
-
-  tree = render();
+  failRead = false;
+  plannerButton(tree, 'Try again').props.onClick();
+  tree = await settle();
   assert.match(text(tree), /Sunday dinner/);
-  nodes(tree).find(node => node.props?.['aria-label'] === 'Delete Sunday dinner').props.onClick();
-  tree = render();
+  const openDelete = () => nodes(tree).find(node => node.props?.['aria-label'] === 'Delete Sunday dinner').props.onClick();
+  openDelete(); tree = render();
   assert.match(text(tree), /stops its shared link from working/i);
-  f.state.failMethods.add('deleteTemplate');
-  nodes(tree).find(node => node.props?.onClick && text(node) === 'Delete saved meal').props.onClick();
-  await new Promise(resolve => setImmediate(resolve));
-  tree = render();
-  assert.match(text(tree), /still saved/i);
-  assert.match(text(tree), /Sunday dinner/);
-
-  f.state.failMethods.delete('deleteTemplate');
-  nodes(tree).find(node => node.props?.onClick && text(node) === 'Delete saved meal').props.onClick();
-  await new Promise(resolve => setImmediate(resolve));
-  tree = render();
+  assert.equal(deletes(), 0);
+  const confirm = plannerButton(tree, 'Delete saved meal');
+  confirm.props.onClick(); confirm.props.onClick();
+  tree = await settle();
+  assert.equal(deletes(), 1);
+  assert.match(text(tree), /may already be deleted/i);
+  assert.doesNotMatch(text(tree), /still saved|was deleted/i);
+  assert.ok(nodes(tree).some(node => node.type === 'h3' && text(node) === meal.name));
+  assert.equal(plannerButton(tree, 'Delete saved meal').props.disabled, true);
+  plannerButton(tree, 'Delete saved meal').props.onClick();
+  await settle(); assert.equal(deletes(), 1);
+  plannerButton(tree, 'Reload saved meals to review deletion').props.onClick();
+  tree = await settle();
+  assert.match(text(tree), /does not undo or cancel/);
+  assert.equal(deletes(), 1);
+  assert.equal(nodes(tree).some(node => node.props?.onClick && text(node) === 'Delete saved meal'), false);
+  // A fresh read still contains this meal. A new explicit confirmation is required.
+  openDelete(); tree = render(); deleteResponse = { ok: true };
+  plannerButton(tree, 'Delete saved meal').props.onClick();
+  tree = await settle();
   assert.match(text(tree), /Sunday dinner was deleted/);
   assert.equal(nodes(tree).some(node => node.props?.['aria-label'] === 'Delete Sunday dinner'), false);
+  assert.deepEqual(requests, [
+    { url: '/api/templates', method: 'GET' }, { url: '/api/templates', method: 'GET' },
+    { url: '/api/templates/meal-1', method: 'DELETE' }, { url: '/api/templates', method: 'GET' },
+    { url: '/api/templates/meal-1', method: 'DELETE' },
+  ]);
 });
 
 test('journal page headings remain server-gated and contain a native h1 when allowed', async () => {
@@ -344,92 +430,145 @@ test('getting started gives one useful decision at a time and saves resumable pr
   assert.ok(nodes(tree).some(n => n.type === 'h1' && text(n) === 'Your kitchen is ready when you are'));
 });
 
-test('web meal removal offers focused undo and keeps it available after a failed restore', async () => {
-  const week = '2026-09-21';
-  const meal = { recipeId: 'recipe-1', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
-  const values = [];
-  values[0] = week;
-  values[1] = [meal];
-  values[13] = week;
-  values[14] = false;
-  const f = fixture({ values, responses: { planRemove: { meals: [] }, planAdd: { meals: [meal] } } });
-  const render = () => f.render(f.app.PlanWeek, { initialWeek: week });
-
-  nodes(render()).find(n => n.props?.['aria-label'] === 'Remove Bean soup from Tue 22 Sep').props.onClick();
-  await new Promise(resolve => setImmediate(resolve));
-  let tree = render();
+test('web meal removal offers focused undo and requires review after unconfirmed restore', async () => {
+  const meal = { recipeId: '11111111-1111-4111-8111-111111111111', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
+  const f = plannerMutationFixture(meal);
+  const remove = tree => nodes(tree).find(n => n.props?.['aria-label'] === 'Remove Bean soup from Tue 22 Sep');
+  let tree = await f.settle();
+  remove(tree).props.onClick();
+  tree = await f.settle();
   assert.match(text(tree).replace(/\s+/g, ' '), /Removed Bean soup from dinner on Tue 22 Sep/);
-  let undo = nodes(tree).find(n => n.type === 'button' && text(n) === 'Undo');
-  assert.equal(undo.props.autoFocus, true);
-
-  f.state.failMethods = new Set(['planAdd']);
-  undo.props.onClick();
-  await new Promise(resolve => setImmediate(resolve));
-  tree = render();
-  assert.ok(nodes(tree).some(n => n.props?.role === 'alert'));
-  assert.ok(nodes(tree).some(n => n.type === 'button' && text(n) === 'Undo'));
-
-  f.state.failMethods.delete('planAdd');
-  nodes(tree).find(n => n.type === 'button' && text(n) === 'Undo').props.onClick();
-  await new Promise(resolve => setImmediate(resolve));
-  tree = render();
-  assert.match(text(tree).replace(/\s+/g, ' '), /Bean soup is back on Tue 22 Sep/);
+  assert.equal(plannerButton(tree, 'Undo').props.autoFocus, true);
+  // Confirmed undo retains the original day/slot and uses the reviewed endpoint.
+  plannerButton(tree, 'Undo').props.onClick();
+  tree = await f.settle();
+  assert.match(text(tree), /Bean soup.*is back on/);
   assert.equal(nodes(tree).some(n => n.type === 'button' && text(n) === 'Undo'), false);
-  nodes(tree).find(n => n.type === 'button' && text(n) === 'Clear the week').props.onClick();
-  tree = render();
-  assert.doesNotMatch(text(tree).replace(/\s+/g, ' '), /Bean soup is back on Tue 22 Sep/);
-  assert.deepEqual(JSON.parse(JSON.stringify(f.state.calls.filter(call => call.name.startsWith('plan')))), [
-    { name: 'planRemove', args: ['recipe-1', '2026-09-22', 'dinner', week] },
-    { name: 'planAdd', args: ['recipe-1', '2026-09-22', 'dinner', week] },
-    { name: 'planAdd', args: ['recipe-1', '2026-09-22', 'dinner', week] },
+  remove(tree).props.onClick();
+  tree = await f.settle();
+  assert.doesNotMatch(text(tree), /is back on/);
+  f.state.rejectWrite = true;
+  plannerButton(tree, 'Undo').props.onClick();
+  tree = await f.settle();
+  assert.ok(nodes(tree).some(n => n.props?.role === 'alert'));
+  const undo = plannerButton(tree, 'Undo');
+  assert.equal(undo.props.disabled, true);
+  undo.props.onClick(); // Even a queued event must not resend an uncertain write.
+  tree = await f.settle();
+  assert.equal(f.state.writes.length, 4);
+  assert.equal(plannerButton(tree, 'I reviewed the result; allow further changes').props.disabled, true);
+  plannerButton(tree, 'Reload plan and suggestions to review').props.onClick();
+  tree = await f.settle();
+  // A fresh plan replaces the local undo preview, without repeating its write.
+  assert.equal(nodes(tree).some(n => n.type === 'button' && text(n) === 'Undo'), false);
+  assert.equal(plannerButton(tree, 'I reviewed the result; allow further changes').props.disabled, false);
+  plannerButton(tree, 'I reviewed the result; allow further changes').props.onClick();
+  tree = await f.settle();
+  assert.match(text(tree), /No request was repeated and nothing was undone/);
+  assert.equal(nodes(tree).some(n => n.type === 'button' && text(n) === 'Undo'), false);
+  const removePayload = { action: 'remove', recipeId: meal.recipeId, date: meal.date, slot: meal.slot, week: '2026-09-21' };
+  const addPayload = { recipeId: meal.recipeId, date: meal.date, slot: meal.slot };
+  assert.deepEqual(f.state.writes, [
+    { url: '/api/plan', payload: removePayload }, { url: '/api/plan/meal', payload: addPayload },
+    { url: '/api/plan', payload: removePayload }, { url: '/api/plan/meal', payload: addPayload },
   ]);
 });
 
 test('web week-clear confirmation remains open when the write is rejected', async () => {
-  const week = '2026-09-21';
-  const meal = { recipeId: 'recipe-1', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
-  const values = [];
-  values[0] = week;
-  values[1] = [meal];
-  values[13] = week;
-  values[14] = false;
-  const f = fixture({ values, responses: { planClearWeek: { meals: [] } }, failMethods: new Set(['planClearWeek']) });
-  const render = () => f.render(f.app.PlanWeek, { initialWeek: week });
-  nodes(render()).find(n => n.type === 'button' && text(n) === 'Clear the week').props.onClick();
-  let tree = render();
-  assert.equal(f.state.calls.length, 0);
-  nodes(tree).find(n => typeof n.type === 'function' && text(n) === 'Clear every meal').props.onClick();
-  await new Promise(resolve => setImmediate(resolve));
-  tree = render();
-  assert.ok(nodes(tree).some(n => typeof n.type === 'function' && text(n) === 'Clear every meal'));
+  const meal = { recipeId: '11111111-1111-4111-8111-111111111111', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
+  const f = plannerMutationFixture(meal);
+  let tree = await f.settle();
+  plannerButton(tree, 'Clear the week').props.onClick();
+  tree = f.render();
+  assert.equal(f.state.writes.length, 0);
+  f.state.rejectWrite = true;
+  plannerButton(tree, 'Clear every meal').props.onClick();
+  tree = await f.settle();
   assert.ok(nodes(tree).some(n => n.props?.role === 'alert'));
+  assert.equal(plannerButton(tree, 'Clear every meal').props.disabled, true);
+  assert.match(text(tree), /Bean soup/);
+  plannerButton(tree, 'Clear every meal').props.onClick();
+  await f.settle();
+  assert.deepEqual(f.state.writes, [{ url: '/api/plan', payload: { action: 'clearWeek', week: '2026-09-21' } }]);
+});
+
+for (const action of ['remove', 'accept suggestion']) test(`an earlier planner ${action} callback cannot repeat an unconfirmed write`, async () => {
+  const meal = { recipeId: '11111111-1111-4111-8111-111111111111', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
+  const f = plannerReadFixture();
+  f.state.responses.plan = { meals: [meal] };
+  f.state.responses.mySuggestions = { suggestions: [{ ...meal, id: 'suggestion-1', suggestedBy: { displayName: 'Sam' } }] };
+  const read = f.sandbox.fetch, writes = [];
+  f.sandbox.fetch = async (url, init = {}) => {
+    if (!init.method || init.method === 'GET') return read(url, init);
+    writes.push({ url, method: init.method, payload: JSON.parse(init.body) });
+    return { ok: false, status: 503, json: async () => ({ error: 'Unconfirmed' }) };
+  };
+  let tree = await f.settle();
+  const button = action === 'remove'
+    ? nodes(tree).find(node => node.props?.['aria-label'] === 'Remove Bean soup from Tue 22 Sep')
+    : plannerButton(tree, 'Accept');
+  assert.equal(button.props.disabled, false);
+  button.props.onClick();
+  // Let the request fail before React commits another render. This handler still
+  // captures the previously enabled state, but the uncertainty ref is current.
+  await new Promise(resolve => setImmediate(resolve));
+  button.props.onClick();
+  tree = await f.settle();
+  assert.equal(writes.length, 1, 'An uncertain write must not be repeated by an earlier callback');
+  assert.match(text(tree), /pending or unconfirmed/);
+  assert.deepEqual(writes[0], action === 'remove'
+    ? { url: '/api/plan', method: 'POST', payload: { action: 'remove', recipeId: meal.recipeId, date: meal.date, slot: meal.slot, week: '2026-09-21' } }
+    : { url: '/api/plan/suggestions/suggestion-1', method: 'POST', payload: { action: 'accept' } });
+});
+
+for (const leave of ['change week', 'unmount']) test(`an earlier planner removal cannot write after ${leave}`, async () => {
+  const meal = { recipeId: '11111111-1111-4111-8111-111111111111', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
+  const f = plannerMutationFixture(meal);
+  let tree = await f.settle();
+  const remove = nodes(tree).find(node => node.props?.['aria-label'] === 'Remove Bean soup from Tue 22 Sep');
+  assert.equal(remove.props.disabled, false);
+  if (leave === 'change week') {
+    f.state.responses.plan = { meals: [] };
+    plannerButton(tree, 'Next →').props.onClick();
+    tree = await f.settle();
+    assert.equal(f.state.calls.filter(call => call.name === 'plan').at(-1).args[0], '2026-09-28');
+  } else {
+    f.state.cleanups.forEach(cleanup => cleanup?.());
+  }
+  remove.props.onClick();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.state.writes.length, 0, 'A callback from a departed planner view must not dispatch');
+});
+
+test('an earlier planner suggestion callback cannot write after unmount', async () => {
+  const f = plannerReadFixture();
+  f.state.responses.mySuggestions = { suggestions: [{ id: 'suggestion-1', recipeId: 'recipe-1', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', suggestedBy: { displayName: 'Sam' } }] };
+  const read = f.sandbox.fetch, writes = [];
+  f.sandbox.fetch = async (url, init = {}) => {
+    if (!init.method || init.method === 'GET') return read(url, init);
+    writes.push(url); return { ok: true, status: 200, json: async () => ({ ok: true }) };
+  };
+  const tree = await f.settle();
+  const accept = plannerButton(tree, 'Accept');
+  assert.equal(accept.props.disabled, false);
+  f.state.cleanups.forEach(cleanup => cleanup?.());
+  accept.props.onClick();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(writes, []);
 });
 
 test('failed week loading never renders a false empty planner and retry restores the grid', async () => {
-  const week = '2026-09-21';
-  const f = fixture({
-    failMethods: new Set(['plan']),
-    responses: { plan: { meals: [] }, library: { recipes: [] }, mySuggestions: { suggestions: [] } },
-  });
-  const render = () => f.render(f.app.PlanWeek, { initialWeek: week });
-  render();
-  f.state.effects[0]();
-  await new Promise(resolve => setImmediate(resolve));
-
-  let tree = render();
-  const failedCopy = text(tree).replace(/\s+/g, ' ');
-  assert.match(failedCopy, /saved plan has not changed/i);
+  const f = plannerReadFixture({ failMethods: new Set(['plan']) });
+  let tree = await f.settle();
+  assert.match(text(tree).replace(/\s+/g, ' '), /saved plan has not changed/i);
   assert.equal(nodes(tree).some(node => node.props?.['aria-label']?.startsWith('Add a recipe to')), false);
-  assert.ok(nodes(tree).some(node => text(node) === 'Try this week again'));
-
-  f.state.failMethods.delete('plan');
-  nodes(tree).find(node => text(node) === 'Try this week again').props.onClick();
-  render();
-  f.state.effects.at(-3)();
-  await new Promise(resolve => setImmediate(resolve));
-  tree = render();
+  const retry = nodes(tree).find(node => text(node) === 'Try this week again' && node.props?.onClick);
+  assert.ok(retry);
+  f.state.failMethods.delete('plan'); retry.props.onClick();
+  tree = await f.settle();
   assert.equal(nodes(tree).filter(node => node.type === 'section' && node.props?.['aria-label']).length >= 7, true);
   assert.equal(nodes(tree).filter(node => node.props?.['aria-label']?.startsWith('Add a recipe to')).length, 21);
+  assert.equal(f.state.calls.filter(call => call.name === 'plan').length, 2);
 });
 
 test('recipe picker distinguishes loading and failed requests from an empty library', () => {
@@ -462,65 +601,59 @@ test('recipe picker distinguishes loading and failed requests from an empty libr
   assert.equal(nodes(tree).find(node => node.props?.['aria-label'] === 'Filter your recipes').props.disabled, false);
 });
 
-test('planner passes recipe-library failure and retry state into the open picker', () => {
-  const week = '2026-09-21';
-  const values = [];
-  values[0] = week;
-  values[1] = [];
-  values[2] = [];
-  values[3] = { date: '2026-09-22', slot: 'dinner' };
-  values[13] = week;
-  values[14] = false;
-  values[17] = false;
-  values[18] = false;
-  values[19] = { message: "Couldn't load your recipes.", signInRequired: false };
-  values[20] = 0;
-  const f = fixture({ values });
-
-  const shell = f.render(f.app.PlanWeek, { initialWeek: week });
-  const dialog = nodes(shell).find(node => typeof node.type === 'function' && node.type.name === 'AddMealDialog');
-  assert.equal(dialog.props.loaded, false);
-  assert.equal(dialog.props.loading, false);
+test('planner passes recipe-library failure and retry state into the open picker', async () => {
+  const f = plannerReadFixture({ failMethods: new Set(['library']) });
+  let tree = await f.settle();
+  nodes(tree).find(node => node.props?.['aria-label']?.startsWith('Add a recipe to')).props.onClick();
+  tree = f.render();
+  const dialog = nodes(tree).find(node => typeof node.type === 'function' && node.type.name === 'AddMealDialog');
+  assert.ok(dialog); assert.equal(dialog.props.loaded, false); assert.equal(dialog.props.loading, false);
   assert.match(dialog.props.loadError, /couldn't load/i);
-  dialog.props.onRetry();
-  assert.equal(f.state.values[20], 1);
+  f.state.failMethods.delete('library'); dialog.props.onRetry();
+  tree = await f.settle();
+  const recovered = nodes(tree).find(node => typeof node.type === 'function' && node.type.name === 'AddMealDialog');
+  assert.equal(recovered.props.loaded, true); assert.equal(recovered.props.loadError, null);
+  assert.equal(f.state.calls.filter(call => call.name === 'library').length, 2);
 });
 
 test('a late prior-week response cannot replace the newly selected week', async () => {
-  const week = '2026-09-21';
-  const nextWeek = '2026-09-28';
-  const f = fixture({
-    deferMethods: new Set(['plan']),
-    responses: { library: { recipes: [] }, mySuggestions: { suggestions: [] } },
-  });
-  const render = () => f.render(f.app.PlanWeek, { initialWeek: week });
-  let tree = render();
-  const cancelOld = f.state.effects[0]();
+  const f = plannerReadFixture({ deferMethods: new Set(['plan']) });
+  let tree = f.render();
   nodes(tree).find(node => text(node) === 'Next →' && node.props?.onClick).props.onClick();
-  render();
-  cancelOld();
-  f.state.effects.at(-3)();
-
-  const nextRequest = f.state.pending.find(request => request.name === 'plan' && request.args[0] === nextWeek);
-  const oldRequest = f.state.pending.find(request => request.name === 'plan' && request.args[0] === week);
+  await f.settle();
+  const nextRequest = f.state.pending.find(request => request.name === 'plan' && request.args[0] === '2026-09-28');
+  const oldRequest = f.state.pending.find(request => request.name === 'plan' && request.args[0] === '2026-09-21');
+  assert.ok(nextRequest); assert.ok(oldRequest);
   nextRequest.resolve({ meals: [{ recipeId: 'new', date: '2026-09-29', slot: 'dinner', title: 'New soup', imageUrl: null, totalMinutes: 20 }] });
-  await new Promise(resolve => setImmediate(resolve));
+  await f.settle();
   oldRequest.resolve({ meals: [{ recipeId: 'old', date: '2026-09-22', slot: 'dinner', title: 'Old soup', imageUrl: null, totalMinutes: 20 }] });
-  await new Promise(resolve => setImmediate(resolve));
-
-  tree = render();
-  assert.match(text(tree), /New soup/);
-  assert.doesNotMatch(text(tree), /Old soup/);
+  tree = await f.settle();
+  assert.match(text(tree), /New soup/); assert.doesNotMatch(text(tree), /Old soup/);
+  assert.equal(f.state.calls.filter(call => call.name === 'plan').length, 2);
 });
 
 test('mobile plan removal offers undo and clear-week requires confirmation', async () => {
   const week = '2026-09-21';
   const meal = { recipeId: 'recipe-1', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
-  const values = [];
-  values[0] = week;
-  values[1] = [meal];
-  const f = fixture({ values, responses: { planRemove: { meals: [] }, planAdd: { meals: [meal] }, planClearWeek: { meals: [] } } });
-  const render = () => f.render(f.app.MobilePlanScreen);
+  const f = fixture({ plannerLifecycle: true, deps: [], cleanups: [] });
+  let saved = [meal], rejectClear = false, focused, blur;
+  const calls = [];
+  const client = {
+    async plan(forWeek) { assert.equal(forWeek, week); return { meals: saved }; },
+    async library() { return { recipes: [] }; },
+    async planRemove(...args) { calls.push({ name: 'planRemove', args }); saved = []; return { meals: saved }; },
+    async reviewedPlanAdd(input) { calls.push({ name: 'reviewedPlanAdd', input }); saved = [meal]; return { meals: saved }; },
+    async planClearWeek(forWeek) { calls.push({ name: 'planClearWeek', week: forWeek }); if (rejectClear) throw new Error('Unconfirmed'); saved = []; return { meals: saved }; },
+  };
+  const render = () => {
+    const tree = f.render(f.app.MobilePlanScreen, { initialWeek: week, client });
+    f.state.effects.splice(0).forEach(effect => effect());
+    const focus = f.state.focusEffects.splice(0).at(-1);
+    if (focus && focus !== focused) { blur?.(); focused = focus; blur = focus(); }
+    return tree;
+  };
+  const settle = async () => { for (let i = 0; i < 3; i++) { render(); await new Promise(resolve => setImmediate(resolve)); } return render(); };
+  await settle();
 
   nodes(render()).find(n => n.props?.accessibilityLabel === 'Remove Bean soup from Tue 22 Sep').props.onPress();
   await new Promise(resolve => setImmediate(resolve));
@@ -534,19 +667,72 @@ test('mobile plan removal offers undo and clear-week requires confirmation', asy
   nodes(tree).find(n => n.props?.label === 'Clear week').props.onPress();
   tree = render();
   assert.doesNotMatch(text(tree).replace(/\s+/g, ' '), /Bean soup is back on Tue 22 Sep/);
-  assert.equal(f.state.calls.some(call => call.name === 'planClearWeek'), false);
+  assert.equal(calls.some(call => call.name === 'planClearWeek'), false);
   assert.ok(nodes(tree).some(n => n.props?.label === 'Clear every meal'));
   assert.ok(nodes(tree).some(n => n.props?.label === 'Keep this week'));
 
-  f.state.failMethods = new Set(['planClearWeek']);
+  rejectClear = true;
   nodes(tree).find(n => n.props?.label === 'Clear every meal').props.onPress();
   await new Promise(resolve => setImmediate(resolve));
   tree = render();
   assert.ok(nodes(tree).some(n => n.props?.label === 'Clear every meal'));
   assert.ok(nodes(tree).some(n => typeof n.type === 'function' && n.props?.tone === 'error'));
+  const confirm = nodes(tree).find(n => n.props?.label === 'Clear every meal');
+  assert.equal(confirm.props.disabled, true);
+  confirm.props.onPress(); await settle();
+  assert.match(text(render()), /may already have saved/);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls)), [
+    { name: 'planRemove', args: [meal.recipeId, meal.date, meal.slot, week] },
+    { name: 'reviewedPlanAdd', input: { recipeId: meal.recipeId, date: meal.date, slot: meal.slot } },
+    { name: 'planClearWeek', week },
+  ]);
+  blur?.();
+
 });
 
-test('pantry memory shows sourced guidance and keeps every correction explicit', () => {
+for (const leave of ['change week', 'blur', 'unmount', 'refocus', 'blurred rerender']) test(`an earlier native planner removal cannot write after ${leave}`, async () => {
+  const week = '2026-09-21';
+  const meal = { recipeId: 'recipe-1', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
+  const f = fixture({ plannerLifecycle: true, deps: [], cleanups: [] });
+  const writes = [];
+  const client = {
+    async plan(selectedWeek) { return { meals: selectedWeek === week ? [meal] : [] }; },
+    async library() { return { recipes: [] }; },
+    async planRemove(...args) { writes.push(args); return { meals: [] }; },
+  };
+  let focused, blur;
+  const render = () => {
+    const tree = f.render(f.app.MobilePlanScreen, { initialWeek: week, client });
+    f.state.effects.splice(0).forEach(effect => effect());
+    const focus = f.state.focusEffects.splice(0).at(-1);
+    if (focus && focus !== focused) { blur?.(); focused = focus; blur = focus(); }
+    return tree;
+  };
+  const settle = async () => { for (let i = 0; i < 3; i++) { render(); await new Promise(resolve => setImmediate(resolve)); } return render(); };
+  let tree = await settle();
+  const remove = nodes(tree).find(node => node.props?.accessibilityLabel === 'Remove Bean soup from Tue 22 Sep');
+  assert.equal(remove.props.disabled, false);
+  if (leave === 'change week') {
+    nodes(tree).find(node => node.props?.accessibilityLabel === 'Next week').props.onPress();
+    await settle();
+  } else {
+    blur();
+    if (leave === 'unmount') f.state.cleanups.forEach(cleanup => cleanup?.());
+    if (leave === 'refocus') { blur = focused(); tree = await settle(); }
+  }
+  const callback = leave === 'blurred rerender'
+    ? nodes(render()).find(node => node.props?.accessibilityLabel === 'Remove Bean soup from Tue 22 Sep') : remove;
+  callback.props.onPress();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(writes, [], 'A departed native view must not send a meal removal');
+  if (leave === 'refocus') {
+    nodes(tree).find(node => node.props?.accessibilityLabel === 'Remove Bean soup from Tue 22 Sep').props.onPress();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(JSON.parse(JSON.stringify(writes)), [[meal.recipeId, meal.date, meal.slot, week]]);
+  }
+});
+
+test('pantry memory shows sourced guidance and keeps every correction explicit', async () => {
   const f = fixture();
   const updates = [];
   const removals = [];
@@ -582,8 +768,10 @@ test('pantry memory shows sourced guidance and keeps every correction explicit',
   nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Save amount').props.onClick?.();
   const amountForm = nodes(tree).find(node => node.type === 'form' && text(node).includes('How many'));
   amountForm.props.onSubmit({ preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
+  tree = f.render(f.app.PantryList, props);
   nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'All gone').props.onClick();
-  nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Remind me in 3 days').props.onClick();
+  nodes(tree).find(node => typeof node.type === 'function' && text(node).replace(/\s+/g, ' ') === 'Remind me in 3 days').props.onClick();
   nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Hide this suggestion').props.onClick();
   assert.deepEqual(JSON.parse(JSON.stringify(updates)), [
     { canonicalItem: 'banana', isUsual: true },
@@ -600,9 +788,10 @@ test('pantry memory shows sourced guidance and keeps every correction explicit',
 test('pantry forms keep typed work until a write is confirmed', async () => {
   const f = fixture();
   let shouldSave = false;
+  const entries = [];
   const props = {
     items: [],
-    async onAdd() { return shouldSave; },
+    async onAdd(entry) { entries.push(entry); return shouldSave; },
     async onUpdate() { return shouldSave; },
     async onRemove() { return shouldSave; },
     async onClear() { return shouldSave; },
@@ -613,17 +802,22 @@ test('pantry forms keep typed work until a write is confirmed', async () => {
   input.props.onChange({ target: { value: 'bananas and yogurt' } });
   tree = render();
   let form = nodes(tree).find(node => node.type === 'form');
-  await form.props.onSubmit({ preventDefault() {} });
+  form.props.onSubmit({ preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
   tree = render();
   input = nodes(tree).find(node => node.props?.['aria-label'] === 'Ingredients to add to your pantry');
   assert.equal(input.props.value, 'bananas and yogurt');
+  assert.equal(input.props.disabled, true);
+  assert.match(text(tree), /Retry the same pantry entry/);
 
   shouldSave = true;
   form = nodes(tree).find(node => node.type === 'form');
-  await form.props.onSubmit({ preventDefault() {} });
+  form.props.onSubmit({ preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
   tree = render();
   input = nodes(tree).find(node => node.props?.['aria-label'] === 'Ingredients to add to your pantry');
   assert.equal(input.props.value, '');
+  assert.deepEqual(entries, ['bananas and yogurt', 'bananas and yogurt']);
 });
 
 test('pantry amount correction and bulk clear stay open after rejected writes', async () => {
@@ -668,17 +862,17 @@ test('pantry and grocery reviews load independently and retry without erasing pa
     acquiredAt: '2026-09-24T00:00:00.000Z', status: 'pending', createdAt: '2026-09-24T00:00:00.000Z',
     items: [],
   };
-  const f = fixture({
+  const f = fixture({ plannerLifecycle: true, deps: [], cleanups: [],
     failMethods: new Set(['listPantryIntakes']),
     responses: { listPantry: [banana], listPantryIntakes: [intake] },
   });
-  const render = () => f.render(f.app.usePantry);
-  render();
-  f.state.effects[0]();
-  f.state.effects[1]();
-  await new Promise(resolve => setImmediate(resolve));
-
-  let controller = render();
+  const render = () => {
+    const controller = f.render(() => f.app.usePantry());
+    f.state.effects.splice(0).forEach(effect => effect());
+    return controller;
+  };
+  const settle = async () => { for (let i = 0; i < 3; i++) { render(); await new Promise(resolve => setImmediate(resolve)); } return render(); };
+  let controller = await settle();
   assert.equal(controller.loaded, true);
   assert.equal(controller.items[0].canonicalItem, 'banana');
   assert.equal(controller.pantryError, null);
@@ -687,22 +881,18 @@ test('pantry and grocery reviews load independently and retry without erasing pa
 
   f.state.failMethods.delete('listPantryIntakes');
   controller.retryIntakes();
-  render();
-  f.state.effects.at(-1)();
-  await new Promise(resolve => setImmediate(resolve));
-  controller = render();
+  controller = await settle();
   assert.equal(controller.intakesLoaded, true);
   assert.equal(controller.intakes[0].sourceLabel, 'Market');
 
   f.state.failMethods.add('listPantry');
   controller.retryPantry();
-  render();
-  f.state.effects.at(-2)();
-  await new Promise(resolve => setImmediate(resolve));
-  controller = render();
+  controller = await settle();
   assert.equal(controller.loaded, true);
   assert.equal(controller.items[0].canonicalItem, 'banana');
   assert.match(controller.pantryError.message, /Fixture write failed/);
+  assert.deepEqual(f.state.calls.map(call => call.name), ['listPantry', 'listPantryIntakes', 'listPantryIntakes', 'listPantry']);
+
 });
 
 test('pantry panel never presents failed loading as an empty pantry', () => {
@@ -714,7 +904,8 @@ test('pantry panel never presents failed loading as an empty pantry', () => {
     retryPantry() {}, retryIntakes() {}, add: async () => false, update: async () => false,
     remove: async () => false, clear: async () => false, resolveIntake: async () => false,
   } });
-  const render = () => f.render(f.app.CookPanel);
+  const shell = f.app.CookPanel({ clerkEnabled: false });
+  const render = () => f.render(shell.type, shell.props);
   let tree = render();
   nodes(tree).find(node => text(node) === 'My pantry' && node.props?.onClick).props.onClick();
   tree = render();
@@ -834,7 +1025,7 @@ test('narrow care cards reserve an art column only when an illustration exists',
   assert.match(careCss, /\.cardSummary:has\(\.foodArt\)\s*\{\s*grid-template-columns:minmax\(96px,35%\) minmax\(0,1fr\) 20px;/);
 });
 
-test('secondary planning, pairing, and shelf controls retain explicit accessible names', () => {
+test('secondary planning, pairing, and shelf controls retain explicit accessible names', async () => {
   const friend = fixture({
     values: [[{ id: 'friend-1', displayName: 'Sam' }], 'friend-1', '2026-08-31', 'dinner', 'idle', null, []],
   });
@@ -845,24 +1036,40 @@ test('secondary planning, pairing, and shelf controls retain explicit accessible
     ['Friend to suggest this meal to', 'Suggested meal date', 'Suggested meal slot'],
   );
 
-  const candidate = { id: 'side-1', title: 'Garden greens', imageUrl: null, nutrition: null };
-  const pairings = fixture({
-    values: [
-      { side: [candidate], drink: [], dessert: [] },
-      { side: candidate.id, drink: null, dessert: null },
-      4,
-      '',
-      'failed',
-      'Fixture save failure',
-    ],
-  });
-  const pairingTree = pairings.render(pairings.app.PairingSuggestions, {
-    recipeId: 'recipe-1', mainNutrition: null, servings: 4,
-  });
+  const mainId = '11111111-1111-4111-8111-111111111111';
+  const candidate = { id: '22222222-2222-4222-8222-222222222222', title: 'Garden greens', imageUrl: null, nutrition: null };
+  const pairings = fixture({ plannerLifecycle: true, deps: [], cleanups: [] });
+  pairings.sandbox.AbortController = AbortController;
+  const requestId = '33333333-3333-4333-8333-333333333333';
+  pairings.sandbox.crypto = { randomUUID: () => requestId };
+  const writes = [];
+  pairings.sandbox.fetch = async (url, init = {}) => {
+    if (!init.method) {
+      assert.equal(url, `/api/recipes/${mainId}/pairings`);
+      return { ok: true, status: 200, json: async () => ({ side: [candidate], drink: [], dessert: [] }) };
+    }
+    assert.equal(url, '/api/templates'); assert.equal(init.method, 'POST');
+    writes.push(JSON.parse(init.body));
+    return { ok: false, status: 503, json: async () => ({}) };
+  };
+  const shell = pairings.app.PairingSuggestions({ clerkEnabled: false, recipeId: mainId, mainNutrition: null, servings: 4 });
+  const render = () => {
+    const tree = pairings.render(shell.type, shell.props);
+    pairings.state.effects.splice(0).forEach(effect => effect());
+    return tree;
+  };
+  render(); await new Promise(resolve => setImmediate(resolve));
+  let pairingTree = render();
   const pairingInputs = nodes(pairingTree).filter(node => node.type === 'input');
   assert.equal(pairingInputs.find(input => input.props.type === 'checkbox').props['aria-label'], 'Include Garden greens as a side in this meal');
-  assert.equal(pairingInputs.find(input => input.props.type === 'text').props['aria-label'], 'Meal name');
-  assert.ok(nodes(pairingTree).some(node => node.props?.role === 'alert' && text(node) === 'Fixture save failure'));
+  const name = pairingInputs.find(input => input.props.type === 'text');
+  assert.equal(name.props['aria-label'], 'Meal name');
+  name.props.onChange({ target: { value: 'Sunday dinner' } });
+  pairingTree = render();
+  await plannerButton(pairingTree, 'Save this meal').props.onClick();
+  pairingTree = render();
+  assert.ok(nodes(pairingTree).some(node => node.props?.role === 'alert' && /could not confirm the meal/i.test(text(node))));
+  assert.deepEqual(writes, [{ id: requestId, name: 'Sunday dinner', items: [{ role: 'main', recipeId: mainId }, { role: 'side', recipeId: candidate.id }] }]);
 
   const shelves = fixture({ values: [true, ''] });
   const shelfTree = shelves.render(shelves.app.ShelfChecklist, {
@@ -987,23 +1194,23 @@ test('friends page protects typed handles and never presents failed loading as a
 
 test('shopping list and provider options load independently without erasing the list', async () => {
   const list = {
-    id: 'list-1', name: 'Shopping list', createdAt: '2026-09-24T00:00:00.000Z',
+    id: '11111111-1111-4111-8111-111111111111', name: 'Shopping list', createdAt: '2026-09-24T00:00:00.000Z',
     itemCount: 1, checkedCount: 0,
-    items: [{ id: 'item-1', canonicalItem: 'banana', displayName: 'bananas', quantity: 6,
+    items: [{ id: '22222222-2222-4222-8222-222222222222', canonicalItem: 'banana', displayName: 'bananas', quantity: 6,
       unit: null, amountUnknown: false, checked: false, mayAlreadyHave: false, recipeIds: [] }],
   };
   const providers = [{ id: 'clipboard', name: 'Copy list', kind: 'handoff', description: 'Copy the list.' }];
-  const f = fixture({
+  const f = fixture({ plannerLifecycle: true, deps: [], cleanups: [],
     failMethods: new Set(['cartProviders']),
     responses: { getList: list, cartProviders: providers },
   });
-  const render = () => f.render(f.app.useShoppingList);
-  render();
-  f.state.effects[0]();
-  f.state.effects[1]();
-  await new Promise(resolve => setImmediate(resolve));
-
-  let controller = render();
+  const render = () => {
+    const controller = f.render(() => f.app.useShoppingList());
+    f.state.effects.splice(0).forEach(effect => effect());
+    return controller;
+  };
+  const settle = async () => { for (let i = 0; i < 3; i++) { render(); await new Promise(resolve => setImmediate(resolve)); } return render(); };
+  let controller = await settle();
   assert.equal(controller.loaded, true);
   assert.equal(controller.list.items[0].displayName, 'bananas');
   assert.equal(controller.listError, null);
@@ -1012,22 +1219,18 @@ test('shopping list and provider options load independently without erasing the 
 
   f.state.failMethods.delete('cartProviders');
   controller.retryProviders();
-  render();
-  f.state.effects.at(-1)();
-  await new Promise(resolve => setImmediate(resolve));
-  controller = render();
+  controller = await settle();
   assert.equal(controller.providersLoaded, true);
   assert.equal(controller.providers[0].name, 'Copy list');
 
   f.state.failMethods.add('getList');
   controller.retryList();
-  render();
-  f.state.effects.at(-2)();
-  await new Promise(resolve => setImmediate(resolve));
-  controller = render();
+  controller = await settle();
   assert.equal(controller.loaded, true);
   assert.equal(controller.list.items[0].displayName, 'bananas');
   assert.match(controller.listError.message, /Fixture write failed/);
+  assert.deepEqual(f.state.calls.map(call => call.name), ['getList', 'cartProviders', 'cartProviders', 'getList']);
+
 });
 
 test('shopping list panel distinguishes load failure from an empty list and provider failure', () => {
@@ -1335,9 +1538,10 @@ test('asynchronous collection panels announce loading, results, and failures', (
     retryPantry() {}, retryIntakes() {},
     add: async () => {}, update: async () => {}, remove: async () => {}, clear: async () => {}, resolveIntake: async () => true,
   } });
-  const pantryTree = pantry.render(pantry.app.CookPanel);
+  const pantryShell = pantry.app.CookPanel({ clerkEnabled: false });
+  const pantryTree = pantry.render(pantryShell.type, pantryShell.props);
   nodes(pantryTree).find(node => text(node) === 'My pantry' && node.props?.onClick).props.onClick();
-  const openPantry = pantry.render(pantry.app.CookPanel);
+  const openPantry = pantry.render(pantryShell.type, pantryShell.props);
   assert.ok(nodes(openPantry).some(node => node.props?.role === 'status' && text(node) === 'Loading pantry…'));
   assert.ok(nodes(openPantry).some(node => node.props?.role === 'alert' && text(node).includes('Fixture pantry failure')));
 
@@ -1352,4 +1556,15 @@ test('asynchronous collection panels announce loading, results, and failures', (
     node => node.props?.href === '/sign-in?redirect_url=%2Flist' && text(node) === 'Sign in again',
   );
   assert.equal(signInLink.props.href, '/sign-in?redirect_url=%2Flist');
+});
+
+test('mobile meal picker honors both injected motion preferences', () => {
+  for (const reducedMotion of [false, true]) {
+    const f = fixture({ reducedMotion });
+    const tree = f.render(f.app.MobilePlanScreen, { initialWeek: "2026-11-02", client: {} });
+    const modal = nodes(tree).find(node => node.type === 'Modal');
+    assert.ok(modal, 'The actual planner renders its meal picker modal');
+    assert.equal(modal.props.animationType, reducedMotion ? 'none' : 'slide');
+    assert.equal(f.state.calls.length, 0);
+  }
 });

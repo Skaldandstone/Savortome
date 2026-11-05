@@ -1,0 +1,52 @@
+// Actual photo route + R2 helper/core validators; auth, database and SDK synthetic.
+// Separate PGlite protocol checks prove transactions. No real provider or account.
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {runInNewContext} from 'node:vm';
+import {createRequire} from 'node:module';
+import {build} from 'esbuild';
+const require=createRequire(import.meta.url);
+const owner='10000000-0000-4000-8000-000000000001',recipe='20000000-0000-4000-8000-000000000002';
+const mocks={
+ 'server-only':'',
+ 'node:perf_hooks':`export const performance={now:()=>state.now};`,
+ 'next/server':`export const NextResponse={json:(body,options)=>new Response(JSON.stringify(body),{status:options?.status??200,headers:options?.headers})};`,
+ '@/lib/session':`export class NotConfiguredError extends Error{}`,
+ './session.js':`export {NotConfiguredError} from '@/lib/session';`,
+ '@/lib/api':`import {NotConfiguredError} from '@/lib/session';export class BadRequestError extends Error{};export const readJson=async request=>{state.calls.push('body');try{return await request.json();}catch{return {};}};export const withUser=async(handler,privacy)=>{state.privacy=privacy;if(!state.signedIn)return new Response(JSON.stringify({error:'Sign in to do that.'}),{status:401});try{return new Response(JSON.stringify(await handler(state.owner,{})),{status:200});}catch(error){return new Response(JSON.stringify({error:error instanceof BadRequestError||error instanceof NotConfiguredError?error.message:'Something went wrong on our end.'}),{status:error instanceof BadRequestError?400:error instanceof NotConfiguredError?501:500});}};`,
+ '@seconds/db':`export const reserveRecipePhotoUpload=async(db,owner,id,key)=>{state.calls.push('reserve');state.key=key;return state.reserve(owner,id,key);};export const attachReservedRecipePhoto=async(db,owner,id,photo)=>{state.calls.push('attach');state.photo=photo;return state.attach(owner,id,photo);};export const removeRecipePhoto=async()=>{throw Error('unused');};`,
+ '@aws-sdk/client-s3':`export class PutObjectCommand{constructor(input){this.input=input;this.kind='put';}};export class DeleteObjectCommand{constructor(input){this.input=input;this.kind='delete';}};export class S3Client{constructor(){state.clients++;}send(command,options){state.calls.push(command.kind);state.command=command.input;state.signal=options?.abortSignal;return state.send(command);}};`,
+ '@seconds/core/format':`export {isUuid} from '${process.cwd().replaceAll('\\','/')}/packages/core/src/ids.ts';export {isPhotoMediaType,MAX_PHOTO_BASE64_CHARS,PHOTO_MEDIA_TYPES} from '${process.cwd().replaceAll('\\','/')}/packages/core/src/recipe.ts';`,
+};
+const bundle=await build({bundle:true,write:false,platform:'node',format:'iife',globalName:'upload',stdin:{resolveDir:process.cwd(),contents:`export {POST} from './apps/web/app/api/recipes/[id]/photos/route.ts';export {createRecipePhotoKey,uploadReservedRecipePhoto} from './apps/web/lib/r2.ts';`},plugins:[{name:'photo-upload-boundaries',setup(api){api.onResolve({filter:/.*/},args=>args.path==='@/lib/r2'?{path:process.cwd()+'/apps/web/lib/r2.ts'}:Object.hasOwn(mocks,args.path)?{path:args.path,namespace:'mock'}:undefined);api.onLoad({filter:/.*/,namespace:'mock'},args=>({contents:mocks[args.path],loader:'js',resolveDir:process.cwd()}));}}]});
+function fixture(){
+ const state={calls:[],clients:0,signedIn:true,owner,registered:false,now:0};
+ state.reserve=async()=>{state.registered=true;return{ok:true};};state.attach=async(_owner,_id,photo)=>({ok:true,photos:[photo]});
+ state.send=async command=>{assert.equal(command.kind,'put');assert.equal(state.registered,true,'SDK PUT requires successful reservation');};
+ const env={R2_ACCOUNT_ID:'synthetic',R2_ACCESS_KEY_ID:'synthetic',R2_SECRET_ACCESS_KEY:'synthetic',R2_BUCKET_NAME:'synthetic-bucket',R2_PUBLIC_URL_BASE:'https://fixture.invalid'};
+ const timers=new Map();let next=0;const context={state,process:{env},require,Response,Buffer,AbortController,setTimeout:(fn,ms)=>{assert.equal(ms,12000);timers.set(++next,fn);return next;},clearTimeout:id=>timers.delete(id)};
+ runInNewContext(bundle.outputFiles[0].text,context);
+ const controller=new AbortController();
+ const request=(body={imageBase64:'aGVsbG8=',imageMediaType:'image/jpeg'})=>({signal:controller.signal,json:async()=>body});
+ const post=(req=request(),id=recipe)=>context.upload.POST(req,{params:Promise.resolve({id})});
+ return{state,env,api:context.upload,controller,request,post,timers,expire:()=>{for(const fn of [...timers.values()])fn();}};
+}
+const generic=async response=>{assert.equal(response.status,500);assert.deepEqual(await response.json(),{error:'Something went wrong on our end.'});assert.equal(response.headers.get('cache-control'),'no-store');};
+const flushed=async()=>{for(let i=0;i<12;i++)await Promise.resolve();};
+
+test('photo upload: signed out refuses before body, reservation or SDK',async()=>{const f=fixture();f.state.signedIn=false;assert.equal((await f.post({get json(){throw Error('must not read');}})).status,401);assert.deepEqual(f.state.calls,[]);assert.equal(f.state.clients,0);});
+test('photo upload: unconfigured storage and invalid recipe refuse before decoding',async()=>{for(const mode of ['config','recipe']){const f=fixture();if(mode==='config')delete f.env.R2_BUCKET_NAME;const response=await f.post(f.request(),mode==='recipe'?'bad-id':recipe);assert.equal(response.status,mode==='config'?501:400);assert.deepEqual(f.state.calls,[]);}});
+test('photo upload: malformed, empty, wrong type and oversized input never reserves or uploads',async()=>{for(const body of [null,{},[],{imageBase64:42},{imageBase64:'abc',imageMediaType:'image/gif'},{imageBase64:'a'.repeat(13000000),imageMediaType:'image/jpeg'}]){const f=fixture();assert.equal((await f.post(f.request(body))).status,400);assert.deepEqual(f.state.calls,['body']);}});
+test('photo upload: failed reservation cannot dispatch PUT',async()=>{const f=fixture();f.state.reserve=async()=>{throw Error('private DB details');};await generic(await f.post());assert.deepEqual(f.state.calls,['body','reserve']);assert.equal(f.state.clients,0);assert.equal(f.state.privacy.redactUnexpectedErrors,true);});
+test('photo upload: ownership and quota refusal precede PUT',async()=>{for(const reason of ['not_found','at_limit']){const f=fixture();f.state.reserve=async()=>({ok:false,reason});const response=await f.post();assert.equal(response.status,reason==='not_found'?404:400);assert.equal(response.headers.get('cache-control'),'no-store');assert.deepEqual(f.state.calls,['body','reserve']);}});
+test('photo upload: exact reserved key PUT then atomic attach; confirmed output only',async()=>{const f=fixture();const response=await f.post();assert.equal(response.status,200);assert.deepEqual(f.state.calls,['body','reserve','put','attach']);assert.ok(f.state.key.startsWith(`recipes/${owner}/${recipe}/`));assert.equal(f.state.command.Key,f.state.key);assert.equal(f.state.command.ContentType,'image/jpeg');assert.equal(f.state.photo.key,f.state.key);assert.equal(f.state.photo.url,`https://fixture.invalid/${f.state.key}`);assert.equal((await response.json()).photos.length,1);assert.equal(f.timers.size,0);});
+test('photo upload: SDK failure leaves reservation and never attaches or erases',async()=>{const f=fixture();f.state.send=async()=>{throw Error('private object details');};await generic(await f.post());assert.equal(f.state.registered,true);assert.deepEqual(f.state.calls,['body','reserve','put']);assert.equal(f.timers.size,0);});
+test('photo upload: attachment refusal keeps cleanup reference without immediate erase',async()=>{for(const reason of ['not_found','at_limit']){const f=fixture();f.state.attach=async()=>({ok:false,reason});assert.equal((await f.post()).status,reason==='not_found'?404:400);assert.equal(f.state.registered,true);assert.deepEqual(f.state.calls,['body','reserve','put','attach']);}});
+test('photo upload: uncertain attachment commit must not erase a potentially live object',async()=>{const f=fixture();f.state.attach=async()=>{f.state.possiblyCommitted=true;throw Error('private commit diagnostic');};await generic(await f.post());assert.equal(f.state.possiblyCommitted,true);assert.deepEqual(f.state.calls,['body','reserve','put','attach']);});
+test('photo upload: already-cancelled request dispatches neither reservation nor PUT',async()=>{const f=fixture();f.controller.abort();assert.equal((await f.post()).status,400);assert.deepEqual(f.state.calls,['body']);});
+test('photo upload: cancellation during reservation preserves key but cannot dispatch PUT',async()=>{const f=fixture();f.state.reserve=async()=>{f.state.registered=true;f.controller.abort();return{ok:true};};await generic(await f.post());assert.equal(f.state.registered,true);assert.deepEqual(f.state.calls,['body','reserve']);assert.equal(f.state.clients,0);});
+test('photo upload: deadline aborts SDK; ignored-abort late success never attaches',async()=>{const f=fixture();let finish;f.state.send=()=>new Promise(resolve=>{finish=resolve;});const operation=f.post();await flushed();assert.ok(finish);f.expire();await generic(await operation);assert.equal(f.state.signal.aborted,true);assert.equal(f.state.registered,true);finish();await flushed();assert.deepEqual(f.state.calls,['body','reserve','put']);assert.equal(f.timers.size,0);});
+test('photo upload: in-flight request cancellation aborts SDK and preserves uncertainty',async()=>{const f=fixture();f.state.send=()=>new Promise((_,reject)=>f.state.signal.addEventListener('abort',()=>reject(Error('synthetic abort')),{once:true}));const operation=f.post();await flushed();f.controller.abort();await generic(await operation);assert.equal(f.state.signal.aborted,true);assert.deepEqual(f.state.calls,['body','reserve','put']);});
+test('photo storage: malformed or media-mismatched key never creates SDK client',async()=>{for(const key of ['other/key',`recipes/${owner}/${recipe}/30000000-0000-4000-8000-000000000003.png`]){const f=fixture();await assert.rejects(f.api.uploadReservedRecipePhoto(key,Buffer.from('fixture'),'image/jpeg'));assert.equal(f.state.clients,0);assert.deepEqual(f.state.calls,[]);}});
+
+test('photo upload: slow reservation refuses new PUT well before its eligibility hold',async()=>{const f=fixture();f.state.reserve=async()=>{f.state.registered=true;f.state.now=30001;return{ok:true};};await generic(await f.post());assert.deepEqual(f.state.calls,['body','reserve']);assert.equal(f.state.clients,0);assert.equal(f.state.registered,true);});

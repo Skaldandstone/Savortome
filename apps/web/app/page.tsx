@@ -9,6 +9,7 @@ import {
 } from "@/modules/library";
 import { librarySortOr } from "@seconds/core/format";
 import { loadLibrary } from "@/lib/library";
+import { clerkConfigured } from "@/lib/session";
 import styles from "./layout.module.css";
 import { canUseBeta } from '@/lib/beta';
 import { WoodlandLibrary } from '@/modules/library/WoodlandLibrary';
@@ -64,7 +65,7 @@ export default async function Home({
 
   return (
     <main>
-      <ImportPanel />
+      <ImportPanel clerkEnabled={clerkConfigured()} />
       <section className={styles.section}>
         <h2 className={styles.sectionHeading}>Your recipes</h2>
         <Library shelfId={shelf} query={q ?? ""} sort={sort ?? ""} />
