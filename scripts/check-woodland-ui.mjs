@@ -13,7 +13,10 @@ const woodlandCss = readFileSync(new URL('../apps/web/ui/woodland.css', import.m
 const stubs = {
   'react/jsx-runtime': 'export const jsx=(type,props)=>({type,props}); export const jsxs=jsx; export const Fragment="fragment";',
   react: `export const useState=initial=>{const i=state.cursor++;if(!(i in state.values))state.values[i]=typeof initial==='function'?initial():initial;return [state.values[i],next=>state.values[i]=typeof next==='function'?next(state.values[i]):next];};
-    export const useEffect=fn=>state.effects.push(fn),useMemo=fn=>fn(),useCallback=fn=>fn,useRef=value=>{const i=state.cursor++;return state.refs[i]??=({current:state.refCurrent??value});},useId=()=>"fixture-id";`,
+    export const useEffect=(fn,deps)=>{if(!state.plannerLifecycle){state.effects.push(fn);return;}const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){state.deps[i]=deps;state.effects.push(()=>{state.cleanups[i]?.();state.cleanups[i]=fn();});}};
+    export const useMemo=(fn,deps)=>{if(!state.plannerLifecycle)return fn();const i=state.cursor++;if(!state.deps[i]||deps.some((v,n)=>v!==state.deps[i][n])){state.deps[i]=deps;state.values[i]=fn();}return state.values[i];};
+    export const useCallback=(fn,deps)=>state.plannerLifecycle?useMemo(()=>fn,deps):fn;
+    export const useRef=value=>{const i=state.cursor++;return state.refs[i]??=({current:state.refCurrent??value});},useId=()=>"fixture-id";`,
   'next/link': 'export default function Link(){}',
   'next/navigation': 'export const usePathname=()=>state.pathname; export const useRouter=()=>({refresh:()=>state.refreshes++});',
   'expo-router': 'export const useFocusEffect=fn=>state.focusEffects.push(fn); export const useRouter=()=>({push:path=>state.routes.push(path)});',
@@ -123,6 +126,34 @@ function careFixture(online = true) {
   f.sandbox.navigator.onLine = online;
   const screen = f.app.CareScreen({ link: {} });
   return { ...f, care: () => f.render(screen.type, screen.props) };
+}
+// Read-only planner fixture: render the current account child and commit effects
+// by dependency identity, without seeding private hook positions.
+function plannerReadFixture(overrides = {}) {
+  const f = fixture({ plannerLifecycle: true, deps: [], cleanups: [],
+    responses: { plan: { meals: [] }, library: { recipes: [] }, mySuggestions: { suggestions: [] } }, ...overrides });
+  f.sandbox.AbortController = AbortController;
+  f.sandbox.fetch = async (url, init = {}) => {
+    assert.ok(!init.method || init.method === 'GET', 'Read fixture must not write');
+    const address = new URL(url, 'https://synthetic.invalid');
+    const name = address.pathname === '/api/plan/suggestions' ? 'mySuggestions' : address.pathname === '/api/plan' ? 'plan' : address.pathname === '/api/recipes' ? 'library' : null;
+    assert.ok(name, `Unexpected route ${address.pathname}`);
+    const args = name === 'plan' ? [address.searchParams.get('week')] : [];
+    f.state.calls.push({ name, args });
+    let response;
+    if (f.state.deferMethods?.has(name)) response = await new Promise((resolve, reject) => f.state.pending.push({ name, args, resolve, reject }));
+    else if (f.state.failMethods?.has(name)) return { ok: false, status: 503, json: async () => ({ error: "Couldn't load your recipes." }) };
+    else response = f.state.responses[name];
+    return { ok: true, status: 200, json: async () => response };
+  };
+  const render = () => {
+    const shell = f.app.PlanWeek({ initialWeek: '2026-09-21', clerkEnabled: false });
+    const tree = f.render(shell.type, shell.props);
+    f.state.effects.splice(0).forEach(effect => effect());
+    return tree;
+  };
+  const settle = async () => { for (let i = 0; i < 3; i++) { render(); await new Promise(resolve => setImmediate(resolve)); } return render(); };
+  return { ...f, render, settle };
 }
 const cards = tree => nodes(tree).filter(node => node.type === 'details' && node.props['data-kind']);
 const action = card => nodes(card).find(node => node.type === 'button' && node.props['aria-label']?.startsWith('Add '));
@@ -408,30 +439,17 @@ test('web week-clear confirmation remains open when the write is rejected', asyn
 });
 
 test('failed week loading never renders a false empty planner and retry restores the grid', async () => {
-  const week = '2026-09-21';
-  const f = fixture({
-    failMethods: new Set(['plan']),
-    responses: { plan: { meals: [] }, library: { recipes: [] }, mySuggestions: { suggestions: [] } },
-  });
-  const render = () => f.render(f.app.PlanWeek, { initialWeek: week });
-  render();
-  f.state.effects[0]();
-  await new Promise(resolve => setImmediate(resolve));
-
-  let tree = render();
-  const failedCopy = text(tree).replace(/\s+/g, ' ');
-  assert.match(failedCopy, /saved plan has not changed/i);
+  const f = plannerReadFixture({ failMethods: new Set(['plan']) });
+  let tree = await f.settle();
+  assert.match(text(tree).replace(/\s+/g, ' '), /saved plan has not changed/i);
   assert.equal(nodes(tree).some(node => node.props?.['aria-label']?.startsWith('Add a recipe to')), false);
-  assert.ok(nodes(tree).some(node => text(node) === 'Try this week again'));
-
-  f.state.failMethods.delete('plan');
-  nodes(tree).find(node => text(node) === 'Try this week again').props.onClick();
-  render();
-  f.state.effects.at(-3)();
-  await new Promise(resolve => setImmediate(resolve));
-  tree = render();
+  const retry = nodes(tree).find(node => text(node) === 'Try this week again' && node.props?.onClick);
+  assert.ok(retry);
+  f.state.failMethods.delete('plan'); retry.props.onClick();
+  tree = await f.settle();
   assert.equal(nodes(tree).filter(node => node.type === 'section' && node.props?.['aria-label']).length >= 7, true);
   assert.equal(nodes(tree).filter(node => node.props?.['aria-label']?.startsWith('Add a recipe to')).length, 21);
+  assert.equal(f.state.calls.filter(call => call.name === 'plan').length, 2);
 });
 
 test('recipe picker distinguishes loading and failed requests from an empty library', () => {
@@ -464,55 +482,35 @@ test('recipe picker distinguishes loading and failed requests from an empty libr
   assert.equal(nodes(tree).find(node => node.props?.['aria-label'] === 'Filter your recipes').props.disabled, false);
 });
 
-test('planner passes recipe-library failure and retry state into the open picker', () => {
-  const week = '2026-09-21';
-  const values = [];
-  values[0] = week;
-  values[1] = [];
-  values[2] = [];
-  values[3] = { date: '2026-09-22', slot: 'dinner' };
-  values[13] = week;
-  values[14] = false;
-  values[17] = false;
-  values[18] = false;
-  values[19] = { message: "Couldn't load your recipes.", signInRequired: false };
-  values[20] = 0;
-  const f = fixture({ values });
-
-  const shell = f.render(f.app.PlanWeek, { initialWeek: week });
-  const dialog = nodes(shell).find(node => typeof node.type === 'function' && node.type.name === 'AddMealDialog');
-  assert.equal(dialog.props.loaded, false);
-  assert.equal(dialog.props.loading, false);
+test('planner passes recipe-library failure and retry state into the open picker', async () => {
+  const f = plannerReadFixture({ failMethods: new Set(['library']) });
+  let tree = await f.settle();
+  nodes(tree).find(node => node.props?.['aria-label']?.startsWith('Add a recipe to')).props.onClick();
+  tree = f.render();
+  const dialog = nodes(tree).find(node => typeof node.type === 'function' && node.type.name === 'AddMealDialog');
+  assert.ok(dialog); assert.equal(dialog.props.loaded, false); assert.equal(dialog.props.loading, false);
   assert.match(dialog.props.loadError, /couldn't load/i);
-  dialog.props.onRetry();
-  assert.equal(f.state.values[20], 1);
+  f.state.failMethods.delete('library'); dialog.props.onRetry();
+  tree = await f.settle();
+  const recovered = nodes(tree).find(node => typeof node.type === 'function' && node.type.name === 'AddMealDialog');
+  assert.equal(recovered.props.loaded, true); assert.equal(recovered.props.loadError, null);
+  assert.equal(f.state.calls.filter(call => call.name === 'library').length, 2);
 });
 
 test('a late prior-week response cannot replace the newly selected week', async () => {
-  const week = '2026-09-21';
-  const nextWeek = '2026-09-28';
-  const f = fixture({
-    deferMethods: new Set(['plan']),
-    responses: { library: { recipes: [] }, mySuggestions: { suggestions: [] } },
-  });
-  const render = () => f.render(f.app.PlanWeek, { initialWeek: week });
-  let tree = render();
-  const cancelOld = f.state.effects[0]();
+  const f = plannerReadFixture({ deferMethods: new Set(['plan']) });
+  let tree = f.render();
   nodes(tree).find(node => text(node) === 'Next →' && node.props?.onClick).props.onClick();
-  render();
-  cancelOld();
-  f.state.effects.at(-3)();
-
-  const nextRequest = f.state.pending.find(request => request.name === 'plan' && request.args[0] === nextWeek);
-  const oldRequest = f.state.pending.find(request => request.name === 'plan' && request.args[0] === week);
+  await f.settle();
+  const nextRequest = f.state.pending.find(request => request.name === 'plan' && request.args[0] === '2026-09-28');
+  const oldRequest = f.state.pending.find(request => request.name === 'plan' && request.args[0] === '2026-09-21');
+  assert.ok(nextRequest); assert.ok(oldRequest);
   nextRequest.resolve({ meals: [{ recipeId: 'new', date: '2026-09-29', slot: 'dinner', title: 'New soup', imageUrl: null, totalMinutes: 20 }] });
-  await new Promise(resolve => setImmediate(resolve));
+  await f.settle();
   oldRequest.resolve({ meals: [{ recipeId: 'old', date: '2026-09-22', slot: 'dinner', title: 'Old soup', imageUrl: null, totalMinutes: 20 }] });
-  await new Promise(resolve => setImmediate(resolve));
-
-  tree = render();
-  assert.match(text(tree), /New soup/);
-  assert.doesNotMatch(text(tree), /Old soup/);
+  tree = await f.settle();
+  assert.match(text(tree), /New soup/); assert.doesNotMatch(text(tree), /Old soup/);
+  assert.equal(f.state.calls.filter(call => call.name === 'plan').length, 2);
 });
 
 test('mobile plan removal offers undo and clear-week requires confirmation', async () => {
