@@ -10,4 +10,4 @@ All assets use a 240 x 160 viewBox, transparent outer canvas, rounded 2.5-unit s
 
 When accompanying visible explanatory copy, use `alt=""` and explicit width/height to avoid duplicated screen-reader announcements and layout shifts. For standalone meaningful use, supply a short contextual alt description. These are decorative illustrations, not action icons; do not use them in place of button labels or state/error indicators. The parchment backing provides consistent separation on light and dark surfaces. No animation or motion dependency.
 
-Only the pantry asset is integrated in this checkpoint. Meal-note and recipe assets are available for subsequent UI integration. Native rendering and physical-device acceptance remain separate.
+The pantry and recipe assets are integrated in their respective empty states. The meal-note asset remains available for subsequent UI integration. Native rendering and physical-device acceptance remain separate.
