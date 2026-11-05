@@ -32,6 +32,7 @@ test("pantry memory migration and writes preserve owner isolation and human choi
         title text NOT NULL,
         image_url text,
         total_minutes integer,
+        steps jsonb NOT NULL,
         tags text[] NOT NULL DEFAULT '{}',
         course text
       );
@@ -143,8 +144,8 @@ test("pantry memory migration and writes preserve owner isolation and human choi
     assert.equal(accepted?.confidence, "confirmed");
 
     await pg.exec(`
-      INSERT INTO recipes(id, owner_id, title, total_minutes, tags)
-      VALUES ('00000000-0000-0000-0000-000000000010', '${A}', 'Banana toast', 10, '{vegetarian}');
+      INSERT INTO recipes(id, owner_id, title, total_minutes, tags, steps)
+      VALUES ('00000000-0000-0000-0000-000000000010', '${A}', 'Banana toast', 10, '{vegetarian}', '[{"text":"Toast bread"},{"text":"Add banana"}]');
       INSERT INTO recipe_ingredients(recipe_id, canonical_item, optional) VALUES
         ('00000000-0000-0000-0000-000000000010', 'banana', false),
         ('00000000-0000-0000-0000-000000000010', 'bread', false),
@@ -153,6 +154,7 @@ test("pantry memory migration and writes preserve owner isolation and human choi
     const matches = await searchByPantry(database, A, { ingredients: ["banana", "bread"] });
     assert.deepEqual(matches[0]?.ingredients, ["banana", "bread", "peanut"]);
     assert.equal(matches[0]?.canMakeNow, true);
+    assert.equal(matches[0]?.stepCount, 2);
   } finally {
     await pg.close();
   }
