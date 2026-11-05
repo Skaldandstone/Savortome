@@ -504,3 +504,10 @@ A focused-state guard also blocks callbacks newly rendered while the screen rema
 Web and native review cards now guard pending and completed actions immediately, retain the displayed selection against queued checkbox events, and require the current dismissal confirmation identity. An earlier failed-action callback cannot resend; a freshly rendered explicit retry still works. Cancelled or superseded dismissal callbacks cannot write. Successful completion requires an explicit true result. Existing failed-review copy, editable selection after failure, manual quantity replacement, and confirmation-before-dismissal semantics remain unchanged. No automatic inventory change or persistent recovery policy is introduced.
 
 Twelve new synthetic regressions reproduced duplicate dispatch, pending selection drift, completed-action replay, cancelled/reopened dismissal, and stale failed-action replay on both platforms. The29-case pantry-review suite and61-case woodland suite pass, with web/native typechecking. The existing CI pantry-review command already includes the new cases. The database pending-row lock remains unchanged; these component checks do not establish hosted writes, provider behavior, physical-device acceptance or deployment.
+
+
+### Reject partially malformed pantry review selections
+
+Acceptance parsing now rejects the whole request if any submitted item ID fails the existing item-ID validation. Previously it filtered those entries out and could send only the remaining subset to the transactional writer, changing the reviewed selection silently. Valid IDs retain submitted order and deduplication; empty acceptance and dismissal behavior are unchanged. The API parses before invoking the writer, whose owner/pending-row and selected-item checks remain unchanged. No schema, provider or client workflow change.
+
+Validation: the mixed-selection regression failed before the fix; six focused intake checks and all706 core tests pass, with core typechecking. Hosted writes, deployment and physical-device acceptance are not claimed.
