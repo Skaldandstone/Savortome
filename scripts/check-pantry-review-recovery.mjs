@@ -57,3 +57,44 @@ for (const platform of ['Web','Mobile']) {
   state.cursor=0;state.resurface=false;assert.doesNotMatch(text(context.app[platform+'Pantry'](props)),/Remind me in/);
  });
 }
+
+for (const platform of ['Web', 'Mobile']) {
+ test(`${platform}: queued review actions cannot dispatch twice while pending`, async () => {
+  const f=fixture(platform); let finish; f.state.write=()=>new Promise(resolve=>finish=resolve);
+  const add=button(f.render(),'Add selected items'); click(add); click(add);
+  assert.equal(f.state.calls.length,1); finish(false); await flush();
+ });
+ test(`${platform}: queued checkbox changes cannot alter a pending review selection`, async () => {
+  const f=fixture(platform); let finish; f.state.write=()=>new Promise(resolve=>finish=resolve);
+  const tree=f.render(); click(button(tree,'Add selected items')); f.uncheck(tree);
+  assert.deepEqual(f.checked(f.render()),[true,true]);
+  finish(false); await flush();
+  assert.deepEqual(f.checked(f.render()),[true,true]);
+  assert.deepEqual(Array.from(f.state.calls[0][2]),['banana','oat']);
+ });
+ test(`${platform}: an earlier add callback cannot repeat a completed review`, async () => {
+  const f=fixture(platform); f.state.write=async()=>true;
+  const add=button(f.render(),'Add selected items'); click(add); await flush(); click(add); await flush();
+  assert.equal(f.state.calls.length,1);
+  assert.match(text(f.render()),/Selected groceries added/);
+ });
+ test(`${platform}: cancelled dismissal cannot be sent by its earlier confirmation`, async () => {
+  const f=fixture(platform); click(button(f.render(),'Dismiss'));
+  const tree=f.render(),confirm=button(tree,'Dismiss this review'); click(button(tree,'Keep reviewing'));
+  click(confirm); await flush(); assert.equal(f.state.calls.length,0);
+ });
+}
+
+for (const platform of ['Web', 'Mobile']) {
+ test(`${platform}: failed review requires a freshly rendered retry action`, async () => {
+  const f=fixture(platform); const add=button(f.render(),'Add selected items');
+  click(add); await flush(); click(add); await flush(); assert.equal(f.state.calls.length,1);
+  click(button(f.render(),'Add selected items')); await flush(); assert.equal(f.state.calls.length,2);
+ });
+ test(`${platform}: reopened dismissal rejects the previous confirmation`, async () => {
+  const f=fixture(platform); click(button(f.render(),'Dismiss'));
+  const old=button(f.render(),'Dismiss this review'); click(button(f.render(),'Keep reviewing'));
+  click(button(f.render(),'Dismiss')); click(old); await flush(); assert.equal(f.state.calls.length,0);
+  click(button(f.render(),'Dismiss this review')); await flush(); assert.equal(f.state.calls.length,1);
+ });
+}

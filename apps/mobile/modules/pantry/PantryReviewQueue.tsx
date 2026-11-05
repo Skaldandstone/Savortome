@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { formatAmount, type PantryIntakeView } from "@seconds/core/format";
 import { Button, Callout, radius, space, type as typeScale, usePalette } from "@/ui";
@@ -28,13 +28,24 @@ function ReviewCard({ intake, onResolve }: {
   const [status, setStatus] = useState("");
   const [confirmDismiss, setConfirmDismiss] = useState(false);
   const [completed, setCompleted] = useState(false);
+  // Live guards also cover callbacks queued before disabled UI commits.
+  const flight = useRef(false);
+  const finished = useRef(false);
+  const dismissal = useRef<object | null>(null);
+  const actionVersion = useRef(0);
+  const renderedAction = actionVersion.current;
+  const renderedDismissal = dismissal.current;
   const resolve = async (action: "accept" | "dismiss") => {
+    if (flight.current || finished.current || actionVersion.current !== renderedAction) return;
+    if (action === "dismiss" ? !renderedDismissal || dismissal.current !== renderedDismissal : dismissal.current || selected.length === 0) return;
+    flight.current = true; ++actionVersion.current;
     setBusy(true);
     setError("");
     setStatus("");
     try {
       const saved = await onResolve(intake.id, action, selected);
-      if (saved) {
+      if (saved === true) {
+        finished.current = true; dismissal.current = null;
         setCompleted(true);
         setConfirmDismiss(false);
         setStatus(action === "accept" ? "Selected groceries added to your pantry." : "Review dismissed. No items were added to your pantry.");
@@ -44,6 +55,7 @@ function ReviewCard({ intake, onResolve }: {
     } catch {
       setError("We could not confirm that the review saved. Your selection is still here. Check your pantry before trying again.");
     } finally {
+      flight.current = false;
       setBusy(false);
     }
   };
@@ -65,7 +77,10 @@ function ReviewCard({ intake, onResolve }: {
             accessibilityRole="checkbox"
             accessibilityState={{ checked, disabled: busy || completed }}
             accessibilityLabel={label}
-            onPress={() => setSelected(current => checked ? current.filter(id => id !== item.id) : [...current, item.id])}
+            onPress={() => {
+              if (flight.current || finished.current || actionVersion.current !== renderedAction) return;
+              setSelected(current => current.includes(item.id) ? current.filter(id => id !== item.id) : [...current, item.id]);
+            }}
             style={styles.checkRow}
           >
             <Text style={[styles.check, { color: c.accent }]}>{checked ? "☑" : "☐"}</Text>
@@ -76,14 +91,14 @@ function ReviewCard({ intake, onResolve }: {
       <Text style={[styles.note, { color: c.textMuted }]}>Confirming replaces an existing displayed quantity. You can correct it afterward.</Text>
       <View style={styles.actions}>
         <Button label={busy ? "Saving review…" : "Add selected items"} busy={busy} disabled={busy || completed || confirmDismiss || selected.length === 0} onPress={() => void resolve("accept")} />
-        <Button label="Dismiss" variant="ghost" disabled={busy || completed} onPress={() => { setConfirmDismiss(true); setError(""); }} />
+        <Button label="Dismiss" variant="ghost" disabled={busy || completed} onPress={() => { if (flight.current || finished.current || actionVersion.current !== renderedAction) return; if (dismissal.current) return; dismissal.current = {}; setConfirmDismiss(true); setError(""); }} />
       </View>
       {confirmDismiss ? (
         <View style={{ gap: space.sm }}>
           <Text style={{ color: c.text }}>Dismiss this review without adding any items? You can keep it here to review later.</Text>
           <View style={styles.actions}>
             <Button label="Dismiss this review" busy={busy} disabled={busy} onPress={() => void resolve("dismiss")} />
-            <Button label="Keep reviewing" variant="ghost" disabled={busy} onPress={() => { setConfirmDismiss(false); setError(""); }} />
+            <Button label="Keep reviewing" variant="ghost" disabled={busy} onPress={() => { if (flight.current || finished.current || actionVersion.current !== renderedAction) return; if (!renderedDismissal || dismissal.current !== renderedDismissal) return; dismissal.current = null; setConfirmDismiss(false); setError(""); }} />
           </View>
         </View>
       ) : null}

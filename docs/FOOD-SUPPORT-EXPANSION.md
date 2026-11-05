@@ -497,3 +497,10 @@ The native mutation runner now checks the mounted and focused state, current wee
 Validation: six focused native planner cases and the complete61-case woodland suite pass locally, with native typechecking. Focused cases are included in the existing CI step. Synthetic focus callbacks do not establish physical-device behavior or deployment; those acceptance gates remain open.
 
 A focused-state guard also blocks callbacks newly rendered while the screen remains blurred, such as after a theme update; a separate regression reproduced this offscreen dispatch.
+
+
+### Pantry review action and selection guards
+
+Web and native review cards now guard pending and completed actions immediately, retain the displayed selection against queued checkbox events, and require the current dismissal confirmation identity. An earlier failed-action callback cannot resend; a freshly rendered explicit retry still works. Cancelled or superseded dismissal callbacks cannot write. Successful completion requires an explicit true result. Existing failed-review copy, editable selection after failure, manual quantity replacement, and confirmation-before-dismissal semantics remain unchanged. No automatic inventory change or persistent recovery policy is introduced.
+
+Twelve new synthetic regressions reproduced duplicate dispatch, pending selection drift, completed-action replay, cancelled/reopened dismissal, and stale failed-action replay on both platforms. The29-case pantry-review suite and61-case woodland suite pass, with web/native typechecking. The existing CI pantry-review command already includes the new cases. The database pending-row lock remains unchanged; these component checks do not establish hosted writes, provider behavior, physical-device acceptance or deployment.
