@@ -306,41 +306,69 @@ test('a late discover response cannot replace the newer search', async () => {
   cleanup();
 });
 
-test('saved meals distinguish load failure from empty and retain a meal after failed deletion', async () => {
+for (const failure of ['false receipt', 'rejected request']) test(`saved meals distinguish failed reads and require review of unconfirmed deletion (${failure})`, async () => {
   const meal = { id: 'meal-1', name: 'Sunday dinner', visibility: 'private', items: [] };
-  const f = fixture({ failMethods: new Set(['myTemplates']), responses: { myTemplates: { templates: [meal] }, deleteTemplate: { ok: true } } });
-  const render = () => f.render(f.app.TemplateList);
+  const f = fixture({ plannerLifecycle: true, deps: [], cleanups: [] });
+  f.sandbox.AbortController = AbortController;
+  let failRead = true, deleteResponse = { ok: false };
+  const requests = [];
+  f.sandbox.fetch = async (url, init = {}) => {
+    const method = init.method ?? 'GET';
+    requests.push({ url, method });
+    if (method === 'GET') {
+      assert.equal(url, '/api/templates');
+      return { ok: !failRead, status: failRead ? 503 : 200, json: async () => ({ templates: [meal] }) };
+    }
+    assert.equal(method, 'DELETE'); assert.equal(url, '/api/templates/meal-1');
+    const rejected = !deleteResponse.ok && failure === 'rejected request';
+    return { ok: !rejected, status: rejected ? 503 : 200, json: async () => deleteResponse };
+  };
+  const render = () => {
+    const shell = f.app.TemplateList({ clerkEnabled: false });
+    const tree = f.render(shell.type, shell.props);
+    f.state.effects.splice(0).forEach(effect => effect());
+    return tree;
+  };
+  const settle = async () => { for (let i = 0; i < 3; i++) { render(); await new Promise(resolve => setImmediate(resolve)); } return render(); };
+  const deletes = () => requests.filter(r => r.method === 'DELETE').length;
   assert.match(text(render()), /Loading saved meals/);
-  f.state.effects[0]();
-  await new Promise(resolve => setImmediate(resolve));
-
-  let tree = render();
+  let tree = await settle();
   assert.match(text(tree), /saved meals have not been changed/i);
   assert.doesNotMatch(text(tree), /Nothing saved yet/);
-  f.state.failMethods.delete('myTemplates');
-  nodes(tree).find(node => node.props?.onClick && text(node) === 'Try again').props.onClick();
-  render();
-  f.state.effects.at(-1)();
-  await new Promise(resolve => setImmediate(resolve));
-
-  tree = render();
+  failRead = false;
+  plannerButton(tree, 'Try again').props.onClick();
+  tree = await settle();
   assert.match(text(tree), /Sunday dinner/);
-  nodes(tree).find(node => node.props?.['aria-label'] === 'Delete Sunday dinner').props.onClick();
-  tree = render();
+  const openDelete = () => nodes(tree).find(node => node.props?.['aria-label'] === 'Delete Sunday dinner').props.onClick();
+  openDelete(); tree = render();
   assert.match(text(tree), /stops its shared link from working/i);
-  f.state.failMethods.add('deleteTemplate');
-  nodes(tree).find(node => node.props?.onClick && text(node) === 'Delete saved meal').props.onClick();
-  await new Promise(resolve => setImmediate(resolve));
-  tree = render();
-  assert.match(text(tree), /still saved/i);
-  assert.match(text(tree), /Sunday dinner/);
-
-  f.state.failMethods.delete('deleteTemplate');
-  nodes(tree).find(node => node.props?.onClick && text(node) === 'Delete saved meal').props.onClick();
-  await new Promise(resolve => setImmediate(resolve));
-  tree = render();
+  assert.equal(deletes(), 0);
+  const confirm = plannerButton(tree, 'Delete saved meal');
+  confirm.props.onClick(); confirm.props.onClick();
+  tree = await settle();
+  assert.equal(deletes(), 1);
+  assert.match(text(tree), /may already be deleted/i);
+  assert.doesNotMatch(text(tree), /still saved|was deleted/i);
+  assert.ok(nodes(tree).some(node => node.type === 'h3' && text(node) === meal.name));
+  assert.equal(plannerButton(tree, 'Delete saved meal').props.disabled, true);
+  plannerButton(tree, 'Delete saved meal').props.onClick();
+  await settle(); assert.equal(deletes(), 1);
+  plannerButton(tree, 'Reload saved meals to review deletion').props.onClick();
+  tree = await settle();
+  assert.match(text(tree), /does not undo or cancel/);
+  assert.equal(deletes(), 1);
+  assert.equal(nodes(tree).some(node => node.props?.onClick && text(node) === 'Delete saved meal'), false);
+  // A fresh read still contains this meal. A new explicit confirmation is required.
+  openDelete(); tree = render(); deleteResponse = { ok: true };
+  plannerButton(tree, 'Delete saved meal').props.onClick();
+  tree = await settle();
   assert.match(text(tree), /Sunday dinner was deleted/);
   assert.equal(nodes(tree).some(node => node.props?.['aria-label'] === 'Delete Sunday dinner'), false);
+  assert.deepEqual(requests, [
+    { url: '/api/templates', method: 'GET' }, { url: '/api/templates', method: 'GET' },
+    { url: '/api/templates/meal-1', method: 'DELETE' }, { url: '/api/templates', method: 'GET' },
+    { url: '/api/templates/meal-1', method: 'DELETE' },
+  ]);
 });
 
 test('journal page headings remain server-gated and contain a native h1 when allowed', async () => {
