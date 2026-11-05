@@ -521,6 +521,42 @@ for (const action of ['remove', 'accept suggestion']) test(`an earlier planner $
     : { url: '/api/plan/suggestions/suggestion-1', method: 'POST', payload: { action: 'accept' } });
 });
 
+for (const leave of ['change week', 'unmount']) test(`an earlier planner removal cannot write after ${leave}`, async () => {
+  const meal = { recipeId: '11111111-1111-4111-8111-111111111111', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
+  const f = plannerMutationFixture(meal);
+  let tree = await f.settle();
+  const remove = nodes(tree).find(node => node.props?.['aria-label'] === 'Remove Bean soup from Tue 22 Sep');
+  assert.equal(remove.props.disabled, false);
+  if (leave === 'change week') {
+    f.state.responses.plan = { meals: [] };
+    plannerButton(tree, 'Next →').props.onClick();
+    tree = await f.settle();
+    assert.equal(f.state.calls.filter(call => call.name === 'plan').at(-1).args[0], '2026-09-28');
+  } else {
+    f.state.cleanups.forEach(cleanup => cleanup?.());
+  }
+  remove.props.onClick();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(f.state.writes.length, 0, 'A callback from a departed planner view must not dispatch');
+});
+
+test('an earlier planner suggestion callback cannot write after unmount', async () => {
+  const f = plannerReadFixture();
+  f.state.responses.mySuggestions = { suggestions: [{ id: 'suggestion-1', recipeId: 'recipe-1', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', suggestedBy: { displayName: 'Sam' } }] };
+  const read = f.sandbox.fetch, writes = [];
+  f.sandbox.fetch = async (url, init = {}) => {
+    if (!init.method || init.method === 'GET') return read(url, init);
+    writes.push(url); return { ok: true, status: 200, json: async () => ({ ok: true }) };
+  };
+  const tree = await f.settle();
+  const accept = plannerButton(tree, 'Accept');
+  assert.equal(accept.props.disabled, false);
+  f.state.cleanups.forEach(cleanup => cleanup?.());
+  accept.props.onClick();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(writes, []);
+});
+
 test('failed week loading never renders a false empty planner and retry restores the grid', async () => {
   const f = plannerReadFixture({ failMethods: new Set(['plan']) });
   let tree = await f.settle();

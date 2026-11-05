@@ -481,3 +481,10 @@ No new schema, dependency, permission, provider, storage/retention policy or dep
 The shared planner mutation runner and suggestion response handler now check the live uncertainty flag before sending, in addition to the rendered disabled state and in-flight guard. An earlier enabled callback can otherwise repeat a request after failure settles but before the next render. Synthetic regression cases reproduced two writes for both removal and suggestion acceptance before the fix and now require exactly one, with exact request payload checks. Existing reload-and-review acknowledgement remains the only way to unlock an unconfirmed result.
 
 Validation: four focused planner cases, the complete 53-case woodland suite, and web typechecking pass locally. The focused planner regressions are included in the existing CI food recovery step. No schema, provider or deployment change; browser scheduling and physical-device acceptance remain distinct from these synthetic component checks.
+
+
+### Web planner departure guards
+
+Planner writes now check that the account view is still mounted and that a meal mutation belongs to the currently selected week before dispatch. Suggestion responses also require the view to remain mounted. Earlier callbacks previously sent writes after week navigation or unmount even though their late results were ignored. Three synthetic cases reproduced that dispatch and now require zero requests; existing current-view success and uncertain-review behavior remains covered.
+
+Validation: seven focused planner checks (included by the existing CI filter), the complete56-case woodland suite, and web typechecking. These are source/component checks, not authenticated browser or physical-device acceptance. No schema, provider or deployment change.
