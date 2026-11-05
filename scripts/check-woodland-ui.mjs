@@ -690,6 +690,46 @@ test('mobile plan removal offers undo and clear-week requires confirmation', asy
 
 });
 
+for (const leave of ['change week', 'blur', 'unmount', 'refocus']) test(`an earlier native planner removal cannot write after ${leave}`, async () => {
+  const week = '2026-09-21';
+  const meal = { recipeId: 'recipe-1', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
+  const f = fixture({ plannerLifecycle: true, deps: [], cleanups: [] });
+  const writes = [];
+  const client = {
+    async plan(selectedWeek) { return { meals: selectedWeek === week ? [meal] : [] }; },
+    async library() { return { recipes: [] }; },
+    async planRemove(...args) { writes.push(args); return { meals: [] }; },
+  };
+  let focused, blur;
+  const render = () => {
+    const tree = f.render(f.app.MobilePlanScreen, { initialWeek: week, client });
+    f.state.effects.splice(0).forEach(effect => effect());
+    const focus = f.state.focusEffects.splice(0).at(-1);
+    if (focus && focus !== focused) { blur?.(); focused = focus; blur = focus(); }
+    return tree;
+  };
+  const settle = async () => { for (let i = 0; i < 3; i++) { render(); await new Promise(resolve => setImmediate(resolve)); } return render(); };
+  let tree = await settle();
+  const remove = nodes(tree).find(node => node.props?.accessibilityLabel === 'Remove Bean soup from Tue 22 Sep');
+  assert.equal(remove.props.disabled, false);
+  if (leave === 'change week') {
+    nodes(tree).find(node => node.props?.accessibilityLabel === 'Next week').props.onPress();
+    await settle();
+  } else {
+    blur();
+    if (leave === 'unmount') f.state.cleanups.forEach(cleanup => cleanup?.());
+    if (leave === 'refocus') { blur = focused(); tree = await settle(); }
+  }
+  remove.props.onPress();
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(writes, [], 'A departed native view must not send a meal removal');
+  if (leave === 'refocus') {
+    nodes(tree).find(node => node.props?.accessibilityLabel === 'Remove Bean soup from Tue 22 Sep').props.onPress();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepEqual(JSON.parse(JSON.stringify(writes)), [[meal.recipeId, meal.date, meal.slot, week]]);
+  }
+});
+
 test('pantry memory shows sourced guidance and keeps every correction explicit', async () => {
   const f = fixture();
   const updates = [];

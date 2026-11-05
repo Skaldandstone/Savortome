@@ -488,3 +488,10 @@ Validation: four focused planner cases, the complete 53-case woodland suite, and
 Planner writes now check that the account view is still mounted and that a meal mutation belongs to the currently selected week before dispatch. Suggestion responses also require the view to remain mounted. Earlier callbacks previously sent writes after week navigation or unmount even though their late results were ignored. Three synthetic cases reproduced that dispatch and now require zero requests; existing current-view success and uncertain-review behavior remains covered.
 
 Validation: seven focused planner checks (included by the existing CI filter), the complete56-case woodland suite, and web typechecking. These are source/component checks, not authenticated browser or physical-device acceptance. No schema, provider or deployment change.
+
+
+### Native planner departure guards
+
+The native mutation runner now checks the mounted state, current week, and focus-visit identity captured by the rendered callback before dispatch. Reproductions showed stale removal callbacks sending after week navigation, blur, and unmount; the new cases require zero writes, including an older callback after refocus. A newly rendered callback after refocus remains usable and sends the exact intended payload. Existing uncertainty locks and confirmation flow are unchanged.
+
+Validation: five focused native planner cases and the complete60-case woodland suite pass locally, with native typechecking. Focused cases are included in the existing CI step. Synthetic focus callbacks do not establish physical-device behavior or deployment; those acceptance gates remain open.
