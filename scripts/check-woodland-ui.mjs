@@ -155,6 +155,31 @@ function plannerReadFixture(overrides = {}) {
   const settle = async () => { for (let i = 0; i < 3; i++) { render(); await new Promise(resolve => setImmediate(resolve)); } return render(); };
   return { ...f, render, settle };
 }
+// Writes are intercepted only in this explicit mutation fixture; reads still use
+// the read-only fixture and real client. Record wire payloads, not mock method args.
+function plannerMutationFixture(meal) {
+  const f = plannerReadFixture();
+  f.state.responses.plan = { meals: [meal] };
+  const read = f.sandbox.fetch;
+  f.state.writes = [];
+  f.sandbox.fetch = async (url, init = {}) => {
+    if (!init.method || init.method === 'GET') return read(url, init);
+    assert.equal(init.method, 'POST');
+    assert.ok(['/api/plan', '/api/plan/meal'].includes(url));
+    const payload = JSON.parse(init.body);
+    f.state.writes.push({ url, payload });
+    if (f.state.rejectWrite) return { ok: false, status: 503, json: async () => ({ error: 'Could not confirm this change.' }) };
+    const meals = url === '/api/plan/meal' ? [meal] : [];
+    f.state.responses.plan = { meals };
+    return { ok: true, status: 200, json: async () => ({ meals }) };
+  };
+  return f;
+}
+const plannerButton = (tree, label) => {
+  const button = nodes(tree).find(n => text(n) === label && n.props?.onClick);
+  assert.ok(button, `Missing planner control: ${label}`);
+  return button;
+};
 const cards = tree => nodes(tree).filter(node => node.type === 'details' && node.props['data-kind']);
 const action = card => nodes(card).find(node => node.type === 'button' && node.props['aria-label']?.startsWith('Add '));
 
@@ -377,65 +402,66 @@ test('getting started gives one useful decision at a time and saves resumable pr
   assert.ok(nodes(tree).some(n => n.type === 'h1' && text(n) === 'Your kitchen is ready when you are'));
 });
 
-test('web meal removal offers focused undo and keeps it available after a failed restore', async () => {
-  const week = '2026-09-21';
-  const meal = { recipeId: 'recipe-1', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
-  const values = [];
-  values[0] = week;
-  values[1] = [meal];
-  values[13] = week;
-  values[14] = false;
-  const f = fixture({ values, responses: { planRemove: { meals: [] }, planAdd: { meals: [meal] } } });
-  const render = () => f.render(f.app.PlanWeek, { initialWeek: week });
-
-  nodes(render()).find(n => n.props?.['aria-label'] === 'Remove Bean soup from Tue 22 Sep').props.onClick();
-  await new Promise(resolve => setImmediate(resolve));
-  let tree = render();
+test('web meal removal offers focused undo and requires review after unconfirmed restore', async () => {
+  const meal = { recipeId: '11111111-1111-4111-8111-111111111111', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
+  const f = plannerMutationFixture(meal);
+  const remove = tree => nodes(tree).find(n => n.props?.['aria-label'] === 'Remove Bean soup from Tue 22 Sep');
+  let tree = await f.settle();
+  remove(tree).props.onClick();
+  tree = await f.settle();
   assert.match(text(tree).replace(/\s+/g, ' '), /Removed Bean soup from dinner on Tue 22 Sep/);
-  let undo = nodes(tree).find(n => n.type === 'button' && text(n) === 'Undo');
-  assert.equal(undo.props.autoFocus, true);
-
-  f.state.failMethods = new Set(['planAdd']);
-  undo.props.onClick();
-  await new Promise(resolve => setImmediate(resolve));
-  tree = render();
-  assert.ok(nodes(tree).some(n => n.props?.role === 'alert'));
-  assert.ok(nodes(tree).some(n => n.type === 'button' && text(n) === 'Undo'));
-
-  f.state.failMethods.delete('planAdd');
-  nodes(tree).find(n => n.type === 'button' && text(n) === 'Undo').props.onClick();
-  await new Promise(resolve => setImmediate(resolve));
-  tree = render();
-  assert.match(text(tree).replace(/\s+/g, ' '), /Bean soup is back on Tue 22 Sep/);
+  assert.equal(plannerButton(tree, 'Undo').props.autoFocus, true);
+  // Confirmed undo retains the original day/slot and uses the reviewed endpoint.
+  plannerButton(tree, 'Undo').props.onClick();
+  tree = await f.settle();
+  assert.match(text(tree), /Bean soup.*is back on/);
   assert.equal(nodes(tree).some(n => n.type === 'button' && text(n) === 'Undo'), false);
-  nodes(tree).find(n => n.type === 'button' && text(n) === 'Clear the week').props.onClick();
-  tree = render();
-  assert.doesNotMatch(text(tree).replace(/\s+/g, ' '), /Bean soup is back on Tue 22 Sep/);
-  assert.deepEqual(JSON.parse(JSON.stringify(f.state.calls.filter(call => call.name.startsWith('plan')))), [
-    { name: 'planRemove', args: ['recipe-1', '2026-09-22', 'dinner', week] },
-    { name: 'planAdd', args: ['recipe-1', '2026-09-22', 'dinner', week] },
-    { name: 'planAdd', args: ['recipe-1', '2026-09-22', 'dinner', week] },
+  remove(tree).props.onClick();
+  tree = await f.settle();
+  assert.doesNotMatch(text(tree), /is back on/);
+  f.state.rejectWrite = true;
+  plannerButton(tree, 'Undo').props.onClick();
+  tree = await f.settle();
+  assert.ok(nodes(tree).some(n => n.props?.role === 'alert'));
+  const undo = plannerButton(tree, 'Undo');
+  assert.equal(undo.props.disabled, true);
+  undo.props.onClick(); // Even a queued event must not resend an uncertain write.
+  tree = await f.settle();
+  assert.equal(f.state.writes.length, 4);
+  assert.equal(plannerButton(tree, 'I reviewed the result; allow further changes').props.disabled, true);
+  plannerButton(tree, 'Reload plan and suggestions to review').props.onClick();
+  tree = await f.settle();
+  // A fresh plan replaces the local undo preview, without repeating its write.
+  assert.equal(nodes(tree).some(n => n.type === 'button' && text(n) === 'Undo'), false);
+  assert.equal(plannerButton(tree, 'I reviewed the result; allow further changes').props.disabled, false);
+  plannerButton(tree, 'I reviewed the result; allow further changes').props.onClick();
+  tree = await f.settle();
+  assert.match(text(tree), /No request was repeated and nothing was undone/);
+  assert.equal(nodes(tree).some(n => n.type === 'button' && text(n) === 'Undo'), false);
+  const removePayload = { action: 'remove', recipeId: meal.recipeId, date: meal.date, slot: meal.slot, week: '2026-09-21' };
+  const addPayload = { recipeId: meal.recipeId, date: meal.date, slot: meal.slot };
+  assert.deepEqual(f.state.writes, [
+    { url: '/api/plan', payload: removePayload }, { url: '/api/plan/meal', payload: addPayload },
+    { url: '/api/plan', payload: removePayload }, { url: '/api/plan/meal', payload: addPayload },
   ]);
 });
 
 test('web week-clear confirmation remains open when the write is rejected', async () => {
-  const week = '2026-09-21';
-  const meal = { recipeId: 'recipe-1', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
-  const values = [];
-  values[0] = week;
-  values[1] = [meal];
-  values[13] = week;
-  values[14] = false;
-  const f = fixture({ values, responses: { planClearWeek: { meals: [] } }, failMethods: new Set(['planClearWeek']) });
-  const render = () => f.render(f.app.PlanWeek, { initialWeek: week });
-  nodes(render()).find(n => n.type === 'button' && text(n) === 'Clear the week').props.onClick();
-  let tree = render();
-  assert.equal(f.state.calls.length, 0);
-  nodes(tree).find(n => typeof n.type === 'function' && text(n) === 'Clear every meal').props.onClick();
-  await new Promise(resolve => setImmediate(resolve));
-  tree = render();
-  assert.ok(nodes(tree).some(n => typeof n.type === 'function' && text(n) === 'Clear every meal'));
+  const meal = { recipeId: '11111111-1111-4111-8111-111111111111', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
+  const f = plannerMutationFixture(meal);
+  let tree = await f.settle();
+  plannerButton(tree, 'Clear the week').props.onClick();
+  tree = f.render();
+  assert.equal(f.state.writes.length, 0);
+  f.state.rejectWrite = true;
+  plannerButton(tree, 'Clear every meal').props.onClick();
+  tree = await f.settle();
   assert.ok(nodes(tree).some(n => n.props?.role === 'alert'));
+  assert.equal(plannerButton(tree, 'Clear every meal').props.disabled, true);
+  assert.match(text(tree), /Bean soup/);
+  plannerButton(tree, 'Clear every meal').props.onClick();
+  await f.settle();
+  assert.deepEqual(f.state.writes, [{ url: '/api/plan', payload: { action: 'clearWeek', week: '2026-09-21' } }]);
 });
 
 test('failed week loading never renders a false empty planner and retry restores the grid', async () => {
