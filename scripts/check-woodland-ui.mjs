@@ -918,7 +918,7 @@ test('narrow care cards reserve an art column only when an illustration exists',
   assert.match(careCss, /\.cardSummary:has\(\.foodArt\)\s*\{\s*grid-template-columns:minmax\(96px,35%\) minmax\(0,1fr\) 20px;/);
 });
 
-test('secondary planning, pairing, and shelf controls retain explicit accessible names', () => {
+test('secondary planning, pairing, and shelf controls retain explicit accessible names', async () => {
   const friend = fixture({
     values: [[{ id: 'friend-1', displayName: 'Sam' }], 'friend-1', '2026-08-31', 'dinner', 'idle', null, []],
   });
@@ -929,24 +929,40 @@ test('secondary planning, pairing, and shelf controls retain explicit accessible
     ['Friend to suggest this meal to', 'Suggested meal date', 'Suggested meal slot'],
   );
 
-  const candidate = { id: 'side-1', title: 'Garden greens', imageUrl: null, nutrition: null };
-  const pairings = fixture({
-    values: [
-      { side: [candidate], drink: [], dessert: [] },
-      { side: candidate.id, drink: null, dessert: null },
-      4,
-      '',
-      'failed',
-      'Fixture save failure',
-    ],
-  });
-  const pairingTree = pairings.render(pairings.app.PairingSuggestions, {
-    recipeId: 'recipe-1', mainNutrition: null, servings: 4,
-  });
+  const mainId = '11111111-1111-4111-8111-111111111111';
+  const candidate = { id: '22222222-2222-4222-8222-222222222222', title: 'Garden greens', imageUrl: null, nutrition: null };
+  const pairings = fixture({ plannerLifecycle: true, deps: [], cleanups: [] });
+  pairings.sandbox.AbortController = AbortController;
+  const requestId = '33333333-3333-4333-8333-333333333333';
+  pairings.sandbox.crypto = { randomUUID: () => requestId };
+  const writes = [];
+  pairings.sandbox.fetch = async (url, init = {}) => {
+    if (!init.method) {
+      assert.equal(url, `/api/recipes/${mainId}/pairings`);
+      return { ok: true, status: 200, json: async () => ({ side: [candidate], drink: [], dessert: [] }) };
+    }
+    assert.equal(url, '/api/templates'); assert.equal(init.method, 'POST');
+    writes.push(JSON.parse(init.body));
+    return { ok: false, status: 503, json: async () => ({}) };
+  };
+  const shell = pairings.app.PairingSuggestions({ clerkEnabled: false, recipeId: mainId, mainNutrition: null, servings: 4 });
+  const render = () => {
+    const tree = pairings.render(shell.type, shell.props);
+    pairings.state.effects.splice(0).forEach(effect => effect());
+    return tree;
+  };
+  render(); await new Promise(resolve => setImmediate(resolve));
+  let pairingTree = render();
   const pairingInputs = nodes(pairingTree).filter(node => node.type === 'input');
   assert.equal(pairingInputs.find(input => input.props.type === 'checkbox').props['aria-label'], 'Include Garden greens as a side in this meal');
-  assert.equal(pairingInputs.find(input => input.props.type === 'text').props['aria-label'], 'Meal name');
-  assert.ok(nodes(pairingTree).some(node => node.props?.role === 'alert' && text(node) === 'Fixture save failure'));
+  const name = pairingInputs.find(input => input.props.type === 'text');
+  assert.equal(name.props['aria-label'], 'Meal name');
+  name.props.onChange({ target: { value: 'Sunday dinner' } });
+  pairingTree = render();
+  await plannerButton(pairingTree, 'Save this meal').props.onClick();
+  pairingTree = render();
+  assert.ok(nodes(pairingTree).some(node => node.props?.role === 'alert' && /could not confirm the meal/i.test(text(node))));
+  assert.deepEqual(writes, [{ id: requestId, name: 'Sunday dinner', items: [{ role: 'main', recipeId: mainId }, { role: 'side', recipeId: candidate.id }] }]);
 
   const shelves = fixture({ values: [true, ''] });
   const shelfTree = shelves.render(shelves.app.ShelfChecklist, {
