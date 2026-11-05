@@ -34,6 +34,8 @@ export function PantryList({
   const [savingAmount, setSavingAmount] = useState(false);
   const [amountError, setAmountError] = useState<string | null>(null);
   const amountFlight = useRef(false);
+  const amountRequest = useRef<PantryEntryUpdate | null>(null);
+  const currentItems = useRef(items); currentItems.current = items;
   const amountVersion = useRef(0);
   const renderedAmountVersion = amountVersion.current;
   const [clearing, setClearing] = useState(false);
@@ -76,7 +78,7 @@ export function PantryList({
   };
 
   const startAmountEdit = (item: PantryEntry) => {
-    if (!mounted.current || amountFlight.current) return;
+    if (!mounted.current || amountFlight.current || amountRequest.current) return;
     ++amountVersion.current; setAmountError(null);
     setEditingAmount(item.canonicalItem);
     setRemainingAmount(item.quantity === null ? "" : String(item.quantity));
@@ -86,22 +88,36 @@ export function PantryList({
     if (!mounted.current || amountFlight.current || renderedAmountVersion !== amountVersion.current) return;
     const quantity = Number(remainingAmount);
     if (!Number.isFinite(quantity) || quantity <= 0) return;
+    const current = currentItems.current.find(value => value.canonicalItem === item.canonicalItem);
+    if (!current || current.unit !== (amountRequest.current ? amountRequest.current.unit : item.unit)) {
+      setAmountError("This item or its unit changed. Cancel this local correction and review the latest pantry before entering another amount."); return;
+    }
+    amountRequest.current ??= { canonicalItem: item.canonicalItem, quantity, unit: item.unit, confirmPresent: true };
     amountFlight.current = true; setSavingAmount(true); setAmountError(null);
     try {
-      const saved = await onUpdate({ canonicalItem: item.canonicalItem, quantity, unit: item.unit, confirmPresent: true });
+      const saved = await onUpdate({ ...amountRequest.current });
       if (!mounted.current) return;
       if (saved !== true) throw new Error("Unconfirmed amount");
-      ++amountVersion.current; setEditingAmount(null); setRemainingAmount("");
+      amountRequest.current = null; ++amountVersion.current; setEditingAmount(null); setRemainingAmount("");
     } catch {
-      if (mounted.current) setAmountError("We could not confirm the amount saved. Check your pantry before trying again; your correction is still here.");
+      if (mounted.current) setAmountError("We could not confirm the amount saved. Your exact correction is kept while this form is open. Check your pantry before retrying. Cancel only discards this local correction; it cannot undo an earlier request.");
     } finally {
       amountFlight.current = false;
       if (mounted.current) setSavingAmount(false);
     }
   };
 
+  const cancelAmount = () => {
+    if (!mounted.current || amountFlight.current || renderedAmountVersion !== amountVersion.current) return;
+    amountRequest.current = null; ++amountVersion.current; setEditingAmount(null); setRemainingAmount(""); setAmountError(null);
+  };
+
   return (
     <>
+      {editingAmount && !items.some(item => item.canonicalItem === editingAmount) ? <div role="group" aria-label="Unfinished amount correction">
+        <p>The edited item no longer appears in the latest pantry. Your local correction ({remainingAmount}) is still here. Cancelling cannot undo an earlier request.</p>
+        <Button type="button" variant="ghost" disabled={savingAmount} onClick={cancelAmount}>Cancel local correction</Button>
+      </div> : null}
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -186,12 +202,12 @@ export function PantryList({
                         step="any"
                         inputMode="decimal"
                         value={remainingAmount}
-                        onChange={event => { if (mounted.current && !amountFlight.current && renderedAmountVersion === amountVersion.current) setRemainingAmount(event.target.value); }}
-                        disabled={savingAmount}
+                        onChange={event => { if (mounted.current && !amountFlight.current && !amountRequest.current && renderedAmountVersion === amountVersion.current) setRemainingAmount(event.target.value); }}
+                        disabled={savingAmount || !!amountRequest.current}
                         required
                       />
                       <Button type="submit" disabled={savingAmount || !Number.isFinite(Number(remainingAmount)) || Number(remainingAmount) <= 0}>{savingAmount ? "Saving…" : "Save amount"}</Button>
-                      <Button type="button" variant="ghost" disabled={savingAmount} onClick={() => { if (mounted.current && !amountFlight.current && renderedAmountVersion === amountVersion.current) { ++amountVersion.current; setEditingAmount(null); setAmountError(null); } }}>Cancel</Button>
+                      <Button type="button" variant="ghost" disabled={savingAmount} onClick={cancelAmount}>Cancel</Button>
                       {amountError ? <p role="alert">{amountError}</p> : null}
                     </form>
                   ) : null}
