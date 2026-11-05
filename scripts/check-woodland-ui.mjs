@@ -755,17 +755,17 @@ test('pantry and grocery reviews load independently and retry without erasing pa
     acquiredAt: '2026-09-24T00:00:00.000Z', status: 'pending', createdAt: '2026-09-24T00:00:00.000Z',
     items: [],
   };
-  const f = fixture({
+  const f = fixture({ plannerLifecycle: true, deps: [], cleanups: [],
     failMethods: new Set(['listPantryIntakes']),
     responses: { listPantry: [banana], listPantryIntakes: [intake] },
   });
-  const render = () => f.render(f.app.usePantry);
-  render();
-  f.state.effects[0]();
-  f.state.effects[1]();
-  await new Promise(resolve => setImmediate(resolve));
-
-  let controller = render();
+  const render = () => {
+    const controller = f.render(() => f.app.usePantry());
+    f.state.effects.splice(0).forEach(effect => effect());
+    return controller;
+  };
+  const settle = async () => { for (let i = 0; i < 3; i++) { render(); await new Promise(resolve => setImmediate(resolve)); } return render(); };
+  let controller = await settle();
   assert.equal(controller.loaded, true);
   assert.equal(controller.items[0].canonicalItem, 'banana');
   assert.equal(controller.pantryError, null);
@@ -774,22 +774,18 @@ test('pantry and grocery reviews load independently and retry without erasing pa
 
   f.state.failMethods.delete('listPantryIntakes');
   controller.retryIntakes();
-  render();
-  f.state.effects.at(-1)();
-  await new Promise(resolve => setImmediate(resolve));
-  controller = render();
+  controller = await settle();
   assert.equal(controller.intakesLoaded, true);
   assert.equal(controller.intakes[0].sourceLabel, 'Market');
 
   f.state.failMethods.add('listPantry');
   controller.retryPantry();
-  render();
-  f.state.effects.at(-2)();
-  await new Promise(resolve => setImmediate(resolve));
-  controller = render();
+  controller = await settle();
   assert.equal(controller.loaded, true);
   assert.equal(controller.items[0].canonicalItem, 'banana');
   assert.match(controller.pantryError.message, /Fixture write failed/);
+  assert.deepEqual(f.state.calls.map(call => call.name), ['listPantry', 'listPantryIntakes', 'listPantryIntakes', 'listPantry']);
+
 });
 
 test('pantry panel never presents failed loading as an empty pantry', () => {
@@ -801,7 +797,8 @@ test('pantry panel never presents failed loading as an empty pantry', () => {
     retryPantry() {}, retryIntakes() {}, add: async () => false, update: async () => false,
     remove: async () => false, clear: async () => false, resolveIntake: async () => false,
   } });
-  const render = () => f.render(f.app.CookPanel);
+  const shell = f.app.CookPanel({ clerkEnabled: false });
+  const render = () => f.render(shell.type, shell.props);
   let tree = render();
   nodes(tree).find(node => text(node) === 'My pantry' && node.props?.onClick).props.onClick();
   tree = render();
@@ -1074,23 +1071,23 @@ test('friends page protects typed handles and never presents failed loading as a
 
 test('shopping list and provider options load independently without erasing the list', async () => {
   const list = {
-    id: 'list-1', name: 'Shopping list', createdAt: '2026-09-24T00:00:00.000Z',
+    id: '11111111-1111-4111-8111-111111111111', name: 'Shopping list', createdAt: '2026-09-24T00:00:00.000Z',
     itemCount: 1, checkedCount: 0,
-    items: [{ id: 'item-1', canonicalItem: 'banana', displayName: 'bananas', quantity: 6,
+    items: [{ id: '22222222-2222-4222-8222-222222222222', canonicalItem: 'banana', displayName: 'bananas', quantity: 6,
       unit: null, amountUnknown: false, checked: false, mayAlreadyHave: false, recipeIds: [] }],
   };
   const providers = [{ id: 'clipboard', name: 'Copy list', kind: 'handoff', description: 'Copy the list.' }];
-  const f = fixture({
+  const f = fixture({ plannerLifecycle: true, deps: [], cleanups: [],
     failMethods: new Set(['cartProviders']),
     responses: { getList: list, cartProviders: providers },
   });
-  const render = () => f.render(f.app.useShoppingList);
-  render();
-  f.state.effects[0]();
-  f.state.effects[1]();
-  await new Promise(resolve => setImmediate(resolve));
-
-  let controller = render();
+  const render = () => {
+    const controller = f.render(() => f.app.useShoppingList());
+    f.state.effects.splice(0).forEach(effect => effect());
+    return controller;
+  };
+  const settle = async () => { for (let i = 0; i < 3; i++) { render(); await new Promise(resolve => setImmediate(resolve)); } return render(); };
+  let controller = await settle();
   assert.equal(controller.loaded, true);
   assert.equal(controller.list.items[0].displayName, 'bananas');
   assert.equal(controller.listError, null);
@@ -1099,22 +1096,18 @@ test('shopping list and provider options load independently without erasing the 
 
   f.state.failMethods.delete('cartProviders');
   controller.retryProviders();
-  render();
-  f.state.effects.at(-1)();
-  await new Promise(resolve => setImmediate(resolve));
-  controller = render();
+  controller = await settle();
   assert.equal(controller.providersLoaded, true);
   assert.equal(controller.providers[0].name, 'Copy list');
 
   f.state.failMethods.add('getList');
   controller.retryList();
-  render();
-  f.state.effects.at(-2)();
-  await new Promise(resolve => setImmediate(resolve));
-  controller = render();
+  controller = await settle();
   assert.equal(controller.loaded, true);
   assert.equal(controller.list.items[0].displayName, 'bananas');
   assert.match(controller.listError.message, /Fixture write failed/);
+  assert.deepEqual(f.state.calls.map(call => call.name), ['getList', 'cartProviders', 'cartProviders', 'getList']);
+
 });
 
 test('shopping list panel distinguishes load failure from an empty list and provider failure', () => {
@@ -1422,9 +1415,10 @@ test('asynchronous collection panels announce loading, results, and failures', (
     retryPantry() {}, retryIntakes() {},
     add: async () => {}, update: async () => {}, remove: async () => {}, clear: async () => {}, resolveIntake: async () => true,
   } });
-  const pantryTree = pantry.render(pantry.app.CookPanel);
+  const pantryShell = pantry.app.CookPanel({ clerkEnabled: false });
+  const pantryTree = pantry.render(pantryShell.type, pantryShell.props);
   nodes(pantryTree).find(node => text(node) === 'My pantry' && node.props?.onClick).props.onClick();
-  const openPantry = pantry.render(pantry.app.CookPanel);
+  const openPantry = pantry.render(pantryShell.type, pantryShell.props);
   assert.ok(nodes(openPantry).some(node => node.props?.role === 'status' && text(node) === 'Loading pantry…'));
   assert.ok(nodes(openPantry).some(node => node.props?.role === 'alert' && text(node).includes('Fixture pantry failure')));
 
