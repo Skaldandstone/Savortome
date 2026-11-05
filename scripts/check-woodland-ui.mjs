@@ -20,6 +20,8 @@ const stubs = {
   'react-native-safe-area-context': 'export const useSafeAreaInsets=()=>({top:0,right:0,bottom:0,left:0});',
   'react-native': `export const Modal='Modal',Pressable='Pressable',ScrollView='ScrollView',Text='Text',View='View'; export const StyleSheet={create:value=>value};`,
   '@clerk/nextjs': 'export const useAuth=()=>({userId:null});',
+  // Theme is an injected native boundary, like the palette in the UI stub.
+  '@/ui/ThemeProvider': 'export const useReducedMotion=()=>state.reducedMotion??false;',
   '@/lib/beta': 'export const canUseBeta=async()=>state.allowed;',
   '@/lib/client': `export const api=new Proxy({}, {get:(_,name)=>async(...args)=>{state.calls.push({name,args});if((state.defer&&name==='dietaryProfile')||(state.deferSave&&name==='setDietaryProfile')||state.deferMethods?.has(name))return new Promise((resolve,reject)=>state.pending.push({resolve,reject,name,args}));if(state.fail||state.failMethods?.has(name))throw Error('Fixture write failed');const response=state.responses?.[name]??state.response??{};return typeof response==='function'?response(...args):response;}});`,
   '@/lib/action-failure': `export const actionFailure=(error,fallback)=>({message:error instanceof Error?error.message:fallback,signInRequired:false}); export const signInReturnHref=path=>'/sign-in?redirect_url='+encodeURIComponent(path);`,
@@ -1352,4 +1354,15 @@ test('asynchronous collection panels announce loading, results, and failures', (
     node => node.props?.href === '/sign-in?redirect_url=%2Flist' && text(node) === 'Sign in again',
   );
   assert.equal(signInLink.props.href, '/sign-in?redirect_url=%2Flist');
+});
+
+test('mobile meal picker honors both injected motion preferences', () => {
+  for (const reducedMotion of [false, true]) {
+    const f = fixture({ reducedMotion });
+    const tree = f.render(f.app.MobilePlanScreen, { initialWeek: "2026-11-02", client: {} });
+    const modal = nodes(tree).find(node => node.type === 'Modal');
+    assert.ok(modal, 'The actual planner renders its meal picker modal');
+    assert.equal(modal.props.animationType, reducedMotion ? 'none' : 'slide');
+    assert.equal(f.state.calls.length, 0);
+  }
 });
