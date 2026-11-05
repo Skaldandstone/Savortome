@@ -80,6 +80,8 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const noteLocked = busy || recording || unconfirmed || deleteUnconfirmed || loading || !loaded;
+  const currentNoteLock = useRef(noteLocked); currentNoteLock.current = noteLocked;
+  const canEditDraft = () => alive.current && !currentNoteLock.current && !action.current && !pendingSave.current && !pendingDelete.current && !voiceOpening.current && recorder.current?.state !== "recording";
   const stopCapture = useCallback((discard = false) => {
     if (discard) {
       ++voiceGeneration.current;
@@ -311,9 +313,9 @@ function AccountTodayScreen({ userId, sessionId }: { userId?: string | null; ses
         }}>Review unconfirmed food-note removal</Button>
       </Callout> : null}
       <form className={styles.stack} onSubmit={event => { event.preventDefault(); void save(); }}>
-        <label>Date<TextField type="date" value={date} disabled={noteLocked} onChange={event => setDate(event.target.value)} /></label>
-        <label>Food name<TextField id="today-food-name" value={title} maxLength={160} disabled={noteLocked} onChange={event => { setTitle(event.target.value); setSource("text"); }} /></label>
-        <label>Portion, if you know it (optional)<TextField value={portion} maxLength={120} disabled={noteLocked} onChange={event => setPortion(event.target.value)} placeholder="For example, one bowl; leave blank if unsure" /></label>
+        <label>Date<TextField type="date" value={date} disabled={noteLocked} onChange={event => { if (canEditDraft()) setDate(event.target.value); }} /></label>
+        <label>Food name<TextField id="today-food-name" value={title} maxLength={160} disabled={noteLocked} onChange={event => { if (canEditDraft()) { setTitle(event.target.value); setSource("text"); } }} /></label>
+        <label>Portion, if you know it (optional)<TextField value={portion} maxLength={120} disabled={noteLocked} onChange={event => { if (canEditDraft()) setPortion(event.target.value); }} placeholder="For example, one bowl; leave blank if unsure" /></label>
         {uncertainty ? <Callout tone="warn">{uncertainty} Photo portions are unknown; add one only if you know it.</Callout> : null}
         {unconfirmed && !busy ? <Callout tone="warn">The save was not confirmed. This draft stays unchanged for a retry with the same reference. Reload first to check whether it already saved.</Callout> : null}
         <Button type="submit" disabled={busy || recording || deleteUnconfirmed || loading || !loaded || !title.trim()}>{busy ? "Working…" : unconfirmed ? "Retry the same food note" : draftId.current ? "Save reviewed edits" : "Save food note"}</Button>

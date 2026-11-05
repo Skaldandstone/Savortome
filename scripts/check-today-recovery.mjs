@@ -257,3 +257,25 @@ for (const invalid of [{size:0,type:'image/jpeg'},{size:8000001,type:'image/jpeg
  choose({size:100,type:'image/jpeg'});assert.ok(button(f.render(),'Send photo for editable draft'));
  choose(invalid);assert.equal(button(f.render(),'Send photo for editable draft'),undefined);assert.equal(webName(f.render()).props.value,'Keep my draft');assert.match(text(f.render()),/Nothing was sent/);assert.equal(f.writes('save').length,0);
 });
+
+test('web: queued edits cannot change the displayed food draft during an uncertain save',async()=>{
+ const f=await webReady();webName(f.render()).props.onChange({target:{value:'Toast'}});
+ const portion=tree=>nodes(tree).find(n=>n.type==='TextField'&&n.props.maxLength===120);
+ const dateField=tree=>nodes(tree).find(n=>n.type==='TextField'&&n.props.type==='date');
+ portion(f.render()).props.onChange({target:{value:'One slice'}});
+ const old=f.render(),originalDate=dateField(old).props.value,gate=deferred();f.state.save=()=>gate.promise;
+ await press(f,'Save food note');
+ webName(old).props.onChange({target:{value:'Soup'}});portion(old).props.onChange({target:{value:'One bowl'}});dateField(old).props.onChange({target:{value:'2026-01-01'}});
+ assert.equal(webName(f.render()).props.value,'Toast');assert.equal(portion(f.render()).props.value,'One slice');assert.equal(dateField(f.render()).props.value,originalDate);
+ gate.reject(Error('Synthetic uncertainty'));await f.settle();
+ webName(old).props.onChange({target:{value:'Rice'}});assert.equal(webName(f.render()).props.value,'Toast');
+ f.state.save=async(_,input)=>entry(input);await press(f,'Retry the same food note');assert.equal(f.writes('save')[1].input.title,'Toast');assert.equal(f.writes('save')[1].input.portion,'One slice');
+});
+
+test('web: stale food input handler stays locked after failed reload and unlocks after review',async()=>{
+ const f=await webReady();webName(f.render()).props.onChange({target:{value:'Toast'}});const old=webName(f.render());
+ f.state.list=async()=>{throw Error('Synthetic failed read');};await press(f,'Reload food notes');await f.settle();
+ old.props.onChange({target:{value:'Unexpected change'}});assert.equal(webName(f.render()).props.value,'Toast');
+ f.state.list=async(owner,date)=>f.state.records.get(owner).filter(note=>!date||note.date===date);await press(f,'Reload food notes');await f.settle();
+ webName(f.render()).props.onChange({target:{value:'Reviewed toast'}});assert.equal(webName(f.render()).props.value,'Reviewed toast');assert.equal(f.writes('save').length,0);
+});
