@@ -39,6 +39,10 @@ export function PantryList({
   const amountVersion = useRef(0);
   const renderedAmountVersion = amountVersion.current;
   const [clearing, setClearing] = useState(false);
+  const [clearError, setClearError] = useState<string | null>(null);
+  const clearFlight = useRef(false);
+  const clearConfirmation = useRef<object | null>(null);
+  const renderedClearConfirmation = clearConfirmation.current;
   const [addError, setAddError] = useState<string | null>(null);
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
   const addDraft = useRef("");
@@ -75,6 +79,30 @@ export function PantryList({
     if (!mounted.current || addFlight.current || !renderedAddRequest || addRequest.current !== renderedAddRequest) return;
     addRequest.current = null; addDraft.current = ""; ++addVersion.current;
     setText(""); setAddError(null); setConfirmingDiscard(false);
+  };
+
+  const openClear = () => {
+    if (!mounted.current || clearFlight.current || clearConfirmation.current) return;
+    clearConfirmation.current = {}; setClearError(null); setConfirmingClear(true);
+  };
+  const cancelClear = () => {
+    if (!mounted.current || clearFlight.current || !renderedClearConfirmation || renderedClearConfirmation !== clearConfirmation.current) return;
+    clearConfirmation.current = null; setClearError(null); setConfirmingClear(false);
+  };
+  const submitClear = async () => {
+    if (!mounted.current || clearFlight.current || !renderedClearConfirmation || renderedClearConfirmation !== clearConfirmation.current) return;
+    clearFlight.current = true; setClearing(true); setClearError(null);
+    try {
+      const saved = await onClear();
+      if (!mounted.current) return;
+      if (saved !== true) throw new Error("Unconfirmed clear");
+      clearConfirmation.current = null; setConfirmingClear(false);
+    } catch {
+      if (mounted.current) setClearError("We could not confirm the pantry was cleared. Check your pantry before trying again. Closing this confirmation cannot undo an earlier request.");
+    } finally {
+      clearFlight.current = false;
+      if (mounted.current) setClearing(false);
+    }
   };
 
   const startAmountEdit = (item: PantryEntry) => {
@@ -268,19 +296,15 @@ export function PantryList({
               );
             })}
           </ul>
-          <Button variant="ghost" type="button" aria-expanded={confirmingClear} onClick={() => setConfirmingClear(true)}>
+          <Button variant="ghost" type="button" aria-expanded={confirmingClear} onClick={openClear}>
             Clear pantry
           </Button>
           {confirmingClear ? (
             <div className={styles.clearConfirm} role="group" aria-label="Confirm clearing pantry">
               <span>This removes every pantry item and its freshness history.</span>
-              <Button type="button" variant="danger" disabled={clearing} onClick={async () => {
-                setClearing(true);
-                const saved = await onClear();
-                setClearing(false);
-                if (saved) setConfirmingClear(false);
-              }}>{clearing ? "Clearing…" : "Clear every item"}</Button>
-              <Button type="button" variant="ghost" disabled={clearing} onClick={() => setConfirmingClear(false)}>Keep my pantry</Button>
+              {clearError ? <p role="alert">{clearError}</p> : null}
+              <Button type="button" variant="danger" disabled={clearing} onClick={submitClear}>{clearing ? "Clearing…" : "Clear every item"}</Button>
+              <Button type="button" variant="ghost" disabled={clearing} onClick={cancelClear}>Keep my pantry</Button>
             </div>
           ) : null}
         </>
