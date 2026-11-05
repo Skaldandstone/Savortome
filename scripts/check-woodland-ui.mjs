@@ -625,7 +625,7 @@ test('mobile plan removal offers undo and clear-week requires confirmation', asy
 
 });
 
-test('pantry memory shows sourced guidance and keeps every correction explicit', () => {
+test('pantry memory shows sourced guidance and keeps every correction explicit', async () => {
   const f = fixture();
   const updates = [];
   const removals = [];
@@ -661,8 +661,10 @@ test('pantry memory shows sourced guidance and keeps every correction explicit',
   nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Save amount').props.onClick?.();
   const amountForm = nodes(tree).find(node => node.type === 'form' && text(node).includes('How many'));
   amountForm.props.onSubmit({ preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
+  tree = f.render(f.app.PantryList, props);
   nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'All gone').props.onClick();
-  nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Remind me in 3 days').props.onClick();
+  nodes(tree).find(node => typeof node.type === 'function' && text(node).replace(/\s+/g, ' ') === 'Remind me in 3 days').props.onClick();
   nodes(tree).find(node => typeof node.type === 'function' && text(node) === 'Hide this suggestion').props.onClick();
   assert.deepEqual(JSON.parse(JSON.stringify(updates)), [
     { canonicalItem: 'banana', isUsual: true },
@@ -679,9 +681,10 @@ test('pantry memory shows sourced guidance and keeps every correction explicit',
 test('pantry forms keep typed work until a write is confirmed', async () => {
   const f = fixture();
   let shouldSave = false;
+  const entries = [];
   const props = {
     items: [],
-    async onAdd() { return shouldSave; },
+    async onAdd(entry) { entries.push(entry); return shouldSave; },
     async onUpdate() { return shouldSave; },
     async onRemove() { return shouldSave; },
     async onClear() { return shouldSave; },
@@ -692,17 +695,22 @@ test('pantry forms keep typed work until a write is confirmed', async () => {
   input.props.onChange({ target: { value: 'bananas and yogurt' } });
   tree = render();
   let form = nodes(tree).find(node => node.type === 'form');
-  await form.props.onSubmit({ preventDefault() {} });
+  form.props.onSubmit({ preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
   tree = render();
   input = nodes(tree).find(node => node.props?.['aria-label'] === 'Ingredients to add to your pantry');
   assert.equal(input.props.value, 'bananas and yogurt');
+  assert.equal(input.props.disabled, true);
+  assert.match(text(tree), /Retry the same pantry entry/);
 
   shouldSave = true;
   form = nodes(tree).find(node => node.type === 'form');
-  await form.props.onSubmit({ preventDefault() {} });
+  form.props.onSubmit({ preventDefault() {} });
+  await new Promise(resolve => setImmediate(resolve));
   tree = render();
   input = nodes(tree).find(node => node.props?.['aria-label'] === 'Ingredients to add to your pantry');
   assert.equal(input.props.value, '');
+  assert.deepEqual(entries, ['bananas and yogurt', 'bananas and yogurt']);
 });
 
 test('pantry amount correction and bulk clear stay open after rejected writes', async () => {
