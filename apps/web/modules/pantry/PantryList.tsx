@@ -125,10 +125,13 @@ export function PantryList({
       </div> : null}
 
       {items.length === 0 ? (
+        <div className={styles.emptyPantry}>
+        <img src="/illustrations/pantry.svg" width={240} height={160} alt="" className={styles.emptyIllustration} />
         <p className={styles.empty}>
           Nothing here yet. Type what&apos;s in your kitchen — amounts are optional. Common
           seasonings and baking staples are already assumed; add anything else you keep in.
         </p>
+        </div>
       ) : (
         <>
           <p className={styles.pantryNote}>
