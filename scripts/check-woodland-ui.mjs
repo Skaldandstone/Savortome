@@ -492,6 +492,35 @@ test('web week-clear confirmation remains open when the write is rejected', asyn
   assert.deepEqual(f.state.writes, [{ url: '/api/plan', payload: { action: 'clearWeek', week: '2026-09-21' } }]);
 });
 
+for (const action of ['remove', 'accept suggestion']) test(`an earlier planner ${action} callback cannot repeat an unconfirmed write`, async () => {
+  const meal = { recipeId: '11111111-1111-4111-8111-111111111111', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
+  const f = plannerReadFixture();
+  f.state.responses.plan = { meals: [meal] };
+  f.state.responses.mySuggestions = { suggestions: [{ ...meal, id: 'suggestion-1', suggestedBy: { displayName: 'Sam' } }] };
+  const read = f.sandbox.fetch, writes = [];
+  f.sandbox.fetch = async (url, init = {}) => {
+    if (!init.method || init.method === 'GET') return read(url, init);
+    writes.push({ url, method: init.method, payload: JSON.parse(init.body) });
+    return { ok: false, status: 503, json: async () => ({ error: 'Unconfirmed' }) };
+  };
+  let tree = await f.settle();
+  const button = action === 'remove'
+    ? nodes(tree).find(node => node.props?.['aria-label'] === 'Remove Bean soup from Tue 22 Sep')
+    : plannerButton(tree, 'Accept');
+  assert.equal(button.props.disabled, false);
+  button.props.onClick();
+  // Let the request fail before React commits another render. This handler still
+  // captures the previously enabled state, but the uncertainty ref is current.
+  await new Promise(resolve => setImmediate(resolve));
+  button.props.onClick();
+  tree = await f.settle();
+  assert.equal(writes.length, 1, 'An uncertain write must not be repeated by an earlier callback');
+  assert.match(text(tree), /pending or unconfirmed/);
+  assert.deepEqual(writes[0], action === 'remove'
+    ? { url: '/api/plan', method: 'POST', payload: { action: 'remove', recipeId: meal.recipeId, date: meal.date, slot: meal.slot, week: '2026-09-21' } }
+    : { url: '/api/plan/suggestions/suggestion-1', method: 'POST', payload: { action: 'accept' } });
+});
+
 test('failed week loading never renders a false empty planner and retry restores the grid', async () => {
   const f = plannerReadFixture({ failMethods: new Set(['plan']) });
   let tree = await f.settle();

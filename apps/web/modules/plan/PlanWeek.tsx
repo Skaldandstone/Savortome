@@ -135,7 +135,7 @@ function AccountPlanWeek({ initialWeek, sessionId }: { initialWeek: string; sess
   useEffect(() => loadSuggestions(), [loadSuggestions]);
 
   const respond = async (suggestion: PlanSuggestion, action: "accept" | "dismiss") => {
-    if (mutation.current || blocked || suggestionsLoading || suggestionsError) return;
+    if (mutation.current || uncertain.current || blocked || suggestionsLoading || suggestionsError) return;
     mutation.current = true; uncertain.current = true; setUnconfirmed(true); setReviewReloaded(false); setNeedsSuggestionReview(true); setBusy(true);
     ++suggestionRead.current; ++planRead.current;
     setRespondingTo(suggestion.id);
@@ -157,7 +157,8 @@ function AccountPlanWeek({ initialWeek, sessionId }: { initialWeek: string; sess
   };
 
   const run = async (work: () => Promise<{ meals: PlannedMeal[]; addedToList?: number }>) => {
-    if (mutation.current || blocked) return false;
+    // Earlier callbacks may capture enabled UI after an unconfirmed request.
+    if (mutation.current || uncertain.current || blocked) return false;
     mutation.current = true; uncertain.current = true; setUnconfirmed(true); setReviewReloaded(false); setNeedsSuggestionReview(false);
     const selectedWeek = week; ++planRead.current;
     setBusy(true);

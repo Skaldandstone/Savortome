@@ -79,6 +79,7 @@ jobs:
           node scripts/check-food-note-signout.mjs
           node scripts/check-food-recovery-accessibility.mjs
           node scripts/check-pantry-planning-recovery.mjs
+          node --test --test-name-pattern="earlier planner|web meal removal|web week-clear" scripts/check-woodland-ui.mjs
           node scripts/check-meal-review-recovery.mjs
           node scripts/check-care-shopping-recovery.mjs
           node scripts/check-native-recipe-shopping.mjs
