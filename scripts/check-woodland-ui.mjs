@@ -570,11 +570,25 @@ test('a late prior-week response cannot replace the newly selected week', async 
 test('mobile plan removal offers undo and clear-week requires confirmation', async () => {
   const week = '2026-09-21';
   const meal = { recipeId: 'recipe-1', date: '2026-09-22', slot: 'dinner', title: 'Bean soup', imageUrl: null, totalMinutes: 25 };
-  const values = [];
-  values[0] = week;
-  values[1] = [meal];
-  const f = fixture({ values, responses: { planRemove: { meals: [] }, planAdd: { meals: [meal] }, planClearWeek: { meals: [] } } });
-  const render = () => f.render(f.app.MobilePlanScreen);
+  const f = fixture({ plannerLifecycle: true, deps: [], cleanups: [] });
+  let saved = [meal], rejectClear = false, focused, blur;
+  const calls = [];
+  const client = {
+    async plan(forWeek) { assert.equal(forWeek, week); return { meals: saved }; },
+    async library() { return { recipes: [] }; },
+    async planRemove(...args) { calls.push({ name: 'planRemove', args }); saved = []; return { meals: saved }; },
+    async reviewedPlanAdd(input) { calls.push({ name: 'reviewedPlanAdd', input }); saved = [meal]; return { meals: saved }; },
+    async planClearWeek(forWeek) { calls.push({ name: 'planClearWeek', week: forWeek }); if (rejectClear) throw new Error('Unconfirmed'); saved = []; return { meals: saved }; },
+  };
+  const render = () => {
+    const tree = f.render(f.app.MobilePlanScreen, { initialWeek: week, client });
+    f.state.effects.splice(0).forEach(effect => effect());
+    const focus = f.state.focusEffects.splice(0).at(-1);
+    if (focus && focus !== focused) { blur?.(); focused = focus; blur = focus(); }
+    return tree;
+  };
+  const settle = async () => { for (let i = 0; i < 3; i++) { render(); await new Promise(resolve => setImmediate(resolve)); } return render(); };
+  await settle();
 
   nodes(render()).find(n => n.props?.accessibilityLabel === 'Remove Bean soup from Tue 22 Sep').props.onPress();
   await new Promise(resolve => setImmediate(resolve));
@@ -588,16 +602,27 @@ test('mobile plan removal offers undo and clear-week requires confirmation', asy
   nodes(tree).find(n => n.props?.label === 'Clear week').props.onPress();
   tree = render();
   assert.doesNotMatch(text(tree).replace(/\s+/g, ' '), /Bean soup is back on Tue 22 Sep/);
-  assert.equal(f.state.calls.some(call => call.name === 'planClearWeek'), false);
+  assert.equal(calls.some(call => call.name === 'planClearWeek'), false);
   assert.ok(nodes(tree).some(n => n.props?.label === 'Clear every meal'));
   assert.ok(nodes(tree).some(n => n.props?.label === 'Keep this week'));
 
-  f.state.failMethods = new Set(['planClearWeek']);
+  rejectClear = true;
   nodes(tree).find(n => n.props?.label === 'Clear every meal').props.onPress();
   await new Promise(resolve => setImmediate(resolve));
   tree = render();
   assert.ok(nodes(tree).some(n => n.props?.label === 'Clear every meal'));
   assert.ok(nodes(tree).some(n => typeof n.type === 'function' && n.props?.tone === 'error'));
+  const confirm = nodes(tree).find(n => n.props?.label === 'Clear every meal');
+  assert.equal(confirm.props.disabled, true);
+  confirm.props.onPress(); await settle();
+  assert.match(text(render()), /may already have saved/);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls)), [
+    { name: 'planRemove', args: [meal.recipeId, meal.date, meal.slot, week] },
+    { name: 'reviewedPlanAdd', input: { recipeId: meal.recipeId, date: meal.date, slot: meal.slot } },
+    { name: 'planClearWeek', week },
+  ]);
+  blur?.();
+
 });
 
 test('pantry memory shows sourced guidance and keeps every correction explicit', () => {
